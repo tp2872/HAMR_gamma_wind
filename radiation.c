@@ -71,7 +71,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	, double fel
 	#endif
 ) {
-	double kappa_abs, kappa_es, tau, norm, bsq, Tr;
+	double kappa_abs, kappa_es, tau, norm, bsq, Tr, dK_dS;
 	int k, pflag = 0, pflag_rad = 0;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -177,9 +177,11 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
 	error_t[0] = 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
 	#if(TWO_T)
-		#if(FIXEDGAMMA)
-		double dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
-		#else
+		#if(CONSTANTGAMMA)
+		dK_dS = (GAMMA - 1.) / pow(pb[RHO], GAMMA - 1.0);
+		#elif(FIXEDGAMMA)
+		dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
+		#elif(VARGAMNMA)
 		fprintf(stderr, "Not implemented yet! \n");
 		#endif
 		error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / dK_dS / norm);
@@ -277,7 +279,14 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 				U_new[RHO] = U_i[RHO];
 				#if(TWO_T)
 					//Set for 2T fluid entropy of ions based on electron entropy
-					#if(FIXEDGAMMA)
+					#if(CONSTANTGAMMA)
+					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
+					ui = pb_new[UU] - ue;
+					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+					#elif(FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
 					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
@@ -483,14 +492,21 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
-			#if(FIXEDGAMMA)
+			#if(CONSTANTGAMMA)
+			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
+			ui = pb_new[UU] - ue;
+			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+			#elif(FIXEDGAMMA)
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
 			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
 			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-			#else
+			#elif(VARGAMMA)
 			fprintf(stderr, "Not implemented yet! \n");
 			#endif
 		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -561,9 +577,11 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 			#endif
 		}
 		#if(TWO_T)
-			#if(FIXEDGAMMA)
+			#if(CONSTANTGAMMA)
+			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+			#elif(FIXEDGAMMA)
 			dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-			#else
+			#elif(VARGAMMA)
 			fprintf(stderr, "Not implemented yet! \n");
 			#endif
 			//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));

@@ -540,7 +540,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double r
 	#endif
 ) {
-	double kappa_abs, kappa_es, tau, norm, bsq, Tr;
+	double kappa_abs, kappa_es, tau, norm, bsq, Tr, dK_dS;
 	int k, pflag=0, pflag_rad=0;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -670,9 +670,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(0.0 * Dt * dU[UU]));
 	error_t[0] = 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
 	#if(TWO_T)
-		#if(FIXEDGAMMA)
-		double dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
-		#else
+		#if(CONSTANTGAMMA)
+		dK_dS = (GAMMA - 1.) / pow(pb[RHO], GAMMA - 1.0);
+		#elif(FIXEDGAMMA)
+		dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
+		#elif(VARGAMMA)
 		fprintf(stderr, "Not implemented yet! \n");
 		#endif
 	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / dK_dS / norm);
@@ -781,14 +783,21 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[RHO] = U_i[RHO];
 				#if(TWO_T)
 					//Set for 2T fluid entropy of ions based on electron entropy
-					#if(FIXEDGAMMA)
+					#if(CONSTANTGAMMA)
+					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
+					ui = pb_new[UU] - ue;
+					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+					#elif(FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
 					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
 					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-					#else
+					#elif(VARGAMMA)
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
 				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -970,9 +979,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Obtain new conserved quantaties from MHD variables
 		get_state(pb_new, geom, &q);
 		U_new[RHO] = U_i[RHO];
+		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
-			#if(FIXEDGAMMA)
+			#if(CONSTANTGAMMA)
+			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
+			ui = pb_new[UU] - ue;
+			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+			#elif(FIXEDGAMMA)
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
 			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
@@ -1053,13 +1070,15 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 		}
 		#if(TWO_T)
-			#if(FIXEDGAMMA)
+			#if(CONSTANTGAMMA)
+			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+			#elif(FIXEDGAMMA)
 			dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-			#else
+			#elif(VARGAMMA)
 			fprintf(stderr, "Not implemented yet! \n");
 			#endif
-			//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
-			error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
+		//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
+		error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 		#endif
 		#if(P_NUM)
 		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
@@ -1140,7 +1159,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol;
+	double T_GAS, norm, norm_S, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
@@ -1510,9 +1529,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				}
 				#if(TWO_T)
-					#if(FIXEDGAMMA)
-					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-					#else
+					#if(CONSTANTGAMMA)
+					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					#elif(FIXEDGAMMA)
+					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					#elif(VARGAMMA)
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
 				//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
@@ -1598,7 +1619,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol;
+	double T_GAS, norm, norm_S, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
@@ -1932,9 +1953,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				}
 				#if(TWO_T)
-					#if(FIXEDGAMMA)
-					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-					#else
+					#if(CONSTANTGAMMA)
+					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					#elif(FIXEDGAMMA)
+					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					#elif(VARGAMMA)
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
 				//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
@@ -2017,7 +2040,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol;
+	double T_GAS, norm, norm_S, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
@@ -2363,9 +2386,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				}
 				#if(TWO_T)
-					#if(FIXEDGAMMA)
-					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-					#else
+					#if(CONSTANTGAMMA)
+					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					#elif(FIXEDGAMMA)
+					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					#elif(VARGAMMA)
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
 				//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
@@ -2833,13 +2858,15 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				#if(TWO_T)
-					#if(FIXEDGAMMA)
+					#if(CONSTANTGAMMA)
+					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					#elif(FIXEDGAMMA)
 					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-					#else
+					#elif(VARGAMMA)
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
-					#endif
+				#endif
 				#if(P_NUM)
 				norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
 				error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
@@ -2984,7 +3011,15 @@ __device__ double source_Coulomb(double* p) {
 	double coulog; 
 	double res;
 
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	#if(CONSTANTGAMMA)
+		#if(FULL_ENTROPY)
+		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMA - 1.0)) * (MU_E * MASS_RATIO));
+		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
+		#else
+		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMA - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
+		#endif
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		#if(FULL_ENTROPY)
 		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0)) * (MU_E * MASS_RATIO));
 		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
@@ -2992,7 +3027,7 @@ __device__ double source_Coulomb(double* p) {
 		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
@@ -3053,7 +3088,10 @@ __device__ double source_Coulomb(double* p) {
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
 __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	double gamg, game, gami, Theta_e, Theta_i;
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+
+	#if(CONSTANTGAMMA)
+	gamg = GAMMA;
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -3063,7 +3101,7 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 		Theta_e = fabs(S[0] * pow(rho, game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I);
@@ -3074,15 +3112,21 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
+	
+	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
+	#endif
 
-	return GAMMA;
+	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
 __device__ double calc_gamma_gas_prim(double* pr) {
 	double gamg, game, gami, Theta_e, Theta_i;
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+
+	#if(CONSTANTGAMMA)
+	gamg = GAMMA;
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -3092,7 +3136,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 		Theta_e = fabs(pr[ENTRE] * pow(pr[RHO], game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
@@ -3103,9 +3147,12 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return GAMMA;
+	#if(VARGAMMA || FIXEDGAMMA)
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
+	#endif
+
+	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -3115,7 +3162,17 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
-	#if(FIXEDGAMMA)   
+	#if(CONSTANTGAMMA)
+	game = GAMMA;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(FIXEDGAMMA)     
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -3125,7 +3182,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		Te = fabs(S[0] * pow(rho, game - 1.0));
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
 		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0));
@@ -3138,7 +3195,11 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
+	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
 	//Calculate gas pressures
 	pe = Te * rho;
@@ -3171,12 +3232,12 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 	quanti = quantg - quante;
 
-	#if(FIXEDGAMMA)
+	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 	Te = pe / rho;
 	Ti = pi / rho;
-	#else
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
@@ -3188,9 +3249,13 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
+	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
-	return GAMMA;
+	return gamg;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
@@ -3200,7 +3265,17 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
-	#if(FIXEDGAMMA)   
+	#if(CONSTANTGAMMA)
+	game = GAMMA;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -3210,7 +3285,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = fabs(S[0] * pow(rho, game - 1.0));
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
@@ -3223,7 +3298,11 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
+	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
 	//Calculate gas pressures
 	pe = Te * rho;
@@ -3256,7 +3335,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 	quanti = quantg - quante;
 
-	#if(FIXEDGAMMA)
+	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 		#if(FULL_ENTROPY)
@@ -3268,7 +3347,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	Te = pe / rho;
 	Ti = pi / rho;
-	#else
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
@@ -3287,9 +3366,13 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	#endif
 
+	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
-	return GAMMA;
+	return gamg;
 }
 
 // Some bessel functions
@@ -6266,12 +6349,12 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 	//Calculate dPdW
 	gamma_eos2 = calc_gamma_gas_w(S, rho, (x[0] + dW) * gtmp, fel);
-	dgamma = (gamma_eos2 - gamma_eos1) / dW;
-	dPdW = factor * gtmp + x[0] * pow(gamma_eos1, -2.0) * dgamma;
+	dgamma = 0.0;// (gamma_eos2 - gamma_eos1) / dW;
+	dPdW = factor * gtmp + (x[0] * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
 
 	//Calculate dPdvsq
-	gamma_eos2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (x[1] + dvsq)), x[0] * (1.0 - (x[1] + dvsq)), fel);
-	dgamma = (gamma_eos2 - gamma_eos1) / dvsq;
+	gamma_eos2 = calc_gamma_gas_w(S, D * sqrt(fabs(1.0 - (x[1] + dvsq))), x[0] * (1.0 - (x[1] + dvsq)), fel);
+	dgamma = 0.0;// (gamma_eos2 - gamma_eos1) / dvsq;
 	dPdvsq = factor * (0.5 * D / sqrt(gtmp) - x[0]) + (x[0] * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
 	#else
 	// 2. Ideal gas EOS
@@ -6563,7 +6646,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	#if(TWO_T)
 	if(dofloor) {
-		#if(FIXEDGAMMA)
+		#if(CONSTANTGAMMA)
 			#if(FULL_ENTROPY)
 			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
 			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
@@ -6571,7 +6654,15 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
-		#else
+		#elif(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
+			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
+			#else
+			pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
+			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
+			#endif
+		#elif(VARGAMMA)
 		fprintf(stderr, "Not implemented yet!\n");
 		#endif
 	}
@@ -6975,7 +7066,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 
 	//Electron entropy source term for radiative cooling and coulomb coupling
 	#if(TWO_T)
-		#if(FIXEDGAMMA)
+		#if(FIXEDGAMMA || CONSTANTGAMMA)
 			#if(FULL_ENTROPY)
 			dK_dS = ph[RHO]/ (GAMMAE - 1.) * ph[UU]);
 			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
@@ -6985,7 +7076,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 			dU[ENTRE] += dK_dS * source_Coulomb(ph);
 			#endif
-		#else
+		#elif(VARGAMMA)
 		#endif
 	#endif
 
@@ -7137,17 +7228,23 @@ __device__ double calc_Te(double* ph) {
 	double Te;
 
 	#if(TWO_T)
-		#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+			#if(FULL_ENTROPY)
+			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
+			#else
+			Te = ph[ENTRE] * pow(ph[RHO], GAMMA - 1.0);
+			#endif
+		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
 			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0);
 			#else
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 			#endif
-		#else     // variable gamma: Sadowski+17 & Chael+19
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0));
+			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
 			#else
-			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0));
+			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
 			#endif
 		#endif
 	#else
@@ -7161,17 +7258,17 @@ __device__ double calc_Ti(double* ph) {
 	double Ti;
 
 	#if(TWO_T)
-		#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
 			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
 			#else
 			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
 			#endif
-		#else     // variable gamma: Sadowski+17 & Chael+19
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0));
+			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0);
 			#else
-			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0));
+			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0);
 			#endif
 		#endif
 	#else

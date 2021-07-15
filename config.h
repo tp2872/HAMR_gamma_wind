@@ -28,7 +28,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -323,11 +323,14 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_HOWES (0)
 #define HEAT_ROWAN (1)
 
-/*Wheter to use dynamical load balancing*/
-#define DYNAMIC_LOADBALANCE (0)
+/*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
+#define CONSTANTGAMMA (1)
 
-/*Wheter to use fixed or variable gamma*/
-#define FIXEDGAMMA (1)
+/*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
+#define FIXEDGAMMA (0)
+
+/*Wheter to use variable gamma as in Sadowski+2017*/
+#define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #define GAMMAE (4./3.)
@@ -343,6 +346,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable IMEX*/
 #define DO_IMEX (0)
+
+/*Wheter to use dynamical load balancing*/
+#define DYNAMIC_LOADBALANCE (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)

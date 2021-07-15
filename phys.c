@@ -117,17 +117,23 @@ double calc_Te(double* ph) {
 	double Te;
 
 	#if(TWO_T)
-		#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(CONSTANTGAMMA)
+			#if(FULL_ENTROPY)
+			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
+			#else
+			Te = ph[ENTRE] * pow(ph[RHO], GAMMA - 1.0);
+			#endif
+		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
 			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0);
 			#else
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 			#endif
-		#else     // variable gamma: Sadowski+17 & Chael+19
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0));
+			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
 			#else
-			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0));
+			Te = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
 			#endif
 		#endif
 	#else
@@ -141,17 +147,17 @@ double calc_Ti(double* ph) {
 	double Ti;
 
 	#if(TWO_T)
-		#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
 			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
 			#else
 			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
 			#endif
-		#else     // variable gamma: Sadowski+17 & Chael+19
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0));
+			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0);
 			#else
-			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0));
+			Ti = 0.2 * (sqrt(1.0 + pow(25.0 * ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0);
 			#endif
 		#endif
 	#else
@@ -975,98 +981,13 @@ double calc_delta(double* restrict ph, double bsq) {
 	delta = 0.5;
 	#endif
 
-	//if (!isfinite(delta) || delta > 1.0 || delta < 0.0) 
-		delta = 0.0;
+	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) delta = 0.5;
 
 	return delta;
 }
 
 void heating(double* ph, struct of_state* q)
 {
-	double Theta_e, Theta_i, u_e, u_i, dis, ughat;
-	double fel, game, gami, pgas;
-
-	fprintf(stderr, "Function heating not implemented! \n");
-
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-	game = GAMMAE;
-	gami = GAMMA;
-		#if(FULL_ENTROPY)
-		Theta_e = fabs(exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) * MU_I);
-		#else
-		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami) * MU_I);
-		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
-		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I);
-		#endif
-	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
-	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
-	#endif
-	
-	//Calculate total gas pressure and internal energies
-	pgas = (Theta_e / (MU_E * MASS_RATIO) + Theta_i / MU_I) * ph[RHO];
-
-	//Calculate internal energy
-	u_e = (Theta_e / (MU_E * MASS_RATIO)) * ph[RHO] / (game - 1.0);
-	u_i = (Theta_i / MU_I) * ph[RHO] / (gami - 1.0);
-
-	//Calculate which fraction goes into electrons
-	//fel = 1.0 / (1.0 + calc_delta(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
-
-	//Total adiabatic evolution of ions and electrons
-	ughat = (u_e + u_i); 
-
-	//Calculate dissipation: ph[UU] is allways positive (guaranteed by utoprim)
-	dis = MY_MAX(ph[UU] - ughat, 0.);
-
-	//Update internal energies
-	u_e += fel * dis;
-	u_i += (1. - fel) * dis;
-
-	if (u_e < 0.01 * u_i) {
-		ughat = u_e + u_i;
-		u_e = 0.01 * ughat;
-		u_i = 0.99 * ughat;
-	}
-	else if (u_i < 0.01 * u_e) {
-		ughat = u_i + u_e;
-		u_i = 0.01 * ughat;
-		u_e = 0.99 * ughat;
-	}
-	if (isnan(u_i))fprintf(stderr, "nanerror: %f \n", u_i);
-	
-	// convert back to entropy 
-	#if(FIXEDGAMMA)
-		#if(FULL_ENTROPY)
-		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.0) * ue * pow(ph[RHO], -game));
-		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.0) * ui * pow(ph[RHO], -gami));
-		#else
-		ph[ENTRE] = (game - 1.0) * u_e * pow(ph[RHO], -game);
-		ph[ENTRI] = (gami - 1.0) * u_i * pow(ph[RHO], -gami);
-		#endif
-	#else
-		//Calculate Theta
-		//u_o_rho=theta_e/MU/( (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e)-1)
-		double u_o_rho = u_e / ph[RHO];
-		Theta_e = 1.0 / 30.0 * (sqrt(25.0 * (MU_E * MASS_RATIO) * (MU_E * MASS_RATIO) * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * (MU_E * MASS_RATIO) * u_o_rho - 6.0);
-		u_o_rho = u_i / ph[RHO];
-		Theta_i = 1.0 / 30.0 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
-
-		#if(FULL_ENTROPY)
-		ph[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho;
-		ph[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / rho;
-		#else
-		ph[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho);
-		ph[ENTRI] = log(pow(Theta_I, 1.5) * pow(Theta_i + 0.4, 1.5) / rho);
-		#endif
-	#endif
 
 	return;
 }
@@ -1074,7 +995,10 @@ void heating(double* ph, struct of_state* q)
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
 double calc_gamma_gas_conserved(double*  S, double rho) {
 	double gamg, game, gami, Theta_e, Theta_i;
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	
+	#if(CONSTANTGAMMA)
+	gamg = GAMMA;
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -1084,7 +1008,7 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		Theta_e = fabs(S[0] * pow(rho, game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
@@ -1096,16 +1020,23 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
+
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
+	#endif
+
 	if (!isfinite(gamg) || gamg > 2.0 || gamg < 1.0) fprintf(stderr, "Gamma_error_conserved: %f %f %f %f \n", gamg, log10(S[0]), log10(S[1]), log10(rho));
 
-	return GAMMA;
+	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
 double calc_gamma_gas_prim(double* pr) {
 	double gamg, game, gami, Theta_e, Theta_i;
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+
+	#if(CONSTANTGAMMA)
+	gamg = GAMMA;
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -1115,7 +1046,7 @@ double calc_gamma_gas_prim(double* pr) {
 		Theta_e = fabs(pr[ENTRE] * pow(pr[RHO], game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
@@ -1127,22 +1058,36 @@ double calc_gamma_gas_prim(double* pr) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
+
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
+	#endif
+
 	if (!isfinite(gamg) || gamg > 1.00001*GAMMA || gamg < 0.99999*GAMMAE) {
 		fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
 	}
 	
-	return GAMMA;
+	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
 double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
-	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante;
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
-	#if(FIXEDGAMMA)   
+	#if(CONSTANTGAMMA)
+	game = GAMMA;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(FIXEDGAMMA)     
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -1152,8 +1097,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		Te = fabs(S[0] * pow(rho, game - 1.0));
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
 		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0));
@@ -1166,7 +1110,11 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
 	//Calculate gas pressures
 	pe = Te * rho;
@@ -1193,17 +1141,18 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	else {
 		u_e += delta * dis;
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
-		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-		quanti = quantg - quante;
 	}
 
-	#if(FIXEDGAMMA)
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	quanti = quantg - quante;
+
+	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 	Te = pe / rho;
 	Ti = pi / rho;
-	#else
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
@@ -1215,20 +1164,33 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
-	
-	return GAMMA;
+	#else
+	gamg = GAMMA;
+	#endif
+
+	return gamg;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
 double set_S_w(double* S, double rho, double w, double delta) {
-	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante;
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
-	#if(FIXEDGAMMA)   
+	#if(CONSTANTGAMMA)
+	game = GAMMA;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
@@ -1238,21 +1200,24 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = fabs(S[0] * pow(rho, game - 1.0));
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	#else
+	gamg = GAMMA;
+	#endif
 
 	//Calculate gas pressures
 	pe = Te * rho;
@@ -1269,22 +1234,23 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	//if (dis == 0.0) {
-	//	quante = game * u_e;
-	//	quanti = gami * u_i;
-	//	double factor = quantg / (quante + quanti);
-	//	quante *= factor;
-	//	quanti *= factor;
-	//}
-	//else {
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
 		u_e += delta * dis;
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
-		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-		quanti = quantg - quante;
-	//}
+	}
 
-	#if(FIXEDGAMMA)
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	quanti = quantg - quante;
+
+	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 		#if(FULL_ENTROPY)
@@ -1296,7 +1262,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	Te = pe / rho;
 	Ti = pi / rho;
-	#else
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
@@ -1315,10 +1281,13 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	#endif
 
+	#if(!CONSTANTGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w2: %f \n", gamg);
-	
-	return GAMMA;
+	#else
+	gamg = GAMMA;
+	#endif
+
+	return gamg;
 }
 
 double set_S_u(double* S, double rho, double u) {
@@ -1581,7 +1550,15 @@ double source_Coulomb(double *p){
 	double coulog;
 	double res;
 
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FULL_ENTROPY)
+		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMA - 1.0)) * (MU_E * MASS_RATIO));
+		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
+		#else
+		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMA - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
+		#endif
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		#if(FULL_ENTROPY)
 		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0)) * (MU_E * MASS_RATIO));
 		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
@@ -1589,7 +1566,7 @@ double source_Coulomb(double *p){
 		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
 		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));

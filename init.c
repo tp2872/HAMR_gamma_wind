@@ -1018,25 +1018,29 @@ void init_torus()
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
-	double delta, u_e, u_i, bsq;
+	double deltaf, u_e, u_i, bsq;
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
-			delta = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+			
+			//Calculate delta (fraction of heating going to electrons
+			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+			deltaf = MY_MIN(deltaf, 0.99);
+			deltaf = MY_MAX(deltaf, 0.01);
 
 			#if(FIXEDGAMMA)   // fixed gamma: Ressler+15, Ryan+17
 				#if(FULL_ENTROPY)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
 				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* delta* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - delta)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
 				#endif
 			#else   // variable gamma: Sadowski+17, Chael+19
-			u_e = delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			u_i = (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_e, ELECTRONS);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_i, IONS);
