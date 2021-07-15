@@ -834,7 +834,7 @@ void init_torus()
 	rmax = 12.;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
-	beta = 100. ;
+	beta = 10. ;
 	#if(RAD_M1)
 	gam_local = 4. / 3.;
 	#else
@@ -940,6 +940,9 @@ void init_torus()
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
+				#if (DOHELM_TEMPERATURE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][DOHELM_TEMP] = 123.;
+				#endif
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
@@ -968,11 +971,14 @@ void init_torus()
 					#pragma omp critical
 					rhomax = rho;
 				}
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u *(1. + 4.e-2 * (ranc(0) - 0.5)); // DIMARK: no perturbation
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;// *(1. + 4.e-2 * (ranc(0) - 0.5));
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
 				}
+				#if (DOHELM_TEMPERATURE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][DOHELM_TEMP] = 123.;
+				#endif
 			
 				#if (TILTED)
 				V[1] = ur;
@@ -1017,7 +1023,7 @@ void init_torus()
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  #endif
+	#endif
   
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
@@ -1107,8 +1113,8 @@ void init_torus()
 			//bl_coord(X, &r, &th, &phi);
 			// den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
 			// ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-      // pres = ener * (gam - 1.0);
-      p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+			// pres = ener * (gam - 1.0);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
 			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			// p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 		}
@@ -2159,7 +2165,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 100.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 10.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;

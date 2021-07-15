@@ -420,7 +420,7 @@ static int general_newton_raphson(double x[], void(*funcd) (double[], double[], 
 #if (DOHELM_TEMPERATURE)
     , double*
 #endif
-), double tolerance,
+), double tolerance
 #if (DOHELM_TEMPERATURE)
     , double* temp_prev
 #endif
@@ -540,14 +540,14 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     double gamma_sq = 1.0/(1.0 - vsq);
     double gamma = sqrt(gamma_sq);
     double dpdrho, dpde_d;
-    double prim[UU + DOHELM_TEMPERATURE];
+    double prim[UU + 1 + DOHELM_TEMPERATURE];
     prim[RHO] = rho;
     prim[UU] = w - rho;
 #if(DOHELM_TEMPERATURE)
     prim[DOHELM_TEMP] = *temp_prev;
 #endif
     eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d); // DI_helmT: what to do with temperature!
-#if(DOHELM_TEMPERATURE)
+#if(DOHELM_TEMPERATURE==1)
     *temp_prev = prim[DOHELM_TEMP];
 #endif
     double dpdeps_o_rho = dpde_d / rho;
@@ -767,7 +767,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     
     #if DOHELM
     double xdens, xpres, xener, xenth;
-    double p_temp[UU+DOHELM_TEMPERATURE];
+    double p_temp[UU + 1+DOHELM_TEMPERATURE];
     // Helmholtz EOS
     xdens = prim[RHO];
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K

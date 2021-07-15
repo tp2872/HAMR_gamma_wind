@@ -17,13 +17,13 @@ Physical Parameters section
 #define POSTMERGER_PROBLEM 13
 #define RAD_PULSE 14
 
-#define WHICHPROBLEM RAD_PULSE
+#define WHICHPROBLEM TORUS_PROBLEM
 
 // DIMARK: rad.pulse kappa_es
 #define KAPPARADPULSE (10.)
 
 /*Set Cartesian grid for test problems*/
-#define CARTESIAN (1)
+#define CARTESIAN (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -51,22 +51,22 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress;
 
-#define DOHELM_FULLENTROPY (0) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
+#define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define EOS_GAMMALAW (0)
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (1)
 #define revert_gamma        (1)
+#define eos_nr_debug (0)
 
 // subcycling testing
 #define RADM1_SUBCYCLING (0)
 
 #define EOS_BISECTION (0)
-#define eos_nr_debug (0)
 
 #define low_rho_correction  (0) // Leave it at 0, breaks 2d inversion
 
@@ -160,8 +160,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 751
-#define BS_2 751
+#define BS_1 128
+#define BS_2 128
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -236,7 +236,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (1)
+#define PPM (0)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -330,7 +330,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
@@ -338,7 +338,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
@@ -761,7 +761,7 @@ Section with EOS constants
 #define bAprox13t (0)
 
 // Use linear interpolation of the EOS table
-#define EOS_LINEAR (0)
+#define EOS_LINEAR (1)
 
 // if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
 // otherwise, set EOS_COULOMB_CORR to 0

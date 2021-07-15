@@ -93,6 +93,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	bsq = bsq_calc(pv, &geom);
 	#endif
 
+	#if (DOHELM && DOHELM_TEMPERATURE)
+	if (pv[DOHELM_TEMP] < eos_temp_low) pv[DOHELM_TEMP] = eos_temp_low;
+	#endif
+
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 	#if(RAD_M1)
@@ -219,7 +223,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
 		//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
 		for (m = 1; m < NDIM; m++) {
-			pv[m + UU] = utcon[m] * trans + pv_prefloor[m + UU] * (1. - trans);
+			pv[m + UU + DOHELM_TEMPERATURE] = utcon[m] * trans + pv_prefloor[m + UU + DOHELM_TEMPERATURE] * (1. - trans);
 		}
 
 	
@@ -243,23 +247,20 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		#endif
 	}
 
-	/*#if DOKTOT
+	#if DOKTOT
 	#if (DOHELM)
 	double xentr;
 	eos_mode_rhou_entr(pv, &xentr);
 	pv[KTOT] = xentr;
 	#else 
-	// DIMARK: entropy test
-	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log/(PRESSURE_SCALE/ * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
-	//pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
-	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
-	#endif
-	#endif*/
 	#if(FULL_ENTROPY)
 	pv[KTOT] = 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
 	#else
 	pv[KTOT] = (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 	#endif
+	#endif
+	#endif
+	
 
 	/* limit gamma wrt normal observer */
 	if(gamma_calc(pv,&geom,&gamma) ) { 
