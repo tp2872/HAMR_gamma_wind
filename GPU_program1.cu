@@ -3294,10 +3294,10 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = rho / (MU_E * MASS_RATIO);
-	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	C = rho / MU_I;
-	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	double C = quante * rho / (MU_E * MASS_RATIO);
+	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	C = quanti * rho / (MU_I);
+	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
@@ -3403,11 +3403,17 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	Te = pe / rho;
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+	//quant*C=(10.0 + 20.0 * x * C) / (6.0 + 15.0 * x * C)/((10.0 + 20.0 * x * C) / (6.0 + 15.0 * x * C)-1)*x*C
+	//C= (MU_E * MASS_RATIO) / RHO
+	//x=pe
 	//Use analytical inversions
-	double C = rho / (MU_E * MASS_RATIO);
-	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	C = rho / MU_I;
-	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	double C = quante * rho / (MU_E * MASS_RATIO);
+	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	C = quanti * rho / (MU_I);
+	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	//pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
+	//C = rho / MU_I;
+	//pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
@@ -6718,8 +6724,15 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
+		double Theta_e, ue, game, C;
+		ue = 0.5 * pf[UU];
+		C = ue / pf[RHO] * MU_E * MASS_RATIO;
+		game = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta_e = (game - 1.0) * ue / pf[RHO] * MU_E * MASS_RATIO;
 			#if(FULL_ENTROPY)
+			pf[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pf[RHO]);
 			#else
+			pf[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pf[RHO];
 			#endif
 		#endif
 	}

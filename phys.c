@@ -1154,10 +1154,10 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = rho / (MU_E * MASS_RATIO);
-	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	C = rho / MU_I;
-	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	double C = quante * rho / (MU_E * MASS_RATIO);
+	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	C = quanti * rho / (MU_I);
+	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
@@ -1264,10 +1264,10 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = rho / (MU_E * MASS_RATIO);
-	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	C = rho / MU_I;
-	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	double C = quante * rho / (MU_E * MASS_RATIO);
+	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	C = quanti * rho / (MU_I);
+	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
