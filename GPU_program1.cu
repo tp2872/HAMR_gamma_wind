@@ -677,7 +677,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#elif(VARGAMMA)
 		//Notes
 		//Q = P * uu * dS;
-		//Q = P * uu * 1 / kappa * dkappa / (gamma-1);
+		//Q = P * uu * 1 / kappa * dkappa;
+		//Q = P / rho  * 1 / kappa * d(rho * uu * kappa);
 
 		//For old entropy
 		//Q = P * uu * rho ^ gamma / P * dkappa / (gamma - 1);
@@ -813,7 +814,29 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 					#elif(VARGAMMA)
-					fprintf(stderr, "Not implemented yet! \n");
+					double Theta, gam, C;
+					
+					//Calculate ue
+					Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0));
+					gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+					
+					//Check limits
+					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					ui = pb_new[UU] - ue;
+
+					//Set electron entropy
+					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+
+					//Set ion entropy
+					C = ui / pb_new[RHO] * MU_I;
+					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
 				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
 				U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
@@ -1011,8 +1034,30 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
 			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-			#else
-			fprintf(stderr, "Not implemented yet! \n");
+			#elif(VARGAMMA)
+			double Theta, gam, C;
+
+			//Calculate ue
+			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0));
+			gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+
+			//Check limits
+			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			ui = pb_new[UU] - ue;
+
+			//Set electron entropy
+			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+
+			//Set ion entropy
+			C = ui / pb_new[RHO] * MU_I;
+			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
 		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
 		U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
@@ -7123,31 +7168,56 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	#if(DOKTOT)
 		#if (DOHELM)
 		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &dK_dS);
+		#elif(TWO_T)
+			#if(VARGAMMA || FIXEDGAMMA)
+			double Theta, gam, entr, C;
+			//For variable entropy
+			C = ph[UU] / ph[RHO] * MU_H;
+			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
+				#if(FULL_ENTROPY)
+				dK_dS = (1.0 / Theta) * (MU_G);
+				#else
+				dK_dS = (ph[KTOT] / Theta) * (MU_G);
+				#endif
+			#else
+				#if(FULL_ENTROPY)
+				dK_dS = ph[RHO] / (gamma_g - 1.) * ph[UU]);
+				#else
+				dK_dS = (gamma_g - 1.) / pow(ph[RHO], gamma_g - 1.0);
+				#endif
+			#endif
 		#else
 			#if(FULL_ENTROPY)
 			dK_dS = ph[RHO] / (GAMMA - 1.) * ph[UU]);
-			dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 			#else
 			dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
-			dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 			#endif
 		#endif
+		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#endif
 
 	//Electron entropy source term for radiative cooling and coulomb coupling
 	#if(TWO_T)
 		#if(FIXEDGAMMA || CONSTANTGAMMA)
 			#if(FULL_ENTROPY)
-			dK_dS = ph[RHO]/ (GAMMAE - 1.) * ph[UU]);
-			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-			dU[ENTRE] += dK_dS * source_Coulom b(ph);
+			dK_dS = ph[RHO] / (GAMMAE - 1.) * ph[UU]);
 			#else
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
-			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-			dU[ENTRE] += dK_dS * source_Coulomb(ph);
 			#endif
 		#elif(VARGAMMA)
+			double Theta_e;
+			//For variable entropy
+			#if(FULL_ENTROPY)
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
+			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+			#else
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
+			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+			#endif
 		#endif
+		dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		dU[ENTRE] += dK_dS * source_Coulomb(ph);
 	#endif
 
 	#pragma ivdep
@@ -7439,6 +7509,23 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 		eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
 		flux[KTOT] = flux[RHO] * xentr;
 		//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
+		#elif(TWO_T)
+			#if(FIXEDGAMMA || VARGAMMA)
+			double Theta;
+			//For variable entropy
+			Theta = (gamma_g - 1.0) * ph[UU] / ph[RHO] * MU_G;
+				#if(FULL_ENTROPY)
+				flux[KTOT] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
+				#else
+				flux[KTOT] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
+				#endif
+			#else
+				#if(FULL_ENTROPY)
+				flux[KTOT] = flux[RHO] * 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
+				#else
+				flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -gamma_g);
+				#endif
+			#endif
 		#else 
 			#if(FULL_ENTROPY)
 			flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));

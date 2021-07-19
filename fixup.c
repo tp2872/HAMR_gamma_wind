@@ -231,34 +231,34 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	if (dofloor) {
-		#if(TWO_T)
-			#if(CONSTANTGAMMA)
-				#if(FULL_ENTROPY)
-				pv[ENTRE] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-				pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-				#else
-				pv[ENTRE] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-				pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-				#endif
-			#elif(FIXEDGAMMA)
-				#if(FULL_ENTROPY)
-				pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
-				pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-				#else
-				pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
-				pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-				#endif
-			#elif(VARGAMMA)
-			double Theta_e, ue, game, C;
-			ue = 0.5 * pv[UU];
-			C = ue / pv[RHO] * MU_E * MASS_RATIO;
-			game = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta_e = (game - 1.0) * ue / pv[RHO] * MU_E * MASS_RATIO;
-				#if(FULL_ENTROPY)
-				pv[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO]);
-				#else
-				pf[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO];
-				#endif	
+	#if(TWO_T)
+		#if(CONSTANTGAMMA)
+			#if(FULL_ENTROPY)
+			pv[ENTRE] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+			pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+			#else
+			pv[ENTRE] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+			#endif
+		#elif(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
+			pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+			#else
+			pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
+			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+			#endif
+		#elif(VARGAMMA)
+		double Theta_e, ue, game, C;
+		ue = 0.5 * pv[UU];
+		C = ue / pv[RHO] * MU_E * MASS_RATIO;
+		game = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta_e = (game - 1.0) * ue / pv[RHO] * MU_E * MASS_RATIO;
+			#if(FULL_ENTROPY)
+			pv[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO]);
+			#else
+			pf[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO];
+			#endif	
 		#endif
 	#endif
 	}

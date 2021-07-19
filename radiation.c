@@ -293,8 +293,30 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 					pb_new[ENTRE]= (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-					#else
-					fprintf(stderr, "Not implemented yet! \n");
+					#elif(VARGAMMA)
+					double Theta, gam, C;
+
+					//Calculate ue
+					Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0));
+					gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+
+					//Check limits
+					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					ui = pb_new[UU] - ue;
+
+					//Set electron entropy
+					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+
+					//Set ion entropy
+					C = ui / pb_new[RHO] * MU_I;
+					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
 				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
 				U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
@@ -507,7 +529,29 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 			ui = pb_new[UU] - ue;
 			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 			#elif(VARGAMMA)
-			fprintf(stderr, "Not implemented yet! \n");
+			double Theta, gam, C;
+
+			//Calculate ue
+			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0));
+			gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+
+			//Check limits
+			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			ui = pb_new[UU] - ue;
+
+			//Set electron entropy
+			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+
+			//Set ion entropy
+			C = ui / pb_new[RHO] * MU_I;
+			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
 		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
 		U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
