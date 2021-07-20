@@ -257,7 +257,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			#if(FULL_ENTROPY)
 			pv[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO]);
 			#else
-			pf[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO];
+			pv[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO];
 			#endif	
 		#endif
 	#endif

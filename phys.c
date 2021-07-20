@@ -60,7 +60,7 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 			#if(FIXEDGAMMA || VARGAMMA)
 			double Theta;
 			//For variable entropy
-			Theta = (gamma_g - 1.0) * ph[UU] / ph[RHO] * MU_G;
+			Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
 				#if(FULL_ENTROPY)
 				flux[KTOT] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
 				#else
@@ -354,7 +354,7 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 			#if(VARGAMMA || FIXEDGAMMA)
 			double Theta, gam, entr, C;
 			//For variable entropy
-			C = ph[UU] / ph[RHO] * MU_H;
+			C = ph[UU] / ph[RHO] * MU_G;
 			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
 				#if(FULL_ENTROPY)
@@ -1078,13 +1078,12 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I);
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) * MU_I);
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1116,13 +1115,12 @@ double calc_gamma_gas_prim(double* pr) {
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I);
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1174,7 +1172,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
@@ -1277,7 +1275,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
@@ -1637,11 +1635,11 @@ double source_Coulomb(double *p){
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(p[RHO] * p[ENTRE], 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 * 25.0 * pow(p[RHO] * p[ENTRI], 2. / 3.)) - 1.0));
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * p[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * p[ENTRI], 2. / 3.)) - 1.0));
 		#endif
 	#endif
 

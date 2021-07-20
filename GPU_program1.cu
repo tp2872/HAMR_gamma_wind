@@ -70,11 +70,34 @@ __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], dou
 	, double fel
 	#endif
 );
-__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy);
-__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm);
-__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
-__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance);
+__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif);
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
 	#if(TWO_T)
 	, double fel
@@ -249,11 +272,35 @@ __device__ void validate_x2(double x[1], double x0[1]);
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
 
 /*Declerations of functions for Utoprim_1dfix1*/
-__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy);
-__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim);
-__device__ int general_newton_raphson3(double x[],  double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance);
-__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
-__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
+__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ int general_newton_raphson3(double x[],  double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
 
 /*Declerations of functions related to (M1) radiation scheme*/
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim);
@@ -594,11 +641,21 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#if(DO_FONT_FIX)
 		if (pflag) {
 			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-			//	#if (DOHELM)
-			//	, gpu_eos_table
-			//	#endif
+				//#if (DOHELM)
+				//, gpu_eos_table
+				//#endif
+				//#if(TWO_T)
+				//, fel
+				//#endif
 			//);
-			//if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+			//if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+				//#if (DOHELM)
+				//, gpu_eos_table
+				//#endif
+				//#if(TWO_T)
+				//, fel
+				//#endif
+				//);
 		}
 		#endif	 
 
@@ -1313,11 +1370,17 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
+					//#if(TWO_T)
+					//, 0.0
+					//#endif
 					//);
 					if (flag) {
 						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 						//#if (DOHELM)
 						//, gpu_eos_table
+						//#endif
+						//#if(TWO_T)
+						//, 0.0
 						//#endif
 						//);
 					}
@@ -1514,12 +1577,18 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				//#if (DOHELM)
 				//, gpu_eos_table
 				//#endif
+				//#if(TWO_T)
+				//, 0.0
+				//#endif
 				//);
 				if (flag) {
 					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
-					//#if (DOHELM)
-					//, gpu_eos_table
-					//#endif
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
 					//);
 				}
 			}
@@ -1766,8 +1835,18 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
 				);
-				if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
+				if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
+				);
 
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
@@ -1951,8 +2030,18 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
+				#if(TWO_T)
+				, 0.0
+				#endif
 			);
-			if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
+			if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, 0.0
+				#endif
+			);
 
 			if (flag == 0) {
 				//Make sure that internal energy stays positive
@@ -2205,13 +2294,16 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				);
 				#if(DO_FONT_FIX)
-				if (flag && (n_iter_jacob > -1)) {
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY			
-					#if (DOHELM)
-					, gpu_eos_table
-					#endif
-					);
-				}
+				//if (flag && (n_iter_jacob > -1)) {
+				//	flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY			
+				//		#if (DOHELM)
+				//		, gpu_eos_table
+				//		#endif
+				//		#if(TWO_T)
+				//		, fel
+				//		#endif
+				//	);
+				//}
 				#endif
 
 				if (flag == 0) {
@@ -2401,9 +2493,12 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			#if(DO_FONT_FIX)
 			//if (flag && (n_iter_fail > -1)) {
 			//	flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
-			//	#if (DOHELM)
-			//	, gpu_eos_table
-			//	#endif
+				//#if (DOHELM)
+				//, gpu_eos_table
+				//#endif
+				//#if(TWO_T)
+				//, 0.0
+				//#endif
 			//	);
 			//}
 			#endif
@@ -2680,11 +2775,17 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
+					//#if(TWO_T)
+					//, 0.0
+					//#endif
 					//);
 					if (flag) {
 						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 						//#if (DOHELM)
 						//, gpu_eos_table
+						//#endif
+						//#if(TWO_T)
+						//, 0.0
 						//#endif
 						//);
 					}
@@ -2891,11 +2992,17 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				//#if (DOHELM)
 				//, gpu_eos_table
 				//#endif
+				//#if(TWO_T)
+				//, 0.0
+				//#endif
 				//);
 				if (flag){
 					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 					//#if (DOHELM)
 					//, gpu_eos_table
+					//#endif
+					//#if(TWO_T)
+					//, 0.0
 					//#endif
 					//);
 				}
@@ -3290,7 +3397,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
@@ -3393,7 +3500,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
@@ -5349,7 +5456,11 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 	return(0);
 }
 
-__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy){
+__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
+	#if(TWO_T)
+	, double fel
+	#endif
+){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
@@ -5378,7 +5489,12 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 	else K_atm = U[KTOT] / U[RHO];
 	#endif
 
-	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim);
+	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
+	);
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
@@ -5388,7 +5504,12 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 	return(ret);
 }
 
-__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim){
+__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+){
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
@@ -5462,7 +5583,12 @@ __device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], do
 	rho_for_gnr2 = rho_for_gnr2_old = rho0;
 
 	x_1d[0] = W_last;
-	retval = general_newton_raphson3(x_1d, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old, tolerance);
+	retval = general_newton_raphson3(x_1d, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old, tolerance
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
+	);
 
 	W = x_1d[0];
 
@@ -5513,7 +5639,12 @@ __device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], do
 	return(retval);
 }
 
-__device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance){
+__device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+){
 	double f, df, x_old[NEWT_DIM_1], dx[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
 	int n_iter=0,  i_extra=0, doing_extra=0;
@@ -5566,7 +5697,12 @@ __device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, doub
 	return(0);
 }
 
-__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2){
+__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+){
 	double f, df, x_old[NEWT_DIM_1], dx[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
 	int n_iter, i_extra, doing_extra;
@@ -5579,7 +5715,12 @@ __device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double 
 
 	keep_iterating = 1;
 	while (keep_iterating) {
-		func_gnr2_rho(x, dx, resid, jac, &f, &df, D, K_atm, W_for_gnr2);  /* returns with new dx, f, df */
+		func_gnr2_rho(x, dx, resid, jac, &f, &df, D, K_atm, W_for_gnr2
+			#if(TWO_T)
+			,  S
+			, fel
+			#endif
+		);  /* returns with new dx, f, df */
 		
 		//Save old values before calculating the new
 		x_old[0] = x[0];
@@ -5614,7 +5755,12 @@ __device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double 
 }
 
 //isentropic version:   eq.  (27)
-__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old){
+__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+){
 	int ntries;
 	double  Dc, t1, t10, t2, t21, t23, t26, t29, t3, t30;
 	double  t32, t33, t34, t38, t5, t51, t67, t8,  x_rho[1], rho, rho_g;
@@ -5626,7 +5772,12 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[], double ja
 	rho_g = x_rho[0] = rho_for_gnr2;
 
 	ntries = 0;
-	while ((gnr2(x_rho, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2)) && (ntries++ < 10)) {
+	while ((gnr2(x_rho, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2
+		#if(TWO_T)
+		,  S
+		, fel
+		#endif
+		)) && (ntries++ < 10)) {
 		rho_g *= 10.;
 		x_rho[0] = rho_g;
 	}
@@ -5662,7 +5813,12 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[], double ja
 }
 
 // for the isentropic version:   eq.  (27)
-__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2){
+__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+){
 	double A, B, C, rho, W, B0;
 
 	A = D*D;
@@ -5682,6 +5838,9 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double fel
 	#endif
 ){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
@@ -5729,6 +5888,10 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
 	);
 
 	//Transform new primitive variables back if there was no problem
@@ -5745,6 +5908,10 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double* S
+	, double fel
 	#endif
 ){
 	double x_1d[1];
@@ -5828,6 +5995,10 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
 	);
 
 	/* Problem with solver, so return denoting error before doing anything further */
@@ -5848,9 +6019,12 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
 	);
-	//if (u > 0.02 || rho0 > 1.02)
-	//	printf("\n W:%g %g %g %g %g [%g %g]\n", W, vsq, rho0, u, p, D, K_atm);
+	
 	//Recover the primitive variables from the scalars and conserved variables:
 	gtmp = sqrt(1. - vsq);
 	gamma = 1. / gtmp;
@@ -5884,6 +6058,10 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
 ){
 	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
@@ -5909,6 +6087,10 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
+			#if(TWO_T)
+			,  S
+			, fel
+			#endif
 		);/* returns with new dx, f, df */
 
 		//Set old values
@@ -5925,6 +6107,10 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 		W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm
 			#if(DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, S
+			, fel
 			#endif
 		);
 		errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
@@ -5964,6 +6150,10 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
 ){
 	double W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
 	//vsq = x[0];
@@ -5998,6 +6188,10 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double* S
+	, double fel
 	#endif
 ){
 	double gtmp;
@@ -6451,16 +6645,16 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 	//Offset sizes
 	dW = 1.e-8 * rho;
-	dvsq = 1.e-8;
+	dvsq = MY_MIN(1.e-8, 1.0 - (x[1] + 1.e-8));
 
 	//Calculate dPdW
 	gamma_eos2 = calc_gamma_gas_w(S, rho, (x[0] + dW) * gtmp, fel);
-	dgamma = 0.0;// (gamma_eos2 - gamma_eos1) / dW;
+	dgamma = (gamma_eos2 - gamma_eos1) / dW;
 	dPdW = factor * gtmp + (x[0] * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
 
 	//Calculate dPdvsq
 	gamma_eos2 = calc_gamma_gas_w(S, D * sqrt(fabs(1.0 - (x[1] + dvsq))), x[0] * (1.0 - (x[1] + dvsq)), fel);
-	dgamma = 0.0;// (gamma_eos2 - gamma_eos1) / dvsq;
+	dgamma = (gamma_eos2 - gamma_eos1) / dvsq;
 	dPdvsq = factor * (0.5 * D / sqrt(gtmp) - x[0]) + (x[0] * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
 	#else
 	// 2. Ideal gas EOS
@@ -6741,9 +6935,19 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
+				#if(TWO_T)
+				, 0.0
+				#endif	
 			);
 			if (flag) {
-				flag = Utoprim_1dfix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC, 0);
+				flag = Utoprim_1dfix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC, 0
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
+				);
 			}
 			#endif	
 		}
@@ -7170,9 +7374,9 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &dK_dS);
 		#elif(TWO_T)
 			#if(VARGAMMA || FIXEDGAMMA)
-			double Theta, gam, entr, C;
+			double Theta, gam, C;
 			//For variable entropy
-			C = ph[UU] / ph[RHO] * MU_H;
+			C = ph[UU] / ph[RHO] * MU_G;
 			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
 				#if(FULL_ENTROPY)
@@ -7513,7 +7717,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 			#if(FIXEDGAMMA || VARGAMMA)
 			double Theta;
 			//For variable entropy
-			Theta = (gamma_g - 1.0) * ph[UU] / ph[RHO] * MU_G;
+			Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
 				#if(FULL_ENTROPY)
 				flux[KTOT] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
 				#else
@@ -11101,11 +11305,24 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
 					);
 					if (pflag[global_id]) {
 						failimage[1 * (ksize)+global_id]++;
 						#if(!DOHELM)
-						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
+						);
 						#endif
 						if (pflag[global_id]){
 							pflag[0] = global_id;
@@ -11316,12 +11533,22 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, fel
+					#endif
 				);
 				#endif
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
 					#if(!DOHELM)
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
+					);
 					#endif
 					if (pflag[global_id]){
 						pflag[0] = global_id;

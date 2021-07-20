@@ -132,8 +132,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 512
+#define BS_1 128
+#define BS_2 256
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -324,10 +324,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (1)
+#define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
-#define FIXEDGAMMA (0)
+#define FIXEDGAMMA (1)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
 #define VARGAMMA (0)

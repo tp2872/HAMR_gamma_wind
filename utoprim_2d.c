@@ -525,7 +525,7 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 
 	//Offset sizes
 	dW = 1.e-8 * rho;
-	dvsq = MY_MIN(1.e-8, 1.0 - (vsq + dvsq));
+	dvsq = MY_MIN(1.e-8, 1.0 - (vsq + 1.e-8));
 
 	//Calculate dPdW
 	gamma_eos2 = calc_gamma_gas_w(S, rho, (W + dW) * gtmp, fel);
