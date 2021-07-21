@@ -5464,6 +5464,9 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
+	#if(TWO_T)
+	double S[2];
+	#endif
 
 	if (U[0] <= 0.) return(-100);
 
@@ -5483,10 +5486,13 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	#if(DOKTOT)
-	// DIMARK: entropy test
-	//K_atm = U[KTOT] / U[RHO];
 	if(full_entropy)K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
+	#endif
+
+	#if(TWO_T)
+	S[0] = U[ENTRE] / U[RHO];
+	S[1] = U[ENTRI] / U[RHO];
 	#endif
 
 	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim
