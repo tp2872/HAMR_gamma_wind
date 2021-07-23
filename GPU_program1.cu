@@ -79,7 +79,8 @@ __device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, doubl
 	#if(TWO_T)
 	, double* S
 	, double fel
-	#endif);
+	#endif
+);
 __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim
 	#if(TWO_T)
 	, double* S
@@ -269,7 +270,6 @@ __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
 __device__ double dWdvsq_calc2(double vsq, double rho, double p);
 __device__ void validate_x2(double x[1], double x0[1]);
-__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
 
 /*Declerations of functions for Utoprim_1dfix1*/
 __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
@@ -296,6 +296,12 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[], double ja
 	#endif
 );
 __device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double D, double K_atm, double W_for_gnr2
 	#if(TWO_T)
 	, double* S
 	, double fel
@@ -1583,12 +1589,12 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				//);
 				if (flag) {
 					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
-					#if (DOHELM)
-					, gpu_eos_table
-					#endif
-					#if(TWO_T)
-					, 0.0
-					#endif
+					//#if (DOHELM)
+					//, gpu_eos_table
+					//#endif
+					//#if(TWO_T)
+					//, 0.0
+					//#endif
 					//);
 				}
 			}
@@ -5663,7 +5669,12 @@ __device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, doub
 	keep_iterating = 1;
 	while (keep_iterating) {
 		#if(USE_ISENTROPIC)   
-		func_1d_orig1(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
+		func_1d_orig1(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old
+			#if(TWO_T)
+			, S
+			, fel
+			#endif
+		);  /* returns with new dx, f, df */
 		#endif
 
 		//Save old values before calculating the new
@@ -5852,6 +5863,9 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
+	#if(TWO_T)
+	double S[2];
+	#endif
 
 	//double pre_rho = U[RHO] / gdet;
 	//double pre_uu = U[UU] / gdet;
@@ -6175,6 +6189,10 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm
 		#if(DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, S
+		, fel
 		#endif
 	);
 	Wsq = W * W;
@@ -11058,12 +11076,18 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 				#if (DOHELM)
 				,gpu_eos_table
 				#endif
+				#if(TWO_T)
+				, fel
+				#endif
 			);			
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
 				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY
 					#if(DOHELM==10)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, fel
 					#endif
 				);
 				if (pflag[global_id]) {
