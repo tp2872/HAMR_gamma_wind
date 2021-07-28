@@ -408,6 +408,12 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
 __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
 __device__ double set_S_w(double* S, double rho, double w, double fel);
+__device__ double set_S_p(double p, double rho,
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
 __device__ double bessi0(double x);
 __device__ double bessi1(double x);
 __device__ double bessk0(double x);
@@ -5867,9 +5873,6 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	double S[2];
 	#endif
 
-	//double pre_rho = U[RHO] / gdet;
-	//double pre_uu = U[UU] / gdet;
-
 	if (U[0] <= 0.) {
 		return(-100);
 	}
@@ -5893,16 +5896,8 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	#pragma unroll 5
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
-	#if(DOKTOT)
-	#if(DOHELM)
-	//K_atm = log(U[KTOT] / U[RHO]) / KTOT_FACTOR;
-	K_atm = U[KTOT] / U[RHO];
-	#else
-	// DIMARK: entropy test
 	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
-	#endif
-	#endif
 
 	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim
 		#if(DOHELM)
@@ -6001,6 +5996,10 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	// 1. Helmholtz EOS
 	double dpdrho, dudrho;
 	eos_mode_rhos_upres(gpu_eos_table, rho0, K_atm, &p, &u, &dpdrho, &dudrho);
+	#elif(TWO_T)
+	double gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);
+	u = prim[UU];
+	p = (gamma_g - 1.) * u;
 	#else
 	// 2. Gamma EOS
 	u = prim[UU];
@@ -6063,6 +6062,9 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 
 	prim[RHO] = rho0;
 	prim[UU] = u;
+	#if(TWO_T)
+	set_S_p(p, rho, S, fel);
+	#endif
 
 	#pragma unroll 3
 	for (i = 1; i < 4; i++) {
@@ -6175,7 +6177,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	, double fel
 	#endif
 ){
-	double W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
+	double W, Wsq, dWdvsq, fact_tmp, rho, p, u;
 	//vsq = x[0];
 
 	// Calculate best value for W given current guess for vsq: 
@@ -6183,9 +6185,8 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	// Helmholtz EOS
 	dWdvsq_calc2_helmholtz(gpu_eos_table, x[0], D, K_atm, &W, &dWdvsq);
 	Wsq = W * W;
-	W3 = W * Wsq;
 	#else
-	// Gamma EOS
+	//Gamma EOS
 	W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm
 		#if(DOHELM)
 		, gpu_eos_table
@@ -6196,14 +6197,30 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 		#endif
 	);
 	Wsq = W * W;
-	W3 = W * Wsq;
+
 	// Doing this assuming  P = (G-1) u :
-	dWdvsq = dWdvsq_calc2(x[0], rho, p);
+		#if(TWO_T)
+		double p_new, u_new, rho_new, vsq_new, W_new, dvsq;
+		dvsq = MY_MIN(1.e-8, 1.0 - (x[0] + 1.e-8));
+		vsq_new = x[0] + dvsq;
+		W_new=W_of_vsq2(vsq_new, &p_new, &rho_new, &u_new, D, K_atm
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, S
+			, fel
+			#endif
+		);
+		dWdvsq = (W_new - W) / dvsq;
+		#else
+		dWdvsq = dWdvsq_calc2(x[0], rho, p);
+		#endif
 	#endif
 
 	fact_tmp = (Bsq + W);
 	resid[0] = Qtsq - x[0] * fact_tmp * fact_tmp + QdotBsq * (Bsq + 2.*W) / Wsq;
-	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (x[0] + QdotBsq / W3));
+	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (x[0] + QdotBsq / (W*Wsq)));
 	dx[0] = -resid[0] / jac[0][0];
 	*f = 0.5*resid[0] * resid[0];
 	*df = -2. * (*f);
@@ -6227,18 +6244,172 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	eos_mode_rhos_upres(gpu_eos_table, *rho, K_atm, p, u, &dpdrho, &dudrho);
 	#else
 	// 2. Gamma EOS
-	// DIMARK: entropy test
-	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
-	//K_atm -= ENTROPY_CONST;
-	//*p = exp(K_atm * (GAMMA - 1.)) * pow((*rho), GAMMA);
+	#if(TWO_T)
+		//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
+		double gamg, game, gami, pe, pi, T_e, T_i, T_g;
+
+		#if(CONSTANTGAMMA)
+		game = GAMMA;
+		gami = GAMMA;
+			#if(FULL_ENTROPY)
+			T_e = fabs((game - 1.0) * exp(S[0] * pow(*rho, game - 1.0)));
+			T_i = fabs((gami - 1.0) * exp(S[1] * pow(*rho, gami - 1.0)));
+			#else
+			T_e = fabs(S[0] * pow(*rho, game - 1.0));
+			T_i = fabs(S[1] * pow(*rho, gami - 1.0));
+			#endif
+		gamg = GAMMA;
+		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		game = GAMMAE;
+		gami = GAMMA;
+			#if(FULL_ENTROPY)
+			T_e = fabs((game - 1.0) * exp(S[0] * pow((*rho), game - 1.0)));
+			T_i = fabs((gami - 1.0) * exp(S[1] * pow((*rho), gami - 1.0)));
+			#else
+			T_e = fabs(S[0] * pow((*rho), game - 1.0));
+			T_i = fabs(S[1] * pow((*rho), gami - 1.0));
+			#endif
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+			#if(FULL_ENTROPY)
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+			#else
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * S[1], 2. / 3.)) - 1.0) / MU_I);
+			#endif
+		#endif
+
+		//Calculate gas pressures
+		pe = T_e * (*rho);
+		pi = T_i * (*rho);
+
+		//Calculate ug from kappa
+		#if(CONSTANTGAMMA)
+		(*p) = K_atm * pow(*rho, GAMMA);
+		#elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
+		T_g = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(*rho * K_atm, 2. / 3.)) - 1.0) / MU_G);
+		(*p) = T_g * (*rho);
+		#endif
+
+		//Update internal energy of electrons
+		double factor = (*p) / (pe + pi);
+		pe *= factor;
+		pi *= factor;
+
+		if (pe > 0.99 * (*p)) pe = 0.99 * (*p);
+		if (pe < 0.01 * (*p)) pe = 0.01 * (*p);
+		pi = (*p) - pe;
+
+		//Set temperature
+		T_e = pe / (*rho);
+		T_i = pi / (*rho);
+
+		//Calculate the internal energy
+		#if(CONSTANTGAMMA)
+		(*u) = (*p) / (GAMMA - 1.0);
+		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		game = GAMMAE;
+		gami = GAMMA;
+		gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+		(*u) = (*p) / (gamg - 1.0);
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+		game = (10.0 + 20.0 * T_e * MU_E * MASS_RATIO) / (6.0 + 15.0 * T_e * MU_E * MASS_RATIO);
+		gami = (10.0 + 20.0 * T_i * MU_I) / (6.0 + 15.0 * T_i * MU_I);
+		gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+		(*u) = (*p) / (gamg - 1.0);
+		#endif
+	#else
 	*p = K_atm * pow(*rho, GAMMA);
 	*u = *p / (GAMMA - 1.);
+	#endif
 	#endif
 	return((*rho + *u + *p) / gtmp);
 }
 
+__device__ void set_S_p(double p, double rho,
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+) {
+	//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
+	double game, gami, pe, pi, T_e, T_i;
+
+	#if(CONSTANTGAMMA)
+	game = GAMMA;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		T_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)));
+		T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)));
+		#else
+		T_e = fabs(S[0] * pow(rho, game - 1.0));
+		T_i = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	game = GAMMAE;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		T_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)));
+		T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)));
+		#else
+		T_e = fabs(S[0] * pow(rho, game - 1.0));
+		T_i = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+		#else
+		T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / MU_I);
+		#endif
+	#endif
+
+	//Calculate gas pressures
+	pe = T_e * rho;
+	pi = T_i * rho;
+
+	//Update internal energy of electrons
+	double factor = p / (pe + pi);
+	pe *= factor;
+	pi *= factor;
+
+	if (pe > 0.99 * p) pe = 0.99 * p;
+	if (pe < 0.01 * p) pe = 0.01 * p;
+	pi = p - pe;
+
+	//Set temperature
+	T_e = pe / rho;
+	T_i = pi / rho;
+
+	//Calculate the internal energy
+	#if(CONSTANTGAMMA || FIXEDGAMMA)
+		#if(FULL_ENTROPY)
+		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game));
+		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami));
+		#else
+		S[0] = pe * pow(rho, -game);
+		S[1] = pi * pow(rho, -gami);
+		#endif
+	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(Te_ * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
+		S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
+		#else
+		S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
+		S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
+		#endif
+	#endif
+}
+
+//W=((rho+u+p)/(1-vsq))
+//W=((D*sqrt(1.0-vsq)+u+p)/(1-vsq))
+//W=((D*sqrt(1.0-vsq)+gam/(gam-1)*p)/(1-vsq))
+//W=((D*sqrt(1.0-vsq)+gam/(gam-1)*kappa*rho^gamma)/(1-vsq))
+//dWdvsq=(0.5*rho+u+p)/(1-vsq)^2 + d(u+p)/dvsq/(1-vsq)
+//dWdvsq=(0.5*rho+u+p)/(1-vsq)^2 +
 __device__ double dWdvsq_calc2(double vsq, double rho, double p){
-	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
+	return((GAMMA*(2. - GAMMA)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
 }
 
 // Entropy inversion, Helmholtz EOS
