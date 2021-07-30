@@ -36,13 +36,45 @@ double Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
 
 // Declarations: 
 static double vsq_calc(double W);
-static double W_of_vsq(double vsq, double *p, double *rho, double *u);
+double calc_gamma_gas_conserved(double* S, double rho);
+static double W_of_vsq(double vsq, double *p, double *rho, double *u
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+);
 static double u_of_p(double p);
 static double pressure_of_rho(double rho0);
 static double dWdvsq_calc(double vsq, double rho, double p);
-static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet,  double prim[], double tolerance, int lim);
-static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df);
-static int general_newton_raphson( double x[],  void (*funcd) (double [], double [], double [], double [][NEWT_DIM_1], double *, double *), double tolerance);
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet,  double prim[], double tolerance, int lim
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+);
+static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+);
+static int general_newton_raphson( double x[],  void (*funcd) (double [], double [], double [], double [][NEWT_DIM_1], double *, double *
+    #if(TWO_T)
+    , double*
+    , double
+    #endif
+    ), double tolerance
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+);
+void set_S_kappa(double rho, double K_atm
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+);
 
 /**********************************************************************/
 /******************************************************************
@@ -87,54 +119,78 @@ static int general_newton_raphson( double x[],  void (*funcd) (double [], double
 
 ******************************************************************/
 
-int Utoprim_1dvsq2fix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim)
+int Utoprim_1dvsq2fix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim
+    #if(TWO_T)
+    , double fel
+    #endif
+)
 {
-      double U_tmp[NPR_U], prim_tmp[NPR_U];
-      int i, j, ret; 
-      double alpha;
+    double U_tmp[NPR_U], prim_tmp[NPR_U];
+    int i, j, ret; 
+    double alpha;
+    #if(TWO_T)
+    double S[2];
+    #endif
 
-      if( U[0] <= 0. ) { 
-        return(-100);
-      }
+    if( U[0] <= 0. ) { 
+    return(-100);
+    }
 
-      //First update the primitive B-fields
-      for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
+    //First update the primitive B-fields
+    for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
 
-      //Set the geometry variables
-      alpha = 1.0/sqrt(-gcon[0][0]);
+    //Set the geometry variables
+    alpha = 1.0/sqrt(-gcon[0][0]);
   
-      //Transform the CONSERVED variables into the new system
-      U_tmp[RHO] = alpha * U[RHO] / gdet;
-      U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
-      for( i = UTCON1; i <= UTCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
-      for( i = BCON1; i <= BCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
+    //Transform the CONSERVED variables into the new system
+    U_tmp[RHO] = alpha * U[RHO] / gdet;
+    U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
+    for( i = UTCON1; i <= UTCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
+    for( i = BCON1; i <= BCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
 
-      //Transform the PRIMITIVE variables into the new system
-      for( i = 0; i < BCON1; i++ ) {
+    //Transform the PRIMITIVE variables into the new system
+    for( i = 0; i < BCON1; i++ ) {
         prim_tmp[i] = prim[i];
-      }
-      for( i = BCON1; i <= BCON3; i++ ) {
-        prim_tmp[i] = alpha*prim[i];
-      }
+    }
+    for( i = BCON1; i <= BCON3; i++ ) {
+     prim_tmp[i] = alpha*prim[i];
+    }
 
-      #if(DOKTOT)
-      #if(FULL_ENTROPY)
-      K_atm2 = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
-      #else
-      K_atm2 = U[KTOT] / U[RHO];
-      #endif
-      #endif
+    #if(DOKTOT)
+        #if(FULL_ENTROPY)
+        K_atm2 = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+        #else
+        K_atm2 = U[KTOT] / U[RHO];
+        #endif
+    #endif
 
-      ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
+    //Set electron and ion entropies
+    #if(TWO_T)
+    S[0] = U[ENTRE] / U[RHO];
+    S[1] = U[ENTRI] / U[RHO];
+    #endif
 
-      //Transform new primitive variables back if there was no problem 
-      if( ret == 0 ) {
+    ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
+        #if(TWO_T)
+        , S
+        , fel
+        #endif
+    );
+
+    //Transform new primitive variables back if there was no problem 
+    if( ret == 0 ) {
         for(i = 0; i < BCON1; i++) {
             prim[i] = prim_tmp[i];
         }
-      }
 
-      return( ret ) ;
+        //Set entropy variables
+        #if(TWO_T)
+        prim[ENTRE] = S[0];
+        prim[ENTRI] = S[1];
+        #endif
+    }
+
+    return( ret ) ;
 }
 
 
@@ -178,7 +234,12 @@ return:  (i*100 + j)  where
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim) {
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+) {
     double x_1d[1];
     double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
     double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
@@ -230,10 +291,18 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 
     //Always calculate rho from D and gamma so that using D in EOS remains consistent; i.e. you don't get positive values for dP/d(vsq) . 
     rho0 = D_2 / gamma;
+
+    #if(TWO_T)
+    double gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);
     u = prim[UU];
+    p = (gamma_g - 1.) * u;
+    #else
+    // 2. Gamma EOS
+    u = prim[UU];
+    p = (GAMMA - 1.) * u;
+    #endif
 
     // DANAT: add EOS p as function of rho0 and u
-    p = pressure_rho0_u(rho0, u);
     w = rho0 + u + p;
     W_last = w * gammasq;
 
@@ -241,7 +310,12 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     x_1d[0] = 1. - 1. / gammasq;
 
     //Find vsq via Newton-Raphson:
-    retval = general_newton_raphson(x_1d, func_1d_gnr, tolerance);
+    retval = general_newton_raphson(x_1d, func_1d_gnr, tolerance
+        #if(TWO_T)
+        , S
+        , fel
+        #endif   
+    );
 
     //Problem with solver, so return denoting error before doing anything further/
     if (retval != 0) {
@@ -257,7 +331,12 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     }
 
     //Find W from this vsq:
-    W = W_of_vsq(vsq, &p, &rho0, &u);
+    W = W_of_vsq(vsq, &p, &rho0, &u
+        #if(TWO_T)
+        , S
+        , fel
+        #endif
+    );
 
     //Recover the primitive variables from the scalars and conserved variables:
     gtmp = sqrt(1. - vsq);
@@ -279,6 +358,9 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     //Set primitive density and internal energy
     prim[RHO] = rho0;
     prim[UU] = u;
+    #if(TWO_T)
+    set_S_kappa(rho0, K_atm2, S, fel);
+    #endif
 
     //Set relative 4-velocities
     for (i = 1; i < 4; i++) {
@@ -327,7 +409,17 @@ static void validate_x(double x[1], double x0[1] )
        -- funcd = name of function that calculates residuals, etc.;
 
 *****************************************************************/
-static int general_newton_raphson( double x[], void (*funcd) (double [], double [], double [],  double [][NEWT_DIM_1], double *, double *), double tolerance){
+static int general_newton_raphson( double x[], void (*funcd) (double [], double [], double [],  double [][NEWT_DIM_1], double *, double *
+    #if(TWO_T)
+    , double*
+    , double 
+    #endif
+    ), double tolerance
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+){
       double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
       double errx, x_orig[NEWT_DIM_1];
       int    n_iter=0, i_extra, doing_extra;
@@ -347,7 +439,12 @@ static int general_newton_raphson( double x[], void (*funcd) (double [], double 
       //Start the Newton-Raphson iterations
       keep_iterating = 1;
       while( keep_iterating ) { 
-            (*funcd) (x, dx, resid, jac, &f, &df);  //returns with new dx, f, df
+            (*funcd) (x, dx, resid, jac, &f, &df
+                #if(TWO_T)
+                , S
+                , fel
+                #endif
+           );  //returns with new dx, f, df
 
             //Save old values before calculating the new
             errx = 0.;
@@ -365,7 +462,13 @@ static int general_newton_raphson( double x[], void (*funcd) (double [], double 
             /* Calculate the convergence criterion */
             /****************************************/
             W_old = W;
-            W = W_of_vsq(x[0], &p, &rho, &u);
+            W = W_of_vsq(x[0], &p, &rho, &u
+                #if(TWO_T)
+                , S
+                , fel
+                #endif
+            );
+
             errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
             errx += (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
@@ -414,14 +517,24 @@ static int general_newton_raphson( double x[], void (*funcd) (double [], double 
          n    = dimension of x[];
  *********************************************************************************/
 
-static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df){
+static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+){
   double vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
   int retval, iters; 
 
   vsq = x[0];
 
   // Calculate best value for W given current guess for vsq: 
-  W = W_of_vsq(vsq, &p, &rho, &u);
+  W = W_of_vsq(vsq, &p, &rho, &u
+        #if(TWO_T)
+      , S
+      , fel
+        #endif
+  );
   Wsq = W*W;
   W3 = W*Wsq;
 
@@ -469,15 +582,94 @@ static double u_of_p(double p){
 /* 
 W as a function of v^2
 */
-static double W_of_vsq(double vsq, double *p, double *rho, double *u){
+static double W_of_vsq(double vsq, double *p, double *rho, double *u
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+){
     double gtmp;
-
     gtmp = (1. - vsq);
-    *rho = D_2 * sqrt(gtmp);
-    *p = pressure_of_rho(*rho);
-    *u = u_of_p(*p);
-  
-    return( (*rho + *u + *p ) / gtmp  );
+    rho[0] = D_2 * sqrt(gtmp);
+    // 2. Gamma EOS
+    #if(TWO_T)
+        //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
+        double gamg, game, gami, pe, pi, T_e, T_i, T_g;
+
+        #if(CONSTANTGAMMA)
+        game = GAMMA;
+        gami = GAMMA;
+            #if(FULL_ENTROPY)
+            T_e = fabs((game - 1.0) * exp(S[0] * pow(*rho, game - 1.0)));
+            T_i = fabs((gami - 1.0) * exp(S[1] * pow(*rho, gami - 1.0)));
+            #else
+            T_e = fabs(S[0] * pow(*rho, game - 1.0));
+            T_i = fabs(S[1] * pow(*rho, gami - 1.0));
+            #endif
+        #elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+        game = GAMMAE;
+        gami = GAMMA;
+            #if(FULL_ENTROPY)
+            T_e = fabs((game - 1.0) * exp(S[0] * pow(rho[0], game - 1.0)));
+            T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho[0], gami - 1.0)));
+            #else
+            T_e = fabs(S[0] * pow(rho[0], game - 1.0));
+            T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
+            #endif
+        #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+            #if(FULL_ENTROPY)
+            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+            #else
+            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[1], 2. / 3.)) - 1.0) / MU_I);
+            #endif
+        #endif
+
+        //Calculate gas pressures
+        pe = T_e * rho[0];
+        pi = T_i * rho[0];
+
+        //Calculate ug from kappa
+        #if(CONSTANTGAMMA)
+        p[0] = K_atm2 * pow(rho[0], GAMMA);
+        #elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
+        T_g = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm2, 2. / 3.)) - 1.0) / MU_G);
+        p[0] = T_g * rho[0];
+        #endif
+
+        //Update internal energy of electrons
+        double factor = p[0] / (pe + pi);
+        pe *= factor;
+        pi *= factor;
+
+        if (pe > 0.99 * p[0]) pe = 0.99 * p[0];
+        if (pe < 0.01 * p[0]) pe = 0.01 * p[0];
+        pi = p[0] - pe;
+
+        //Set temperature
+        T_e = pe / rho[0];
+        T_i = pi / rho[0];
+
+        //Calculate the internal energy
+        #if(CONSTANTGAMMA)
+        u[0] = p[0] / (GAMMA - 1.0);
+        #elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+        game = GAMMAE;
+        gami = GAMMA;
+        gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+        u[0] = p[0] / (gamg - 1.0);
+        #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+        game = (10.0 + 20.0 * T_e * MU_E * MASS_RATIO) / (6.0 + 15.0 * T_e * MU_E * MASS_RATIO);
+        gami = (10.0 + 20.0 * T_i * MU_I) / (6.0 + 15.0 * T_i * MU_I);
+        gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+        u[0] = p[0] / (gamg - 1.0);
+        #endif
+    #else
+    p[0] = K_atm * pow(rho[0], GAMMA);
+    u[0] = p[0] / (GAMMA - 1.);
+    #endif
+    return((rho[0] + u[0] + p[0]) / gtmp);
 }
 
 /* 
@@ -485,6 +677,89 @@ dW/dvsq as a function of v^2, rho, p
 */
 static double dWdvsq_calc(double vsq, double rho, double p){
     return((GAMMA * (2. - GAMMA) * p + (GAMMA - 1.) * rho) / (2. * (GAMMA - 1.) * (1. - vsq) * (1. - vsq)));
+}
+
+void set_S_kappa(double rho, double K_atm
+    #if(TWO_T)
+    , double* S
+    , double fel
+    #endif
+) {
+    //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
+    double game, gami, p, pe, pi, T_e, T_i;
+
+    #if(CONSTANTGAMMA)
+    game = GAMMA;
+    gami = GAMMA;
+        #if(FULL_ENTROPY)
+        T_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)));
+        T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)));
+        #else
+        T_e = fabs(S[0] * pow(rho, game - 1.0));
+        T_i = fabs(S[1] * pow(rho, gami - 1.0));
+        #endif
+    #elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+    game = GAMMAE;
+    gami = GAMMA;
+        #if(FULL_ENTROPY)
+        T_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)));
+        T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)));
+        #else
+        T_e = fabs(S[0] * pow(rho, game - 1.0));
+        T_i = fabs(S[1] * pow(rho, gami - 1.0));
+        #endif
+    #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+        #if(FULL_ENTROPY)
+        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+        #else
+        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / MU_I);
+        #endif
+    #endif
+
+    //Calculate gas pressures
+    pe = T_e * rho;
+    pi = T_i * rho;
+
+    //Calculate ug from kappa
+    #if(CONSTANTGAMMA)
+    p = K_atm * pow(rho, GAMMA);
+    #elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
+    p = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * K_atm, 2. / 3.)) - 1.0) / MU_G) * rho;
+    #endif
+
+    //Update internal energy of electrons
+    double factor = p / (pe + pi);
+    pe *= factor;
+    pi *= factor;
+
+    if (pe > 0.99 * p) pe = 0.99 * p;
+    if (pe < 0.01 * p) pe = 0.01 * p;
+    pi = p - pe;
+
+    //Set temperature
+    T_e = pe / rho;
+    T_i = pi / rho;
+
+    //Calculate the internal energy
+    #if(CONSTANTGAMMA || FIXEDGAMMA)
+        #if(FULL_ENTROPY)
+        S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game));
+        S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami));
+        #else
+        S[0] = pe * pow(rho, -game);
+        S[1] = pi * pow(rho, -gami);
+        #endif
+    #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+        #if(FULL_ENTROPY)
+        S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
+        S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
+        #else
+        S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
+        S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
+        #endif
+    #endif
 }
 
 

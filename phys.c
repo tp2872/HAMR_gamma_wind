@@ -1166,11 +1166,11 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0)) / MU_I;
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0)) / MU_I;
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
@@ -1320,13 +1320,6 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
-		#if(FULL_ENTROPY)
-		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game));
-		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami));
-		#else
-		S[0] = pe * pow(rho, -game);
-		S[1] = pi * pow(rho, -gami);
-		#endif
 	Te = pe / rho;
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19

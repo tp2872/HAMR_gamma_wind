@@ -408,11 +408,11 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
 __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
 __device__ double set_S_w(double* S, double rho, double w, double fel);
-__device__ double set_S_p(double p, double rho,
-	#if(TWO_T)
+__device__ void set_S_kappa(double rho, double K_atm
+#if(TWO_T)
 	, double* S
 	, double fel
-	#endif
+#endif
 );
 __device__ double bessi0(double x);
 __device__ double bessi1(double x);
@@ -5896,8 +5896,15 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	#pragma unroll 5
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+	//Set entropy to kappa from log(kappa) if necessary
 	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
+
+	//Set electron and ion entropies
+	#if(TWO_T)
+	S[0] = U[ENTRE] / U[RHO];
+	S[1] = U[ENTRI] / U[RHO];
+	#endif
 
 	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim
 		#if(DOHELM)
@@ -5915,6 +5922,12 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+
+		//Set entropy variables
+		#if(TWO_T)
+		prim[ENTRE] = S[0];
+		prim[ENTRI] = S[1];
+		#endif
 	}
 
 	return(ret);
@@ -6063,7 +6076,7 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	prim[RHO] = rho0;
 	prim[UU] = u;
 	#if(TWO_T)
-	set_S_p(p, rho, S, fel);
+	set_S_kappa(rho0, K_atm, S, fel);
 	#endif
 
 	#pragma unroll 3
@@ -6237,14 +6250,13 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 ){
 	double gtmp;
 	gtmp = (1. - vsq);
-	*rho = D * sqrt(gtmp);
+	rho[0] = D * sqrt(gtmp);
 	#if(DOHELM)
 	// 1. Helmholtz EOS
 	double dpdrho, dudrho;
 	eos_mode_rhos_upres(gpu_eos_table, *rho, K_atm, p, u, &dpdrho, &dudrho);
-	#else
 	// 2. Gamma EOS
-	#if(TWO_T)
+	#elif(TWO_T)
 		//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
 		double gamg, game, gami, pe, pi, T_e, T_i, T_g;
 
@@ -6258,82 +6270,80 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 			T_e = fabs(S[0] * pow(*rho, game - 1.0));
 			T_i = fabs(S[1] * pow(*rho, gami - 1.0));
 			#endif
-		gamg = GAMMA;
 		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		game = GAMMAE;
 		gami = GAMMA;
 			#if(FULL_ENTROPY)
-			T_e = fabs((game - 1.0) * exp(S[0] * pow((*rho), game - 1.0)));
-			T_i = fabs((gami - 1.0) * exp(S[1] * pow((*rho), gami - 1.0)));
+			T_e = fabs((game - 1.0) * exp(S[0] * pow(rho[0], game - 1.0)));
+			T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho[0], gami - 1.0)));
 			#else
-			T_e = fabs(S[0] * pow((*rho), game - 1.0));
-			T_i = fabs(S[1] * pow((*rho), gami - 1.0));
+			T_e = fabs(S[0] * pow(rho[0], game - 1.0));
+			T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
 			#else
-			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow((*rho) * S[1], 2. / 3.)) - 1.0) / MU_I);
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[1], 2. / 3.)) - 1.0) / MU_I);
 			#endif
 		#endif
 
 		//Calculate gas pressures
-		pe = T_e * (*rho);
-		pi = T_i * (*rho);
+		pe = T_e * rho[0];
+		pi = T_i * rho[0];
 
 		//Calculate ug from kappa
 		#if(CONSTANTGAMMA)
-		(*p) = K_atm * pow(*rho, GAMMA);
+		p[0] = K_atm * pow(rho[0], GAMMA);
 		#elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
-		T_g = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(*rho * K_atm, 2. / 3.)) - 1.0) / MU_G);
-		(*p) = T_g * (*rho);
+		T_g = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm, 2. / 3.)) - 1.0) / MU_G);
+		p[0] = T_g * rho[0];
 		#endif
 
 		//Update internal energy of electrons
-		double factor = (*p) / (pe + pi);
+		double factor = p[0] / (pe + pi);
 		pe *= factor;
 		pi *= factor;
 
-		if (pe > 0.99 * (*p)) pe = 0.99 * (*p);
-		if (pe < 0.01 * (*p)) pe = 0.01 * (*p);
-		pi = (*p) - pe;
+		if (pe > 0.99 * p[0]) pe = 0.99 * p[0];
+		if (pe < 0.01 * p[0]) pe = 0.01 * p[0];
+		pi = p[0] - pe;
 
 		//Set temperature
-		T_e = pe / (*rho);
-		T_i = pi / (*rho);
+		T_e = pe / rho[0];
+		T_i = pi / rho[0];
 
 		//Calculate the internal energy
 		#if(CONSTANTGAMMA)
-		(*u) = (*p) / (GAMMA - 1.0);
+		u[0] = p[0] / (GAMMA - 1.0);
 		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		game = GAMMAE;
 		gami = GAMMA;
 		gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
-		(*u) = (*p) / (gamg - 1.0);
+		u[0] = p[0] / (gamg - 1.0);
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		game = (10.0 + 20.0 * T_e * MU_E * MASS_RATIO) / (6.0 + 15.0 * T_e * MU_E * MASS_RATIO);
 		gami = (10.0 + 20.0 * T_i * MU_I) / (6.0 + 15.0 * T_i * MU_I);
 		gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + T_i / T_e)) / ((T_i / T_e) * (game - 1.0) + 1.0 * (gami - 1.0));
-		(*u) = (*p) / (gamg - 1.0);
+		u[0] = p[0] / (gamg - 1.0);
 		#endif
 	#else
-	*p = K_atm * pow(*rho, GAMMA);
-	*u = *p / (GAMMA - 1.);
+	p[0] = K_atm * pow(rho[0], GAMMA);
+	u[0] = p[0] / (GAMMA - 1.);
 	#endif
-	#endif
-	return((*rho + *u + *p) / gtmp);
+	return((rho[0] + u[0] + p[0]) / gtmp);
 }
 
-__device__ void set_S_p(double p, double rho,
+__device__ void set_S_kappa(double rho, double K_atm
 	#if(TWO_T)
 	, double* S
 	, double fel
 	#endif
 ) {
 	//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
-	double game, gami, pe, pi, T_e, T_i;
+	double game, gami, p, pe, pi, T_e, T_i;
 
 	#if(CONSTANTGAMMA)
 	game = GAMMA;
@@ -6369,6 +6379,13 @@ __device__ void set_S_p(double p, double rho,
 	pe = T_e * rho;
 	pi = T_i * rho;
 
+	//Calculate ug from kappa
+	#if(CONSTANTGAMMA)
+	p = K_atm * pow(rho, GAMMA);
+	#elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
+	p = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * K_atm, 2. / 3.)) - 1.0) / MU_G) * rho;
+	#endif
+
 	//Update internal energy of electrons
 	double factor = p / (pe + pi);
 	pe *= factor;
@@ -6393,7 +6410,7 @@ __device__ void set_S_p(double p, double rho,
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(Te_ * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
+		S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
 		S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
 		#else
 		S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
@@ -7769,13 +7786,13 @@ __device__ double calc_Te(double* ph) {
 	#if(TWO_T)
 		#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
-			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
+			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMA - 1.0);
 			#else
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMA - 1.0);
 			#endif
 		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
-			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0);
+			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMAE - 1.0);
 			#else
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 			#endif
@@ -7799,7 +7816,7 @@ __device__ double calc_Ti(double* ph) {
 	#if(TWO_T)
 		#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 			#if(FULL_ENTROPY)
-			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0);
+			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(ph[RHO], GAMMA - 1.0);
 			#else
 			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
 			#endif

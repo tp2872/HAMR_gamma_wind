@@ -115,8 +115,16 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 		);
 		#if(DO_FONT_FIX)
 		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
-			if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
+			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+				#if(TWO_T)
+				, fel
+				#endif
+			);
+			if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+				#if(TWO_T)
+				, fel
+				#endif
+			);
 		}
 		#endif	 
 
@@ -740,9 +748,17 @@ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* p
 	);
 	#if(DO_FONT_FIX)
 	if (flag) {
-		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2);
+		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2
+			#if(TWO_T)
+			, 0.0
+			#endif
+		);
 		if (flag) {
-			flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2);
+			flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2
+				#if(TWO_T)
+				, 0.0
+				#endif
+			);
 		}
 	}
 	#endif
@@ -797,9 +813,17 @@ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* p
 			);
 			#if(DO_FONT_FIX)
 			if (flag) {
-				flag = Utoprim_1dvsq2fix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL, BASIC);
+				flag = Utoprim_1dvsq2fix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL, BASIC
+					#if(TWO_T)
+					, 0.0
+					#endif
+				);
 				if (flag) {
-					flag = Utoprim_1dfix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL, BASIC);
+					flag = Utoprim_1dfix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL, BASIC
+						#if(TWO_T)
+						, 0.0
+						#endif
+					);
 				}
 			}
 			#endif
@@ -853,9 +877,17 @@ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* p
 				);
 				#if(DO_FONT_FIX)
 				if (flag) {
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
+						#if(TWO_T)
+						, 0.0
+						#endif
+					);
 					if (flag) {
-						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
+						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
+							#if(TWO_T)
+							, 0.0
+							#endif
+						);
 					}
 				}
 				#endif

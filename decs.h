@@ -1049,8 +1049,16 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	, double fel
 #endif
 );
-int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
-int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel
+	#endif
+);
 void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* cmax, double* cmin
 	#if(TWO_T)
 	, double gamma_g
