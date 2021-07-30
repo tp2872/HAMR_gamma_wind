@@ -252,7 +252,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		double Theta_e, ue, game, C;
 		ue = 0.5 * pv[UU];
 		C = ue / pv[RHO] * MU_E * MASS_RATIO;
-		game = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 		Theta_e = (game - 1.0) * ue / pv[RHO] * MU_E * MASS_RATIO;
 			#if(FULL_ENTROPY)
 			pv[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pv[RHO]);

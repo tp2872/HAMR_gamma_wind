@@ -355,7 +355,7 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 			double Theta, gam, entr, C;
 			//For variable entropy
 			C = ph[UU] / ph[RHO] * MU_G;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
 				#if(FULL_ENTROPY)
 				dK_dS = (1.0 / Theta) * (MU_G);

@@ -316,13 +316,13 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 
 					//Set electron entropy
 					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 					Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
 					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
-					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 					Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
 					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
@@ -551,13 +551,13 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 
 			//Set electron entropy
 			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
 			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
 			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif

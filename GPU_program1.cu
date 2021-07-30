@@ -897,13 +897,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 					//Set electron entropy
 					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 					Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
 					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
-					gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 					Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
 					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
@@ -1118,13 +1118,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 			//Set electron entropy
 			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
 			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
 			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
@@ -7188,7 +7188,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		double Theta_e, ue, game, C;
 		ue = 0.5 * pf[UU];
 		C = ue / pf[RHO] * MU_E * MASS_RATIO;
-		game = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 		Theta_e = (game - 1.0) * ue / pf[RHO] * MU_E * MASS_RATIO;
 			#if(FULL_ENTROPY)
 			pf[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pf[RHO]);
@@ -7589,7 +7589,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			double Theta, gam, C;
 			//For variable entropy
 			C = ph[UU] / ph[RHO] * MU_G;
-			gam = 0.03333333333333333 * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
 				#if(FULL_ENTROPY)
 				dK_dS = (1.0 / Theta) * (MU_G);
