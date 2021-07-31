@@ -163,9 +163,9 @@ double calc_Te(double* ph) {
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0)/ (MU_E*MASS_RATIO);
 			#else
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 			#endif
 		#endif
 	#else
@@ -187,9 +187,9 @@ double calc_Ti(double* ph) {
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0);
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
 			#else
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0);
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0) / MU_I;
 			#endif
 		#endif
 	#else
@@ -1079,11 +1079,11 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1116,11 +1116,11 @@ double calc_gamma_gas_prim(double* pr) {
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1177,7 +1177,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
-	#if(!CONSTANTGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -1221,17 +1221,17 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = quante * rho / (MU_E * MASS_RATIO);
-	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
-	C = quanti * rho / (MU_I);
-	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	double C = MU_E * MASS_RATIO / rho;
+	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	C = MU_I / rho;
+	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
-	#if(!CONSTANTGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -1280,7 +1280,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
-	#if(!CONSTANTGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -1324,10 +1324,10 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = quante * rho / (MU_E * MASS_RATIO);
-	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
-	C = quanti * rho / (MU_I);
-	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	double C = MU_E * MASS_RATIO / rho;
+	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	C = MU_I / rho;
+	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
@@ -1341,7 +1341,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	#endif
 
-	#if(!CONSTANTGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;

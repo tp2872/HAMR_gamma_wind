@@ -898,13 +898,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					//Set electron entropy
 					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
 					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-					Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					Theta = (gam - 1.0) * C;
 					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
 					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-					Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+					Theta = (gam - 1.0) * C;
 					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
 				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -1119,13 +1119,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			//Set electron entropy
 			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			Theta = (gam - 1.0) * C;
 			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * ui / pb_new[RHO] * MU_I;
+			Theta = (gam - 1.0) * C;
 			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
 		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -3322,11 +3322,11 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -3357,11 +3357,11 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -3403,18 +3403,18 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0)) / MU_I;
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0)) / MU_I;
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
-	#if(VARGAMMA || FIXEDGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -3458,17 +3458,17 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
-	double C = quante * rho / (MU_E * MASS_RATIO);
-	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
-	C = quanti * rho / (MU_I);
-	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
+	double C = MU_E * MASS_RATIO / rho;
+	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	C = MU_I / rho;
+	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
-	#if(VARGAMMA || FIXEDGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -3517,7 +3517,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	#endif
 
 	//Calculate gamma assuming purely adiabatic evolution
-	#if(VARGAMMA || FIXEDGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -3571,13 +3571,11 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	//C= (MU_E * MASS_RATIO) / RHO
 	//x=pe
 	//Use analytical inversions
-	double C = quante * rho / (MU_E * MASS_RATIO);
-	pe = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
-	C = quanti * rho / (MU_I);
-	pi = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C + 44.0 * C + 20.0) + 5.0 * C - 10.0) / C;
-	//pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	//C = rho / MU_I;
-	//pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	double C = MU_E * MASS_RATIO / rho;
+	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	C = MU_I / rho;
+	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
+
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
@@ -3591,7 +3589,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		#endif
 	#endif
 
-	#if(VARGAMMA || FIXEDGAMMA)
+	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
 	gamg = GAMMA;
@@ -7185,15 +7183,24 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
-		double Theta_e, ue, game, C;
-		ue = 0.5 * pf[UU];
-		C = ue / pf[RHO] * MU_E * MASS_RATIO;
-		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-		Theta_e = (game - 1.0) * ue / pf[RHO] * MU_E * MASS_RATIO;
+		double Theta, u, gam, C;
+		u = 0.5 * pf[UU];
+		C = u / pf[RHO] * MU_E * MASS_RATIO;
+		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta = (gam - 1.0) * C;
 			#if(FULL_ENTROPY)
-			pf[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pf[RHO]);
+			pf[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
 			#else
-			pf[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pf[RHO];
+			pf[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
+			#endif
+
+		C = u / pf[RHO] * MU_I;
+		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta = (gam - 1.0) * C;
+			#if(FULL_ENTROPY)
+			pf[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
+			#else
+			pf[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
 			#endif
 		#endif
 	}
@@ -7798,9 +7805,9 @@ __device__ double calc_Te(double* ph) {
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 			#else
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 			#endif
 		#endif
 	#else
@@ -7822,9 +7829,9 @@ __device__ double calc_Ti(double* ph) {
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 			#if(FULL_ENTROPY)
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0);
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
 			#else
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0);
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0) / MU_I;
 			#endif
 		#endif
 	#else

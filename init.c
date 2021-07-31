@@ -1018,7 +1018,7 @@ void init_torus()
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
-	double deltaf, u_e, u_i, bsq;
+	double deltaf, u_e, u_i, bsq, Theta, gam, C;
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1040,10 +1040,24 @@ void init_torus()
 				#endif
 			#else   // variable gamma: Sadowski+17, Chael+19
 			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif	
 
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_e, ELECTRONS);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_i, IONS);
+			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_i / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif
 			#endif	
 		}
 	}

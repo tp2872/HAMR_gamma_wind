@@ -132,8 +132,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 512
+#define BS_1 128
+#define BS_2 256
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -333,7 +333,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
+#if(CONSTANTGAMMA)
+#define GAMMAE (GAMMA)
+#else
 #define GAMMAE (4./3.)
+#endif
 
 /*Enable or disable library with Bessel functions*/
 #define GSL_ENABLED (0)
