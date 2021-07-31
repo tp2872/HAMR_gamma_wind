@@ -1207,6 +1207,11 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	}
 	else {
 		u_e += delta * dis;
+		#if(VARGAMMA)
+		double C;
+		C = u_e / rho * MU_E * MASS_RATIO;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
@@ -1310,6 +1315,11 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	}
 	else {
 		u_e += delta * dis;
+		#if(VARGAMMA)
+		double C;
+		C = u_e / rho * MU_E * MASS_RATIO;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
