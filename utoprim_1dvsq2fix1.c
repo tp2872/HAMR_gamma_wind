@@ -69,12 +69,7 @@ static int general_newton_raphson( double x[],  void (*funcd) (double [], double
     , double fel
     #endif
 );
-void set_S_kappa(double rho, double K_atm
-    #if(TWO_T)
-    , double* S
-    , double fel
-    #endif
-);
+void set_S_kappa(double rho, double K_atm, double* S, double fel);
 
 /**********************************************************************/
 /******************************************************************
@@ -666,7 +661,7 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u
         u[0] = p[0] / (gamg - 1.0);
         #endif
     #else
-    p[0] = K_atm * pow(rho[0], GAMMA);
+    p[0] = K_atm2 * pow(rho[0], GAMMA);
     u[0] = p[0] / (GAMMA - 1.);
     #endif
     return((rho[0] + u[0] + p[0]) / gtmp);
@@ -679,12 +674,7 @@ static double dWdvsq_calc(double vsq, double rho, double p){
     return((GAMMA * (2. - GAMMA) * p + (GAMMA - 1.) * rho) / (2. * (GAMMA - 1.) * (1. - vsq) * (1. - vsq)));
 }
 
-void set_S_kappa(double rho, double K_atm
-    #if(TWO_T)
-    , double* S
-    , double fel
-    #endif
-) {
+void set_S_kappa(double rho, double K_atm, double* S, double fel) {
     //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
     double game, gami, p, pe, pi, T_e, T_i;
 

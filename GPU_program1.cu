@@ -408,12 +408,7 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
 __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
 __device__ double set_S_w(double* S, double rho, double w, double fel);
-__device__ void set_S_kappa(double rho, double K_atm
-#if(TWO_T)
-	, double* S
-	, double fel
-#endif
-);
+__device__ void set_S_kappa(double rho, double K_atm, double* S, double fel);
 __device__ double bessi0(double x);
 __device__ double bessi1(double x);
 __device__ double bessk0(double x);
@@ -6344,12 +6339,7 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	return((rho[0] + u[0] + p[0]) / gtmp);
 }
 
-__device__ void set_S_kappa(double rho, double K_atm
-	#if(TWO_T)
-	, double* S
-	, double fel
-	#endif
-) {
+__device__ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
 	//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
 	double game, gami, p, pe, pi, T_e, T_i;
 

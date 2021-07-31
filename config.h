@@ -22,7 +22,7 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (0)
+#define REFINE_JET (1)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
@@ -127,17 +127,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
+#define NB_1 10
+#define NB_2 10
 #define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 128
-#define BS_2 256
+#define BS_2 128
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -304,20 +304,20 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
 #define STOP_SCALEHEIGHT (0.03)
 
 /*Enable advenced opacities*/
-#define OP_EXTRA (1)
+#define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)
