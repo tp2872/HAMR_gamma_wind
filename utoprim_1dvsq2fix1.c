@@ -634,7 +634,7 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u
         #if(CONSTANTGAMMA)
         p[0] = K_atm2 * pow(rho[0], GAMMA);
         #elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
-        T_g = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm2, 2. / 3.)) - 1.0) / MU_G);
+        T_g = 0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm2, 2. / 3.)) - 1.0) / MU_G;
         p[0] = T_g * rho[0];
         #endif
 
@@ -753,11 +753,11 @@ void set_S_kappa(double rho, double K_atm
         #endif
     #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
         #if(FULL_ENTROPY)
-        S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
-        S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
-        #else
         S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
         S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
+        #else
+        S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
+        S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
         #endif
     #endif
 }
