@@ -2965,11 +2965,25 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
+
+
+
 			if (r > 50.0){
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-				if (log(q.ucon[0]) / log(10.0) > 0.5 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 1.0 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.2) ref_val = 100.0;
+
+				//Ore's criterion
+				//if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.1) || (bsq/p[nl[n]][index_3D(n, i, j, z)][RHO] > 1.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.05) || (bsq / p[nl[n]][index_3D(n, i, j, z)][RHO] > 0.5)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+
+				//Matthew's criterion
+				if (log(q.ucon[0]) / log(10.0) > 0.5 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 1.0 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.2) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (log(q.ucon[0]) / log(10.0) > 0.25 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 0.5 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.1) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}

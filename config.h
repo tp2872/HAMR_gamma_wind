@@ -123,11 +123,11 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (40)
+#define MAX_BLOCKS (1000)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
+#define NB_1 20
 #define NB_2 10
 #define NB_3 1
 
@@ -137,7 +137,7 @@ Numerical Parameters section
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 3
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -179,10 +179,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (600)
@@ -197,7 +197,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 100.0
+#define TREF 25.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)

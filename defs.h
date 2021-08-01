@@ -40,8 +40,8 @@ double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
 double(*restrict gdet[NB_LOCAL])[NPG];
-double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
-double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
+double(*restrict Mud[NB_LOCAL])[NDIM][NDIM][NDIM];
+double(*restrict Mud_inv[NB_LOCAL])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
 
 /*EOS CPU arrays*/

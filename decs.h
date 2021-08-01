@@ -94,8 +94,8 @@ extern double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gdet[NB_LOCAL])[NPG];
-extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
-extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
+extern double(*restrict Mud[NB_LOCAL])[NDIM][NDIM][NDIM];
+extern double(*restrict Mud_inv[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
 #if (DOHELM)
