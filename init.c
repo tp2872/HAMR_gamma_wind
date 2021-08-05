@@ -702,7 +702,7 @@ void init_torus()
 	double bl_gcov[NDIM][NDIM];
 	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
 	double tilt, eccentricity;
-	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es;
+	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es, gamma_g;
 	struct of_geom geom ;
 
 	/* for disk interior */
@@ -724,7 +724,7 @@ void init_torus()
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
-	#if(RAD_M1)
+	#if(RAD_M1 && HIGH_MDOT)
 	gam_local = 4. / 3.;
 	#else
 	gam_local = GAMMA;
@@ -839,8 +839,7 @@ void init_torus()
 			 * so it needs to be transformed at the end */
 			else { 
 				hm1 = exp(lnh) - 1. ;
-				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),
-							1./(gam_local - 1.)) ;
+				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),1./(gam_local - 1.)) ;
 				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
 				ur = 0. ;
 				uh = 0. ;
@@ -940,7 +939,13 @@ void init_torus()
 				#endif
 			);
 			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
-			double gamma_g = GAMMA;
+
+			#if(TWO_T)
+			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#else
+			gamma_g = GAMMA;
+			#endif
+
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
 				#if(TWO_T)
 				, gamma_g
@@ -1102,14 +1107,13 @@ void init_rad_pres(double pi[NPR]) {
 		n_iter++;
 	} 
 
-	if (n_iter == MAX_NEWT_ITER*5) {
-		//pi[UU_RAD] = 0.;
-	}
-	else {
-		pgas = pi[RHO] * T_new;
-		pi[UU] = pgas / (GAMMA - 1.);
-		pi[UU_RAD] = arad*pow(T_new,4.);
-	}
+	#if(HIGH_MDOT)
+	pgas = pi[RHO] * T_new;
+	pi[UU] = pgas / (GAMMA - 1.);
+	pi[UU_RAD] = arad * pow(T_new, 4.);
+	#else
+	pi[UU_RAD] = 0.0;
+	#endif
 
 	#if(P_NUM)
 	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
@@ -2079,6 +2083,7 @@ void set_mag(void){
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;
+	double gamma_g;
 
 	#if(!NSY)
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
@@ -2248,13 +2253,21 @@ void set_mag(void){
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+
+			#if(TWO_T)
+			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#else
+			gamma_g = GAMMA;
+			#endif
+
 			#if(RAD_M1)
-			if (((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
+			if (((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
-			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
-				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
@@ -2349,13 +2362,20 @@ void set_mag(void){
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
+
+			#if(TWO_T)
+			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#else
+			gamma_g = GAMMA;
+			#endif
+
 			#if(RAD_M1)
-			if (((GAMMA - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
+			if (((gamma_g - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
-			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)

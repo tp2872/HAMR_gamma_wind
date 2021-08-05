@@ -2556,7 +2556,7 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				#if(NB_1<10)
+				#if(NB_1<100)
 				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
@@ -2968,7 +2968,7 @@ double calc_refcrit(int n){
 
 
 
-			if (r > 50.0){
+			if (r > 50.0 && th>3.14/2.0){
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
@@ -2980,10 +2980,51 @@ double calc_refcrit(int n){
 				//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 
 				//Matthew's criterion
-				if (log(q.ucon[0]) / log(10.0) > 0.5 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 1.0 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.2) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (log(q.ucon[0]) / log(10.0) > 0.25 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 0.5 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.1) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if (log10(q.ucon[0]) > 0.5 || log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.3 || log10(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) > -0.2) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (log10(q.ucon[0]) > 0.25 || log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15 || log10(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) > -0.4) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				//if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.3) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+
+				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total>500)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+			}
+		}
+	}
+	#elif(REFINE_THIN && RAD_M1)
+	if (block[n][AMR_NODE] == rank) {
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+
+			if (r > 5.0) {
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+
+				//Calculate target vs real scaleheight
+				double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+				double gamma_g = calc_gamma_gas_prim(p[nl[n]][index_3D(n, i, j, z)]);
+				double ptot = ((gamma_g - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU] + (1.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD]);
+				double cs = sqrt(2.0 / M_PI * ptot / (gamma_g * p[nl[n]][index_3D(n, i, j, z)][UU] + (4.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] + rho));
+				double v_kepler = r / (pow(r, 3. / 2.) + BH_SPIN);
+				double scaleheight = cs / v_kepler;
+				double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
+
+				//Only refine if number of cells is insufficient
+				if ((cells_per_scaleheight < 12) && (rho > 0.02)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if ((cells_per_scaleheight < 30) && (rho > 0.01)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+
+				//Don't refine too close to BH
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 0) && (block[n][AMR_COORD1] <= 0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (block[n][AMR_COORD1] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (block[n][AMR_COORD1] <= 6)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 3) && (block[n][AMR_COORD1] <= 14)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 4) && (block[n][AMR_COORD1] <= 30)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+
+				//Don't refine too close to pole
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] >= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}

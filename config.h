@@ -22,18 +22,21 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (1)
+#define REFINE_JET (0)
+
+/*Enable special refinement criterion for large scale jet simulations*/
+#define REFINE_THIN (1)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
-#define TILT_ANGLE (45.0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -123,17 +126,17 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (1000)
-#define NB_LOCAL (1200)
+#define MAX_BLOCKS (525)
+#define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 20
-#define NB_2 10
+#define NB_1 10
+#define NB_2 12
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
+#define BS_1 38
+#define BS_2 42
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -185,7 +188,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (600)
+#define DUMPFACTOR (200)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -304,10 +307,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
+
+/*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
+#define HIGH_MDOT (1)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
-#define COOL_STOP (0)
+#define COOL_STOP (1)
 #define STOP_SCALEHEIGHT (0.03)
 
 /*Enable advenced opacities*/
@@ -317,7 +323,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)
@@ -327,10 +333,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
-#define FIXEDGAMMA (0)
+#define FIXEDGAMMA (1)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (1)
+#define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)

@@ -8117,7 +8117,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		, gamma_g
 		#endif
 		#if(COOL_STOP)
-		, Tr
+		, Tr //Fake value for r; We do not need to know kappa_emmit
 		#endif
 		#if(P_NUM)
 		, NULL
@@ -8458,11 +8458,11 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	double epsilon = ((gamma_g - 1.) * ph[UU] + 0.3333 * ph[UU_RAD]) / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2. * pow(STOP_SCALEHEIGHT * r * om_kepler, 2.);
-	double Y = (GAMMA - 1.) * epsilon / T_target; // HELMEOS
+	double Y = (gamma_g - 1.) * epsilon / T_target; // HELMEOS
 	if (Y < 1) {
-		if (kappa_emmit != NULL) kappa_emmit[0] *= pow(Y, 2.0);
+		if (kappa_emmit != NULL) kappa_emmit[0] *= pow(Y, 4.0);
 		#if(P_NUM)
-		if (kappa_emmit_ph != NULL) kappa_emmit_ph[0] *= pow(Y, 2.0);
+		if (kappa_emmit_ph != NULL) kappa_emmit_ph[0] *= pow(Y, 4.0);
 		#endif
 	}
 	#endif
@@ -8884,8 +8884,8 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	double epsilon = ((gamma_g - 1.) * ph[UU]+0.3333*ph[UU_RAD]) / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2. * pow(STOP_SCALEHEIGHT * r * om_kepler, 2.);
-	double Y = (GAMMA - 1.) * epsilon / T_target; // HELMEOS
-	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 2.0);
+	double Y = (gamma_g - 1.) * epsilon / T_target; // HELMEOS
+	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 4.0);
 	#endif
 
 	if (!isfinite(kappa_abs))  kappa_abs = 0.0;
@@ -9005,8 +9005,8 @@ __device__ double calc_kappa_emmit_ph(double* ph, double bsq, double Tr
 	double epsilon = ((gamma_g - 1.) * ph[UU] + 0.3333 * ph[UU_RAD]) / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2. * pow(STOP_SCALEHEIGHT * r * om_kepler, 2.);
-	double Y = (GAMMA - 1.) * epsilon / T_target; // HELMEOS
-	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 2.0);
+	double Y = (gamma_g - 1.) * epsilon / T_target; // HELMEOS
+	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 4.0);
 	#endif
 
 	if (!isfinite(kappa_abs))  kappa_abs = 0.0;
@@ -11524,7 +11524,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				);
 				#endif
 				
-				/*if (pflag[global_id]) {
+				if (pflag[global_id]) {
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
@@ -11554,7 +11554,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 							failimage[2 * (ksize)+global_id]++;
 						}
 					}
-				}*/
+				}
 			#endif
 		#endif
 

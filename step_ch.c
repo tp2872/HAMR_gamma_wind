@@ -1067,11 +1067,11 @@ double advance_GPU(void)
 	}
 	#elif(!PRESTEP2)
 	set_iprobe(0, &flag);
-	do{
+	do {
 		#if(GPU_OPENMP)
 		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 		#endif
-		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			#endif	
@@ -1080,11 +1080,13 @@ double advance_GPU(void)
 			#if(N3G>0)
 			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 			#endif
-		}
+	}
 		set_iprobe(1, &flag);
 	} while (flag);
 	set_iprobe(0, &flag);
+
 	#endif 
+
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
 	#if(!TRANS_BOUND && !CARTESIAN)
 	#if(GPU_OPENMP)

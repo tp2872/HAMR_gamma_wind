@@ -13,7 +13,7 @@ double slope_lim(double y1,double y2,double y3)
 		Dqp = 2.0*(y3 - y2);
 		Dqc = 0.5*(y3 - y1);
 		s = Dqm*Dqp;
-		if (s <= 0.) return 0.;
+		if (s <= 0. || isnan(Dqm) || isnan(Dqp)) return 0.;
 		else {
 			if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
 				return(Dqm);
@@ -28,7 +28,7 @@ double slope_lim(double y1,double y2,double y3)
 		Dqm = (y2 - y1);
 		Dqp = (y3 - y2);
 		s = Dqm*Dqp;
-		if (s <= 0.) return 0.;
+		if (s <= 0. || isnan(Dqm) || isnan(Dqp)) return 0.;
 		else
 			return(2.*s / (Dqm + Dqp));
 	}
@@ -38,7 +38,7 @@ double slope_lim(double y1,double y2,double y3)
 		Dqm = (y2 - y1);
 		Dqp = (y3 - y2);
 		s = Dqm*Dqp;
-		if (s <= 0.) return 0.;
+		if (s <= 0. || isnan(Dqm) || isnan(Dqp)) return 0.;
 		else if (fabs(Dqm) < fabs(Dqp)) return Dqm;
 		else return Dqp;
 	}

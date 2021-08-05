@@ -344,6 +344,7 @@ void param_read(FILE *fp) {
 		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
 		fread(&block[n2][AMR_NODE], int_size, 1, fp);
 		block[n2][AMR_NODE] = -1;
+		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
 	}
 
 	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3) {
