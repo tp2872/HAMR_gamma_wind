@@ -67,7 +67,7 @@ all: $(EXE)
 	
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
-bounds.o coord.o diag.o dump.o fixup.o \
+bounds.o coord.o diag.o dump.o fixup.o memory.o \
 init.o interp.o main.o metric.o lu.o \
 phys.o ranc.o restart.o step_ch.o radiation.o \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\

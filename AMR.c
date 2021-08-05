@@ -3084,8 +3084,10 @@ double calc_refcrit(int n){
 				double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
 
 				//Only refine if number of cells is insufficient
-				if ((cells_per_scaleheight < 12) && (rho > 0.02)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if ((cells_per_scaleheight < 30) && (rho > 0.01)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				//if ((cells_per_scaleheight < 12) && (rho > 0.02)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if ((cells_per_scaleheight < 30) && (rho > 0.01)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if (rho * r > 0.2) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (rho* r > 0.1) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 
 				//Don't refine too close to BH
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 0) && (block[n][AMR_COORD1] <= 0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
