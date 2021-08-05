@@ -7166,15 +7166,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	#if(TWO_T)
 	if(dofloor) {
-		#if(CONSTANTGAMMA)
-			#if(FULL_ENTROPY)
-			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
-			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
-			#else
-			pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
-			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
-			#endif
-		#elif(FIXEDGAMMA)
+		#if(CONSTANTGAMMA || FIXEDGAMMA)
 			#if(FULL_ENTROPY)
 			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
 			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));

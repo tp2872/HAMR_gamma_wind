@@ -116,6 +116,9 @@ Numerical Parameters section
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
 
+/*Memory of each GPU in GB*/
+#define GPU_MEM (40.0)
+
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
 

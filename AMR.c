@@ -1261,7 +1261,26 @@ void set_AMR(void){
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
 
+	//Activate all blocks in arrays n_ord and n_ord_total
 	activate_blocks();
+
+	#if(GPU_ENABLED)
+	//Calculate memory consumption on each GPU
+	double total_mem = 0.;
+	for (n = 0; n < n_active_total; n++) {
+		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
+	}
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
+
+	if (max_blocks * numtasks < n_active_total) {
+		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
+		exit(0);
+	}
+	#else
+	max_blocks = MAX_BLOCKS;
+	#endif
+
 	balance_load();
 	for (n = 0; n < n_active; n++) {
 		alloc_bounds_GPU(n_ord[n]);
@@ -1301,9 +1320,9 @@ void balance_load(void){
 		double min_time = 1000000000000.0;
 		double avg_time = 0.0;
 		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (rank == 0) fprintf(stderr, "Starting benchmarking step! \n");
+	
 		//First benchmark blocks on node
+		if (rank == 0) fprintf(stderr, "Starting benchmarking step! \n");
 		for (n = 0; n < n_active; n++)benchmark_GPU(n_ord[n]);
 
 		//Synchronize with other nodes
@@ -1441,10 +1460,10 @@ void balance_load(void){
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
 
-		if ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
-	} while ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
+		if ((n_active_local_max> max_blocks || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
+	} while ((n_active_local_max> max_blocks || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 	
-	if (n_active_local_max > MAX_BLOCKS) {
+	if (n_active_local_max > max_blocks) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
 		//exit(0);
 	}
@@ -1566,6 +1585,28 @@ void balance_load(void){
 
 	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, n_active_local_min, n_active_local_max);
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
+
+	#if(GPU_ENABLED)
+	//Calculate memory consumption on each GPU
+	double max_mem = 0.;
+	double min_mem = 0.;
+	double total_mem = 0.;
+	double mem = 0.;
+	for (n = 0; n < n_active; n++) {
+		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+		max_mem += mem;
+		min_mem += mem;
+		total_mem += mem;
+	}
+	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
+
+	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#endif
 
 	bound_prim(p, 1);
 	//Copy the B-field to make the code resilient against two bit ECC errors
@@ -2271,7 +2312,7 @@ int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
 
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > max_blocks){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -2610,7 +2651,7 @@ void check_refcrit(void){
 
 		if(one_block_refined==1) post_refine();
 
-		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU){
+		if (tag != 0 && n_active_total<numtasks* max_blocks *N_GPU){
 			MPI_Barrier(mpi_cartcomm);
 			if(rank==0) fprintf(stderr, "Intermediate load balance! \n");
 			balance_load();
@@ -2619,7 +2660,7 @@ void check_refcrit(void){
 			#endif
 			pre_refine();
 		}
-	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU && count<10);
+	} while (tag != 0 && n_active_total<numtasks* max_blocks *N_GPU && count<10);
 
 	if (tag == 1){
 		if(rank==0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
@@ -2699,7 +2740,7 @@ void check_refcrit(void){
 				//#pragma omp critical
 				//{
 					node = block[n_ord_total[n]][AMR_NODE];
-					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
+					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < max_blocks + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
 						for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
 							i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 							if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {

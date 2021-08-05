@@ -789,6 +789,7 @@ int count_node[1], count_gpu[N_GPU];
 int N1_GPU_offset[NB];
 int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
+int max_blocks;
 
 //MPI Variables
 MPI_Request req[NB], boundreqs[NB_LOCAL][600];
