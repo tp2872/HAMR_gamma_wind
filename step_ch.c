@@ -1190,7 +1190,7 @@ double advance_GPU(void)
 
 void benchmark_GPU(int n)
 {
-	#if(RAD_M1)
+	#if(RAD_M1 || RESISTIVE)
 	int i;
 	gpu = 1;
 	clock_t start, end;
@@ -1219,7 +1219,6 @@ void benchmark_GPU(int n)
 		GPU_fluxcalc2D(1, 0, n);
 		#endif
 
-		gpu = 1;
 		#if(!TRANS_BOUND && !CARTESIAN)
 		GPU_fix_flux(n);
 		#endif

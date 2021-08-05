@@ -1223,6 +1223,7 @@ void set_gridparam(void);
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);
 double calc_mem(int n_blocks);
 double calc_mem_gpu(int n);
+void calc_mem_cpu(int n);
 double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB_LOCAL])[NDIM],
 	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
 	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,

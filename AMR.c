@@ -1278,6 +1278,17 @@ void set_AMR(void){
 		exit(0);
 	}
 	#else
+	double total_mem = 0.;
+	for (n = 0; n < n_active_total; n++) {
+		total_mem += calc_mem_cpu(n_ord_total[n]) / pow(10., 9.);
+	}
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (numtasks * CPU_MEM - total_mem) / mem_per_block);
+
+	if (max_blocks * numtasks < n_active_total) {
+		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d Quiting! \n", max_blocks);
+		exit(0);
+	}
 	max_blocks = MAX_BLOCKS;
 	#endif
 
@@ -1605,6 +1616,26 @@ void balance_load(void){
 	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
 
 	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#else
+	//Calculate memory consumption on each CPU
+	double max_mem = 0.;
+	double min_mem = 0.;
+	double total_mem = 0.;
+	double mem = 0.;
+	for (n = 0; n < n_active; n++) {
+		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+		max_mem += mem;
+		min_mem += mem;
+		total_mem += mem;
+	}
+	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (CPU_MEM * numtasks - total_mem) / mem_per_block);
+
+	if (rank == 0) fprintf(stderr, "CPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
 	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
 	#endif
 

@@ -1445,10 +1445,474 @@ void free_bound_cpu(int n){
 	#endif
 }
 
+void calc_mem_cpu(int n)
+{
+	double mem;
+
+	//Normal variables
+	mem +=(NPRDUMP * BS_1*BS_2*BS_3 * sizeof(float));
+	#if(DUMP_SMALL)
+	mem +=(NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
+	mem +=(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
+	mem +=(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
+	#endif
+	mem +=(9 * BS_1*BS_2*BS_3 * sizeof(double));
+	mem +=(49 * BS_1*BS_2 * sizeof(double));
+	mem +=((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(4 * BS_1*BS_2*BS_3 * sizeof(float));
+	mem +=((BS_1 + 2 * N1G) * sizeof(double));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	#if(DO_IMEX && RAD_M1)
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	#else
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	#endif
+	#if(STAGGERED)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+	#endif
+	#if(LEER)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
+	#endif
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int));
+	#if(RAD_M1)
+	mem +=((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
+	#endif
+	#if(CPU_OPENMP || 1)
+	#if(STAGGERED)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
+	#endif
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+	#endif
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int[NFAIL]));
+	#if(!NSY)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NDIM][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG]));
+	#else
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NPG][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG]));
+	#endif
+	#if(FRAME_TRANSFORM)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
+	#endif
+	#if(ZIRI_DUMP)
+	mem +=(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NDIM][NDIM]));
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NDIM][NDIM]));
+	#endif
+	#if (ELLIPTICAL2)
+	mem +=((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPR]));
+	#endif
+	
+	//GPU transfer memory
+	#if(GPU_ENABLED)
+	mem +=(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * sizeof(double));
+	mem +=(NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) * sizeof(double));
+	mem +=(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * sizeof(double)); //array to store temporary data
+	#if(STAGGERED)
+	mem +=(NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * sizeof(double));
+	mem +=(NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * sizeof(double));
+	#endif
+	#if(!NSY)
+	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
+	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
+	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
+	#if(FRAME_TRANSFORM)
+	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+	#endif
+	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG * sizeof(double));
+	#else
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*NPG*10 * sizeof(double));
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
+	#if(FRAME_TRANSFORM)
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NPG  * sizeof(double));
+	#endif
+	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NFAIL * sizeof(int));
+	#endif
+	
+	//Boundaries
+	int ref1_1, ref1_3, ref1_5, ref1_6;
+	int ref2_2, ref2_4, ref2_5, ref2_6;
+	int ref3_1, ref3_2, ref3_3, ref3_4;
+	int ref1_1s, ref1_3s;
+	int ref3_1s, ref3_3s, ref3_2s, ref3_4s;
+
+	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
+	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
+	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
+	ref1_1s = REF_1; ref1_3s = REF_1;
+	ref3_1s = REF_3; ref3_3s = REF_3;
+
+	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
+		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+	}
+	ref1_1s = ref1_1;
+	ref1_3s = ref1_3;
+	ref3_1s = ref3_1;
+	ref3_3s = ref3_3;
+
+	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
+	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
+	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
+	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
+	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) && DEREFINE_POLE){
+		ref3_2s = 0;
+		ref3_4s = 0;
+	}
+
+	mem +=(NG *(1 + ref1_1)*(1 + ref3_1)* (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=(NG *(1 + ref2_2)*(1 + ref3_2)* (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	mem +=(NG *(1 + ref1_3)*(1 + ref3_3)* (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=(NG *(1 + ref2_4)*(1 + ref3_4)* (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NG *(1 + ref2_5)*(1 + ref1_5)* (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G) * (BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
+	mem +=(NG *(1 + ref2_6)*(1 + ref1_6)* (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G) * (BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	#endif
+
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	#endif
+	mem +=((1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=((1 + ref2_6)*(1 + ref1_6)* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	mem +=((1 + ref2_5)*(1 + ref1_5)* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	#endif
+	#endif
+	#if(PRESTEP==-100 || PRESTEP2==-100)
+	mem +=((1 + ref1_3)*(1 + ref3_3)* 2* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_4)*(1 + ref3_4)* 2*NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref1_1)*(1 + ref3_1)*2* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_2)*(1 + ref3_2)* 2*NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=((1 + ref2_6)*(1 + ref1_6)*2* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	mem +=((1 + ref2_5)*(1 + ref1_5)*2* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	mem +=(2*NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	#endif
+	#endif
+	#endif
+	mem +=(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
+	#endif
+	mem +=((1 + ref1_3)*(1 + ref3_3)* (NPR)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_4)*(1 + ref3_4)* (NPR)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref1_1)*(1 + ref3_1)* (NPR)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_2)*(1 + ref3_2)* (NPR)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=((1 + ref2_6)*(1 + ref1_6)* (NPR)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	mem +=((1 + ref2_5)*(1 + ref1_5)* (NPR)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	#endif
+	#if(CPU_OPENMP)
+	mem +=(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	mem +=(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
+	#endif
+	mem +=(NPR* (BS_1)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_1)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_3) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NPR* (BS_2)*(BS_1) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_1) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	#endif
+	mem +=(NPR* (BS_1)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_1)*(BS_3) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_3) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NPR* (BS_2)*(BS_1) * sizeof(double));
+	mem +=(NPR* (BS_2)*(BS_1) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	mem +=(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	mem +=(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	#if(N3G>0)
+	mem +=(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	mem +=(NPR*(BS_2 / (1 + ref2_5) + 2 * N2G) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	#endif
+	#endif
+	#endif
+	#if(CPU_OPENMP || 1)
+	mem +=(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	mem +=(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=(2 * (BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	mem +=(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
+	#endif
+	mem +=((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	#endif
+	mem +=((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	mem +=((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
+	#if(N3G>0)
+	mem +=((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	#endif
+	mem +=(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	mem +=(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	#endif
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	mem +=((BS_3 + 2 * D3) * sizeof(double));
+	#if(N3G>0)
+	mem +=((BS_2 + 2 * D2) * sizeof(double);
+	mem +=(((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	mem +=((BS_1 + 2 * D1) * sizeof(double));
+	#endif
+	#endif
+	#endif
+}
+
 int index_3D(int n, int i, int j, int z)
 {
 	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
 }
+
 int index_2D(int n, int i, int j, int z)
 {
 	#if(!NSY)

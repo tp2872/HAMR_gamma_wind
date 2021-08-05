@@ -119,6 +119,9 @@ Numerical Parameters section
 /*Memory of each GPU in GB*/
 #define GPU_MEM (40.0)
 
+/*Memory of the node*/
+#define CPU_MEM (80.0)
+
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
 
