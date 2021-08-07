@@ -132,7 +132,6 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (525)
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
@@ -319,7 +318,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HIGH_MDOT (1)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
-#define COOL_STOP (1)
+#define COOL_STOP (0)
 #define STOP_SCALEHEIGHT (0.03)
 
 /*Enable advenced opacities*/

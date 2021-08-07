@@ -1132,6 +1132,7 @@ double calc_gamma_gas_prim(double* pr) {
 
 	if (!isfinite(gamg) || gamg > 1.00001*GAMMA || gamg < 0.99999*GAMMAE) {
 		fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
+		exit(0);
 	}
 	
 	return gamg;

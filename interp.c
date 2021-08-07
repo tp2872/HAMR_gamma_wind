@@ -9,8 +9,8 @@ double slope_lim(double y1,double y2,double y3)
 
 	/* woodward, or monotonized central, slope limiter */
 	if (lim == MC) {
-		Dqm = 2.0*(y2 - y1);
-		Dqp = 2.0*(y3 - y2);
+		Dqm = 1.5*(y2 - y1);
+		Dqp = 1.5*(y3 - y2);
 		Dqc = 0.5*(y3 - y1);
 		s = Dqm*Dqp;
 		if (s <= 0. || isnan(Dqm) || isnan(Dqp)) return 0.;
