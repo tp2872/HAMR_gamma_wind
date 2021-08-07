@@ -87,7 +87,6 @@ void init_torus_grb();
 void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
-void init_rad_pres(double pi[NPR]);
 void init_sndwave();
 void init_entwave();
 
@@ -916,7 +915,9 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+
 			#if(RAD_M1)
+			//Set radiation pressure
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 
 			//Calculate optical depth of one cell
@@ -924,15 +925,18 @@ void init_torus()
 			#if(D3>1)
 			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
 			#else
-			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
+
 			//Calculate radiation temperature in rest frame of fluid
 			struct of_state q;
 			struct of_state_rad q_rad;
 			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
 			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
 
+			#if(P_NUM)
 			double exp_xi;
+			#endif
 			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov
 				#if(P_NUM)
 				, &exp_xi
@@ -999,8 +1003,6 @@ void init_torus()
 	calc_source();
 	#endif
 
-
-
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
@@ -1023,47 +1025,14 @@ void init_torus()
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
-	double deltaf, u_e, u_i, bsq, Theta, gam, C;
+	double bsq;
 
 	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, n, bsq, geom)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
-			
-			//Calculate delta (fraction of heating going to electrons
-			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
-			deltaf = MY_MIN(deltaf, 0.99);
-			deltaf = MY_MAX(deltaf, 0.01);
-
-			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
-				#if(FULL_ENTROPY)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
-				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
-				#endif
-			#else   // variable gamma: Sadowski+17, Chael+19
-			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
-				#if(FULL_ENTROPY)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
-				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-				#endif	
-
-			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * u_i / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
-				#if(FULL_ENTROPY)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
-				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-				#endif
-			#endif	
+			set_2T_entropy(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);
 		}
 	}
 	#endif
@@ -1072,12 +1041,155 @@ void init_torus()
 
 }
 
+void set_2T_entropy(double pi[NPR], double bsq) {
+	double deltaf = 0.5, u_e, u_i,  Theta, gam, game, gami, p_tot, p_old, p_new, ug_old, ug_new, dp_dug, errx, offset=1.e-8;
+	#if(VARGAMMA)
+	double C;
+	#endif
+	int keep_iterating = 1, i, n_iter = 0;
+
+	//Set desired gas pressure
+	p_tot = (GAMMA - 1.0) * pi[UU];
+	
+	//Calculate old gas pressue
+	ug_old = pi[UU];
+	ug_new = pi[UU];
+	
+	while (keep_iterating) {
+		//Calculate delta (fraction of heating going to electrons)
+		pi[UU] = ug_new;
+
+		//Distribute internal energy among ions and electrons
+		while(i < 3){
+			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
+				#if(FULL_ENTROPY)
+				pi[ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * deltaf * pi[UU] * pow(pi[RHO], -GAMMAE));
+				pi[ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - deltaf) * pi[UU] * pow(pi[RHO], -GAMMA));
+				#else
+				pi[ENTRE] = (GAMMAE - 1.)* deltaf* pi[UU] * pow(pi[RHO], -GAMMAE);
+				pi[ENTRI] = (GAMMA - 1.)* (1. - deltaf)* pi[UU] * pow(pi[RHO], -GAMMA);
+				#endif
+			#else   // variable gamma: Sadowski+17, Chael+19
+			u_e = deltaf * pi[UU];
+			C = u_e / pi[RHO] * MU_E * MASS_RATIO;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_e / pi[RHO] * MU_E * MASS_RATIO;
+				#if(FULL_ENTROPY)
+				pi[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
+				#else
+				pi[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
+				#endif	
+
+			u_i = (1. - deltaf) * pi[UU];
+			C = u_e / pi[RHO] * MU_I;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_i / pi[RHO] * MU_I;
+				#if(FULL_ENTROPY)
+				pi[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
+				#else
+				pi[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
+				#endif
+			#endif	
+
+			deltaf = calc_delta(pi, bsq);   // initial Tel/Ttot (temperature ratio)
+			deltaf = MY_MIN(deltaf, 0.99);
+			deltaf = MY_MAX(deltaf, 0.01);
+		}
+
+		//Calculate gradient dPdT
+		u_e = deltaf * ug_new;
+		u_i = (1.0 - deltaf) * ug_new;
+
+		#if(VARGAMMA)
+		C = u_e / pi[RHO] * MU_E * MASS_RATIO;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		C = u_i / pi[RHO] * MU_I;
+		gami = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		#else
+		game = GAMMAE;
+		gami = GAMMA;
+		#endif
+		p_old= (game * deltaf * ug_new + gami * (1.0 - deltaf) * ug_new) - p_tot;
+		
+		u_e = deltaf * (ug_new + offset);
+		u_i = (1.0 - deltaf) * (ug_new + offset);
+		#if(VARGAMMA)
+		C = u_e / pi[RHO] * MU_E * MASS_RATIO;
+		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		C = u_i / pi[RHO] * MU_I;
+		gami = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		#else
+		game = GAMMAE;
+		gami = GAMMA;
+		#endif
+		p_new = (game * deltaf * (ug_new + offset) + gami * (1.0 - deltaf) * (ug_new + offset)) - p_tot;
+
+		dp_dug = (p_new - p_old) / offset;
+
+		/* Make the newton step: */
+		ug_old = ug_new;
+		ug_new = ug_old - (p_old - p_tot) / dp_dug;
+
+		/****************************************/
+		/* Calculate the convergence criterion for iterated variables */
+		/****************************************/
+		errx = fabs(ug_new - ug_old) / ug_old;
+
+		/*****************************************************************************/
+		/* If we've reached the tolerance level, then just do a few extra iterations */
+		/*  before stopping                                                          */
+		/*****************************************************************************/
+		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+			keep_iterating = 0;
+		}
+
+		n_iter++;
+	}
+
+	//If converged set new gas internal energy
+	if (fabs(errx) <= NEWT_TOL) pi[UU] = ug_new;
+	else {
+		pi[UU] = p_tot / (GAMMA - 1.0);
+		fprintf(stderr, "set_2T_entropy failed to converge! \n");
+	}
+
+	//Redistribute internal energy among ions and electrons
+	#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
+		#if(FULL_ENTROPY)
+		pi[ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * deltaf * pi[UU] * pow(pi[RHO], -GAMMAE));
+		pi[ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - deltaf) * pi[UU] * pow(pi[RHO], -GAMMA));
+		#else
+		pi[ENTRE] = (GAMMAE - 1.)* deltaf* pi[UU] * pow(pi[RHO], -GAMMAE);
+		pi[ENTRI] = (GAMMA - 1.)* (1. - deltaf)* pi[UU] * pow(pi[RHO], -GAMMA);
+		#endif
+	#else   // variable gamma: Sadowski+17, Chael+19
+	u_e = deltaf * pi[UU];
+	C = u_e / pi[RHO] * MU_E * MASS_RATIO;
+	gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+	Theta = (gam - 1.0) * u_e / pi[RHO] * MU_E * MASS_RATIO;
+		#if(FULL_ENTROPY)
+		pi[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
+		#else
+		pi[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
+		#endif	
+
+	u_i = (1. - deltaf) * pi[UU];
+	C = u_e / pi[RHO] * MU_I;
+	gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+	Theta = (gam - 1.0) * u_i / pi[RHO] * MU_I;
+		#if(FULL_ENTROPY)
+		pi[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
+		#else
+		pi[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
+		#endif
+	#endif	
+}
+
 void init_rad_pres(double pi[NPR]) {
 	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
-	int keep_iterating, i, n_iter;
+	int keep_iterating=1, i, n_iter=0;
 
-	keep_iterating = 1;
-	n_iter = 0;
+	//Calculate old pressure
 	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	T_old = (4. / 3. - 1.) * pi[UU] / pi[RHO];
 	T_new = T_old;
@@ -1115,10 +1227,12 @@ void init_rad_pres(double pi[NPR]) {
 	pi[UU_RAD] = 0.0;
 	#endif
 
+	//Set photon number based on Boltzman distribution
 	#if(P_NUM)
 	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
+
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
@@ -2322,31 +2436,10 @@ void set_mag(void){
 	}
 
 	#if(RESISTIVE)
-	int i1, j1, k1, l1;
-	double alpha, sqrtgamma, B_guess[3], B_D[3], vd_guess[3], gamma;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + D3) {
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
-			alpha = 1.0 / sqrt(-geom.gcon[0][0]);
-			sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
-			gamma = alpha * state.ucon[0];
-			vd_guess[0] = state.ucov[1] / gamma;
-			vd_guess[1] = state.ucov[2] / gamma;
-			vd_guess[2] = state.ucov[3] / gamma;
-			B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-			B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-			B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-
-			lower_3(B_guess, geom.gcov, B_D);
-
-			for (i1 = 0; i1 < 3; i1++) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
-				for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
-					if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
-				}
-			}
+			set_E_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], geom);
 		}
 	}
 	#endif
@@ -2414,6 +2507,33 @@ void set_mag(void){
 		fixup(p, n_ord[n]);
 	}
 	bound_prim(p, 1);
+}
+
+void set_E_init(double p[NPR], struct of_geom geom) {
+	int i1, j1, k1, l1, i, j, k, n;
+	double alpha, sqrtgamma, B_guess[3], B_D[3], vd_guess[3], gamma;
+	struct of_state state;
+	
+	get_state(p, &geom, &state);
+	alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+	sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+	gamma = alpha * state.ucon[0];
+	vd_guess[0] = state.ucov[1] / gamma;
+	vd_guess[1] = state.ucov[2] / gamma;
+	vd_guess[2] = state.ucov[3] / gamma;
+	B_guess[0] = alpha * p[B1];
+	B_guess[1] = alpha * p[B2];
+	B_guess[2] = alpha * p[B3];
+
+	lower_3(B_guess, geom.gcov, B_D);
+
+	for (i1 = 0; i1 < 3; i1++) {
+		p[E1 + i1] = 0.;
+		for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+			if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+			p[E1 + i1] = p[E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+		}
+	}
 }
 
 void init_monopole(double Rout_val)

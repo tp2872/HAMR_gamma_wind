@@ -51,41 +51,14 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 
 	//Entropy advection
 	#if(DOKTOT)
-		#if(DOHELM)
-			double xentr;
-			eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
-			flux[KTOT] = flux[RHO] * xentr;
-			//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
-		#elif(TWO_T)
-			#if(FIXEDGAMMA || VARGAMMA)
-			double Theta;
-			//For variable entropy
-			Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
-				#if(FULL_ENTROPY)
-				flux[KTOT] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
-				#else
-				flux[KTOT] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
-				#endif
-			#else
-				#if(FULL_ENTROPY)
-				flux[KTOT] = flux[RHO] * 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
-				#else
-				flux[KTOT] = flux[RHO] * (gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g);
-				#endif
-			#endif
-		#else 
-			#if(FULL_ENTROPY)
-			flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
-			#else
-			flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
-			#endif
+	flux[KTOT] = flux[RHO] * calc_entropy(pr
+		#if (DOHELM)
+		, gpu_eos_table
 		#endif
-	#endif
-
-	#if(FULL_ENTROPY)
-	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA));
-	#else
-	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
 	#endif
     
 	for (k = 0; k < NPR; k++) flux[k] *= geom->g;
@@ -134,6 +107,50 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	/* single row of mhd stress tensor, first index up, second index down */
 	#pragma ivdep
 	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
+}
+
+//Calculates gas entropy
+double calc_entropy(double* pr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+) {
+	double entr;
+	#if(DOHELM)
+	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &entr);
+	entr = xentr;
+	//entr = exp(KTOT_FACTOR * entr);
+	#elif(TWO_T)
+		#if(FIXEDGAMMA || VARGAMMA)
+		double Theta;
+		//For variable entropy
+		Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
+			#if(FULL_ENTROPY)
+			entr = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
+			#else
+			entr = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
+			#endif
+		#else
+		double P = (gamma_g - 1.0) * pr[UU] / pr[RHO];
+			#if(FULL_ENTROPY)
+			entr = 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
+			#else
+			entr = P * pow(pr[RHO], -gamma_g);
+			#endif
+		#endif
+	#else 
+	double P = (GAMMA - 1.0) * pr[UU] / pr[RHO];
+		#if(FULL_ENTROPY)
+		entr = 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+		#else
+		entr = P * pow(pr[RHO], -GAMMA);
+		#endif
+	#endif
+
+	return entr;
 }
 
 /* Radiation stress tensor, with first index up, second index down */

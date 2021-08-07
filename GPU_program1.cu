@@ -344,7 +344,14 @@ __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt);
-
+__device__ double calc_entropy(double* pr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
@@ -517,17 +524,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		//		#endif
 		//	);
 
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
-
-			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
+			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -535,6 +532,25 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, r
 				#endif
 			);
+
+			if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);
+
+			//If error is still below set margin, accept solution, otherwise try URAD
+			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	#if(COOL_STOP)
+			//	, r
+			//	#endif
+			//);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
@@ -703,10 +719,15 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 
 	//Recompute entropy for consistency
-	#if(FULL_ENTROPY)
-	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA));
-	#else
-	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] *(GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
+	#if(DOKTOT)
+	U_f[KTOT] = U_f[RHO] * calc_entropy(pb
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
 	#endif
 
 	//Recompute R_t^mu for consistency
@@ -924,13 +945,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
 
-				if (do_entropy == 1) {
-					#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					#else
-					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					#endif				
-				}
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
+				#endif
 
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
 				U_new[U1_RAD] = U_i[U1_RAD] - (U_new[U1] - U_i[U1]);
@@ -942,10 +967,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+				//Recompute photon number
 				#if(P_NUM)
 				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 				#endif
-				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Calculate radiative (including coulomb) source term
 				source_rad(pb_new, geom, dU_new
@@ -1078,9 +1105,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//Make sure that internal energy stays positive
 		if (pb_new[UU] < 0.0) pb_new[UU] = 0.5 * fabs(pb_new[UU]);
+		
+		//Make sure that electron entropy stays positive
 		#if(TWO_T)
 		if (pb_new[ENTRE] < 0.0) pb_new[ENTRE] = 0.5 * fabs(pb_new[ENTRE]);
 		#endif
+		
+		//Make sure that photon number stays positive
 		#if(P_NUM)
 		if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 		#endif
@@ -1144,10 +1175,16 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 		U_new[UU] = U_new[UU] + U_new[RHO];
 
-		#if(FULL_ENTROPY)
-		U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-		#else
-		U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+		//Recalculate gas entropy for consistency
+		#if(DOKTOT)
+		U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
+		);
 		#endif
 
 		//Derive new conserved quantaties for radiation variables
@@ -1163,10 +1200,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
 		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+		
+		//Recompute photon number
 		#if(P_NUM)
 		U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 		#endif
-		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 		//Get radiative source term
 		source_rad(pb_new, geom, dU_new
@@ -1426,17 +1465,27 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 					#endif
 
-					//Gas entropy
-					#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					#else
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+					//Recalculate gas entropy for consistency
+					#if(DOKTOT)
+					U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
 					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+					//Recompute photon number
+					#if(P_NUM)
+					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					#endif
 
 					//Calculate source term using new variables
 					source_rad(pb_new, geom, dU_new
@@ -1649,17 +1698,27 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				#endif
 
-				//Gas entropy
-				#if(FULL_ENTROPY)
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				#else
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
 				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+				//Recompute photon number
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, dU_new
@@ -1899,11 +1958,17 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 					#endif
 
-					//Gas entropy
-					#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					#else
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+	
+					//Recalculate gas entropy for consistency
+					#if(DOKTOT)
+					U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 					#endif
 
 					//Set radiation conserved quantities
@@ -1918,6 +1983,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					get_state_rad(pb_new, geom, &q_rad);
 					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+					//Recompute photon number
+					#if(P_NUM)
+					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					#endif
 
 					//Calculate source term using new variables
 					source_rad(pb_new, geom, dU_new
@@ -2109,11 +2179,16 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				#endif
 
-				//Gas entropy
-				#if(FULL_ENTROPY)
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				#else
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
 				#endif
 
 				//Derive new conserved quantaties for MHD variables
@@ -2129,6 +2204,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+				//Compute photon number
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, dU_new
@@ -2372,18 +2452,28 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 					#endif
-
-					//Gas entropy
-					#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					#else
-					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+	
+					//Recalculate gas entropy for consistency
+					#if(DOKTOT)
+					U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
 					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+					//Recompute photon number
+					#if(P_NUM)
+					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					#endif
 
 					//Calculate source term using new variables
 					source_rad(pb_new, geom, dU_new
@@ -2583,17 +2673,27 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				#endif
 
-				//Gas entropy
-				#if(FULL_ENTROPY)
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				#else
-				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
 				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+				//Recompute photon number
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, dU_new
@@ -2860,12 +2960,22 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 					#endif
+	
+					//Recalculate gas entropy for consistency
+					#if(DOKTOT)
+					U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					#endif
 
-					//Compute new entropy from MHD variables
-					#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-					#else
-					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+					//Recompute photon number
+					#if(P_NUM)
+					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 					#endif
 
 					//Calculate source function and jacobian
@@ -2880,6 +2990,8 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						, r
 						#endif
 					);
+
+					//Calculate Jacobian
 					for (k = U1_RAD; k <= U3_RAD; k++) {
 						E_new[k - UU_RAD] = (U_new[k] - U_i[k] - Dt * dU_new[k]);
 						dEdpb[k - UU_RAD][i - UU_RAD] = (E_new[k - UU_RAD] - E_old[k - UU_RAD]) / dpb;
@@ -3005,6 +3117,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			//Make sure that radiation internal energy stays positive
 			if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
 
+			//Make sure that electron entropy stays positive
+			#if(TWO_T)
+			if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+			#endif
+
 			//Make sure that photon number stays positive
 			if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 
@@ -3083,12 +3200,22 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				#endif
+	
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
+				#endif
 
-				//Compute new entropy from MHD variables
-				#if(FULL_ENTROPY)
-				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-				#else
-				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+				//Recompute photon number
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 				#endif
 
 				//Get radiative source term
@@ -3168,7 +3295,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error increasing stop iterating
-				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
 					keep_iterating = 0;
 				}
 
@@ -7969,35 +8096,14 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	#endif
 
 	#if(DOKTOT)
-		#if(DOHELM)
-		double xentr;
-		eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
-		flux[KTOT] = flux[RHO] * xentr;
-		//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
-		#elif(TWO_T)
-			#if(FIXEDGAMMA || VARGAMMA)
-			double Theta;
-			//For variable entropy
-			Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
-				#if(FULL_ENTROPY)
-				flux[KTOT] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
-				#else
-				flux[KTOT] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
-				#endif
-			#else
-				#if(FULL_ENTROPY)
-				flux[KTOT] = flux[RHO] * 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
-				#else
-				flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -gamma_g);
-				#endif
-			#endif
-		#else 
-			#if(FULL_ENTROPY)
-			flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
-			#else
-			flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
-			#endif
+	flux[KTOT] = flux[RHO] * calc_entropy(pr
+		#if (DOHELM)
+		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
 	#endif
 
 	#pragma unroll 9
@@ -8077,6 +8183,50 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 		*vmin = MY_MIN(vp, vm);
 	}
 	return;
+}
+
+//Calculate gas entropy
+__device__ double calc_entropy(double* pr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+) {
+	double entr;
+	#if(DOHELM)
+	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &entr);
+	entr = xentr;
+	//entr = exp(KTOT_FACTOR * entr);
+	#elif(TWO_T)
+		#if(FIXEDGAMMA || VARGAMMA)
+		double Theta;
+		//For variable entropy
+		Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
+			#if(FULL_ENTROPY)
+			entr = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO]);
+			#else
+			entr = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
+			#endif
+		#else
+		double P = (gamma_g - 1.0) * pr[UU] / pr[RHO];
+			#if(FULL_ENTROPY)
+			entr = 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
+			#else
+			entr = P * pow(pr[RHO], -gamma_g);
+			#endif
+		#endif
+	#else 
+	double P = (GAMMA - 1.0) * pr[UU] / pr[RHO];
+		#if(FULL_ENTROPY)
+		entr = 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+		#else
+		entr = P * pow(pr[RHO], -GAMMA);
+		#endif
+	#endif
+
+	return entr;
 }
 
 //Calculate radiative wave velocity

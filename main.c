@@ -65,6 +65,10 @@ int main(int argc, char *argv[])
 	clock_t begin2;
 	nstep = 0;
 	defcon = 1.;
+
+	//Check input parameters
+	check_input();
+
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
 
@@ -75,9 +79,9 @@ int main(int argc, char *argv[])
 
 	#if (DOHELM)
 	eos_init();
-	#if(GPU_ENABLED || GPU_DEBUG )
-	eos_init_GPU();
-	#endif
+		#if(GPU_ENABLED || GPU_DEBUG )
+		eos_init_GPU();
+		#endif
 	#endif
 
 	if (!restart_read()) {
@@ -94,133 +98,6 @@ int main(int argc, char *argv[])
 		//restart_write();
 		//close_rdump();
 	}
-
-	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-	double den, ener, pres, bsq, esq,f, U[NPR], gamma, p_old[NPR];
-	int zz;
-	struct of_state_res q_res;
-	struct of_geom geom;
-	struct of_state q;
-	struct of_state_rad q_rad;
-	#if(RESISTIVE)
-	int ind0, k;
-	for (n = 0; n < n_active; n++) {
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
-			for (zz = 0; zz < 1; zz++) {
-
-				get_geometry(n_ord[n], i, j, z, CENT, &geom);
-
-				ind0 = index_3D(n_ord[n], i, j, z);
-				p[nl[n_ord[n]]][ind0][UU] = fabs(p[nl[n_ord[n]]][ind0][UU]);
-				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
-				bsq = dot(q_res.bcon, q_res.bcov);
-				esq = dot(q_res.econ, q_res.ecov);
-				if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
-					double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3], E_D[3];
-					struct of_state state;
-					get_geometry(n_ord[n], i, j, z, CENT, &geom);
-					get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
-					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
-					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
-					gamma = alpha * state.ucon[0];
-					vd_guess[0] = state.ucov[1] / gamma;
-					vd_guess[1] = state.ucov[2] / gamma;
-					vd_guess[2] = state.ucov[3] / gamma;
-					B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-					B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-					B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-					//E_guess[0] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-					//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-					//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-			
-					lower_3(B_guess, geom.gcov, B_D);
-					//lower_3(E_guess, &geom, E_D);
-					int i1, j1, k1;
-					for (i1 = 0; i1 < 3; i1++) {
-						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
-						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
-							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
-							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
-						}
-					}
-					//p[nl[n_ord[n]]][ind0][B1] = 0.;
-					//p[nl[n_ord[n]]][ind0][B2] = 0.;
-					//p[nl[n_ord[n]]][ind0][B3] = 0.;
-					//p[nl[n_ord[n]]][ind0][E1] = 0.;
-					//p[nl[n_ord[n]]][ind0][E2] = 0.;
-					//p[nl[n_ord[n]]][ind0][E3] = 0.;
-					
-					//ps[nl[n_ord[n]]][ind0][1] = 0.;
-					//ps[nl[n_ord[n]]][ind0][2] = 0.;
-					//ps[nl[n_ord[n]]][ind0][3] = 0.;
-					//psh[nl[n_ord[n]]][ind0][1] = 0.;
-					//psh[nl[n_ord[n]]][ind0][2] = 0.;
-					//psh[nl[n_ord[n]]][ind0][3] = 0.;
-
-					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
-
-
-					//Reset variables
-					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
-
-					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1*(ETA<0.000000000000001));
-
-					if (pflag[nl[n_ord[n]]][ind0] != 0) {
-						get_state_res(p_old, &geom, &q_res);
-						bsq = dot(q_res.bcon, q_res.bcov);
-						esq = dot(q_res.econ, q_res.ecov);
-						fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
-
-						get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-						bsq = dot(q_res.bcon, q_res.bcov);
-						esq = dot(q_res.econ, q_res.ecov);
-						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
-						
-						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 2, &geom, U);
-						fprintf(stderr, "F[2][B3]: %f ", 10000. * U[UU]);
-						
-						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
-						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 2, &geom, U);
-						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
-
-
-					}
-				}
-			}
-		}
-	}
-	#endif
-	#if(RAD_M1)
-	/*int ind0, k;
-	for (n = 0; n < n_active; n++) {
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
-			for (zz = 0; zz < 1; zz++) {
-				ind0 = index_3D(n_ord[n], i, j, z);
-				get_geometry(n_ord[n], i, j, z, CENT, &geom);
-				get_state(p[nl[n_ord[n]]][ind0], &geom, &q);
-				get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U, GAMMA);
-
-				//Reset variables
-				PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
-
-				//Invert
-				pflag[nl[n_ord[n]]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
-
-				//Print
-				if (fabs(p_old[UU_RAD] - p[nl[n_ord[n]]][ind0][UU_RAD])/(p_old[UU_RAD] + p[nl[n_ord[n]]][ind0][UU_RAD])>pow(10.,-12.)) {
-					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), fabs(q_rad.ucon[0]));
-					get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-					fprintf(stderr, "uu_new (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p[nl[n_ord[n]]][ind0][UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
-				}
-			}
-		}
-	}*/
-	#endif
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
@@ -598,5 +475,87 @@ double get_wall_time(){
 	return (double)time.tv_sec + (double)time.tv_usec * .000001;
 	#else
 	return clock() / CLOCKS_PER_SEC;
+	#endif
+}
+
+//Runs checks on input
+void check_input() {
+	
+	//Select a grid that is compatible with DEREFINE_POLE
+	if (DEREFINE_POLE && (NB_2 == 6 || NB_2 == 12 || NB_2 == 24 || NB_2 == 48 || NB_2 == 96)) {}
+	else if(DEREFINE_POLE){
+		fprintf(stderr, "Init error 1");
+		exit(0);
+	}
+
+	//You can only select on version
+	if (VARGAMMA + FIXEDGAMMA + CONSTANTGAMMA != 1) {
+		fprintf(stderr, "Init error 2");
+		exit(0);
+	}
+
+	//NB_3 has to be even in 3D
+	if (NB_3 % 2 == 0 || (NB_3 * BS_3 == 1)) {}
+	else {
+		fprintf(stderr, "Init error 3");
+		exit(0);
+	}
+
+	//Don't use block sizes this small in any case
+	if ((BS_3 < 8 && NB_3 * BS_3 > 1)|| BS_2 < 8 || BS_1 < 8) {
+		fprintf(stderr, "Init error 4");
+		exit(0);
+	}
+
+	if (((BS_3%2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {
+		fprintf(stderr, "Init error 5");
+		exit(0);
+	}
+	
+	//You can't run on CPU and GPU
+	if (GPU_ENABLED + CPU_OPENMP > 1) {
+		fprintf(stderr, "Init error 6");
+		exit(0);
+	}
+
+	//Photon number evolution needs M1
+	if (P_NUM && !RAD_M1) {
+		fprintf(stderr, "Init error 7");
+		exit(0);
+	}
+
+	//These features are not supported anymore
+	if (FULL_ENTROPY || !DOKTOT) {
+		fprintf(stderr, "Init error 8");
+		exit(0);
+	}
+
+	//PPM not implemented in CPU version
+	if (CPU_OPENMP && PPM) { 
+		fprintf(stderr, "Init error 9"); 
+		exit(0);
+	}
+
+	//Don't use block sizes this small on GPU
+	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
+		fprintf(stderr, "Init error 10");
+		exit(0);
+	}
+
+	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT) < 4 && N_LEVELS_1D_INT > 0) {
+		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
+		//exit(0);
+	}
+
+	if (BS_2 % (int)pow(2, N_LEVELS_1D_INT) != 0 || BS_3 % (int)pow(2, N_LEVELS_1D_INT) != 0) {
+		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! \n");
+		//exit(0);
+	}
+
+	#if(DUMP_SMALL)
+	if ((BS_1 % REDUCE_FACTOR1 != 0 || BS_2 % REDUCE_FACTOR2 != 0 || BS_3 % REDUCE_FACTOR3 != 0) && DUMP_SMALL) {
+		if (rank == 0) fprintf(stderr, "Grid reduction incompatible with grid size! \n");
+		exit(0);
+	}
 	#endif
 }

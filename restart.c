@@ -136,20 +136,54 @@ int restart_read(void)
 
 void rdump_block_read(FILE *fp, int n)
 {
-	int i, j, z, k;
+	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
+	int npr_local = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH;
+	struct of_geom geom;
 
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
-		PLOOP fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		for (k=0; k < npr_local; k++) fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
 		#if(STAGGERED)
 		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
 		ps[nl[n]][index_3D(n, i, j, z)][1] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
 		ps[nl[n]][index_3D(n, i, j, z)][2] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
 		ps[nl[n]][index_3D(n, i, j, z)][3] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
 		#endif
-		p[nl[n]][index_3D(n, i, j, z)][B1] *= 1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B2] *= 1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B3] *= 1.0;
+
+		//If file doesn't contain physics, initiliaze the physics just like in ICs
+		#if(RAD_M1)
+		if (!read_M1) {
+			init_rad_pres(p[nl[n]][index_3D(n, i, j, z)]);
+		}
+		#endif
+		#if(TWO_T)
+		if (!read_2T) {
+			double bsq;
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			read_geom = 1;
+			bsq = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
+			set_2T_entropy(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);
+		}
+		#endif
+		#if(P_NUM)
+		if (!read_Pnum) {
+			double T_new, *exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM];
+			if (!read_geom)get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			read_geom = 1;
+			ucon_calc(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
+			ucon_calc_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
+			lower(ucon_rad, &geom, ucov_rad);
+			T_new = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ucon, ucon_rad, ucov_rad, exp_xi);
+			T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+			p[nl[n]][index_3D(n, i, j, z)][PHOTON] = p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+		}
+		#endif
+		#if(RESISTIVE)
+		if (!read_Res) {
+			if (!read_geom)get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			set_E_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], geom);
+		}
+		#endif
 	}
 }
 
@@ -332,6 +366,26 @@ void param_read(FILE *fp) {
 	fread(&rt, int_size, 1, fp);
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
+	if (docyl >= 1000) {
+		read_Pnum = 1;
+		docyl -= 1000;
+	}
+	else read_Pnum = 0;
+	if (docyl >= 100) {
+		read_2T = 1;
+		docyl -= 100;
+	}
+	else read_2T = 0;
+	if (docyl >= 10) {
+		read_Res = 1;
+		docyl -= 10;
+	}
+	else read_Res = 0;
+	if (docyl >= 1) {
+		read_M1 = 1;
+		docyl -= 1;
+	}
+	else read_M1 = 0;
 	fread(&dk, int_size, 1, fp);
 
 	for (n = 0; n < NB; n++) {
@@ -347,7 +401,7 @@ void param_read(FILE *fp) {
 		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
 	}
 
-	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3) {
+	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3 || a!=BH_SPIN) {
 		if (rank == 0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
 

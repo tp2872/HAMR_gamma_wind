@@ -863,6 +863,7 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
+extern int read_M1, read_2T, read_Pnum, read_Res;
 
 /*AMR parameters*/
 extern int(*block)[NV];
@@ -902,8 +903,12 @@ void close_rdump();
 void close_gdump();
 void close_gdump_reduced();
 double get_wall_time();
+void check_input();
 
 /** Evolution/physics functions **/
+void init_rad_pres(double pi[NPR]);
+void set_2T_entropy(double pi[NPR], double bsq);
+void set_E_init(double p[NPR], struct of_geom geom);
 double advance(int flag);
 double advance_GPU(void);
 void bound_prim(double(*restrict pr[NB_LOCAL])[NPR], int MPI);
@@ -971,6 +976,14 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
+double calc_entropy(double* pr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
