@@ -3078,7 +3078,11 @@ double calc_refcrit(int n){
 
 				//Calculate target vs real scaleheight
 				double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+				#if(TWO_T)
 				double gamma_g = calc_gamma_gas_prim(p[nl[n]][index_3D(n, i, j, z)]);
+				#else
+				double gamma_g = GAMMA;
+				#endif
 				double ptot = ((gamma_g - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU] + (1.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD]);
 				double cs = sqrt(2.0 / M_PI * ptot / (gamma_g * p[nl[n]][index_3D(n, i, j, z)][UU] + (4.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] + rho));
 				double v_kepler = r / (pow(r, 3. / 2.) + BH_SPIN);

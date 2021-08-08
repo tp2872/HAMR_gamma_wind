@@ -1018,7 +1018,7 @@ double calc_kappa_es(double * restrict ph
 	#endif
 );
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
-#if(TWO_T)
+//#if(TWO_T)
 double source_Coulomb(double* p);
 double calc_delta(double* restrict ph, double bsq);
 void heating(double* restrict ph, struct of_state* q);
@@ -1038,7 +1038,7 @@ double bessk(int n, double x);
 double calc_CoulombCoupling(double n_e, double theta_e, double theta_i);
 double calc_thetafromsnm(double s, double numd, double mass);
 double calc_ufromsrho(double s, double rho, int type);
-#endif
+//#endif
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);

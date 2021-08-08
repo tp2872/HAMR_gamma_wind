@@ -318,7 +318,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HIGH_MDOT (1)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
-#define COOL_STOP (0)
+#define COOL_STOP (1)
 #define STOP_SCALEHEIGHT (0.03)
 
 /*Enable advenced opacities*/
@@ -328,7 +328,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)

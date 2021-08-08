@@ -138,11 +138,33 @@ void rdump_block_read(FILE *fp, int n)
 {
 	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
-	int npr_local = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH;
+	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM;
+	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH;
+	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1];
 	struct of_geom geom;
+	#if(RAD_M1)
+	int uu_rad = (8 + DOKTOT);
+	int u1_rad = (8 + DOKTOT + 1);
+	int u2_rad = (8 + DOKTOT + 2);
+	int u3_rad = (8 + DOKTOT + 3);
+	#endif
+	#if(RESISTIVE)
+	int e1 = (8 + DOKTOT + read_M1 * 4);
+	int e2 = (8 + DOKTOT + read_M1 * 4 + 1);
+	int e3 = (8 + DOKTOT + read_M1 * 4 + 2);
+	#endif
+	#if(TWO_T)
+	int entre = (8 + DOKTOT + read_M1 * 4 + read_Res * 3);
+	int entri = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + 1);
+	#endif
+	#if(P_NUM)
+	int photon = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2);
+	#endif
 
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
-		for (k=0; k < npr_local; k++) fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		for (k = 0; k < npr_file; k++) {
+			fread(&(read[k]), double_size, 1, fp);
+		}
 		#if(STAGGERED)
 		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
 		ps[nl[n]][index_3D(n, i, j, z)][1] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
@@ -150,10 +172,18 @@ void rdump_block_read(FILE *fp, int n)
 		ps[nl[n]][index_3D(n, i, j, z)][3] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
 		#endif
 
+		for (k = 0; k < NPR_U; k++) p[nl[n]][index_3D(n, i, j, z)][k] = read[k];
+
 		//If file doesn't contain physics, initiliaze the physics just like in ICs
 		#if(RAD_M1)
 		if (!read_M1) {
 			init_rad_pres(p[nl[n]][index_3D(n, i, j, z)]);
+		}
+		else {
+			p[nl[n]][index_3D(n, i, j, z)][UU_RAD] = read[uu_rad];
+			p[nl[n]][index_3D(n, i, j, z)][U1_RAD] = read[u1_rad];
+			p[nl[n]][index_3D(n, i, j, z)][U2_RAD] = read[u2_rad];
+			p[nl[n]][index_3D(n, i, j, z)][U3_RAD] = read[u3_rad];
 		}
 		#endif
 		#if(TWO_T)
@@ -163,6 +193,10 @@ void rdump_block_read(FILE *fp, int n)
 			read_geom = 1;
 			bsq = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
 			set_2T_entropy(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);
+		}
+		else{
+			p[nl[n]][index_3D(n, i, j, z)][ENTRE] = read[entre];
+			p[nl[n]][index_3D(n, i, j, z)][ENTRI] = read[entri];
 		}
 		#endif
 		#if(P_NUM)
@@ -177,11 +211,19 @@ void rdump_block_read(FILE *fp, int n)
 			T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 			p[nl[n]][index_3D(n, i, j, z)][PHOTON] = p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 		}
+		else {
+			p[nl[n]][index_3D(n, i, j, z)][PHOTON] = read[photon];
+		}
 		#endif
 		#if(RESISTIVE)
 		if (!read_Res) {
 			if (!read_geom)get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			set_E_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], geom);
+		}
+		else {
+			p[nl[n]][index_3D(n, i, j, z)][E1] = read[e1];
+			p[nl[n]][index_3D(n, i, j, z)][E2] = read[e2];
+			p[nl[n]][index_3D(n, i, j, z)][E3] = read[e3];
 		}
 		#endif
 	}

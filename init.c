@@ -1041,6 +1041,7 @@ void init_torus()
 
 }
 
+#if(TWO_T)
 void set_2T_entropy(double pi[NPR], double bsq) {
 	double deltaf = 0.5, u_e, u_i,  Theta, gam, game, gami, p_tot, p_old, p_new, ug_old, ug_new, dp_dug, errx, offset=1.e-8;
 	#if(VARGAMMA)
@@ -1184,6 +1185,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		#endif
 	#endif	
 }
+#endif
 
 void init_rad_pres(double pi[NPR]) {
 	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
