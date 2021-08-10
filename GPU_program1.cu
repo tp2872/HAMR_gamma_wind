@@ -761,7 +761,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Calculate iterated error at start of iteration
 	error_t[0] = 0.0;
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(0.0 * Dt * dU[UU]));
-	if (pflag_rad == 0)error_t[0] += 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
+	error_t[0] += 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
 	#if(TWO_T)
 		#if(CONSTANTGAMMA)
 		dK_dS = (GAMMA - 1.) / pow(pb[RHO], GAMMA - 1.0);
@@ -5146,14 +5146,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//if (y < 1. - 100. * NUMEPSILON) {
 		if ((Qtsq>0.0) && (prim[1]*prim[1]+prim[2]*prim[2]+prim[3]*prim[3]>0.0)) {
-
 			if (lim == TYPE2) {
 				Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
-				//prim[1] = 0.;
-				//prim[2] = 0.;
-				//prim[3] = 0.;
 				pressure = -Qdotn / (4. * GAMMAMAX*GAMMAMAX - 1.);
-				//returnval = (pressure < 0.);
 				prim[0] = pressure * 3.; // Erad = 3*p_rad	
 			}
 			else {
@@ -5162,7 +5157,6 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				prim[2] = 0.;
 				prim[3] = 0.;
 			}
-			returnval = 1;
 		}
 		else {
 			prim[1] = 0.;
@@ -5177,249 +5171,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
-		//return 0;
-		//else if (y>1.-100.*NUMEPSILON){
-		//	prim[1] = 0.;
-		//	prim[2] = 0.;
-		//	prim[3] = 0.;
-		//	pressure = -Qdotn / (4. - 1.);
-		//	prim[0] = pressure * 3.; // Erad = 3*p_rad
-		//}
+
+		returnval = 1;
 	}
 	return(returnval);
-	/*
-	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
-	double Uabs, qsq;
-	double gammasq, y, pressure, f;
-	int i, returnval = 0;
-
-	for (i = 0; i < 4; i++) Qcov[i] = U[i];
-	raise(Qcov, gcon, Qcon);
-
-	ncov = -sqrt(-1. / gcon[0]);
-	ncon[0] = gcon[0] * ncov;
-	ncon[1] = gcon[1] * ncov;
-	ncon[2] = gcon[2] * ncov;
-	ncon[3] = gcon[3] * ncov;
-
-	Qdotn = Qcon[0] * ncov; //-Erad in McKinney2013
-	for (i = 1; i < 4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;  //Utilde in McKinney2013
-
-	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
-	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
-
-	//Check for bad values of -Erad and U_tilde^2; If values are nan floor them
-	if (!isfinite(Qdotn)) Qdotn = -(1.e-30);
-	if (!isfinite(Qtsq)) Qtsq = 0.0;
-	if (!isfinite(Qtcon[1])) Qtcon[1] = 0.0;
-	if (!isfinite(Qtcon[2])) Qtcon[2] = 0.0;
-	if (!isfinite(Qtcon[3])) Qtcon[3] = 0.0;
-
-	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
-	if (y < 0. || isnan(y)) y = 0.;
-	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
-
-	// Get Ebar and p_rad as usual
-	pressure = -Qdotn / (4. * gammasq - 1.);
-	prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
-
-	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
-
-	#if(P_NUM)
-	prim[4] = U[4] / sqrt(gammasq);
-	#endif
-
-	if (Qdotn > 0.) { //Negative internal energy
-		if (lim == TYPE2) {
-			Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-			for (i = 1; i < 4; i++) {
-				if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-				prim[i] = Qtcon[i] / Uabs;
-			}
-			qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
-				+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-			if (qsq < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
-
-			f = 0.;// sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			if (f < 10000000.0) {
-				prim[1] *= f;
-				prim[2] *= f;
-				prim[3] *= f;
-			}
-			Qdotn = -(1.e-150 + sqrt(fabs(Qtsq) / y_max));
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-
-			returnval = 1;
-		}
-		else {
-			prim[0] = 1.e-30;
-			prim[1] = 0.;
-			prim[2] = 0.;
-			prim[3] = 0.;
-			gammasq = 1.0;
-		}
-
-		#if(P_NUM)
-		prim[4] = U[4] / sqrt(gammasq);
-		#endif
-	}
-	else if (y > y_max) {
-		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++) {
-			if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-			prim[i] = Qtcon[i] / Uabs;
-		}
-		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
-			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-		if (qsq < 1.E-10 || !isfinite(qsq)) qsq = 1.E-10; // set floor
-		gammasq = 1. + qsq;
-
-		f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-		//if (f < 10000000.0 && y<1.0-0.000000001){
-		prim[1] *= f;
-		prim[2] *= f;
-		prim[3] *= f;
-		//}
-		//else {
-		//	prim[1] = 0;
-		//	prim[2] = 0;
-		//	prim[3] = 0;
-	//	}
-		if (lim == TYPE2) {
-			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-			returnval = 1;
-		}
-		else{
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-		}
-
-		#if(P_NUM)
-		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
-		#endif
-	}
-	return returnval;
-	*/
-	/*
-double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
-	double Uabs, qsq;
-	double gammasq, y, pressure, f;
-	int i, returnval = 0;
-
-	for (i = 0; i < 4; i++) Qcov[i] = U[i];
-	raise(Qcov, gcon, Qcon);
-
-	ncov = -sqrt(-1. / gcon[0]);
-	ncon[0] = gcon[0] * ncov;
-	ncon[1] = gcon[1] * ncov;
-	ncon[2] = gcon[2] * ncov;
-	ncon[3] = gcon[3] * ncov;
-
-	Qdotn = Qcon[0] * ncov; //-Erad in McKinney2013
-	for (i = 1; i < 4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;  //Utilde in McKinney2013
-
-	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
-	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
-
-	//Check for bad values of -Erad and U_tilde^2; If values are nan floor them
-	//if (!isfinite(Qdotn)) Qdotn = -(1.e-30);
-	//if (!isfinite(Qtsq)) Qtsq = 0.0;
-
-	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
-	//if (y < 0. || isnan(y)) y = 0.;
-	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
-
-	// Get Ebar and p_rad as usual
-	pressure = -Qdotn / (4. * gammasq - 1.);
-	prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
-
-	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
-
-	#if(P_NUM)
-	prim[4] = U[4] / sqrt(gammasq);
-	#endif
-
-
-
-	if (Qdotn > 0. || isnan(Qdotn)) { //Negative internal energy
-		if (lim == -10) {
-			Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-			for (i = 1; i < 4; i++) {
-				if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-				prim[i] = Qtcon[i] / Uabs;
-			}
-
-			qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
-				+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-			if (qsq < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
-
-			f = 0.0;// sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			//if (f < 10000000.0) {
-				prim[1] *= f;
-				prim[2] *= f;
-				prim[3] *= f;
-			//}
-			Qdotn = -(1.e-150 + sqrt(fabs(Qtsq) / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
-
-			returnval = 1;
-		}
-		else {
-			prim[0] = 1.e-30;
-			prim[1] = 0.;
-			prim[2] = 0.;
-			prim[3] = 0.;
-			gammasq = 1.0;
-		}
-
-		#if(P_NUM)
-		prim[4] = U[4] / sqrt(gammasq);
-		#endif
-	}
-	else if (y > y_max || isnan(y)) {
-		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++) {
-			if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-			prim[i] = Qtcon[i] / Uabs;
-		}
-		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
-			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-		if (qsq < 1.E-10 || !isfinite(qsq)) qsq = 1.E-10; // set floor
-		gammasq = 1. + qsq;
-
-		f = 0.0;// sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-		//if (f < 10000000.0 && y<1.0-0.000000001){
-			prim[1] = 0.0;
-			prim[2] = 0.0;
-			prim[3] = 0.0;
-		//}
-		//else {
-		//	prim[1] = 0;
-		//	prim[2] = 0;
-		//	prim[3] = 0;
-	//	}
-		if (lim == -10) {
-			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
-			returnval = 1;
-		}
-		else{
-			prim[0] = 1.e-30;
-		}
-	
-		#if(P_NUM)
-		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
-		#endif
-	}
-	return returnval;
-	*/
 }
 
 __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
