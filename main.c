@@ -142,7 +142,10 @@ int main(int argc, char *argv[])
 		#endif
 
 		/* deal with failed timestep, exit upon failure */
-		if (failed) break;
+		if (failed) {
+			fprintf(stderr, "Failure of some sort \n");
+			break;
+		}
 
 		//Every swithchtime read out data from GPU and set boundary
 		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
@@ -152,7 +155,10 @@ int main(int argc, char *argv[])
 			#endif
 			bound_prim(p, 1);
 			#if(!CARTESIAN)
-			if (dt > 0.5) break;
+			if (dt > 0.5) {
+				fprintf(stderr, "dt too big \n");
+				break;
+			}
 			#endif
 		}
 

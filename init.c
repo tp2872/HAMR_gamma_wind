@@ -1024,15 +1024,62 @@ void init_torus()
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
-	#if(TWO_T)
+	/*#if(TWO_T)
 	double bsq;
 
 	for (n = 0; n < n_active; n++) {
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, n, bsq, geom)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, bsq, geom)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
 			set_2T_entropy(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);
+		}
+	}
+	#endif*/
+
+		/* initialize the entropies for two temperature fluids (electrons and ions) */
+	#if(TWO_T)
+	double deltaf, u_e, u_i, bsq, Theta, gam, C;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
+			
+			//Calculate delta (fraction of heating going to electrons
+			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+			deltaf = MY_MIN(deltaf, 0.99);
+			deltaf = MY_MAX(deltaf, 0.01);
+
+			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
+				#endif
+			#else   // variable gamma: Sadowski+17, Chael+19
+			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif	
+
+			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_i / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif
+			#endif	
 		}
 	}
 	#endif
@@ -1055,12 +1102,13 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 	//Calculate old gas pressue
 	ug_old = pi[UU];
 	ug_new = pi[UU];
-	
+	/*
 	while (keep_iterating) {
 		//Calculate delta (fraction of heating going to electrons)
 		pi[UU] = ug_new;
 
 		//Distribute internal energy among ions and electrons
+		i = 0;
 		while(i < 3){
 			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
 				#if(FULL_ENTROPY)
@@ -1095,6 +1143,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 			deltaf = calc_delta(pi, bsq);   // initial Tel/Ttot (temperature ratio)
 			deltaf = MY_MIN(deltaf, 0.99);
 			deltaf = MY_MAX(deltaf, 0.01);
+			i++;
 		}
 
 		//Calculate gradient dPdT
@@ -1112,8 +1161,8 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		#endif
 		p_old= (game * deltaf * ug_new + gami * (1.0 - deltaf) * ug_new) - p_tot;
 		
-		u_e = deltaf * (ug_new + offset);
-		u_i = (1.0 - deltaf) * (ug_new + offset);
+		u_e = deltaf * (ug_new + offset* ug_new);
+		u_i = (1.0 - deltaf) * (ug_new + offset* ug_new);
 		#if(VARGAMMA)
 		C = u_e / pi[RHO] * MU_E * MASS_RATIO;
 		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
@@ -1125,27 +1174,20 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		#endif
 		p_new = (game * deltaf * (ug_new + offset) + gami * (1.0 - deltaf) * (ug_new + offset)) - p_tot;
 
-		dp_dug = (p_new - p_old) / offset;
+		dp_dug = (p_new - p_old) / (offset*ug_new);
 
-		/* Make the newton step: */
 		ug_old = ug_new;
-		ug_new = ug_old - (p_old - p_tot) / dp_dug;
+		ug_new = ug_old - (p_tot - p_old) / dp_dug;
 
-		/****************************************/
-		/* Calculate the convergence criterion for iterated variables */
-		/****************************************/
+	
 		errx = fabs(ug_new - ug_old) / ug_old;
 
-		/*****************************************************************************/
-		/* If we've reached the tolerance level, then just do a few extra iterations */
-		/*  before stopping                                                          */
-		/*****************************************************************************/
 		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 
 		n_iter++;
-	}
+	}*/
 
 	//If converged set new gas internal energy
 	if (fabs(errx) <= NEWT_TOL) pi[UU] = ug_new;
