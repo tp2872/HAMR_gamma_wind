@@ -134,7 +134,7 @@ double calc_entropy(double* pr
 			entr = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
 			#endif
 		#else
-		double P = (gamma_g - 1.0) * pr[UU] / pr[RHO];
+		double P = (gamma_g - 1.0) * pr[UU];
 			#if(FULL_ENTROPY)
 			entr = 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
 			#else
@@ -142,7 +142,7 @@ double calc_entropy(double* pr
 			#endif
 		#endif
 	#else 
-	double P = (GAMMA - 1.0) * pr[UU] / pr[RHO];
+	double P = (GAMMA - 1.0) * pr[UU];
 		#if(FULL_ENTROPY)
 		entr = 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 		#else
