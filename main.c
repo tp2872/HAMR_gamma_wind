@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(INIT_OUT);
+	//diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
