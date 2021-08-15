@@ -328,7 +328,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)

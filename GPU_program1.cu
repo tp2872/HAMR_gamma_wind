@@ -518,7 +518,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//If error is below set margin, accept solution, otherwise try PMHD
 			//if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0);
 
-		//	if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+		//	if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0 
 		//		#if(DOHELM)
 		//		, gpu_eos_table
 		//		#endif
@@ -533,6 +533,15 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//	#endif
 			//);
 
+			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);
+
 			if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -542,14 +551,15 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			/*if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9)implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
 				#if(COOL_STOP)
 				, r
 				#endif
-			);*/
+			);
+
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
@@ -924,15 +934,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					//Set for 2T fluid entropy of ions based on electron entropy
 					#if(CONSTANTGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
-					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
 					pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 					#elif(FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
-					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
 					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
@@ -945,8 +951,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 					
 					//Check limits
-					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					if (ue > 0.99 * pb_new[UU]) ue = 0.98 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.02 * pb_new[UU];
 					ui = pb_new[UU] - ue;
 
 					//Set electron entropy
@@ -993,6 +999,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
+				//Invert radiation variables
 				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
 
 				//Recompute R_t^mu for consistency
@@ -2072,7 +2079,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 		if (flag) return 1;
 
 		n_iter_fail = 0;
-		while (n_iter_fail < 10) {
+		while (n_iter_fail < 5) {
 			//Set primitive variables before Newton step
 			PLOOP{
 				pb_new[k] = pb_old[k];
@@ -2340,7 +2347,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 			}
 			else {
 				n_iter_fail++;
-				if (n_iter_fail == 10) return(1);
+				if (n_iter_fail == 5) return(1);
 			}
 		}
 		n_iter++;
@@ -2818,23 +2825,22 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				}
 				#if(TWO_T)
-					norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-					#if(CONSTANTGAMMA)
-					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-					#elif(FIXEDGAMMA)
-					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
-					#elif(VARGAMMA)
-					double Theta_e;
-					//For variable entropy
-						#if(FULL_ENTROPY)
-						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
-						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
-						#else
-						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0);
-						dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
-						#endif
+				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
+				#if(CONSTANTGAMMA)
+				dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+				#elif(FIXEDGAMMA)
+				dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+				#elif(VARGAMMA)
+				double Theta_e;
+				//For variable entropy
+					#if(FULL_ENTROPY)
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+					#else
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0);
+					dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 					#endif
-				//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
+				#endif
 				error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 				#endif
 				#if(P_NUM)
@@ -3873,7 +3879,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	if (dis == 0.0) {
+	if (dis == -100.0) {
 		quante = game * u_e;
 		quanti = gami * u_i;
 		double factor = quantg / (quante + quanti);
@@ -3890,8 +3896,8 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	if (quante > 0.99 * quantg) quante = 0.98 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.02 * quantg;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
