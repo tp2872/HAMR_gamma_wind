@@ -9276,7 +9276,8 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 		double Y = (gamma_g - 1.) * epsilon / T_target; 
 		#else
 		double Y = (GAMMA - 1.) * epsilon / T_target;
-		#endif	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 4.0);
+		#endif	
+	if (Y < 1) kappa_abs = kappa_abs * pow(Y, 4.0);
 	#endif
 
 	if (!isfinite(kappa_abs))  kappa_abs = 0.0;

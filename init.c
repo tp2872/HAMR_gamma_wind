@@ -2553,6 +2553,7 @@ void set_mag(void){
 	bound_prim(p, 1);
 }
 
+#if(RESISTIVE)
 void set_E_init(double p[NPR], struct of_geom geom) {
 	int i1, j1, k1, l1, i, j, k, n;
 	double alpha, sqrtgamma, B_guess[3], B_D[3], vd_guess[3], gamma;
@@ -2579,6 +2580,7 @@ void set_E_init(double p[NPR], struct of_geom geom) {
 		}
 	}
 }
+#endif
 
 void init_monopole(double Rout_val)
 {

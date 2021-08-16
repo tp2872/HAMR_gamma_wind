@@ -1482,8 +1482,8 @@ void calc_mem_cpu(int n)
 	mem +=((BS_3 + 2 * D3) * sizeof(double));
 	mem +=((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	mem +=((BS_2 + 2 * D2) * sizeof(double);
-	mem +=(((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
+	mem +=((BS_2 + 2 * D2) * sizeof(double));
 	mem +=((BS_2 + 2 * D2) * sizeof(double));
 	mem +=((BS_2 + 2 * D2) * sizeof(double));
 	mem +=((BS_1 + 2 * D1) * sizeof(double));

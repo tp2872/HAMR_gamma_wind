@@ -3031,8 +3031,22 @@ double calc_refcrit(int n){
 		ref_val = 100.0;
 	}
 	#elif(REFINE_GIBWA)
-	if (block[n][AMR_COORD2]/pow(1+REF_2, block[n][AMR_LEVEL2]) == 1) {
-		ref_val = 100.0;
+	if (block[n][AMR_LEVEL2] == 0) {
+		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] <= 8) {
+			if (block[n][AMR_COORD2] == 5 || block[n][AMR_COORD2] == 6)ref_val = 100.0;
+		}
+	}
+
+	if (block[n][AMR_LEVEL2] == 1) {
+		if (block[n][AMR_COORD1] >= 4 && block[n][AMR_COORD1] < 12) {
+			if (block[n][AMR_COORD2] == 11 || block[n][AMR_COORD2] == 12) ref_val = 100.0;
+		}
+		else {
+			ref_val = 0.6 * REFINEMENT_CUTOFF;
+		}
+	}
+	if (block[n][AMR_LEVEL2] == 2) {
+		ref_val = 100;
 	}
 	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
