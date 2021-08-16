@@ -189,10 +189,10 @@ void rdump_block_read(FILE *fp, int n)
 		#if(TWO_T)
 		if (!read_2T) {
 			double bsq;
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			get_geometry(n, i, j, z, CENT, &geom);
 			read_geom = 1;
-			bsq = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
-			set_2T_entropy(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);
+			bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+			set_2T_entropy(p[nl[n]][index_3D(n, i, j, z)], bsq);
 		}
 		else{
 			p[nl[n]][index_3D(n, i, j, z)][ENTRE] = read[entre];
@@ -202,12 +202,12 @@ void rdump_block_read(FILE *fp, int n)
 		#if(P_NUM)
 		if (!read_Pnum) {
 			double T_new, *exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM];
-			if (!read_geom)get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			if (!read_geom)get_geometry(n, i, j, z, CENT, &geom);
 			read_geom = 1;
 			ucon_calc(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
 			ucon_calc_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
 			lower(ucon_rad, &geom, ucov_rad);
-			T_new = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ucon, ucon_rad, ucov_rad, exp_xi);
+			T_new = calc_Tr(p[nl[n]][index_3D(n, i, j, z)], ucon, ucon_rad, ucov_rad, exp_xi);
 			T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 			p[nl[n]][index_3D(n, i, j, z)][PHOTON] = p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 		}
@@ -217,8 +217,8 @@ void rdump_block_read(FILE *fp, int n)
 		#endif
 		#if(RESISTIVE)
 		if (!read_Res) {
-			if (!read_geom)get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			set_E_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], geom);
+			if (!read_geom)get_geometry(n, i, j, z, CENT, &geom);
+			set_E_init(p[nl[n]][index_3D(n, i, j, z)], geom);
 		}
 		else {
 			p[nl[n]][index_3D(n, i, j, z)][E1] = read[e1];
