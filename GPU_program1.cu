@@ -542,24 +542,23 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-			#if(COOL_STOP)
-				, r
-				#endif
-			);
+			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//#if(COOL_STOP)
+			//	, r
+			//	#endif
+			//);
 
-			if (error_t[1] > 1.e-9)implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-
+			//if (error_t[1] > 1.e-9)implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	#if(COOL_STOP)
+			//	, r
+			//	#endif
+			//);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0

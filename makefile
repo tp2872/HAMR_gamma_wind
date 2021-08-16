@@ -50,7 +50,7 @@ CC       = mpicc
 CCFLAGS  = -fopenmp -O3 -I /usr/local/cuda-10.2/include
 endif
 
-EXTRALIBS = -lm -L /usr/local/cuda-10.2/lib64 -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L /usr/local/cuda-10.2/lib64  -lstdc++ -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
 CUDA_COMPILE  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 

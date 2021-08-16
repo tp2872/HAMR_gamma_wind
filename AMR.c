@@ -1351,11 +1351,11 @@ void balance_load(void){
 		if (rank == 0)  fprintf(stderr, "max_time: %f, min_time: %f, avg_time: %f \n", max_time, min_time, avg_time);
 		for (n = 0; n < n_active_total; n++) {
 			block[n_ord_total[n]][AMR_WEIGHT] = 32;
-			if (bench_time[n_ord_total[n]] > 0.25 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
-			if (bench_time[n_ord_total[n]] > 0.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 8;
-			if (bench_time[n_ord_total[n]] > 1.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 4;
-			if (bench_time[n_ord_total[n]] > 3.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
-			if (bench_time[n_ord_total[n]] > 6.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.67 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 8;
+			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
 			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
 		}
 

@@ -1193,22 +1193,22 @@ void benchmark_GPU(int n)
 	#if(RAD_M1 || RESISTIVE)
 	int i;
 	gpu = 1;
-	clock_t start, end;
+	double start, end;
 	
 	//Synchronize GPU
 	cudaDeviceSynchronize();
-	start = clock();
+	start = get_wall_time();
 
-	for (i = 0; i < AMR_SWITCHTIMELEVEL * DUMPFACTOR / 3; i++) {
+	for (i = 0; i < 100; i++) {
 		#if(RAD_M1 && DO_IMEX)
 		if(i%2==-10) GPU_Utoprim_M1_0(n, dt * (double)block[n][AMR_TIMELEVEL]); //do not use
 		#endif
 
 		#if(N3G>0)		
 		GPU_fluxcalc2D(3, 0, n);
-		#if(N_LEVELS_1D_INT>0)
-		GPU_reconstruct_internal(0, n);
-		#endif
+			#if(N_LEVELS_1D_INT>0)
+			GPU_reconstruct_internal(0, n);
+			#endif
 		#endif
 
 		#if(N2G>0)
@@ -1222,19 +1222,20 @@ void benchmark_GPU(int n)
 		#if(!TRANS_BOUND && !CARTESIAN)
 		GPU_fix_flux(n);
 		#endif
-		#if(STAGGERED)
-		GPU_consttransport1(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
-		#if(RAD_M1 && DO_IMEX)
-		GPU_consttransport2(0, dt * (double)block[n][AMR_TIMELEVEL], n);
-		#else
-		GPU_consttransport2(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
-		#endif
 
-		#if(RAD_M1 && DO_IMEX)
-		GPU_consttransport3(0, dt * (double)block[n][AMR_TIMELEVEL], n);
-		#else
-		GPU_consttransport3(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
-		#endif
+		#if(STAGGERED)
+			GPU_consttransport1(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+			#if(RAD_M1 && DO_IMEX)
+			GPU_consttransport2(0, dt * (double)block[n][AMR_TIMELEVEL], n);
+			#else
+			GPU_consttransport2(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+			#endif
+
+			#if(RAD_M1 && DO_IMEX)
+			GPU_consttransport3(0, dt * (double)block[n][AMR_TIMELEVEL], n);
+			#else
+			GPU_consttransport3(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+			#endif
 		#else
 		GPU_flux_ct1(n);
 		GPU_flux_ct2(n);
@@ -1247,9 +1248,9 @@ void benchmark_GPU(int n)
 		#endif
 	}
 	cudaDeviceSynchronize();
-	end = clock();
+	end = get_wall_time();
 
-	bench_time[n] = (double)(end - start) / CLOCKS_PER_SEC;
+	bench_time[n] = (double)(end - start);
 	#else
 	bench_time[n] = 1.0;
 	#endif

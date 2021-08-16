@@ -89,6 +89,7 @@ void set_uniform_Bphi(void);
 double lfish_calc(double r);
 void init_sndwave();
 void init_entwave();
+void init_postmerger();
 
 double global_kappa, aphipow;
 

@@ -1,22 +1,20 @@
 #!/bin/bash -l
-#SBATCH --job-name="THIN_GIBWA"
-#SBATCH --account="s952"
+#SBATCH -A AST20011
+#SBATCH --job-name="THIN_RAD_MAD"
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=matthewliska92@gmail.com
-#SBATCH --time=00:15:00
-#SBATCH --nodes=200
-#SBATCH --ntasks-per-core=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --partition=normal
-#SBATCH --constraint=gpu
-#SBATCH --hint=multithread
+#SBATCH -t 7-00:00:00
+#SBATCH -p v100
+#SBATCH -N 64 #Number of nodes
+#SBATCH -n 256 # Number of cores
 
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-export MPICH_RDMA_ENABLED_CUDA=1
-module load cdt/20.08
-module switch PrgEnv-cray PrgEnv-gnu
-module load daint-gpu
-module load craype-accel-nvidia60
-cd /scratch/snx3000/mliska/test
-srun ./harm
+module load gcc
+module load cuda
+export OMP_NUM_THREADS=10
+export MY_SPECTRUM_OPTIONS="--gpu"
+cd /scratch/03284/tg825826/THIN_RAD_MAD
+
+ibrun -np 256 ./harm
+
+cd /scratch/03284/tg825826/PLASMOID1024_3
+ibrun -np 256 ./harm

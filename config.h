@@ -205,7 +205,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 100.0
+#define TREF 50.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
@@ -319,7 +319,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (1)
-#define STOP_SCALEHEIGHT (0.03)
+#define STOP_SCALEHEIGHT (0.02)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -366,7 +366,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DO_IMEX (0)
 
 /*Wheter to use dynamical load balancing*/
-#define DYNAMIC_LOADBALANCE (0)
+#define DYNAMIC_LOADBALANCE (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
