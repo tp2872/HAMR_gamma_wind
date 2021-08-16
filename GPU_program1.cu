@@ -546,7 +546,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
-				#if(COOL_STOP)
+			#if(COOL_STOP)
 				, r
 				#endif
 			);
@@ -707,9 +707,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
-		//if (!pflag) {
-			pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
-		//}
+		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
 	}
 
 	//Recompute T_t^mu for consistency
@@ -737,7 +735,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	}
 	U_f[ENTRE] = U_i[ENTRE];
 	U_f[ENTRI] = U_i[ENTRI];
-	//for (k = 0; k < NPR; k++)U_i[k] = U_f[k];
 	#endif
 
 	//Recompute entropy for consistency
@@ -780,11 +777,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, r
 		#endif
 	);
-
-	//In low optical depth limit reset U_i to U_f
-	//if (tau < 0.66) {
-		//for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
-	//}
 
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
@@ -934,6 +926,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					//Set for 2T fluid entropy of ions based on electron entropy
 					#if(CONSTANTGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
 					pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
@@ -951,8 +945,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 					
 					//Check limits
-					if (ue > 0.99 * pb_new[UU]) ue = 0.98 * pb_new[UU];
-					if (ue < 0.01 * pb_new[UU]) ue = 0.02 * pb_new[UU];
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
 					ui = pb_new[UU] - ue;
 
 					//Set electron entropy
@@ -1165,15 +1159,15 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#if(TWO_T)
 			#if(CONSTANTGAMMA)
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
-			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0- FLOOR_ENTROPY) * pb_new[UU];
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
 			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
 			ui = pb_new[UU] - ue;
 			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 			#elif(FIXEDGAMMA)
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
-			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
 			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
@@ -1186,8 +1180,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
 			//Check limits
-			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
-			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
 			ui = pb_new[UU] - ue;
 
 			//Set electron entropy
@@ -1325,15 +1319,15 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error increasing stop iterating
-		//if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			//keep_iterating = 0;
-		//}
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+			keep_iterating = 0;
+		}
 
 		//If error increased more than 4 times stop iterating
-		//if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
-		//	count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
-		//}
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
+			count_increase++;
+			if (count_increase >= 5) keep_iterating = 0;
+		}
 
 		//Reset variables if Newton step succesfull
 		if (keep_iterating) {
@@ -1353,7 +1347,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_f[k] = U_new[k];
 				dU[k] = dU_new[k];
 			}
-			if (flag_rad) {
+			if (flag_rad && keep_iterating == 0) {
 				Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
 
 				//Recompute R_t^mu for consistency
@@ -3460,19 +3454,19 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-					//keep_iterating = 0;
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
-					//count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					count_increase++;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
 				if (pb_new[UU] < 0.) {
 					count_increase_gas++;
-					//if (count_increase > 2) keep_iterating = 0;
+					if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -3788,8 +3782,8 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
-	if (quante > 0.99 * quantg) quante = 0.98 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.02 * quantg;
+	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
+	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
@@ -3896,8 +3890,8 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
-	if (quante > 0.99 * quantg) quante = 0.98 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.02 * quantg;
+	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
+	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)

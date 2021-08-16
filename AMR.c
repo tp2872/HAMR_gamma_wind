@@ -3123,7 +3123,7 @@ double calc_refcrit(int n){
 			bl_coord(X, &r, &th, &phi);
 			#pragma omp critical
 			{
-				if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r < 150.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+				if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r < 150.) ref_val = 0.0;//p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
 			}
 		}
 	}

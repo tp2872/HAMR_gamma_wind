@@ -1233,8 +1233,8 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
+	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
@@ -1341,8 +1341,8 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
 
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
+	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
