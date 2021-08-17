@@ -1471,8 +1471,8 @@ void balance_load(void){
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
 
-		if ((n_active_local_max> max_blocks || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
-	} while ((n_active_local_max> max_blocks || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
+		if ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
+	} while ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 	
 	if (n_active_local_max > max_blocks) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");

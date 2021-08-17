@@ -193,7 +193,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (40)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -205,7 +205,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 50.0
+#define TREF 10.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
@@ -366,7 +366,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DO_IMEX (0)
 
 /*Wheter to use dynamical load balancing*/
-#define DYNAMIC_LOADBALANCE (1)
+#define DYNAMIC_LOADBALANCE (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)

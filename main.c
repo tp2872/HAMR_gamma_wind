@@ -176,12 +176,15 @@ int main(int argc, char *argv[])
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dump simultaneous with log
+			close_rdump();
 			tlog += DTl;
 		}
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
+			close_dump();
+			close_gdump();
 			tdump += DTd;
 		}
 
@@ -189,6 +192,8 @@ int main(int argc, char *argv[])
 		#if(DUMP_SMALL)
 		if (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT_REDUCED);
+			close_dump_reduced();
+			close_gdump_reduced();
 			tdump_reduced += DTd_reduced;
 		}
 		#endif
