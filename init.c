@@ -1091,7 +1091,7 @@ void init_torus()
 
 #if(TWO_T)
 void set_2T_entropy(double pi[NPR], double bsq) {
-	double deltaf = 0.5, u_e, u_i,  Theta, gam, game, gami, p_tot, p_old, p_new, ug_old, ug_new, dp_dug, errx, offset=1.e-8;
+	double deltaf = 0.45, u_e, u_i,  Theta, gam, game, gami, p_tot, p_old, p_new, ug_old, ug_new, dp_dug, errx, offset=1.e-8;
 	#if(VARGAMMA)
 	double C;
 	#endif
@@ -1236,10 +1236,10 @@ void init_rad_pres(double pi[NPR]) {
 
 	//Calculate old pressure
 	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
-	T_old = (4. / 3. - 1.) * pi[UU] / pi[RHO];
-	T_new = T_old;
-	ptot = (4. / 3. - 1.)*pi[UU];
 
+		T_old = (GAMMA - 1.) * pi[UU] / pi[RHO];
+		T_new = T_old;
+		ptot = (GAMMA - 1.) * pi[UU];
 	while (keep_iterating) {
 		//Calculate gradient dPdT
 		dPdT = pi[RHO] + 4. / 3.*arad*pow(T_new, 3.);

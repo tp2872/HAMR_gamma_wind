@@ -31,7 +31,7 @@ Physical Parameters section
 #define REFINE_GIBWA (1)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -205,7 +205,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 10.0
+#define TREF 5.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
@@ -318,7 +318,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HIGH_MDOT (1)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
-#define COOL_STOP (1)
+#define COOL_STOP (0)
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enable advenced opacities*/
@@ -411,7 +411,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (0.0012)
+#define MASS_DENSITY_SCALE (0.0001)
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)

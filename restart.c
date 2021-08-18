@@ -178,6 +178,7 @@ void rdump_block_read(FILE *fp, int n)
 		#if(RAD_M1)
 		if (!read_M1) {
 			init_rad_pres(p[nl[n]][index_3D(n, i, j, z)]);
+			//dt = 1.e-5;
 		}
 		else {
 			p[nl[n]][index_3D(n, i, j, z)][UU_RAD] = read[uu_rad];
@@ -188,6 +189,7 @@ void rdump_block_read(FILE *fp, int n)
 		#endif
 		#if(TWO_T)
 		if (!read_2T) {
+			//if (rank == 0) fprintf(stderr, "Reading entropy! \n");
 			double bsq;
 			get_geometry(n, i, j, z, CENT, &geom);
 			read_geom = 1;

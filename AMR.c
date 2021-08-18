@@ -3032,21 +3032,22 @@ double calc_refcrit(int n){
 	}
 	#elif(REFINE_GIBWA)
 	if (block[n][AMR_LEVEL2] == 0) {
-		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] <= 8) {
+		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] < 7) {
 			if (block[n][AMR_COORD2] == 5 || block[n][AMR_COORD2] == 6)ref_val = 100.0;
 		}
 	}
-
 	if (block[n][AMR_LEVEL2] == 1) {
-		if (block[n][AMR_COORD1] >= 4 && block[n][AMR_COORD1] < 12) {
+		if (block[n][AMR_COORD1] >= 4 && block[n][AMR_COORD1] < 10) {
 			if (block[n][AMR_COORD2] == 11 || block[n][AMR_COORD2] == 12) ref_val = 100.0;
 		}
-		else {
-			ref_val = 0.6 * REFINEMENT_CUTOFF;
+		else if(block[n][AMR_COORD1] >= 2 && block[n][AMR_COORD1] < 14){
+			if (block[n][AMR_COORD2] >= 10 && block[n][AMR_COORD2] < 14) ref_val = 0.6 * REFINEMENT_CUTOFF;
 		}
 	}
 	if (block[n][AMR_LEVEL2] == 2) {
-		ref_val = 100;
+		if (block[n][AMR_COORD1] >= 8 && block[n][AMR_COORD1] < 20) {
+			if (block[n][AMR_COORD2] >= 22 && block[n][AMR_COORD2] < 26) ref_val = 0.6 * REFINEMENT_CUTOFF;
+		}
 	}
 	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
