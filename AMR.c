@@ -1309,7 +1309,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL * (1 + 31 * RAD_M1), 8 * (1 + 31 * RAD_M1));
+	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL * (1 + 3 * RAD_M1 * DYNAMIC_LOADBALANCE), 32 * (1 + 3 * RAD_M1 * DYNAMIC_LOADBALANCE));
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	double val;
@@ -1350,12 +1350,12 @@ void balance_load(void){
 
 		if (rank == 0)  fprintf(stderr, "max_time: %f, min_time: %f, avg_time: %f \n", max_time, min_time, avg_time);
 		for (n = 0; n < n_active_total; n++) {
-			block[n_ord_total[n]][AMR_WEIGHT] = 32;
-			if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
-			if (bench_time[n_ord_total[n]] > 0.67 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 8;
-			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 4;
-			if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
-			if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			//if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.67 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			//if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			//if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
 			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
 		}
 
