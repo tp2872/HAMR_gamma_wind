@@ -331,7 +331,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TWO_T (1)
 
 /*Fractional floor on entropy*/
-#define FLOOR_ENTROPY (0.01)
+#define FLOOR_ENTROPY (0.00001)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)

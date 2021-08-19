@@ -1359,6 +1359,16 @@ void balance_load(void){
 			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
 		}
 
+		/*for (n = 0; n < n_active_total; n++) {
+			block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			//if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.5 * max_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			//if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			//if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
+		}*/
+
 		//for (n = 0; n < n_active_total; n++) {
 		//	block[n_ord_total[n]][AMR_WEIGHT] = (int)pow(2, round(log(max_time / bench_time[n_ord_total[n]]) / log(2)));
 		//	max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);

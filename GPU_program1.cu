@@ -31,7 +31,7 @@ __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, dou
 __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
 
-__device__ void source_rad(double* ph, struct of_geom* geom, double* dU, const  double* __restrict__ gpu_eos_table);
+__device__ void source_rad(double* ph, struct of_geom* geom, struct of_state* q, struct of_state_rad* q_rad, double* dU, const  double* __restrict__ gpu_eos_table);
 __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM],  double bsq,const  double* __restrict__ gpu_eos_table);
 
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table);
@@ -173,7 +173,7 @@ __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, dou
 	#endif
 );
 
-__device__ void source_rad(double* ph, struct of_geom* geom, double* dU
+__device__ void source_rad(double* ph, struct of_geom* geom, struct of_state* q, struct of_state_rad* q_rad, double* dU
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -765,7 +765,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 
 	//Calculate source term for U_i
-	source_rad(pb, geom, dU
+	source_rad(pb, geom, &q, &q_rad, dU
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -852,7 +852,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	double T_GAS, dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
+	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase2 = 0;
 	#if(TWO_T)
 	int flag_floor_kappa;
 	double gamma_g, ue, ui;
@@ -1009,7 +1009,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				#endif
 
 				//Calculate radiative (including coulomb) source term
-				source_rad(pb_new, geom, dU_new
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
@@ -1253,7 +1253,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#endif
 
 		//Get radiative source term
-		source_rad(pb_new, geom, dU_new
+		source_rad(pb_new, geom, &q, &q_rad, dU_new
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
@@ -1299,7 +1299,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 				#endif
 			#endif
-		error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
+		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 		#endif
 		#if(P_NUM)
 		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
@@ -1328,7 +1328,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error increasing stop iterating
-		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+			keep_iterating = 0;
+		}
+
+		//If error increasing stop iterating
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
 			keep_iterating = 0;
 		}
 
@@ -1336,6 +1341,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
 			if (count_increase >= 5) keep_iterating = 0;
+		}
+
+		//If error increased more than 4 times stop iterating
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+			count_increase2++;
+			if (count_increase2 >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
@@ -1534,7 +1545,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 
 					//Calculate source term using new variables
-					source_rad(pb_new, geom, dU_new
+					source_rad(pb_new, geom, &q, &q_rad, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
@@ -1762,7 +1773,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				#endif
 
 				//Get radiative source term
-				source_rad(pb_new, geom, dU_new
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
@@ -2027,7 +2038,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 
 					//Calculate source term using new variables
-					source_rad(pb_new, geom, dU_new
+					source_rad(pb_new, geom, &q, &q_rad, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
@@ -2246,7 +2257,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				#endif
 
 				//Get radiative source term
-				source_rad(pb_new, geom, dU_new
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
@@ -2578,7 +2589,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					#endif
 
 					//Calculate source term using new variables
-					source_rad(pb_new, geom, dU_new
+					source_rad(pb_new, geom, &q, &q_rad, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
@@ -2804,7 +2815,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				#endif
 
 				//Get radiative source term
-				source_rad(pb_new, geom, dU_new
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
@@ -3149,7 +3160,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#endif
 
 					//Calculate source function and jacobian
-					source_rad(pb_new, geom, dU_new
+					source_rad(pb_new, geom, &q, &q_rad, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
@@ -3385,7 +3396,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				#endif
 
 				//Get radiative source term
-				source_rad(pb_new, geom, dU_new
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
@@ -7890,7 +7901,7 @@ __device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, 
 	DLOOPA mhd_rad[j] = 4. / 3. * pr[UU_RAD] * q_rad->ucon[dir] * q_rad->ucov[j] + 1. / 3. * pr[UU_RAD] * delta(dir, j);
 }
 
-__device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
+__device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state* q, struct of_state_rad* q_rad, double * dU
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -7903,27 +7914,21 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 )
 {
 	#if(RAD_M1)
-	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM], dK_dS, bsq;
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM],dK_dS, bsq;
 	int k;
-	struct of_state_rad q_rad;
 
 	PLOOP dU[k] = 0.;
 
 	//Add M1 radiation terms
-	get_state_rad(ph, geom, &q_rad);
-	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
-	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
-	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
-	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+	mhd_calc_rad(ph, 0, q_rad, mhd_rad[0]);
+	mhd_calc_rad(ph, 1, q_rad, mhd_rad[1]);
+	mhd_calc_rad(ph, 2, q_rad, mhd_rad[2]);
+	mhd_calc_rad(ph, 3, q_rad, mhd_rad[3]);
 
 	//Add radiation 4-force
-	ucon_calc(ph, geom, ucon);
-	lower(ucon, geom->gcov, ucov);
-	bcon_calc(ph, ucon, ucov, bcon);
-	lower(bcon, geom->gcov, bcov);
-	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
+	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
 
-	calc_Gcon(ph, Gcon, ucon, ucov, q_rad.ucon, q_rad.ucov, mhd_rad, bsq
+	calc_Gcon(ph, Gcon, q->ucon, q->ucov, q_rad->ucon, q_rad->ucov, mhd_rad, bsq
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -7979,7 +7984,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
 			#endif
 		#endif
-		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		dU[KTOT] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 	#endif
 
 	//Electron entropy source term for radiative cooling and coulomb coupling
@@ -8001,7 +8006,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 			#endif
 		#endif
-		dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 		dU[ENTRE] += dK_dS * source_Coulomb(ph);
 	#endif
 
@@ -8806,18 +8811,17 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		}
 		#endif
 	#else
-	double Ye = (1. + X_AB) / 2.;
 	kappa_m = 30.0 * 0.1 * Z_AB;
 	if (kappa_abs != NULL) {
 		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Te * Te);	
-		kappa_h = 30.0 * 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-		kappa_chianti = 30.0 * 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
+		kappa_h = 33.0 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
+		kappa_chianti = 30.0 * pow(10., 33.) * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
 		kappa_bf = 30.0 * 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 		kappa_ff_abs = 30.0 * 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
 		kappa_sy_abs = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) * pow(Tr / Te, -3.) / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333)) / (ph[RHO] * MASS_DENSITY_SCALE);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 		//phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
 		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 		//kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
@@ -8830,14 +8834,14 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	}
 	if (kappa_emmit != NULL) {
 		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Te * Te);
-		kappa_h = 30.0 * 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-		kappa_chianti = 30.0 * 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
+		kappa_h = 33.0 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
+		kappa_chianti = 30.0 * pow(10., 33.) * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
 		kappa_bf = 30.0 * 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 		kappa_ff_emmit = 30.0 * 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-		kappa_sy_emmit = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+		kappa_sy_emmit = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE);
 		//phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-		////Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 		//kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
