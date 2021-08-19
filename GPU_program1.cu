@@ -1164,11 +1164,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				flag_floor_kappa = 1;
+				flag_floor_kappa = 0;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				flag_floor_kappa = 1;
+				flag_floor_kappa = 0;
 			}
 			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
 			ui = pb_new[UU] - ue;
@@ -1329,24 +1329,24 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			keep_iterating = 0;
+			//keep_iterating = 0;
 		}
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-			keep_iterating = 0;
+			//keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
-			count_increase++;
-			if (count_increase >= 5) keep_iterating = 0;
+			//count_increase++;
+			//if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-			count_increase2++;
-			if (count_increase2 >= 5) keep_iterating = 0;
+			//count_increase2++;
+			//if (count_increase2 >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
@@ -5321,7 +5321,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		//if (y < 1. - 100. * NUMEPSILON) {
 		if ((Qtsq>0.0) && ((prim[1]*prim[1])>0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
 			if (lim == TYPE2) {
-				if (Qdotn < 0.0) {
+				if (0) {
 					// Get Ebar and p_rad as usual
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 					pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
