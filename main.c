@@ -477,12 +477,16 @@ void set_grid(int n)
 }
 
 double get_wall_time(){	
+	#ifdef __unix__
 	struct timeval time;
 	if (gettimeofday(&time, NULL)){
 		//  Handle error
 		return 0;
 	}
 	return (double)time.tv_sec + (double)time.tv_usec * .000001;
+	#else
+	return clock() / CLOCKS_PER_SEC;
+	#endif
 }
 
 //Runs checks on input
