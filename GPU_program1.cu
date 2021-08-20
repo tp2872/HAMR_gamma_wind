@@ -630,18 +630,47 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double r
 	#endif
 ) {
-	double kappa_abs, kappa_es, tau, norm, bsq, Tr, dK_dS;
+	double kappa_abs, kappa_es, tau, norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
 	int k, pflag=0, pflag_rad=0, do_entropy=0;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	#if(TWO_T)
-	double gamma_g = calc_gamma_gas_prim(pb);
+	double gamma_g;// = calc_gamma_gas_prim(pb);
 	#endif
 	#if(P_NUM)
 	double exp_xi;
 	#endif
 
 	//Calculate optical depth
+
+	//Calculate opacities
+	/*get_state(pb, geom, &q);
+	get_state_rad(pb, geom, &q_rad);
+	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q_rad.ucov
+	#if(P_NUM)
+	, &exp_xi
+	#endif
+	);
+	Te = calc_Te(pb);
+	calc_kappa_new(pb, bsq, Tr, Te, &kappa_abs, NULL, &kappa_es
+		#if(TWO_T)
+		, gamma_g
+		#endif
+		#if(COOL_STOP)
+		, r
+		#endif
+		#if(P_NUM)
+		, NULL
+		, NULL
+		, NULL
+		#endif
+	);
+	tau = (kappa_abs + kappa_es) * cell_size;
+
+	//Store old values
+	if (tau > 0.66)PLOOP pb_old[k] = pb[k];*/
+
 	/*get_state(pb, geom, &q);
 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 	get_state_rad(pb, geom, &q_rad);
@@ -670,10 +699,20 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif
 	);
 	tau = (kappa_abs + kappa_es) * cell_size;*/
-	tau = 0.0;
+	//tau = 0.0;
+
 	//Set guess values for primitives after implicit step based on optical depth
-	if (tau < 0.66) {
-		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+	pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, fel
+		#endif
+	);
+	#if(DO_FONT_FIX)
+	if (pflag) {
+		pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
@@ -681,33 +720,37 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			, fel
 			#endif
 		);
-		#if(DO_FONT_FIX)
-		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(TWO_T)
-				, fel
-				#endif
-			);
-			#if(!TWO_T)
-			if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(TWO_T)
-				, fel
-				#endif
-				);
+		#if(!TWO_T)
+		if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+			#if (DOHELM)
+			, gpu_eos_table
 			#endif
-			if (!pflag) do_entropy = 1;
-		}
-		#endif	 
-
-		//Even if MHD inversion fails, use updated value of radiation variable as gues
-		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+			#if(TWO_T)
+			, fel
+			#endif
+			);
+		#endif
+		if (!pflag) do_entropy = 1;
 	}
+	#endif	 
+
+	//Even if MHD inversion fails, use updated value of radiation variable as gues
+	pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+
+	//Set electron entropy variables after inversion; Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
+	#if(TWO_T)
+	if (pflag == 0) {
+		U_i[ENTRE] = pb[ENTRE] * U_i[RHO];
+		U_i[ENTRI] = pb[ENTRI] * U_i[RHO];
+	}
+	U_f[ENTRE] = U_i[ENTRE];
+	U_f[ENTRI] = U_i[ENTRI];
+	#endif
+
+	//Reset guess for p
+	//if (tau > 0.66) {
+	//	//PLOOP if(k!=B1 && k!=B2 && k!=B3) pb[k] = pb_old[k];
+	//}
 
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
@@ -725,16 +768,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	);
 	for (k = UU; k <= U3; k++)U_f[k] *= geom->g;
 	U_f[UU] += U_f[RHO];
-
-	//Set electron entropy variables after inversion; Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
-	#if(TWO_T)
-	if (pflag == 0) {
-		U_i[ENTRE] = pb[ENTRE] * U_i[RHO];
-		U_i[ENTRI] = pb[ENTRI] * U_i[RHO];
-	}
-	U_f[ENTRE] = U_i[ENTRE];
-	U_f[ENTRI] = U_i[ENTRI];
-	#endif
 
 	//Recompute entropy for consistency
 	#if(DOKTOT)
@@ -1164,11 +1197,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				flag_floor_kappa = 0;
+				flag_floor_kappa = 1;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				flag_floor_kappa = 0;
+				flag_floor_kappa = 1;
 			}
 			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
 			ui = pb_new[UU] - ue;
@@ -1322,31 +1355,41 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
 		error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
 
+
+		double bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-10) || (n_iter >= 20)) {
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-10 && bsq / pb_new[RHO] <= 1.0) || (n_iter >= 20) || (fabs(error_new[n_iter % 5 + 5]) <= 1.e-8 && bsq / pb_new[RHO]>1.0)) {
+			keep_iterating = 0;
+		}
+
+		//If residual drops below bound exit
+		double residual = 0.;
+		for (k = 0; k < NPR; k++)residual += fabs(pb_new[k] - pb_old[k]);
+		if (residual<10.e-15) {
 			keep_iterating = 0;
 		}
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			//keep_iterating = 0;
+			keep_iterating = 0;
 		}
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-			//keep_iterating = 0;
+			keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
-			//count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
+			count_increase++;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-			//count_increase2++;
-			//if (count_increase2 >= 5) keep_iterating = 0;
+			count_increase2++;
+			if (count_increase2 >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
@@ -6691,8 +6734,8 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 		pe *= factor;
 		pi *= factor;
 
-		if (pe > 0.99 * p[0]) pe = 0.99 * p[0];
-		if (pe < 0.01 * p[0]) pe = 0.01 * p[0];
+		if (pe > (1.0 - FLOOR_ENTROPY) * p[0]) pe = (1.0 - FLOOR_ENTROPY) * p[0];
+		if (pe < FLOOR_ENTROPY * p[0]) pe = FLOOR_ENTROPY * p[0];
 		pi = p[0] - pe;
 
 		//Set temperature
@@ -6770,8 +6813,8 @@ __device__ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
 	pe *= factor;
 	pi *= factor;
 
-	if (pe > 0.99 * p) pe = 0.99 * p;
-	if (pe < 0.01 * p) pe = 0.01 * p;
+	if (pe > (1.0 - FLOOR_ENTROPY) * p) pe = (1.0 - FLOOR_ENTROPY) * p;
+	if (pe < FLOOR_ENTROPY * p) pe = FLOOR_ENTROPY * p;
 	pi = p - pe;
 
 	//Set temperature
@@ -8813,43 +8856,42 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#else
 	kappa_m = 30.0 * 0.1 * Z_AB;
 	if (kappa_abs != NULL) {
-		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Te * Te);	
+		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);	
 		kappa_h = 33.0 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
 		kappa_chianti = 30.0 * pow(10., 33.) * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
 		kappa_bf = 30.0 * 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 		kappa_ff_abs = 30.0 * 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
-		kappa_sy_abs = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) * pow(Tr / Te, -3.) / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333)) / (ph[RHO] * MASS_DENSITY_SCALE);
-		//phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
+		kappa_sy_abs = (bsq / ph[RHO] < 1.0 && bsq / ph[RHO]>0.00001) * 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE);
 		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
-		//kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+		//phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
+		//kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr * ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
 		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 
 		#if(P_NUM)
-		kappa_abs_ph[0] = kappa_abs[0];		
+		if (kappa_abs_ph != NULL)kappa_abs_ph[0] = kappa_abs[0];
 		#endif
 	}
 	if (kappa_emmit != NULL) {
-		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Te * Te);
 		kappa_h = 33.0 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
 		kappa_chianti = 30.0 * pow(10., 33.) * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
 		kappa_bf = 30.0 * 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 		kappa_ff_emmit = 30.0 * 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-		kappa_sy_emmit = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE);
-		//phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
+		kappa_sy_emmit = (bsq / ph[RHO] < 1.0 && bsq / ph[RHO]>0.00001) * 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE);
 		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
-		//kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+		//phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
+		//kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te * ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
 		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 
 		#if(P_NUM)
-		kappa_emmit_ph[0] = kappa_emmit[0];
+		if (kappa_emmit_ph != NULL)kappa_emmit_ph[0] = kappa_emmit[0];
 		#endif	
 	}
 	#endif
