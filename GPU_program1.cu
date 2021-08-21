@@ -8191,8 +8191,10 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	#if(P_NUM)
 	double  Nhat;
 	Nhat = fabs(-ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad);
-	Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
-	exp_xi[0] = 1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat));
+	//Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
+	Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
+	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701);
+	exp_xi[0] = MY_MIN(1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat)), 0.99);
 	#else
 	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
@@ -8635,8 +8637,8 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 	//Calc free-free absorption opacity
 	if (Theta_e <= 1.0) {
-		Rei = 1 + 1.7 * pow(Theta_e, 1.34);
-		Ree = 1.76 * Theta_e * (1.0 + 1.1 * Theta_e + Theta_e * Theta_e - 1.06 * pow(Theta_e, 2.5));
+		Rei = 1. + 1.76 * pow(Theta_e, 1.34);
+		Ree = 1.7 * Theta_e * (1.0 + 1.1 * Theta_e + Theta_e * Theta_e - 1.06 * pow(Theta_e, 2.5));
 	}
 	else {
 		Rei = 1.4 * sqrt(Theta_e) * (log(1.12 * Theta_e + 0.48) + 1.5);
@@ -8655,7 +8657,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	scaling_factor = kappa_ff_abs / kappa_ff_emmit;
 
 	//Calculate synchrotron opacities
-	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 	
 	#if(P_NUM)
 		#if(0)
@@ -8795,11 +8797,15 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	//Calculate total absorption opacity
 	if (kappa_abs != NULL) {
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_HOPAL * scaling_factor) + 1.0 / (kappa_COPAL * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
+		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
+
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
 		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 	}
 	if (kappa_emmit != NULL) {
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_HOPAL) + 1.0 / kappa_COPAL + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
+		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
+
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
 		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 	}
@@ -8866,11 +8872,14 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		//Calculate total number absorption opacity
 		if (kappa_abs_ph != NULL) {
 			kappa_abs_ph[0] = 1. / (1. / (kappa_m + kappa_HOPAL * scaling_factor) + 1.0 / (kappa_COPAL * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
+			kappa_abs_ph[0] = 1. / (1. / (kappa_m + kappa_h * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
 			if (!isfinite(kappa_abs_ph[0])) kappa_abs_ph[0] = 0.0;
 			else kappa_abs_ph[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 		}
 		if (kappa_emmit_ph != NULL) {
 			kappa_emmit_ph[0] = 1. / (1. / (kappa_m + kappa_HOPAL) + 1.0 / kappa_COPAL + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
+			kappa_emmit_ph[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
+
 			if (!isfinite(kappa_emmit_ph[0])) kappa_emmit_ph[0] = 0.0;
 			else kappa_emmit_ph[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 		}
@@ -8980,7 +8989,7 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 	Theta_gamma = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 	zeta = Tr / Te;
-	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 	phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
 
 	//Calc free-free absorption opacity
