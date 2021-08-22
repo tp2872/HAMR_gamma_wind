@@ -1213,10 +1213,10 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = MY_MAX(quantg / gamg - ughat, 0.);
+	dis = quantg / gamg - ughat;
 
 	//Update internal energy of electrons
-	if (dis == 0.0) {
+	if (dis == -100.0) {
 		quante = game * u_e;
 		quanti = gami * u_i;
 		double factor = quantg / (quante + quanti);
@@ -1226,9 +1226,10 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	else {
 		u_e += delta * dis;
 		#if(VARGAMMA)
-		double C;
+		double C, Theta;
 		C = u_e / rho * MU_E * MASS_RATIO;
-		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+		game = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
@@ -1245,12 +1246,10 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = MU_E * MASS_RATIO / rho;
-	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	Te = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0) / (MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	C = MU_I / rho;
-	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
-	Te = pe / rho;
-	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	Ti = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0) / MU_I;
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
@@ -1321,10 +1320,10 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = MY_MAX(quantg / gamg - ughat, 0.);
+	dis = quantg / gamg - ughat;
 
 	//Update internal energy of electrons
-	if (dis == 0.0) {
+	if (dis == -100.0) {
 		quante = game * u_e;
 		quanti = gami * u_i;
 		double factor = quantg / (quante + quanti);
@@ -1334,9 +1333,10 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	else {
 		u_e += delta * dis;
 		#if(VARGAMMA)
-		double C;
+		double C, Theta;
 		C = u_e / rho * MU_E * MASS_RATIO;
-		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+		game = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
@@ -1353,12 +1353,10 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = MU_E * MASS_RATIO / rho;
-	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	Te = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0) / (MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	C = MU_I / rho;
-	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
-	Te = pe / rho;
-	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	Ti = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0) / MU_I;
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 		#if(FULL_ENTROPY)
 		S[0] = log(pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);

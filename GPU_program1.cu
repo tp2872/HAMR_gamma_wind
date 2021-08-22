@@ -986,14 +986,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 					//Set electron entropy
 					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-					Theta = (gam - 1.0) * C;
+					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
-					gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-					Theta = (gam - 1.0) * C;
+					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
 				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -1228,14 +1226,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 			//Set electron entropy
 			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * C;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * C;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
 		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
@@ -3838,9 +3834,13 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	else {
 		u_e += delta * dis;
 		#if(VARGAMMA)
-		double C;
+		double C, Theta;
 		C = u_e / rho * MU_E * MASS_RATIO;
-		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		//Theta=(gam-1)*ue/rho*MU_E*MASS_RATIO
+		//Theta=((10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta)-1)*ue/rho*MU_E*MASS_RATIO
+		//Theta=((10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta)-1)*C --> Solved in Wolfram Alpha
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+		game = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
@@ -3857,15 +3857,14 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//Use analytical inversions
 	double C = MU_E * MASS_RATIO / rho;
-	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	Te = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0) / (MU_E*MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	C = MU_I / rho;
-	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
-	Te = pe / rho;
-	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	Ti = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0) / MU_I;
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
+	//Calculate gas eos gammma
 	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	#else
@@ -3946,9 +3945,10 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	else {
 		u_e += delta * dis;
 		#if(VARGAMMA)
-		double C;
+		double C, Theta;
 		C = u_e / rho * MU_E * MASS_RATIO;
-		game = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+		game = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		#endif
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
 	}
@@ -3960,6 +3960,8 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
+
+	//Set entropy
 		#if(FULL_ENTROPY)
 		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game));
 		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami));
@@ -3971,18 +3973,18 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	Ti = pi / rho;
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
 	//quant*C=(10.0 + 20.0 * x * C) / (6.0 + 15.0 * x * C)/((10.0 + 20.0 * x * C) / (6.0 + 15.0 * x * C)-1)*x*C
+	//quant*C=(10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta)/((10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta)-1)*Theta --> Solved this analytically in Wolfram
 	//C= (MU_E * MASS_RATIO) / RHO
 	//x=pe
-	//Use analytical inversions
+	//Theta=x*C
 	double C = MU_E * MASS_RATIO / rho;
-	pe = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0);
+	Te = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quante * quante + 44.0 * C * quante + 20.0) + 5.0 * C * quante - 10.0) / (MU_E * MASS_RATIO);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	C = MU_I / rho;
-	pi = 1.0 / (40.0 * C) * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0);
-
-	Te = pe / rho;
-	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	Ti = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0) / MU_I;
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+
+	//Set entropy
 		#if(FULL_ENTROPY)
 		S[0] = log(pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
 		S[1] = log(pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho);
@@ -7602,11 +7604,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
-		double Theta, u, gam, C;
+		double Theta, u, C;
 		u = 0.5 * pf[UU];
 		C = u / pf[RHO] * MU_E * MASS_RATIO;
-		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-		Theta = (gam - 1.0) * C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)
 			pf[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
 			#else
@@ -7614,8 +7615,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#endif
 
 		C = u / pf[RHO] * MU_I;
-		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-		Theta = (gam - 1.0) * C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)
 			pf[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
 			#else
@@ -8006,11 +8006,10 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &dK_dS);
 		#elif(TWO_T)
 			#if(VARGAMMA || FIXEDGAMMA)
-			double Theta, gam, C;
+			double Theta, C;
 			//For variable entropy
 			C = ph[UU] / ph[RHO] * MU_G;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
+			Theta= (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 				#if(FULL_ENTROPY)
 				dK_dS = (1.0 / Theta) * (MU_G);
 				#else

@@ -249,11 +249,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
-		double Theta, u, gam, C;
+		double Theta, u, C;
 		u = 0.5 * pv[UU];
 		C = u / pv[RHO] * MU_E * MASS_RATIO;
-		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-		Theta = (gam - 1.0) * C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)
 			pv[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
 			#else
@@ -262,8 +261,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		u = 0.5 * pv[UU];
 		C = u / pv[RHO] * MU_I;
-		gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-		Theta = (gam - 1.0) * C;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)
 			pv[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
 			#else
