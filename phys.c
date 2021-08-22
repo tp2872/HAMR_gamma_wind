@@ -369,11 +369,10 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &dK_dS);
 		#elif(TWO_T)
 			#if(VARGAMMA || FIXEDGAMMA)
-			double Theta, gam, entr, C;
+			double Theta, entr, C;
 			//For variable entropy
 			C = ph[UU] / ph[RHO] * MU_G;
-			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
-			Theta = (gam - 1.0) * ph[UU] / ph[RHO] * MU_G;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 				#if(FULL_ENTROPY)
 				dK_dS = (1.0 / Theta) * (MU_G);
 				#else
@@ -500,7 +499,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 
 		//Compton scattering term is added
-		factor = BOLTZ_CGS / (MMW * ME_CGS * C_CGS * C_CGS);
+		factor = BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 		G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
 		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif

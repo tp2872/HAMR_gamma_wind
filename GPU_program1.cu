@@ -8111,39 +8111,6 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		, exp_xi
 		#endif
 	);
-	/*kappa_abs = calc_kappa_abs(ph, bsq, Tr
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
-		#if(TWO_T)
-		, gamma_g
-		#endif
-		#if(P_NUM)
-		, exp_xi
-		#endif
-	);
-	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
-		#if(DOHELM) 
-		, gpu_eos_table
-		#endif
-		#if(TWO_T)
-		, gamma_g
-		#endif
-		#if(COOL_STOP)
-		,  r
-		#endif
-		#if(P_NUM)
-		, exp_xi
-		#endif
-	);
-	kappa_es = calc_kappa_es(ph
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
-		#if(TWO_T)
-		, gamma_g
-		#endif
-	);*/
 
 	//Calculate emmission rate
 	lambda = kappa_emmit * (ARAD / ENERGY_DENSITY_SCALE) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
@@ -8166,7 +8133,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Nhat + (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 
 		//Compton scattering term is added
-		factor = BOLTZ_CGS / (MMW * ME_CGS * C_CGS* C_CGS); 
+		factor = BOLTZ_CGS / (ME_CGS * C_CGS* C_CGS); 
 		G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
 		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif

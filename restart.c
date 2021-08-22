@@ -203,14 +203,16 @@ void rdump_block_read(FILE *fp, int n)
 		#endif
 		#if(P_NUM)
 		if (!read_Pnum) {
-			double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM];
+			double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM], u_dot_urad, urad_dot_urad, Ehat;
 			if (!read_geom)get_geometry(n, i, j, z, CENT, &geom);
 			read_geom = 1;
 			ucon_calc(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
-			ucon_calc_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
+			ucon_calc_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_rad);
 			lower(ucon_rad, &geom, ucov_rad);
-			T_new = calc_Tr(p[nl[n]][index_3D(n, i, j, z)], ucon, ucon_rad, ucov_rad, &exp_xi);
-			T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+			u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+			urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+			Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * (urad_dot_urad));
+			T_new = pow(Ehat / ARAD, 0.25);
 			p[nl[n]][index_3D(n, i, j, z)][PHOTON] = p[nl[n]][index_3D(n, i, j, z)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 		}
 		else {
