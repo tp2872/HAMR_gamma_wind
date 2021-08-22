@@ -8159,7 +8159,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	Nhat = fabs(-ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad);
 	Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
-	//Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701);
+	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701);
 	exp_xi[0] = MY_MIN(1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat)), 0.99);
 	#else
 	Tr = pow(Ehat / ARAD, 0.25);
@@ -8783,7 +8783,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		b = -0.412 * pow(exp_xi, 59.1) + 0.000894 * pow(one_exp_xi, 10.2) + 3.15;
 		c = 5.27 * pow(exp_xi, 69.2) + 2.39 * pow(one_exp_xi, 0.552);
 		kappa_ff_abs = 1.2 * (10.e24) * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * a * pow(zeta, -b) * log(1 + c * zeta);
-		kappa_ff_emmit = 1.2 * (10.e24) * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 20.0 * log(1.0 + 5.0);
+		kappa_ff_emmit = 1.2 * (10.e24) * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 25.0 * log(1.0 + 5.27); //Watch out with coefficients
 		scaling_factor = kappa_ff_abs / kappa_ff_emmit;
 
 		//Calculate synchrotron opacities
@@ -8810,7 +8810,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		if (kappa_emmit_ph != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
 			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
-			kappa_sy_emmit *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
+			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
 		}
 
 		//Calculate double compton number absorption opacity
