@@ -8636,31 +8636,31 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			e = 0.415 * pow(exp_xi, 0.399) + 1.04 * pow(one_exp_xi, 0.252) + 2.68;
 
 			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-			kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 
 		if (kappa_emmit != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		#else
 		//XRB
 		if (kappa_abs != NULL){
-			a = -2.31 * (10.0e-8) * pow(exp_xi, 34.) - 8.24 * (10.e-9) * pow(one_exp_xi, 2.42) + 1.27;
+			a = -2.31 * (e-8) * pow(exp_xi, 34.) - 8.24 * (10.e-9) * pow(one_exp_xi, 2.42) + 1.27;
 			b = -0.0261 * pow(exp_xi, 738.0) - 0.00475 * pow(one_exp_xi, 1.55) + 1.06;
 			c = 0.000179 * pow(exp_xi, 432.0) + 0.0000411 * pow(one_exp_xi, 0.372) + 0.000584;
 			d = -17.7 * pow(exp_xi, 49.4) - 3.33 * pow(one_exp_xi, 2.76) + 18.3;
 			e = 0.427 * pow(exp_xi, 0.654) + 1.23 * pow(one_exp_xi, 0.214) + 2.49;
 
 			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-			kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		#endif
@@ -8675,12 +8675,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		if (kappa_abs != NULL) {
 			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-			kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		#else
@@ -8693,12 +8693,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		if (kappa_abs != NULL) {
 			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-			kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		#endif
@@ -8709,12 +8709,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#if(1)
 		#if(P_NUM)
 		//Absorption opacity
-		a = 6.7 * pow(exp_xi, 0.942) + 4.16 * pow(one_exp_xi, 1.69) + 3.1 * (10.0e-8);
+		a = 6.7 * pow(exp_xi, 0.942) + 4.16 * pow(one_exp_xi, 1.69) + 3.1 * (e-8);
 		b = -0.0021 * pow(exp_xi, 0.0217) - 0.0334 * pow(one_exp_xi, 0.469) + 0.042;
 		c = -0.18 * pow(exp_xi, 33.0) + 0.201 * pow(one_exp_xi, 0.258) + 3.8;
 		d = 0.0169 * pow(exp_xi, 35.4) - 0.0626 * pow(one_exp_xi, 0.35) + 0.118;
 		p_theta = pow(1.0 + Theta_e, -3.0);
-		kappa_dc_abs = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_abs = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc_abs *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 	
 		//Emmission opacity
@@ -8723,17 +8723,17 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		c = -0.16 * pow(exp_xi, 15.4) + 0.184 * pow(one_exp_xi, 0.366) + 3.78;
 		d = 0.015 * pow(exp_xi, 26.3) - 0.0256 * pow(one_exp_xi, 0.398) + 0.119;
 		p_theta = pow(1.0 + Theta_gamma, -3.0);
-		kappa_dc_emmit = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_emmit = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc_emmit *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 		#else
 		//Absorption opacity
 		p_theta = pow(1.0 + Theta_e, -3.0);
-		kappa_dc_abs = 7.36 * (10.0e-46) * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_abs = 7.36 * (e-46) * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc_abs *= 1.0 / ((1.0 / 6.83 + 1.0 / (0.0374 * pow(Theta_gamma, -3.63))) + 1.0 / (0.134 * pow(Theta_gamma, -3.63 / 3.0)));
 
 		//Emmission opacity
 		p_theta = pow(1.0 + Theta_gamma, -3.0);
-		kappa_dc_emmit = 7.36 * (10.0e-46) * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_emmit = 7.36 * (e-46) * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc_emmit *= 1.0 / ((1.0 / 6.83 + 1.0 / (0.0374 * pow(Theta_gamma, -3.63))) + 1.0 / (0.134 * pow(Theta_gamma, -3.63 / 3.0)));
 		#endif
 	#endif
@@ -8755,7 +8755,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	kappa_bf = 1.2 * (10.e24) * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5);
 
 	//Calculate COPAL terms conform Mckinney+2017
-	kappa_COPAL = 3.0 * (10.0e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
+	kappa_COPAL = 3.0 * (e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
 
 	//Calculate HOPAL terms conform Mckinney+2017
 	kappa_HOPAL = 10.e4 * pow(Te, -1.2) * kappa_h;
@@ -8792,7 +8792,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			a = 10.8 * pow(exp_xi, 172.0) - 20.4 * pow(one_exp_xi, 0.699) + 29.2;
 			b = -0.18 * pow(exp_xi, 31.9) + 0.425 * pow(one_exp_xi, 0.179) + 2.76;
 			c = 0.0207 * pow(exp_xi, 9.69) + 0.0506 * pow(one_exp_xi, 0.804) + 0.0314;
-			d = 1.51 * (10.0e-6) * pow(exp_xi, 2830.0) - 1.4 * (10.0e-5) * pow(one_exp_xii, 3.06*(10.0e-12)) + 1.4*(10.0e-5);
+			d = 1.51 * (e-6) * pow(exp_xi, 2830.0) - 1.4 * (e-5) * pow(one_exp_xii, 3.06*(e-12)) + 1.4*(e-5);
 			e = 0.1 * pow(exp_xi, 1.95) + 1.57 * pow(one_exp_xi, 0.124);
 			#else
 			//XRB
@@ -8804,13 +8804,14 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			#endif
 		if (kappa_abs_ph != NULL) {
 			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-			kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit_ph != NULL) {
 			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-			kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
-			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
+			kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			//kappa_sy_emmit *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e-6 * pow(phi, -0.1))); //AGN
+			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0))); //XRB
 		}
 
 		//Calculate double compton number absorption opacity
@@ -8821,7 +8822,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		b = 0.196 * pow(exp_xi, 18.1) - 1.12 * pow(one_exp_xi, 0.134) + 1.16;
 		c = -0.8 * pow(exp_xi, 21.6) + 0.0427 * pow(one_exp_xi, 182.0) + 3.93;
 		d = 1.87 * pow(exp_xi, 309.0) - 2.72 * pow(one_exp_xi, 0.106) + 2.86;
-		kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 
 		//Calculate double compton number emmission opacity
@@ -8830,7 +8831,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		b = 1.31 * pow(exp_xi, 1.12) + 1.05 * pow(one_exp_xi, 0.249) + 4.8*10.e-11;
 		c = -0.418 * pow(exp_xi, 14.8) + 0.442 * pow(one_exp_xi, 0.361) + 3.44;
 		d = 1.37 * pow(exp_xi, 31.3) - 1.38 * pow(one_exp_xi, 0.316) + 3.38;
-		kappa_dc_emmit = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_emmit = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
 		kappa_dc_emmit *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 		#endif
 		*/
@@ -8862,7 +8863,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 		//phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-		//kappa_sy_abs = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr * ph[RHO] * MASS_DENSITY_SCALE);
+		//kappa_sy_abs = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr * ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
@@ -8881,7 +8882,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 		//phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-		//kappa_sy_emmit = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te * ph[RHO] * MASS_DENSITY_SCALE);
+		//kappa_sy_emmit = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te * ph[RHO] * MASS_DENSITY_SCALE);
 		//kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
@@ -8991,7 +8992,7 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	//e = 0.415 * pow(exp_xi, 0.399) + 1.04 * pow(one_exp_xi, 0.252) + 2.68;
 
 	//XRB
-	a = -2.31*(10.0e-8) * pow(exp_xi, 34.) - 8.24*(10.e-9) * pow(one_exp_xi, 2.42) + 1.27;
+	a = -2.31*(e-8) * pow(exp_xi, 34.) - 8.24*(10.e-9) * pow(one_exp_xi, 2.42) + 1.27;
 	b = -0.0261 * pow(exp_xi, 738.0) - 0.00475 * pow(one_exp_xi, 1.55) + 1.06;
 	c = 0.000179 * pow(exp_xi, 432.0) + 0.0000411 * pow(one_exp_xi, 0.372) + 0.000584;
 	d = -17.7 * pow(exp_xi, 49.4) - 3.33 * pow(one_exp_xi, 2.76) + 18.3;
@@ -9011,23 +9012,23 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	d = 0.616;
 	e = 2.91;
 	#endif
-	kappa_sy = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr);
+	kappa_sy = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr);
 	kappa_sy *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 
 	//Calculate double compton opacity
 	p_theta = pow(1.0 + Theta_e, -3.0);
 	#if(P_NUM)
-	a = 6.7 * pow(exp_xi, 0.942) + 4.16 * pow(one_exp_xi, 1.69)  + 3.1 * (10.0e-8);
+	a = 6.7 * pow(exp_xi, 0.942) + 4.16 * pow(one_exp_xi, 1.69)  + 3.1 * (e-8);
 	b = -0.0021 * pow(exp_xi, 0.0217) + 0.0334 * pow(one_exp_xi, 0.469) + 0.042;
 	c = -0.18 * pow(exp_xi, 33.0) + 0.201 * pow(one_exp_xi, 0.258) + 3.8;
 	d = 0.0169 * pow(exp_xi, 35.4) - 0.0626 * pow(one_exp_xi, 0.35) + 0.118;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta;
 	#else
 	a = 6.83;
 	b = 0.0374;
 	c = 3.63;
 	d = 0.134;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * 1.0 * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * 1.0 * p_theta;
 	#endif
 	kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 
@@ -9047,7 +9048,7 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	kappa_bf = 1.2 * (10.e24) * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * scaling_factor;
 
 	//Calculate COPAL terms conform Mckinney+2017
-	kappa_COPAL = 3.0 * (10.0e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
+	kappa_COPAL = 3.0 * (e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
 
 	//Calculate HOPAL terms conform Mckinney+2017
 	kappa_HOPAL = 10.e4 * pow(Te, -1.2) * kappa_h;
@@ -9133,7 +9134,7 @@ __device__ double calc_kappa_abs_ph(double* ph, double bsq, double Tr
 	//a = 10.8 * pow(exp_xi, 172.0) - 20.4 * pow(one_exp_xi, 0.699) + 29.2;
 	//b = -0.18 * pow(exp_xi, 31.9) + 0.425 * pow(one_exp_xi, 0.179) + 2.76;
 	//c = 0.0207 * pow(exp_xi, 9.69) + 0.0506 * pow(one_exp_xi, 0.804) + 0.0314;
-	//d = 1.51 * (10.0e-6) * pow(exp_xi, 2830.0) - 1.4 * (10.0e-5) * pow(one_exp_xii, 3.06*(10.0e-12)) + 1.4*(10.0e-5);
+	//d = 1.51 * (e-6) * pow(exp_xi, 2830.0) - 1.4 * (e-5) * pow(one_exp_xii, 3.06*(e-12)) + 1.4*(e-5);
 	//e = 0.1 * pow(exp_xi, 1.95) + 1.57 * pow(one_exp_xi, 0.124);
 
 	//XRB
@@ -9147,7 +9148,7 @@ __device__ double calc_kappa_abs_ph(double* ph, double bsq, double Tr
 	//a = 40.0;
 	//b = 2.58;
 	//c = 0.0522;
-	//d = 1.65 * (10.0e6);
+	//d = 1.65 * (e6);
 	//e = 0.100;
 
 	//XRB
@@ -9157,7 +9158,7 @@ __device__ double calc_kappa_abs_ph(double* ph, double bsq, double Tr
 	d = 0.123;
 	e = 2.00;
 	#endif
-	kappa_sy = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr);
+	kappa_sy = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Tr);
 	kappa_sy *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 
 	//Calculate double compton opacity
@@ -9167,13 +9168,13 @@ __device__ double calc_kappa_abs_ph(double* ph, double bsq, double Tr
 	b = 0.196 * pow(exp_xi, 18.1) - 1.12 * pow(one_exp_xi, 0.134) + 1.16;
 	c = -0.8 * pow(exp_xi, 21.6) + 0.0427 * pow(one_exp_xi, 182.0) + 3.93;
 	d = 1.87 * pow(exp_xi, 309.0) - 2.72 * pow(one_exp_xi, 0.106) + 2.86;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta;
 	#else
 	a = 116.0;
 	b = 1.34;
 	c = 3.03;
 	d = 4.72;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * 1.0 * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * 1.0 * p_theta;
 	#endif
 	kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 
@@ -9272,7 +9273,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	c = 0.000763;
 	d = 0.616;
 	e = 2.91;
-	kappa_sy = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te);
+	kappa_sy = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te);
 	kappa_sy *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 
 	//Calculate double compton opacity
@@ -9282,13 +9283,13 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	b = 0.0282 * pow(exp_xi, 1.56) + 0.0142 * pow(one_exp_xi, 0.361) + 0.0875;
 	c = -0.16 * pow(exp_xi, 15.4) + 0.184 * pow(one_exp_xi, 0.366) + 3.78;
 	d = 0.015 * pow(exp_xi, 26.3) - 0.0256 * pow(one_exp_xi, 0.398) + 0.119;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta;
 	#else
 	a = 6.83;
 	b = 0.0374;
 	c = 3.63;
 	d = 0.134;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * p_theta;
 	#endif
 	kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 
@@ -9308,7 +9309,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	kappa_bf = 1.2 * (10.e24) * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5);
 
 	//Calculate COPAL terms conform Mckinney+2017
-	kappa_COPAL = 3.0 * (10.0e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
+	kappa_COPAL = 3.0 * (e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
 
 	//Calculate HOPAL terms conform Mckinney+2017
 	kappa_HOPAL = 10.e4 * pow(Te, -1.2) * kappa_h;
@@ -9402,7 +9403,7 @@ __device__ double calc_kappa_emmit_ph(double* ph, double bsq, double Tr
 	/*a = 40.0;
 	b = 2.58;
 	c = 0.0522;
-	d = 1.65*(10.0e6);
+	d = 1.65*(e6);
 	e = 0.100;*/
 
 	//XRB
@@ -9411,23 +9412,23 @@ __device__ double calc_kappa_emmit_ph(double* ph, double bsq, double Tr
 	c = 0.921;
 	d = 0.123;
 	e = 2.00;
-	kappa_sy = 5.85374 * (10.0e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te);
+	kappa_sy = 5.85374 * (e-14) * ne * phi / (Theta_e * Theta_e * Theta_e * Te);
 	kappa_sy *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 
 	//Calculate double compton opacity
 	p_theta = pow(1.0 + Theta_e, -3.0);
 	#if(P_NUM)
 	a = -81.7 * pow(exp_xi, 1.01) - 94.8 * pow(one_exp_xi, 0.925) + 198.0;
-	b = 1.31 * pow(exp_xi, 1.12) + 1.05 * pow(one_exp_xi, 0.249) + 4.8 * (10.0e-11);
+	b = 1.31 * pow(exp_xi, 1.12) + 1.05 * pow(one_exp_xi, 0.249) + 4.8 * (e-11);
 	c = -0.418 * pow(exp_xi, 14.8) + 0.442 * pow(one_exp_xi, 0.361) + 3.44;
 	d = 1.37 * pow(exp_xi, 31.3) - 1.38 * pow(one_exp_xi, 0.316) + 3.38;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * exp_xi * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * exp_xi * p_theta;
 	#else
 	a = 116.0;
 	b = 1.34;
 	c = 3.03;
 	d = 4.72;
-	kappa_dc = 7.36 * (10.0e-46) * ne * Tr * Tr * p_theta;
+	kappa_dc = 7.36 * (e-46) * ne * Tr * Tr * p_theta;
 	#endif
 	kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 
@@ -9447,7 +9448,7 @@ __device__ double calc_kappa_emmit_ph(double* ph, double bsq, double Tr
 	kappa_bf = 1.2 * (10.e24) * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5);
 
 	//Calculate COPAL terms conform Mckinney+2017
-	kappa_COPAL = 3.0 * (10.0e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
+	kappa_COPAL = 3.0 * (e-13) * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
 
 	//Calculate HOPAL terms conform Mckinney+2017
 	kappa_HOPAL = (10.e4) * pow(Te, -1.2) * kappa_h;
