@@ -989,7 +989,7 @@ double calc_entropy(double* pr
 	#endif
 );
 void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad);
-double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]
+double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov[NDIM]
 	#if(P_NUM)
 	, double *exp_xi
 	#endif
