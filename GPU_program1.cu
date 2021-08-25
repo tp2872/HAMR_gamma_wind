@@ -1366,23 +1366,23 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			//keep_iterating = 0;
 		//}
 
-		//If error increasing stop iterating
+		//If total error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
 			keep_iterating = 0;
 		}
 
-		//If error increasing stop iterating
+		//If iterated error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
 			keep_iterating = 0;
 		}
 
-		//If error increased more than 4 times stop iterating
+		//If total error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
 			if (count_increase >= 5) keep_iterating = 0;
 		}
 
-		//If error increased more than 4 times stop iterating
+		//If iterated error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 			count_increase2++;
 			if (count_increase2 >= 5) keep_iterating = 0;
@@ -8890,11 +8890,6 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 		kappa_ff_abs = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4e-10 * Te);
 		kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE); /// (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));;
-		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
-		//phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
-		//kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr * ph[RHO] * MASS_DENSITY_SCALE);
-		//kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
 		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
@@ -8904,6 +8899,8 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 			kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
 			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
+			if (!isfinite(kappa_abs_ph[0])) kappa_abs_ph[0] = 0.0;
+
 		}
 		#endif
 	}
@@ -8914,11 +8911,6 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 		kappa_ff_emmit = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4e-10 * Te);
 		kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE);// / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));
-		//Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-		//nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
-		//phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
-		//kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te * ph[RHO] * MASS_DENSITY_SCALE);
-		//kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
 		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
@@ -8928,6 +8920,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 			kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
 			kappa_emmit_ph[0] += (kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
+			if (!isfinite(kappa_emmit_ph[0])) kappa_emmit_ph[0] = 0.0;
 		}
 		#endif	
 	}
