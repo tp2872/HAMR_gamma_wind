@@ -3096,7 +3096,7 @@ double calc_refcrit(int n){
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 
-			if (r > 5.0 && t>1000.0) {
+			if (r > 5.0 && t>500.0) {
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);

@@ -25,10 +25,10 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (0)
+#define REFINE_THIN (1)
 
 /*Gibwa's refinement criterion*/
-#define REFINE_GIBWA (1)
+#define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
@@ -117,7 +117,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (16.0)
+#define GPU_MEM (80.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -135,17 +135,17 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
+#define NB_1 10
+#define NB_2 12
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256 
-#define BS_2 256
+#define BS_1 38
+#define BS_2 42
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 3
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -325,7 +325,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)

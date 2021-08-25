@@ -5417,6 +5417,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		#endif
 	}
 
+	#if(P_NUM)
+	if (prim[4] < 0.0) {
+		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		returnval = 1;
+	}
+	#endif
+
 	return(returnval);
 
 
@@ -8133,12 +8141,12 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		#if(OP_EXTRA)
 		source_photon[0] = -kappa_abs_ph / MASS_DENSITY_SCALE * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 		#else
-		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Nhat + (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
+		source_photon[0] = -kappa_abs_ph / MASS_DENSITY_SCALE * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 		#endif
 
 		//Compton scattering term is added
 		factor = BOLTZ_CGS / (ME_CGS * C_CGS* C_CGS); 
-		G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
+		G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4.0 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
 		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif
 
@@ -8164,7 +8172,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
 	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701);
-	exp_xi[0] = MY_MIN(1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat)), 0.99);
+	exp_xi[0] = MY_MIN(1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat)), 1.0);
 	#else
 	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
@@ -8459,7 +8467,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	double Acon_0, Acon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	#if(P_NUM)
-	double exp_xi;
+	double exp_xi, kappa_abs_ph;
 	#endif
 
 	if (dir == 1) {
@@ -8528,12 +8536,16 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		, Tr //Fake value for r; We do not need to know kappa_emmit
 		#endif
 		#if(P_NUM)
-		, NULL
+		, &kappa_abs_ph
 		, NULL
 		, exp_xi
 		#endif
 	);
+	#if(P_NUM)
+	kappa_tot = MY_MIN(kappa_abs, kappa_abs_ph) + kappa_es;
+	#else
 	kappa_tot = kappa_abs + kappa_es;
+	#endif
 	tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
 	crad2 = 16. / (9. * tau * tau);
 
@@ -8889,10 +8901,9 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		#if(P_NUM)
 		if (kappa_abs_ph != NULL) {
-			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs;
+			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 			kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
-			kappa_abs_ph[0] += kappa_sy_abs;
-			kappa_abs_ph[0] = kappa_abs_ph[0];
+			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
 		}
 		#endif
 	}
@@ -8914,10 +8925,9 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		#if(P_NUM)
 		if (kappa_emmit_ph != NULL) {
-			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit;
+			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 			kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
-			kappa_emmit_ph[0] += kappa_sy_emmit;
-			kappa_emmit_ph[0] = kappa_emmit_ph[0];
+			kappa_emmit_ph[0] += (kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
 		}
 		#endif	
 	}
