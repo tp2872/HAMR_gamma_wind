@@ -322,7 +322,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enable advenced opacities*/
-#define OP_EXTRA (1)
+#define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
 #define P_NUM (1)
