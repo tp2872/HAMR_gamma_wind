@@ -1269,7 +1269,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//Get new radiation primitives using TYPE2 limiter
 		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
-		if (flag_rad) for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
+		if (flag_rad) {
+			for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
+			#if(P_NUM)
+			U_prev[PHOTON] = U_new[PHOTON];
+			#endif
+		}
 
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
@@ -1406,17 +1411,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_f[k] = U_new[k];
 				dU[k] = dU_new[k];
 			}
-			if (flag_rad && keep_iterating == 0) {
+			if (flag_rad) {
 				Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb, geom, &q_rad);
-				mhd_calc_rad(pb, 0, &q_rad, &U_new[UU_RAD]);
-				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+				mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
+				for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
 
 				//Recompute photon number
 				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				U_f[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 				#endif
 			}
 		}
@@ -5323,7 +5328,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	#if(P_NUM)
 	prim[4] = U[4] / sqrt(gammasq);
 	#endif
-
+	
 	/*if (0) {
 		prim[0] = 1.e-30;
 		prim[1] = 0.;
@@ -9932,9 +9937,14 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
 		for (k = 0; k < NPR; k++) {
-			if (k == UU_RAD || k == U1_RAD || k == U2_RAD || k == U3_RAD || k == PHOTON) {
+			if (k == UU_RAD || k == U1_RAD || k == U2_RAD || k == U3_RAD) {
 				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
 			}
+			#if(P_NUM)
+			else if (k == PHOTON) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
+			}
+			#endif
 			else {
 				#if(HLLF)
 				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
