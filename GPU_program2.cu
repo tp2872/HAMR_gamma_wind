@@ -1534,25 +1534,42 @@ __global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_FLUXES)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = 0.25*factor*(
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr] +
 						pv[k*(ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (pv[k * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[k * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] +
+						pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr + ref_3]);
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					#endif
 				}
 			}
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += 0.25*factor*(
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr] +
 						pv[k*(ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (pv[k * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[k * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] +
+						pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr + ref_3]);
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					#endif
 				}
 			}
 		}
@@ -1568,25 +1585,42 @@ __global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_FLUXES)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k*(ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
 						+ pv[k*(ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (pv[k * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[k * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr]
+						+ pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3]);
+					pv[k * (ksize)+(icurr) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(icurr) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					#endif
 				}
 			}
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k*(ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
 						+ pv[k*(ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (pv[k * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[k * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] + pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr]
+						+ pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3]);
+					pv[k * (ksize)+(icurr) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(icurr) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr + ref_3] = avg;
+					#endif
 				}
 			}
 		}
@@ -1602,25 +1636,44 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + ref_2))) / ((j2 - j1) / (1 + ref_2))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_FLUXES)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] = 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
 						+ pv[k*(ksize)+(icurr + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (
+						pv[k * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[k * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] + pv[k * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + z + N3G]
+						+ pv[k * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+					pv[k * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					#endif
 				}
 			}
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] += 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
 						+ pv[k*(ksize)+(icurr + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G]);
+					#if(AVG_FLUXES)
+					avg = 0.25 * (
+						pv[k * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[k * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] + pv[k * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + z + N3G]
+						+ pv[k * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+					pv[k * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					pv[k * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+					#endif
 				}
 			}
 		}
@@ -1738,6 +1791,9 @@ __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_EMF)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1745,25 +1801,63 @@ __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 			for (i = i1; i < i2; i++){
 				send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = factor*0.5*(
 					pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr]);
+				#if(AVG_EMF)
+				pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				#endif
 			}
 			//k=3
 			for (i = i1; i < i2; i++){
 				send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = factor*0.5*(
 					pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + ref_3]);
-			}
+				#if(AVG_EMF)
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[3 * (ksize)+(i + N1G) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				#endif
+			}		
 		}
-		else{
+		else if(first_timestep==0){
 			//k=2
 			for (i = i1; i < i2; i++){
 				send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += factor*0.5*(
 					pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr]);
+				#if(AVG_EMF)
+				pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				#endif
 			}
 			//k=3
 			for (i = i1; i < i2; i++){
 				send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += factor*0.5*(
 					pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+				#if(AVG_EMF)
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[3 * (ksize)+(i + N1G) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				#endif
 			}
 		}
+		#if(AVG_EMF)
+		else {
+			//k=2
+			for (i = i1; i < i2; i++) {
+				avg = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				avg = 0.5 * (pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[2 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+				pv[2 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+			}
+			//k=3
+			for (i = i1; i < i2; i++) {
+				avg = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[3 * (ksize)+(i + N1G) * isize + jcurr * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+				avg = 0.5 * (pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[3 * (ksize)+(i + N1G) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+			}
+		}
+		#endif
 	}
 }
 
@@ -1776,6 +1870,9 @@ __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_EMF)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1783,25 +1880,62 @@ __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 			for (j = j1; j < j2; j++){
 				send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = factor*0.5*(
 					pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]);
+				#if(AVG_EMF)
+				pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				#endif
 			}
 			//k=3;
 			for (j = j1; j < j2; j++){
 				send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] = factor*0.5*(
 					pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+				#if(AVG_EMF)
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = 0.5 * (pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr + 2 * ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[3 * (ksize)+(icurr + 2 * ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				#endif
 			}
 		}
-		else{
+		else if (first_timestep == 0) {
 			//k=1;
 			for (j = j1; j < j2; j++){
 				send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += factor*0.5*(
 					pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]);
+				#if(AVG_EMF)
+				pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + 2 * ref_3)]);
+				#endif
 			}
 			//k=3;
 			for (j = j1; j < j2; j++){
 				send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] += factor*0.5*(
 					pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + ref_3]);
+				#if(AVG_EMF)
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = 0.5 * (pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr + 2 * ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = 0.5 * (pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[3 * (ksize)+(icurr + 2 * ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				#endif
 			}
 		}
+		#if(AVG_EMF)
+		else {
+			for (j = j1; j < j2; j++) {
+				avg = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr]);
+				pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				avg = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] + pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[1 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+			}
+			//k=3;
+			for (j = j1; j < j2; j++) {
+				avg = 0.5 * (pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[3 * (ksize)+(icurr)*isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+				avg = 0.5 * (pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = avg;
+				pv[3 * (ksize)+(icurr + ref_1) * isize + (j + N2G) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+			}
+		}
+		#endif
 	}
 }
 
@@ -1814,6 +1948,9 @@ __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + ref_2))) / ((j2 - j1) / (1 + ref_2))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(AVG_EMF)
+	double avg;
+	#endif
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1821,25 +1958,63 @@ __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 			for (z = z1; z < z2; z++){
 				send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] = factor*0.5*(
 					pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G]);
+				#if(AVG_EMF)
+				pv[1 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr)*isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				#endif
 			}
 			//k=2;
 			for (z = z1; z < z2; z++){
 				send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] = factor*0.5*(
 					pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G]);
+				#if(AVG_EMF)
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[2 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr + 2 * ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr + 2 * ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				#endif
 			}
 		}
-		else{
+		else if (first_timestep == 0) {
 			//k=1;
 			for (z = z1; z < z2; z++){
 				send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] += factor*0.5*(
 					pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G]);
+				#if(AVG_EMF)
+				pv[1 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr)*isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + 2 * ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				#endif
 			}
 			//k=2;
 			for (z = z1; z < z2; z++){
 				send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] += factor*0.5*(
 					pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G]);
+				#if(AVG_EMF)
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[2 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr + 2 * ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = 0.5 * (pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr + 2 * ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				#endif
 			}
 		}
+		#if(AVG_EMF)
+		else {
+			//k=1
+			for (z = z1; z < z2; z++) {
+				avg = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[1 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				avg = 0.5 * (pv[1 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[1 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				pv[1 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+			}
+			//k=2
+			for (z = z1; z < z2; z++) {
+				avg = 0.5 * (pv[2 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[2 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				avg = 0.5 * (pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G]);
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+				pv[2 * (ksize)+(icurr + ref_1) * isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + z + N3G] = avg;
+			}
+		}
+		#endif
 	}
 }
 
@@ -2275,6 +2450,11 @@ __global__ void packsendE1corncourse(int i1, int i2, int j, int z, double *  pv,
 	if (global_id < work_size){
 		if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
 		else send[global_id] += 0.5*factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+		#if(AVG_EMF)
+		double avg = 0.5 * (pv[1 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr]);
+		pv[1 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+		pv[1 * (ksize)+(icurr + ref_1) * isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+		#endif
 	}
 }
 
@@ -2289,6 +2469,11 @@ __global__ void packsendE2corncourse(int i, int j1, int j2, int z, double *  pv,
 	if (global_id < work_size){
 		if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr]);
 		else send[global_id] += 0.5*factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr]);
+		#if(AVG_EMF)
+		double avg = 0.5 * (pv[2 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr]);
+		pv[2 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+		pv[2 * (ksize)+(icurr)*isize + (jcurr + ref_2) * (BS_3 + 2 * N3G) + zcurr] = avg;
+		#endif
 	}
 }
 
@@ -2303,6 +2488,11 @@ __global__ void packsendE3corncourse(int i, int j, int z1, int z2, double *  pv,
 	if (global_id < work_size){
 		if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
 		else send[global_id] += 0.5*factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+		#if(AVG_EMF)
+		double avg = 0.5 * (pv[3 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + (zcurr + ref_3)]);
+		pv[3 * (ksize)+(icurr)*isize + jcurr * (BS_3 + 2 * N3G) + zcurr] = avg;
+		pv[3 * (ksize)+(icurr)*isize + (jcurr) * (BS_3 + 2 * N3G) + (zcurr + ref_3)] = avg;
+		#endif
 	}
 }
 

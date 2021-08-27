@@ -144,6 +144,9 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		}
+		#if(AVG_EMF)
+		 packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+		#endif
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error packsendEaverage1: %d \n", status);
@@ -197,6 +200,9 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		}
+		#if(AVG_EMF)
+		packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+		#endif
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error packsendEaverage2: %d \n", status);
@@ -243,6 +249,9 @@ void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		}
+		#if(AVG_EMF)
+		packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+		#endif
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error packsendEaverage3: %d \n", status);

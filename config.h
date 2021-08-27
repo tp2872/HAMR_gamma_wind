@@ -22,21 +22,21 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (0)
+#define REFINE_JET (1)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (1)
+#define REFINE_THIN (0)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(13./9.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (35.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -132,17 +132,17 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define NB_LOCAL (1000)
+#define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
+#define NB_1 6
 #define NB_2 12
-#define NB_3 1
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 38
-#define BS_2 42
-#define BS_3 1
+#define BS_1 24
+#define BS_2 12
+#define BS_3 8
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 3
@@ -171,10 +171,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -193,7 +193,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (200)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -201,11 +201,17 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0
 
+/*Wheter ot not to smooth out fluxes at AMR boundaries*/
+#define AVG_FLUXES (0)
+
+/*Wheter ot not to smooth out EMFs at AMR boundaries*/
+#define AVG_EMF (0)
+
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 5.0
+#define TREF 25.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
@@ -312,7 +318,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -325,10 +331,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.01)

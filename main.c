@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 25.0;
-	DTd = 5.0;
+	DTl = 100.0;
+	DTd = 25.0;
 	DTd_reduced = 5.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -550,7 +550,7 @@ void check_input() {
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
 		fprintf(stderr, "Init error 10");
-		exit(0);
+		//exit(0);
 	}
 
 	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT) < 4 && N_LEVELS_1D_INT > 0) {
