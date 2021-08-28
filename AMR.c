@@ -3086,7 +3086,7 @@ double calc_refcrit(int n){
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 
-				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total>500)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				//if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total>3990)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}

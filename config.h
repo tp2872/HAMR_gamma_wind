@@ -35,8 +35,8 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (35.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -135,14 +135,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
+#define NB_1 12
 #define NB_2 12
-#define NB_3 4
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 12
-#define BS_3 8
+#define BS_1 48
+#define BS_2 24
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 3
@@ -171,10 +171,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (1)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -205,13 +205,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AVG_FLUXES (0)
 
 /*Wheter ot not to smooth out EMFs at AMR boundaries*/
-#define AVG_EMF (0)
+#define AVG_EMF (1)
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 25.0
+#define TREF 5.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
