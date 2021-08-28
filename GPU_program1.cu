@@ -10359,7 +10359,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	int jsize = BS_3 + 2 * N3G;
 
 	if (k==1){
-		#if(RESISTIVE || CARTESIAN || REFINE_JET)
+		#if(RESISTIVE || CARTESIAN)
 		double dE_LEFT_13_1 = 0.0;
 		double dE_LEFT_13_2 = 0.0;
 		double dE_RIGHT_13_1 = 0.0;
