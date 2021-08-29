@@ -3067,7 +3067,7 @@ double calc_refcrit(int n){
 
 
 
-			if (r > 50.0 && th>3.14/2.0){
+			if ((r > 50.0) && (phi>0.5*3.14) && (phi<1.5*3.14)){
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
@@ -3085,8 +3085,7 @@ double calc_refcrit(int n){
 				//else if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-
-				//if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total>3990)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total > 0.95 * max_blocks)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}

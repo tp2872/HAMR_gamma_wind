@@ -1125,14 +1125,14 @@ void calc_mem_cpu(int n)
 	#endif
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG * sizeof(double));
 	#else
-	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
-	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*NPG*10 * sizeof(double));
-	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
+	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
+	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
+	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
 	#if(FRAME_TRANSFORM)
 	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
 	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
 	#endif
-	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NPG  * sizeof(double));
+	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NPG  * sizeof(double));
 	#endif
 	mem +=(((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NFAIL * sizeof(int));
 	#endif
