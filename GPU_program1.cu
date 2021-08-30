@@ -9445,8 +9445,8 @@ __device__ double interp(double y1, double y2, double y3)
 {
 	double Dqm, Dqp, Dqc, s;
 	/* woodward, or monotonized central, slope limiter */
-	Dqm = (2.0)*(y2 - y1);
-	Dqp = (2.0)*(y3 - y2);
+	Dqm = (1.0)*(y2 - y1);
+	Dqp = (1.0)*(y3 - y2);
 	Dqc = 0.5*(y3 - y1);
 	s = Dqm*Dqp;
 	if (s <= 0.) return 0.;

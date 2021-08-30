@@ -920,14 +920,18 @@ double advance_GPU(void)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){
 			GPU_fluxcalc2D(3, 1, n_ord[n]);
-			#if(N_LEVELS_1D_INT>0)
-			GPU_reconstruct_internal(1, n_ord[n]);
+			#if(RECONSTRUCT_INTERNAL)
+				#if(N_LEVELS_1D_INT>0)
+				GPU_reconstruct_internal(1, n_ord[n]);
+				#endif
 			#endif
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1){
 			GPU_fluxcalc2D(3, 0, n_ord[n]);
-			#if(N_LEVELS_1D_INT>0)
-			GPU_reconstruct_internal(0, n_ord[n]);
+			#if(RECONSTRUCT_INTERNAL)
+				#if(N_LEVELS_1D_INT>0)
+				GPU_reconstruct_internal(0, n_ord[n]);
+				#endif
 			#endif
 		}
 	}
@@ -1206,9 +1210,6 @@ void benchmark_GPU(int n)
 
 		#if(N3G>0)		
 		GPU_fluxcalc2D(3, 0, n);
-			#if(N_LEVELS_1D_INT>0)
-			GPU_reconstruct_internal(0, n);
-			#endif
 		#endif
 
 		#if(N2G>0)
