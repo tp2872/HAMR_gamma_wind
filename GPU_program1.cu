@@ -9684,12 +9684,18 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 
 	if ((k == 1)){
 		if (zoffset == 0){
-			for (k = 0; k < NPR; k++) temp[k] = p[k*(ksize)+global_id - zoffset];
+			for (k = 0; k < NPR; k++) temp[k] = 0.0;
+			for (u = 0; u < zsize; u++) {
+				for (k = 0; k < NPR; k++) temp[k] += p[k * (ksize)+global_id - zoffset + u] / ((double)zsize);
+			}
 			for (u = 0; u < zsize; u++){
 				for (k = 0; k < NPR; k++) p[k*ksize + global_id - zoffset + u] = temp[k] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*(dq2[k*(ksize)+global_id - zoffset] - dq1[k*(ksize)+global_id - zoffset]);
 			}
 
-			temp[0] = ps[0 * (ksize)+global_id - zoffset];
+			temp[0] = 0.0;
+			for (u = 0; u < zsize; u++) {
+				temp[0] += ps[0 * (ksize)+global_id - zoffset + u] / ((double)zsize);
+			}
 			temp[2] = ps[2 * (ksize)+global_id - zoffset];
 			for (u = 0; u < zsize; u++){
 				ps[0 * ksize + global_id - zoffset + u] = temp[0] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*0.5*(dq2[B1*(ksize)+global_id - zoffset] + dq2[B1*(ksize)+global_id - isize - zoffset] - dq1[B1*(ksize)+global_id - zoffset] - dq1[B1*(ksize)+global_id - isize - zoffset]);
