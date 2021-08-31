@@ -1373,7 +1373,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If total error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			//keep_iterating = 0;
+		//	keep_iterating = 0;
 		}
 
 		//If iterated error increasing stop iterating
@@ -5370,7 +5370,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//if (y < 1. - 100. * NUMEPSILON) {
 		if ((Qtsq>0.0) && ((prim[1]*prim[1])>0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
-			if (1) {
+			if (lim==TYPE2) {
 				if (Qdotn<0.0) {
 					// Get Ebar and p_rad as usual
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
