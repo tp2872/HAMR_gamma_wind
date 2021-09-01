@@ -8093,7 +8093,10 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], Tr, Te;
 	#if(P_NUM)
 	double exp_xi, kappa_abs_ph, kappa_emmit_ph;
-	double Ehat, Nhat, G0, u_dot_urad, u_dot_u, factor;
+	double Ehat, Nhat, u_dot_urad, u_dot_u;
+	#endif
+	#if(COMPTON)
+	double G0, factor;
 	#endif
 
 	//Calculate radiation temperature in rest frame of fluid
@@ -8143,16 +8146,15 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
 		
 		//Source term for photons
-		#if(OP_EXTRA)
 		source_photon[0] = -kappa_abs_ph / MASS_DENSITY_SCALE * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
-		#else
-		source_photon[0] = -kappa_abs_ph / MASS_DENSITY_SCALE * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
-		#endif
 
-		//Compton scattering term is added
-		factor = BOLTZ_CGS / (ME_CGS * C_CGS* C_CGS); 
-		G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4.0 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
-		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+			//Compton scattering term is added
+			#if(COMPTON)
+			factor = BOLTZ_CGS / (ME_CGS * C_CGS* C_CGS); 
+			G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4.0 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
+			for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+			#endif
+		
 		#endif
 
 	#endif
