@@ -1337,7 +1337,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#endif
 		#if(P_NUM)
 		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		//if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -8096,7 +8096,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	double Ehat, Nhat, u_dot_urad, u_dot_u;
 	#endif
 	#if(COMPTON)
-	double G0, factor;
+	double G0, Theta_e, Theta_r;
 	#endif
 
 	//Calculate radiation temperature in rest frame of fluid
@@ -8142,21 +8142,20 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		//Misc variables-->Merge with calc_Tr
 		u_dot_urad = ucov[0] * ucon_rad[0] + ucov[1] * ucon_rad[1] + ucov[2] * ucon_rad[2] + ucov[3] * ucon_rad[3];
 		u_dot_u = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
-		Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
-		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
+		Ehat = ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
+		Nhat = -ph[PHOTON] * u_dot_urad;
 		
 		//Source term for photons
-		source_photon[0] = -kappa_abs_ph / MASS_DENSITY_SCALE * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
+		source_photon[0] = -kappa_abs_ph * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 
 			//Compton scattering term is added
 			#if(COMPTON)
-			factor = BOLTZ_CGS / (ME_CGS * C_CGS* C_CGS); 
-			G0 = -kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4.0 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
+			Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+			Theta_r = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+			G0 = -kappa_es * Ehat * 4.0 * (Theta_e - Theta_r) * (1.0 + 3.683 * Theta_e + 4.0 * Theta_e * Theta_e) / ((1.0 + Theta_e));
 			for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 			#endif
-		
 		#endif
-
 	#endif
 }
 
