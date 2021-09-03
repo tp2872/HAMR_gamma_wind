@@ -849,8 +849,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / (dK_dS * norm));
 	#endif
 	#if(P_NUM)
-	norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
-	if (pflag_rad == 0)error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+	//norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
+	//if (pflag_rad == 0)error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
 	#endif
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
 	norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2]) + fabs(U_f[U2]) + fabs(Dt * dU[U2]));
@@ -1336,8 +1336,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 		#endif
 		#if(P_NUM)
-		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		//norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+		//if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -5370,7 +5370,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//if (y < 1. - 100. * NUMEPSILON) {
 		if ((Qtsq>0.0) && ((prim[1]*prim[1])>0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
-			if (lim==TYPE2) {
+			if (0) {
 				if (Qdotn<0.0) {
 					// Get Ebar and p_rad as usual
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
@@ -6657,9 +6657,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	Wsq = W * W;
 
 		// Doing this assuming  P = (G-1) u :
-		#if(!TWO_T)
+		#if(TWO_T)
 		double p_new, u_new, rho_new, vsq_new, W_new, dvsq;
-		dvsq = MY_MIN(1.e-8, 1.0 - (x[0] + 1.e-8));
+		dvsq = MY_MIN(1.e-8, 1.0 - (x[0] + fabs(1.e-8)));
 		vsq_new = x[0] + dvsq;
 		W_new=W_of_vsq2(vsq_new, &p_new, &rho_new, &u_new, D, K_atm
 			#if(DOHELM)
@@ -6739,21 +6739,12 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 		pe = T_e * rho[0];
 		pi = T_i * rho[0];
 
-		//Calculate ug from kappa
-		#if(CONSTANTGAMMA)
-		p[0] = K_atm * pow(rho[0], GAMMA);
-		#elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
-		T_g = 0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm, 2. / 3.)) - 1.0) / MU_G;
-		p[0] = T_g * rho[0];
-		#endif
-
 		//Update internal energy of electrons
-		double factor = p[0] / (pe + pi);
-		pe *= factor;
-		pi *= factor;
+		p[0] = (pe + pi);
 
-		if (pe > (1.0 - FLOOR_ENTROPY) * p[0]) pe = (1.0 - FLOOR_ENTROPY) * p[0];
-		if (pe < FLOOR_ENTROPY * p[0]) pe = FLOOR_ENTROPY * p[0];
+		//Limit temperature ratios
+		if (pe > (1.0 - 0.5 * FLOOR_ENTROPY) * p[0]) pe = (1.0 - FLOOR_ENTROPY) * p[0];
+		if (pe < 0.5 * FLOOR_ENTROPY * p[0]) pe = FLOOR_ENTROPY * p[0];
 		pi = p[0] - pe;
 
 		//Set temperature
@@ -6819,20 +6810,12 @@ __device__ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
 	pe = T_e * rho;
 	pi = T_i * rho;
 
-	//Calculate ug from kappa
-	#if(CONSTANTGAMMA)
-	p = K_atm * pow(rho, GAMMA);
-	#elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
-	p = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * K_atm, 2. / 3.)) - 1.0) / MU_G * rho;
-	#endif
-
 	//Update internal energy of electrons
-	double factor = p / (pe + pi);
-	pe *= factor;
-	pi *= factor;
+	p = (pe + pi);
 
-	if (pe > (1.0 - FLOOR_ENTROPY) * p) pe = (1.0 - FLOOR_ENTROPY) * p;
-	if (pe < FLOOR_ENTROPY * p) pe = FLOOR_ENTROPY * p;
+	//Limit temperature ratios
+	if (pe > (1.0 - 0.5 * FLOOR_ENTROPY) * p) pe = (1.0 - FLOOR_ENTROPY) * p;
+	if (pe < 0.5 * FLOOR_ENTROPY * p) pe = FLOOR_ENTROPY * p;
 	pi = p - pe;
 
 	//Set temperature
@@ -7297,7 +7280,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 	//Offset sizes
 	dW = 1.e-8 * rho;
-	dvsq = MY_MIN(1.e-8, 1.0 - (x[1] + 1.e-8));
+	dvsq = MY_MIN(1.e-8, fabs(1.0 - (x[1] + 1.e-8)));
 
 	//Calculate dPdW
 	gamma_eos2 = calc_gamma_gas_w(S, rho, (x[0] + dW) * gtmp, fel);
@@ -8150,8 +8133,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 
 			//Compton scattering term is added
 			#if(COMPTON)
-			Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-			Theta_r = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+			Theta_e = Te * 1.6863687454173171e-10;
+			Theta_r = Tr * 1.6863687454173171e-10;
 			G0 = -kappa_es * Ehat * 4.0 * (Theta_e - Theta_r) * (1.0 + 3.683 * Theta_e + 4.0 * Theta_e * Theta_e) / ((1.0 + Theta_e));
 			for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 			#endif

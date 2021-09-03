@@ -1484,7 +1484,7 @@ void balance_load(void){
 		if ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
 	} while ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 	
-	if (n_active_local_max > max_blocks) {
+	if (n_active_local_max > max_blocks/numtasks) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
 		//exit(0);
 	}
@@ -2353,7 +2353,7 @@ int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
 
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > max_blocks){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > max_blocks/numtasks){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -2578,7 +2578,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.200 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 1.200 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2640,7 +2640,7 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				#if(NB_1<100)
+				#if(NB_1<10)
 				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
@@ -2694,7 +2694,7 @@ void check_refcrit(void){
 
 		if(one_block_refined==1) post_refine();
 
-		if (tag != 0 && n_active_total<numtasks* max_blocks *N_GPU){
+		if (tag != 0 && n_active_total<max_blocks){
 			MPI_Barrier(mpi_cartcomm);
 			if(rank==0) fprintf(stderr, "Intermediate load balance! \n");
 			balance_load();
@@ -2703,7 +2703,7 @@ void check_refcrit(void){
 			#endif
 			pre_refine();
 		}
-	} while (tag != 0 && n_active_total<numtasks* max_blocks *N_GPU && count<10);
+	} while (tag != 0 && n_active_total<max_blocks && count<10);
 
 	if (tag == 1){
 		if(rank==0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
@@ -2783,7 +2783,7 @@ void check_refcrit(void){
 				//#pragma omp critical
 				//{
 					node = block[n_ord_total[n]][AMR_NODE];
-					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < max_blocks + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
+					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < max_blocks/numtasks + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
 						for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
 							i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 							if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
@@ -3085,7 +3085,7 @@ double calc_refcrit(int n){
 				//else if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total > 0.95 * max_blocks)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total > 0.95 * max_blocks/numtasks)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}
@@ -3140,15 +3140,24 @@ double calc_refcrit(int n){
 		}
 	}
 	#else
-	if (block[n][AMR_NODE] == rank){
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi)
+		if (block[n][AMR_NODE] == rank && t>1000.0){
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi, geom, q, bsq)
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			#pragma omp critical
-			{
-				if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r < 150.) ref_val = 0.0;//p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
-			}
+			get_geometry(n, i, j, z, CENT, &geom);
+			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+			double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			double ptot = ((GAMMA - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU]);
+			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + rho));
+			double v_kepler = r / (pow(r, 1.5) + a);
+			double scaleheight = cs / v_kepler;
+			//#pragma omp critical
+			//{
+				if ((p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06)) > ref_val && r < 60.) ref_val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+			//}
 		}
 	}
 	#endif

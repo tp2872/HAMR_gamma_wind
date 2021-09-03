@@ -331,7 +331,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (1)
+#define COMPTON (0)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
