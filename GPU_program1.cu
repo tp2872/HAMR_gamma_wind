@@ -5370,7 +5370,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//if (y < 1. - 100. * NUMEPSILON) {
 		if ((Qtsq>0.0) && ((prim[1]*prim[1])>0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
-			if (0) {
+			if (lim==TYPE2) {
 				if (Qdotn<0.0) {
 					// Get Ebar and p_rad as usual
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
