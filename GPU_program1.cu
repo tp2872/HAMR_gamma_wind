@@ -5376,9 +5376,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 					pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 					prim[0] = pressure * 3.; // Erad = 3*p_rad
-					prim[1] = 0.;
-					prim[2] = 0.;
-					prim[3] = 0.;
+					//prim[1] = 0.;
+					//prim[2] = 0.;
+					//prim[3] = 0.;
 					returnval = 1;
 				}
 				else{
@@ -8130,14 +8130,14 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		
 		//Source term for photons
 		source_photon[0] = -kappa_abs_ph * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
+		#endif
 
-			//Compton scattering term is added
-			#if(COMPTON)
-			Theta_e = Te * 1.6863687454173171e-10;
-			Theta_r = Tr * 1.6863687454173171e-10;
-			G0 = -kappa_es * Ehat * 4.0 * (Theta_e - Theta_r) * (1.0 + 3.683 * Theta_e + 4.0 * Theta_e * Theta_e) / ((1.0 + Theta_e));
-			for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
-			#endif
+		//Compton scattering term is added
+		#if(COMPTON)
+		Theta_e = Te * 1.6863687454173171e-10;
+		Theta_r = Tr * 1.6863687454173171e-10;
+		G0 = -kappa_es * Ehat * 4.0 * (Theta_e - Theta_r) * (1.0 + 3.683 * Theta_e + 4.0 * Theta_e * Theta_e) / ((1.0 + Theta_e));
+		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif
 	#endif
 }
