@@ -491,13 +491,16 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	}
 
 		//Evaluate comptonization term
-		#if(P_NUM)
+		#if(P_NUM || COMPTON)
 		double Ehat, Nhat,u_dot_urad, u_dot_u;
 
 		//Misc variables
 		u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 		u_dot_u = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
 		Ehat = ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (u_dot_u));
+		#endif
+
+		#if(P_NUM)
 		Nhat = -ph[PHOTON]  * u_dot_urad;
 
 		//Source term for photons

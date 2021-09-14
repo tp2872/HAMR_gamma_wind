@@ -702,6 +702,16 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//tau = 0.0;
 
 	//Set guess values for primitives after implicit step based on optical depth
+	#if(NEWMAN)
+	pflag = Utoprim_NM(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, fel
+		#endif
+	);
+	#else
 	pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 		#if (DOHELM)
 		, gpu_eos_table
@@ -710,8 +720,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, fel
 		#endif
 	);
+	#endif
 	#if(DO_FONT_FIX)
-	if (pflag) {
+	if (0) {
 		pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
 			#if (DOHELM)
 			, gpu_eos_table
@@ -978,7 +989,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0));
 					gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
-					
+
 					//Check limits
 					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
 					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
@@ -1161,7 +1172,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			+ E_old[4 + P_NUM] * dEdpb_inv[4][4 + P_NUM]
 			#endif	
 			);
-		pb_new[ENTRE] = pb_old[ENTRE] + dpb;
+			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
 		#endif
 		#if(P_NUM)
 		dpb = -D * (E_old[0] * dEdpb_inv[4 + TWO_T][0] + E_old[1] * dEdpb_inv[4 + TWO_T][1] + E_old[2] * dEdpb_inv[4 + TWO_T][2] + E_old[3] * dEdpb_inv[4 + TWO_T][3] + E_old[4] * dEdpb_inv[4 + TWO_T][4]
@@ -1220,10 +1231,16 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
 			//Check limits
-			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-			if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
+				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
+				flag_floor_kappa = 1;
+			}
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
+				ue = FLOOR_ENTROPY * pb_new[UU];
+				flag_floor_kappa = 1;
+			}
 			ui = pb_new[UU] - ue;
-
+		
 			//Set electron entropy
 			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
 			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
@@ -5376,9 +5393,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 					pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 					prim[0] = pressure * 3.; // Erad = 3*p_rad
-					//prim[1] = 0.;
-					//prim[2] = 0.;
-					//prim[3] = 0.;
+					prim[1] = 0.;
+					prim[2] = 0.;
+					prim[3] = 0.;
 					returnval = 1;
 				}
 				else{
@@ -7289,7 +7306,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 	//Calculate dPdvsq
 	gamma_eos2 = calc_gamma_gas_w(S, D * sqrt(fabs(1.0 - (x[1] + dvsq))), x[0] * (1.0 - (x[1] + dvsq)), fel);
-	dgamma = (gamma_eos2 - gamma_eos1) / dvsq;
+	dgamma =  (gamma_eos2 - gamma_eos1) / dvsq;
 	dPdvsq = factor * (0.5 * D / sqrt(gtmp) - x[0]) + (x[0] * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
 	#else
 	// 2. Ideal gas EOS
@@ -7564,7 +7581,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#endif
 		);
 		#endif
-		if (flag) {
+		if (0) {
 			#if( DO_FONT_FIX ) 
 			flag = Utoprim_1dvsq2fix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC, 0
 				#if (DOHELM)
@@ -8074,7 +8091,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if(RAD_M1)
 	int i;
 	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], Tr, Te;
-	#if(P_NUM)
+	#if(P_NUM || COMPTON)
 	double exp_xi, kappa_abs_ph, kappa_emmit_ph;
 	double Ehat, Nhat, u_dot_urad, u_dot_u;
 	#endif
@@ -8121,11 +8138,14 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	}
 
 		//Evaluate comptonization term
-		#if(P_NUM)
 		//Misc variables-->Merge with calc_Tr
+		#if(P_NUM || COMPTON)
 		u_dot_urad = ucov[0] * ucon_rad[0] + ucov[1] * ucon_rad[1] + ucov[2] * ucon_rad[2] + ucov[3] * ucon_rad[3];
 		u_dot_u = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
 		Ehat = ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
+		#endif
+
+		#if(P_NUM)
 		Nhat = -ph[PHOTON] * u_dot_urad;
 		
 		//Source term for photons
@@ -11448,7 +11468,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				);
 				#endif
 				
-				if (pflag[global_id]) {
+				/*if (pflag[global_id]) {
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
@@ -11478,7 +11498,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 							failimage[2 * (ksize)+global_id]++;
 						}
 					}
-				}
+				}*/
 			#endif
 		#endif
 

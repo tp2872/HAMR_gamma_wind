@@ -140,8 +140,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 42
-#define BS_2 36
+#define BS_1 24
+#define BS_2 18
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -321,7 +321,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -337,7 +337,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
