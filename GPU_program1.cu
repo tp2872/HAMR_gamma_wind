@@ -753,6 +753,48 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	if (pflag == 0) {
 		U_i[ENTRE] = pb[ENTRE] * U_i[RHO];
 		U_i[ENTRI] = pb[ENTRI] * U_i[RHO];
+
+		double ue, ui;
+		//Set for 2T fluid entropy of ions based on electron entropy
+			#if(CONSTANTGAMMA)
+			ue = pb[ENTRE] * pow(pb[RHO], GAMMA) / (GAMMA - 1.0);
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb[UU];
+			if (ue < FLOOR_ENTROPY * pb[UU]) ue =FLOOR_ENTROPY * pb[UU];
+			pb[ENTRE] = (GAMMA - 1.0) * ue * pow(pb[RHO], -GAMMA);
+			ui = pb[UU] - ue;
+			pb[ENTRI] = (GAMMA - 1.0) * ui * pow(pb[RHO], -GAMMA);
+			#elif(FIXEDGAMMA)
+			ue = pb[ENTRE] * pow(pb[RHO], GAMMAE) / (GAMMAE - 1.0);
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb[UU];
+			if (ue < FLOOR_ENTROPY * pb[UU]) ue = FLOOR_ENTROPY * pb[UU];
+			pb[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb[RHO], -GAMMAE);
+			ui = pb[UU] - ue;
+			pb[ENTRI] = (GAMMA - 1.0) * ui * pow(pb[RHO], -GAMMA);
+			#elif(VARGAMMA)
+			double Theta, gam, C;
+
+			//Calculate ue
+			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb[RHO] * pb[ENTRE], 2. / 3.)) - 1.0));
+			gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+			ue = Theta / (MU_E * MASS_RATIO) * pb[RHO] / (gam - 1.0);
+
+			//Check limits
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb[UU];
+			if (ue < FLOOR_ENTROPY * pb[UU]) ue = FLOOR_ENTROPY * pb[UU];
+			ui = pb[UU] - ue;
+
+			//Set electron entropy
+			C = ue / pb[RHO] * MU_E * MASS_RATIO;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			pb[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+
+			//Set ion entropy
+			C = ui / pb[RHO] * MU_I;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			pb[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+			#endif
+		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
+		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
 	}
 	U_f[ENTRE] = U_i[ENTRE];
 	U_f[ENTRI] = U_i[ENTRI];
@@ -857,7 +899,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			dK_dS = (pb[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 			#endif
 		#endif
-	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / (dK_dS * norm));
+	norm = (fabs(U_i[ENTRE]) + fabs(U_f[ENTRE]) + fabs(Dt * dU[ENTRE]));
+	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / ( norm));
 	#endif
 	#if(P_NUM)
 	//norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
@@ -1350,7 +1393,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 				#endif
 			#endif
-		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
+		norm = (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
+		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (norm));
 		#endif
 		#if(P_NUM)
 		//norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
@@ -3817,8 +3861,8 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / MU_I;
 		#else
-		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / MU_I;
+		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[1]), 2. / 3.)) - 1.0) / MU_I;
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
@@ -3928,8 +3972,8 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I);
 		#else
-		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / (MU_I);
+		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[1]), 2. / 3.)) - 1.0) / (MU_I);
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);

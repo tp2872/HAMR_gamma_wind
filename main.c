@@ -544,7 +544,7 @@ void check_input() {
 	//PPM not implemented in CPU version
 	if (CPU_OPENMP && PPM) { 
 		fprintf(stderr, "Init error 9"); 
-		exit(0);
+		//exit(0);
 	}
 
 	//Don't use block sizes this small on GPU

@@ -1280,16 +1280,16 @@ void set_AMR(void){
 	#else
 	double total_mem = 0.;
 	for (n = 0; n < n_active_total; n++) {
-		total_mem += calc_mem_cpu(n_ord_total[n]) / pow(10., 9.);
+		//total_mem += calc_mem_cpu(n_ord_total[n]) / pow(10., 9.);
 	}
 	double mem_per_block = total_mem / n_active_total;
-	max_blocks = (int)(n_active_total + (numtasks * CPU_MEM - total_mem) / mem_per_block);
+	//max_blocks = (int)(n_active_total + (numtasks * CPU_MEM - total_mem) / mem_per_block);
 
 	if (max_blocks * numtasks < n_active_total) {
 		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d Quiting! \n", max_blocks);
 		exit(0);
 	}
-	max_blocks = MAX_BLOCKS;
+	max_blocks =100000;
 	#endif
 
 	balance_load();

@@ -331,7 +331,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (1)
+#define COMPTON (0)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -353,10 +353,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
-#define FIXEDGAMMA (0)
+#define FIXEDGAMMA (1)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (1)
+#define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -706,7 +706,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (0)
+#define NEWMAN (1)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */
