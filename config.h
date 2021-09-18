@@ -321,7 +321,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -353,10 +353,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
-#define FIXEDGAMMA (1)
+#define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (0)
+#define VARGAMMA (1)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -706,7 +706,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (1)
+#define NEWMAN (0)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

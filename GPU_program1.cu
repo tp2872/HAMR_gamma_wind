@@ -793,6 +793,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			pb[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
 			#endif
+		get_state(pb, geom, &q);
 		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
 		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
 	}
@@ -3913,6 +3914,8 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 
 	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
 	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
+	//if (quante > quantg) quante = quantg;
+	//if (quante < 0.0) quante = 0.0;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
@@ -4021,6 +4024,8 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 
 	if (quante > (1.0 - FLOOR_ENTROPY) * quantg) quante = (1.0 - FLOOR_ENTROPY) * quantg;
 	if (quante < FLOOR_ENTROPY * quantg) quante = FLOOR_ENTROPY * quantg;
+	//if (quante >  quantg) quante = quantg;
+	//if (quante < 0.0) quante = 0.0;
 	quanti = quantg - quante;
 
 	#if(CONSTANTGAMMA || FIXEDGAMMA)
@@ -11493,7 +11498,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
 			#else
 				#if(NEWMAN)
-				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
@@ -11511,8 +11516,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				#endif
 				);
 				#endif
-				
-				/*if (pflag[global_id]) {
+				if (pflag[global_id]) {
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
@@ -11525,7 +11529,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						, fel
 						#endif
 					);
-					if (pflag[global_id]) {
+					if (pflag[global_id] && !TWO_T) {
 						failimage[1 * (ksize)+global_id]++;
 						#if(!DOHELM)
 						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
@@ -11542,7 +11546,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 							failimage[2 * (ksize)+global_id]++;
 						}
 					}
-				}*/
+				}
 			#endif
 		#endif
 
