@@ -724,7 +724,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	);
 	#endif
 	#if(DO_FONT_FIX)
-	if (0) {
+	if (pflag) {
 		pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
 			#if (DOHELM)
 			, gpu_eos_table
@@ -3813,8 +3813,6 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	
 	#if(VARGAMMA || FIXEDGAMMA)
 	if ((Theta_i < 0.00001) || (Theta_e < 0.00001)) {
-		gami = GAMMA;
-		game = GAMMAE;
 		gamg = 5.0 / 3.0;
 	}
 	else {
@@ -3855,8 +3853,6 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 
 	#if(VARGAMMA || FIXEDGAMMA)
 	if ((Theta_i < 0.00001) || (Theta_e < 0.00001)) {
-		gami = GAMMA;
-		game = GAMMAE;
 		gamg = 5.0 / 3.0;
 	}
 	else {
