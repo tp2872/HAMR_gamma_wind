@@ -53,7 +53,7 @@ Physical Parameters section
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
-#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress;
+#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
 
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define EOS_GAMMALAW (0)
@@ -445,25 +445,25 @@ MNEMONICS SECTION
 #define RHO	(0)	
 #define UU	(1)
 #if (DOHELM_TEMPERATURE)
-#define DOHELM_TEMP (2)
+#define DOHELM_TEMP (UU)
 #endif
-#define U1	(2+DOHELM_TEMPERATURE)
-#define U2	(3+DOHELM_TEMPERATURE)
-#define U3	(4+DOHELM_TEMPERATURE)
-#define B1	(5+DOHELM_TEMPERATURE)
-#define B2	(6+DOHELM_TEMPERATURE)
-#define B3	(7+DOHELM_TEMPERATURE)
-#define KTOT (8+DOHELM_TEMPERATURE)
-#define UU_RAD	(8+DOHELM_TEMPERATURE+DOKTOT)
-#define U1_RAD	(8+DOHELM_TEMPERATURE+DOKTOT+1)
-#define U2_RAD	(8+DOHELM_TEMPERATURE+DOKTOT+2)
-#define U3_RAD	(8+DOHELM_TEMPERATURE+DOKTOT+3)
-#define E1 (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4)
-#define E2 (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4+1)
-#define E3 (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4+2)
-#define ENTRE (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4+RESISTIVE*3)
-#define ENTRI (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
-#define PHOTON (8+DOHELM_TEMPERATURE+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
+#define U1	(2)
+#define U2	(3)
+#define U3	(4)
+#define B1	(5)
+#define B2	(6)
+#define B3	(7)
+#define KTOT (8)
+#define UU_RAD	(8+DOKTOT)
+#define U1_RAD	(8+DOKTOT+1)
+#define U2_RAD	(8+DOKTOT+2)
+#define U3_RAD	(8+DOKTOT+3)
+#define E1 (8+DOKTOT+RAD_M1*4)
+#define E2 (8+DOKTOT+RAD_M1*4+1)
+#define E3 (8+DOKTOT+RAD_M1*4+2)
+#define ENTRE (8+DOKTOT+RAD_M1*4+RESISTIVE*3)
+#define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
+#define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -475,18 +475,18 @@ MNEMONICS SECTION
 #define FACE3	(4)
 
 //For variable inversions
-#define UTCON1 	2+DOHELM_TEMPERATURE
-#define UTCON2 	3+DOHELM_TEMPERATURE
-#define UTCON3 	4+DOHELM_TEMPERATURE
-#define BCON1	5+DOHELM_TEMPERATURE
-#define BCON2	6+DOHELM_TEMPERATURE
-#define BCON3	7+DOHELM_TEMPERATURE
+#define UTCON1 	2
+#define UTCON2 	3
+#define UTCON3 	4
+#define BCON1	5
+#define BCON2	6
+#define BCON3	7
 
 //For variable inversions
-#define QCOV0	1+DOHELM_TEMPERATURE
-#define QCOV1	2+DOHELM_TEMPERATURE
-#define QCOV2	3+DOHELM_TEMPERATURE
-#define QCOV3	4+DOHELM_TEMPERATURE
+#define QCOV0	1
+#define QCOV1	2
+#define QCOV2	3
+#define QCOV3	4
 
 /* mnemonics for slope limiter */
 #define MC	(0)
@@ -876,12 +876,12 @@ Section with derived quantities
 #define D3 (N3>1)
 
 /*Set variable numbers*/
-#define NPR_U      (8+DOHELM_TEMPERATURE+DOKTOT)        /* number of gas primitive variables */
+#define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
 #define NPR_E      (3)        /* number of electric field primitive variables */
-#define NPR_HD     (5+DOHELM_TEMPERATURE)        /* number of hydrodynamic primitive variables */
+#define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
@@ -890,7 +890,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+DOHELM_TEMPERATURE+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

@@ -540,21 +540,26 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     double gamma_sq = 1.0/(1.0 - vsq);
     double gamma = sqrt(gamma_sq);
     double dpdrho, dpde_d;
-    double prim[UU + 1 + DOHELM_TEMPERATURE];
+    double prim[UU + 1];
     prim[RHO] = rho;
     prim[UU] = w - rho;
-#if(DOHELM_TEMPERATURE)
-    prim[DOHELM_TEMP] = *temp_prev;
-#endif
-    eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d); // DI_helmT: what to do with temperature!
-#if(DOHELM_TEMPERATURE==1)
-    *temp_prev = prim[DOHELM_TEMP];
-#endif
+	#if (DOHELM_TEMPERATURE)
+	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(rho, temp_prev, w - rho, &p_tmp, &dpdrho, &dpde_d);
+	#else
+    eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d);
+	#endif
+	#if (inversion_w_edits)
+	// Danat: edit (DIMARK)
+	double dudp = rho / dpde_d;
+	dPdW = 1.0 / (1.0 + dudp) * (1.0 - vsq);
+	dPdvsq = (-x[0] + 0.5 * D / sqrt((1.0 - vsq)) * (1. - dpdrho * dudp)) / (1. + dudp);
+	#else 
     double dpdeps_o_rho = dpde_d / rho;
     double dpdvsq_1 = -0.5*D*gamma*dpdrho;
     double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
     dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
+	#endif
 	#elif(TWO_T)
 	double gtmp, gamma_eos, w, rho, factor1, factor2, dvsq, dfactordvsq;
 	w = W * (1.0 - vsq);
@@ -767,11 +772,15 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     
     #if DOHELM
     double xdens, xpres, xener, xenth;
-    double p_temp[UU + 1+DOHELM_TEMPERATURE];
+    double p_temp[UU + 1];
     // Helmholtz EOS
     xdens = prim[RHO];
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K
+	#if (DOHELM_TEMPERATURE)
+	eos_mode_rhotemp_pres(xdens, eos_temp_low, &xpres);
+	#else 
     eos_mode_rhotemp_pres_min (xdens, &xpres);
+	#endif
     p_array[0] = xpres;
     #else
     // Ideal gas EOS
@@ -811,13 +820,11 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         // Helmholtz EOS
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
-#if(DOHELM_TEMPERATURE)
-        p_temp[DOHELM_TEMP] = prim[DOHELM_TEMP];
-#endif
+		#if (DOHELM_TEMPERATURE)
+		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU], w - rho0, &xpres, &u);
+		#else
         eos_mode_rhow_pres_u (p_temp, &xpres, &u); // DI_helmT
-#if(DOHELM_TEMPERATURE)
-        prim[DOHELM_TEMP] = p_temp[DOHELM_TEMP];
-#endif
+		#endif
         #else
         // Ideal gas EOS
 			#if(TWO_T)
@@ -883,14 +890,11 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         // Helmholtz EOS
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
-#if(DOHELM_TEMPERATURE)
-        p_temp[DOHELM_TEMP] = prim[DOHELM_TEMP];
-#endif
-        eos_mode_rhow_pres_u (p_temp, &xpres, &u); // DI_helmT
-#if(DOHELM_TEMPERATURE)
-        prim[DOHELM_TEMP] = p_temp[DOHELM_TEMP];
-#endif
-        p_new = xpres;
+		#if(DOHELM_TEMPERATURE)
+		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU], w - rho0, &p_new, &u);
+		#else
+        eos_mode_rhow_pres_u (p_temp, &p_new, &u);
+		#endif
         #else
 		#if(TWO_T)
 		gamma_eos = set_S_w(S2, rho0, w, fel);

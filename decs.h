@@ -1373,3 +1373,16 @@ void eos_mode_rhotemp_pres_min (double den, double *pres);
 void eos_mode_rhopres_u (double* prim);
 void eos_mode_rhou_temp (double* prim, double* temp);
 
+// DITEMP: eos wrapper functions 
+#if (DOHELM_TEMPERATURE)
+void eos_mode_rhotemp_pres_u(double dens, double temp, double* pres, double* u);
+void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double* pres, double* u, double* cs2);
+void eos_mode_rhotemp_pres(double dens, double temp, double* pres);
+void eos_mode_rhotemp_entr(double dens, double temp, double* entr);
+// Rootfinding functions based on w and s (3x)
+void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, double* pres, double* dpdrho, double* dpde_d);
+void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres, double* u);
+void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* pres, double* u, double* dpdrho, double* dudrho);
+// Floor
+void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* pres);
+#endif

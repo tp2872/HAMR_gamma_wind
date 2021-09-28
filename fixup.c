@@ -68,7 +68,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
 	double f,gamma, bsq;
 	double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
-	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut, u;
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 	int m;
 	int k, flag, dofloor=0;
@@ -93,18 +93,25 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	bsq = bsq_calc(pv, &geom);
 	#endif
 
-	#if (DOHELM && DOHELM_TEMPERATURE)
-	if (pv[DOHELM_TEMP] < eos_temp_low) pv[DOHELM_TEMP] = eos_temp_low;
+	#if (DOHELM)
+	double xP;
+	#if (DOHELM_TEMPERATURE)
+	if (pv[UU] < eos_temp_low) pv[UU] = eos_temp_low;
+	eos_mode_rhotemp_pres_u(pv[RHO], pv[UU], &xP, &u);
+	double prefloor_u = u;
+	#else 
+	u = pv[UU];
+	#endif
 	#endif
 
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 	#if(RAD_M1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (pv[UU] + pv[UU_RAD]) / (UORHOMAX);
+	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (u + pv[UU_RAD]) / (UORHOMAX);
 	#else
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-	if (rhoflr < pv[UU] / UORHOMAX) rhoflr = pv[UU] / (UORHOMAX);
+	if (rhoflr < u / UORHOMAX) rhoflr = u / (UORHOMAX);
 	#endif
 	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
 	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
@@ -118,13 +125,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	//Internal energy floor
 	#if(RAD_M1)
-	if (pv[UU] + pv[UU_RAD] < uuflr) {
-		pv[UU] = uuflr - pv[UU_RAD];
+	if (u + pv[UU_RAD] < uuflr) {
+		u = uuflr - pv[UU_RAD];
 		dofloor = 1;
 	}
 	#else
-	if (pv[UU] < uuflr) {
-		pv[UU] = uuflr;
+	if (u < uuflr) {
+		u = uuflr;
 		dofloor = 1;
 	}
 	#endif
@@ -179,9 +186,12 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy before the floors
 		#if (DOHELM)
-		double xP;
+		#if (DOHELM_TEMPERATURE)
+		wold = pv_prefloor[RHO] + prefloor_u + xP;
+		#else 
 		eos_mode_rhou_pres(pv_prefloor, &xP);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
+		#endif
 		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
 		#endif 
@@ -191,8 +201,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy after the floors
 		#if (DOHELM)
+		#if (DOHELM_TEMPERATURE)
+		eos_mode_rhotemp_u_pres_floor(pv[RHO], &pv[UU], u, &xP);
+		wnew = pv[RHO] + u + xP;
+		#else 
 		eos_mode_rhou_pres(pv, &xP);
 		wnew = pv[RHO] + pv[UU] + xP;
+		#endif
 		#else
 		wnew = pv[RHO] + pv[UU] * gam;
 		//wnew = wold;
@@ -223,7 +238,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
 		//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
 		for (m = 1; m < NDIM; m++) {
-			pv[m + UU + DOHELM_TEMPERATURE] = utcon[m] * trans + pv_prefloor[m + UU + DOHELM_TEMPERATURE] * (1. - trans);
+			pv[m + UU] = utcon[m] * trans + pv_prefloor[m + UU] * (1. - trans);
 		}
 
 	
@@ -250,7 +265,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if DOKTOT
 	#if (DOHELM)
 	double xentr;
+	#if (DOHELM_TEMPERATURE)
+	eos_mode_rhotemp_entr(pv[RHO], pv[UU], &xentr);
+	#else
 	eos_mode_rhou_entr(pv, &xentr);
+	#endif
 	pv[KTOT] = xentr;
 	#else 
 	#if(FULL_ENTROPY)

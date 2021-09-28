@@ -243,7 +243,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int rd = dump_reduced;
 	int rt = RTRANS;
 	int rb = RB;
-	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000 + DOHELM_TEMPERATURE * 10000;
+	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000;
 	int dk = DOKTOT;
 
 	//Print out essential stuff for restart
@@ -318,9 +318,6 @@ void dump_block(MPI_File *fp, int n)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + RHO] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + UU] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
-        #if(DOHELM_TEMPERATURE)
-        array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + DOHELM_TEMP] = (float)p[nl[n]][index_3D(n, i, j, z)][2];
-        #endif
 
 		get_geometry(n, i, j, z, CENT, &geom);
 		ucon_calc(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
