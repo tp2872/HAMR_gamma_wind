@@ -3979,8 +3979,6 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	//Calculate gas eos gammma
 	#if(FIXEDGAMMA || VARGAMMA)
 	if ((Ti * MU_I < 0.00001) || (Te * MU_E * MASS_RATIO < 0.00001)) {
-		gami = GAMMA;
-		game = GAMMAE;
 		gamg = 5.0 / 3.0;
 	}
 	else {
