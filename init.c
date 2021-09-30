@@ -1098,23 +1098,16 @@ void init_torus()
 
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-	// double den, ener;
 	double pres;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			//coord(n_ord[n], i, j, z, CENT, X);
-			//bl_coord(X, &r, &th, &phi);
-			// den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-			// ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			// pres = ener * (gam - 1.0);
-			pres = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * (gam - 1.);
+			pres = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * (gam_local - 1.);
 			#if (DOHELM_TEMPERATURE)
 			eos_mode_rhopres_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], pres);
 			#else
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam_local - 1.);
 			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
-			fprintf(stderr, "%e %e %e\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], pres);
-			// p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 		}
 	}
 	#endif

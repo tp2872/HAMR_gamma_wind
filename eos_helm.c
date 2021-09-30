@@ -601,14 +601,6 @@ void validate_T(double* temp) {
     return;
 }
 
-// Look up ug given rho, T:
-void eos_mode_rhotemp_ener(double* prim, double* u) {
-    double pres, ener, entr, dpdt, dedt, dpdrho, cs2;
-    eos_helm(1, prim[UU], prim[RHO], 1.0, 1.0, &pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
-
-    *u = prim[RHO] * ener;
-}
-
 // Entropy inversion
 void eos_mode_rhou_entr(double* prim, double* entr) {
     // Parameters of Newton-Raphson iterations

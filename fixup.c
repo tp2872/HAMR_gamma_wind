@@ -108,7 +108,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 	#if(RAD_M1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (u + pv[UU_RAD]) / (UORHOMAX);
+	if (rhoflr < (u + pv[UU_RAD]) / UORHOMAX)  rhoflr = (u + pv[UU_RAD]) / (UORHOMAX);
 	#else
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < u / UORHOMAX) rhoflr = u / (UORHOMAX);
@@ -132,6 +132,9 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#else
 	if (u < uuflr) {
 		u = uuflr;
+		#if (!DOHELM_TEMPERATURE)
+		pv[UU] = u;
+		#endif
 		dofloor = 1;
 	}
 	#endif
@@ -151,7 +154,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	#if(DRIFT_FLOOR)
-	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
+	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], u) - 1.) > 0.) {
 		#if(RESISTIVE)
 		get_state_res(pv_prefloor, &geom, &q);
 		#else
@@ -206,7 +209,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		wnew = pv[RHO] + u + xP;
 		#else 
 		eos_mode_rhou_pres(pv, &xP);
-		wnew = pv[RHO] + pv[UU] + xP;
+		wnew = pv[RHO] + u + xP;
 		#endif
 		#else
 		wnew = pv[RHO] + pv[UU] * gam;
