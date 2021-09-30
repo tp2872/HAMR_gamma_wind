@@ -1264,7 +1264,93 @@ __device__ void eos_mode_rhotemp_entr(double dens, double temp, double* entr) {
 }
 
 
-__device__ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* pres, double* u, double* dpdrho, double* dudrho) {
+void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
+    // Parameters of Newton-Raphson iterations
+    double tolerance_p = EOS_TOL;
+    double deni = 1.0 / dens;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (p_goal <= 0.0) temp_ini_guess = eos_temp_low;
+    temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+    if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double p_tmp;
+    double entr, cs2;
+    double xener;
+
+    double error, error_p;
+    int i;
+
+    double dpdt, dedt, dpdrho;
+
+    temp_old = temp_ini_guess;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    for (i = 0; i < EOS_ITERATIONS; i++) {
+        eos_helm(1, temp_old, dens, 1.0, 1.0, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+
+        temp_new = temp_old - (p_tmp - p_goal) / dpdt;
+
+        // do not allow temp to change more than 2 times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_p = fabs((p_tmp - p_goal) / p_goal);
+        validate_T(&temp_new);
+
+        temp_old = temp_new;
+
+        // more iterations after reached below tolerance
+        if (error < EOS_TEMP_TOL && error_p < tolerance_p) {
+            more_iterations -= 1;
+            *temp = temp_old;
+            if (more_iterations == 0) break;
+        }
+
+    }
+
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double presA, presB, presC;
+    double fA, fB, fC;
+    int flag = 1;
+
+    if (error_p > EOS_TOL) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, dens, 1.0, 1.0, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fA = presA - p_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, dens, 1.0, 1.0, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fB = presB - p_goal;
+
+        if (fA * fB >= 0.0) flag = 0;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS && flag) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, dens, 1.0, 1.0, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            fC = presC - p_goal;
+            error_p = fabs(fC / p_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_p < EOS_TOL) {
+                *temp = tempC;
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
+    }
+}
+
+
+void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* pres, double* u, double* dpdrho, double* dudrho) {
     double deni = 1.0 / dens;
     // prim[UU] is K_atm for this function only
     double entr_goal = entr;
@@ -1370,7 +1456,7 @@ __device__ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr
     #endif
 }
 
-__device__ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres, double* u) {
+void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres, double* u) {
     // implementation in Newman-Hamlin inversion
     double deni = 1.0 / dens;
     // w is w - rho for this function only
@@ -1482,7 +1568,7 @@ __device__ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, d
     #endif
 }
 
-__device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, double* pres, double* dpdrho, double* dpde_d) {
+void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, double* pres, double* dpdrho, double* dpde_d) {
     double deni = 1.0 / dens;
     // w is w - rho for this function
     double xenth = w * deni; // Helmholtz EOS takes non-relativistic enthalpy
