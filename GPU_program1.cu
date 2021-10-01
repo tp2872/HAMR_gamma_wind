@@ -1024,22 +1024,22 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
 					//Check limits
-					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
-					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					//if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					//if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
 					ui = pb_new[UU] - ue;
 
 					//Set electron entropy
-					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+					//C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					//Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+					//pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
 					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 					#endif
-				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
-				U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
+				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
@@ -1275,17 +1275,19 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ui = pb_new[UU] - ue;
 		
 			//Set electron entropy
-			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+			if (flag_floor_kappa == 1) {
+				C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+				Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+			}
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
 			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 			#endif
-		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
-		U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
+		U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+		U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 		gamma_g = calc_gamma_gas_prim(pb_new);
 		#endif
 		mhd_calc(pb_new, 0, &q, &U_new[UU]
@@ -1361,7 +1363,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		else {
 			#if(FULL_ENTROPY)
 			dK_dS = pb_new[RHO] / ((GAMMA - 1.) * pb_new[UU]);
-			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm * dK_dS);
+			error_new[n_iter % 5] += 0.25 * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm * dK_dS);
 			#else
 			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 			error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]))) / (norm * dK_dS);
@@ -1434,13 +1436,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//If total error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			if (count_increase >= 5) keep_iterating = 0;
+			//if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 			count_increase2++;
-			if (count_increase2 >= 5) keep_iterating = 0;
+			//if (count_increase2 >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
