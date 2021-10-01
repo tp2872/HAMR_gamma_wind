@@ -1375,6 +1375,7 @@ void eos_mode_rhou_temp (double* prim, double* temp);
 
 // DITEMP: eos wrapper functions 
 #if (DOHELM_TEMPERATURE)
+void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal);
 void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal);
 void eos_mode_rhotemp_pres_u(double dens, double temp, double* pres, double* u);
 void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double* pres, double* u, double* cs2);

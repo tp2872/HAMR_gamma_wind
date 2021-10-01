@@ -95,7 +95,8 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	#if (DOHELM)
 	double xP;
-	#if (DOHELM_TEMPERATURE)
+	#if (DOHELM_TEMPERATURE == 2)
+	// Making sure that temperature is not below the threshold of the table
 	if (pv[UU] < eos_temp_low) pv[UU] = eos_temp_low;
 	eos_mode_rhotemp_pres_u(pv[RHO], pv[UU], &xP, &u);
 	double prefloor_u = u;
@@ -132,7 +133,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#else
 	if (u < uuflr) {
 		u = uuflr;
-		#if (!DOHELM_TEMPERATURE)
+		#if (!(DOHELM_TEMPERATURE == 2))
 		pv[UU] = u;
 		#endif
 		dofloor = 1;
@@ -189,7 +190,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy before the floors
 		#if (DOHELM)
-		#if (DOHELM_TEMPERATURE)
+		#if (DOHELM_TEMPERATURE == 2)
 		wold = pv_prefloor[RHO] + prefloor_u + xP;
 		#else 
 		eos_mode_rhou_pres(pv_prefloor, &xP);
@@ -204,7 +205,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy after the floors
 		#if (DOHELM)
-		#if (DOHELM_TEMPERATURE)
+		#if (DOHELM_TEMPERATURE == 2)
 		eos_mode_rhotemp_u_pres_floor(pv[RHO], &pv[UU], u, &xP);
 		wnew = pv[RHO] + u + xP;
 		#else 
@@ -268,7 +269,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if DOKTOT
 	#if (DOHELM)
 	double xentr;
-	#if (DOHELM_TEMPERATURE)
+	#if (DOHELM_TEMPERATURE == 2)
 	eos_mode_rhotemp_entr(pv[RHO], pv[UU], &xentr);
 	#else
 	eos_mode_rhou_entr(pv, &xentr);

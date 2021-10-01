@@ -59,7 +59,7 @@ Physical Parameters section
 #define EOS_GAMMALAW (0)
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
-#define enable_input_check  (1)
+#define enable_input_check  (0)
 #define revert_gamma        (1)
 #define eos_nr_debug (0)
 
