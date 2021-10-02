@@ -866,9 +866,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif
 	}
 	#if(TWO_T)
-		#if(CONSTANTGAMMA)
-		dK_dS = (GAMMA - 1.) / pow(pb[RHO], GAMMA - 1.0);
-		#elif(FIXEDGAMMA)
+		#if(CONSTANTGAMMA || FIXEDGAMMA)
 		dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
 		#elif(VARGAMMA)
 		//Notes
@@ -1001,20 +999,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[RHO] = U_i[RHO];
 				#if(TWO_T)
 					//Set for 2T fluid entropy of ions based on electron entropy
-					#if(CONSTANTGAMMA)
-					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
-					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
-					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
-					pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
-					ui = pb_new[UU] - ue;
-					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-					#elif(FIXEDGAMMA)
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
 					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
 					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
-					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+					pb_new[ENTRI] = (GAMMAE - 1.0) * ui * pow(pb_new[RHO], -GAMMAE);
 					#elif(VARGAMMA)
 					double Theta, gam, C;
 					
@@ -1024,14 +1015,14 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
 					//Check limits
-					//if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
-					//if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
 					ui = pb_new[UU] - ue;
 
 					//Set electron entropy
-					//C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-					//Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-					//pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
@@ -1235,8 +1226,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
 			flag_floor_kappa = 0;
-			#if(CONSTANTGAMMA)
-			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMA) / (GAMMA - 1.0);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
 				flag_floor_kappa = 1;
@@ -1245,16 +1236,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				ue = FLOOR_ENTROPY * pb_new[UU];
 				flag_floor_kappa = 1;
 			}
-			pb_new[ENTRE] = (GAMMA - 1.0) * ue * pow(pb_new[RHO], -GAMMA);
-			ui = pb_new[UU] - ue;
-			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
-			#elif(FIXEDGAMMA)
-			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
-			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-			if (ue < FLOOR_ENTROPY * pb_new[UU]) ue = FLOOR_ENTROPY * pb_new[UU];
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
-			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+			pb_new[ENTRI] = (GAMMAE - 1.0) * ui * pow(pb_new[RHO], -GAMMAE);
 			#elif(VARGAMMA)
 			double Theta, gam, C;
 
@@ -1463,7 +1447,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_f[k] = U_new[k];
 				dU[k] = dU_new[k];
 			}
-			if (flag_rad) {
+			if (flag_rad && keep_iterating==0) {
 				Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
 
 				//Recompute R_t^mu for consistency
@@ -1475,6 +1459,19 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				#if(P_NUM)
 				U_f[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 				#endif
+
+				//Recompute radiative source term
+				source_rad(pb_new, geom, &q, &q_rad, dU
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, gamma_g
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				);
 			}
 		}
 
@@ -5396,37 +5393,16 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	#if(P_NUM)
 	prim[4] = U[4] / sqrt(gammasq);
 	#endif
-	
-	/*if (0) {
-		prim[0] = 1.e-30;
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
-
-		// Get Ebar and p_rad as usual
-		if (!isnan(Qdotn) && Qdotn < 0.0) {
-			pressure = -Qdotn / (4. - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-		}
-
-		//Floor on photon number+
-		#if(P_NUM)
-		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
-		#endif
-
-		return 0;
-	}*/
 	if (y > y_max || isnan(Qdotn) || prim[0] < 0. || Qdotn > 0.0 || isnan(y) || y < 0. || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
-		Uabs = 0.5 * (fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++)prim[i] = Qtcon[i];
+		Uabs = 0.5 * (fabs(Qdotn) + fabs(Qtsq) + 1.e-150);
+		for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_RAD * Qtcon[i] / Uabs;
 
 		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
 			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-		//if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
-		if (qsq < 0.) {
-		 qsq = 1.E-10; // set floor
-		}
+		if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+		//if (qsq < 0.) {
+		//	qsq = 1.E-10; // set floor
+		//}
 
 		gammasq = 1. + qsq;
 
@@ -5437,40 +5413,30 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 
 		//if (y < 1. - 100. * NUMEPSILON) {
-		if ((Qtsq>0.0) && ((prim[1]*prim[1])>0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
-			if (lim==TYPE2) {
-				if (Qdotn<0.0) {
-					// Get Ebar and p_rad as usual
-					Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
-					pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-					prim[0] = pressure * 3.; // Erad = 3*p_rad
-					prim[1] = 0.;
-					prim[2] = 0.;
-					prim[3] = 0.;
-					returnval = 1;
-				}
-				else{
-					prim[0] = 1.e-30;
-					prim[1] = 0.;
-					prim[2] = 0.;
-					prim[3] = 0.;
-					returnval = 1;
-					//pressure = Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-					///prim[0] = pressure * 3.; // Erad = 3*p_rad	
-				}
-				//Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
-				//pressure = -Qdotn / (4. * GAMMAMAX_RAD*GAMMAMAX_RAD - 1.);
-				//prim[0] = pressure * 3.; // Erad = 3*p_rad	
-				//prim[1] = 0.;
-				//prim[2] = 0.;
-				//prim[3] = 0.;
+		if ((Qtsq > 0.0) && ((prim[1] * prim[1]) > 0.0) && ((prim[2] * prim[2]) > 0.0) && ((prim[3] * prim[3]) > 0.0)) {
+			if (lim == TYPE2) {
+				// Get Ebar and p_rad as usual
+				Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
+				pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+				prim[0] = pressure * 3.; // Erad = 3*p_rad
+				//prim[0] = 1.e-30;
+				if (isfinite(prim[0])){}
+				else prim[0] = 1.e-30;
+
+				if (!isfinite(prim[1])){}
+				else prim[1] = 0.;
+				if (!isfinite(prim[2])){}
+				else prim[2] = 0.;
+				if (!isfinite(prim[3])){}
+				else prim[3] = 0.;
+				returnval = 0;
 			}
 			else {
 				prim[0] = 1.e-30;
 				prim[1] = 0.;
 				prim[2] = 0.;
 				prim[3] = 0.;
-				returnval = 1;
+				//returnval = 1;
 			}
 
 		}
@@ -5480,7 +5446,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[2] = 0.;
 			prim[3] = 0.;
 
-			returnval = 1;
+			//returnval = 1;
 		}
 
 		//Floor on photon number+
@@ -5894,7 +5860,6 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 			// Ideal gas EOS
 			#if(TWO_T)
 			gamma_eos = calc_gamma_gas_w(S, rho0, w, fel);
-			if (isnan(gamma_eos))gamma_eos = GAMMA;
 			#else
 			gamma_eos = GAMMA;
 			#endif
@@ -7433,11 +7398,15 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 ) {
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
-	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
+	double pf_prefloor[NPR], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
 	#if(RESISTIVE)
 	struct of_state_res q;
 	#else
 	struct of_state q;
+	#endif
+	#if(TWO_T)
+	double uu_old = pf[UU];
+	double ue, ui, Theta, gam, C, dis;
 	#endif
 	int dofloor=0, flag = 0, m, k;
 
@@ -7469,6 +7438,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	//Store old values
 	#pragma unroll 9
 	for (k = 0; k < NPR_U; k++) pf_prefloor[k] = pf[k];
+	#if(TWO_T)
+	pf_prefloor[ENTRE] = pf[ENTRE];
+	pf_prefloor[ENTRI] = pf[ENTRI];
+	#endif
 
 	//floor on density 
 	if (pf[RHO] < rhoflr) {
@@ -7507,6 +7480,53 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	}
 	#endif
 
+	//Divide internal energy inject between electrons and ions 1:1
+	#if(TWO_T)
+	if(dofloor) {	
+		#if(CONSTANTGAMMA || FIXEDGAMMA)
+		ue = pf[ENTRE] * pow(pf[RHO], GAMMAE) / (GAMMAE - 1.0);
+		ui = pf[ENTRI] * pow(pf[RHO], GAMMA) / (GAMMA - 1.0);
+		dis = pf[UU] - (ue + ui);
+		ue += 0.5 * dis;
+		ui += 0.5 * dis;
+			#if(FULL_ENTROPY)
+			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
+			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
+			#else
+			pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
+			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
+			#endif
+		#elif(VARGAMMA)
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRE]), 2. / 3.)) - 1.0));
+		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+		ue = Theta / (MU_E * MASS_RATIO) * pf[RHO] / (gam - 1.0);
+
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRI]), 2. / 3.)) - 1.0));
+		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+		ui = Theta / (MU_I) * pf[RHO] / (gam - 1.0);
+
+		dis = pf[UU] - (ue + ui);
+		ue += 0.5 * dis;
+		C = ue / pf[RHO] * MU_E * MASS_RATIO;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			#if(FULL_ENTROPY)
+			pf[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
+			#else
+			pf[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
+			#endif
+
+		ui += 0.5 * dis;
+		C = ui / pf[RHO] * MU_I;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			#if(FULL_ENTROPY)
+			pf[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
+			#else
+			pf[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
+			#endif
+		#endif
+	}
+	#endif
+
 	#if(DRIFT_FLOOR)
 	trans = 10. * bsq / MY_MIN(pf[RHO], pf[UU]) - 1.;
 	if (dofloor && (trans) > 0.) {
@@ -7535,7 +7555,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		eos_mode_rhou_pres(gpu_eos_table, pf_prefloor[RHO], pf_prefloor[UU], &xP);
 		wold = pf_prefloor[RHO] + pf_prefloor[UU] + xP;
 		#elif(TWO_T)
-		wold = pf_prefloor[RHO] + pf_prefloor[UU] * GAMMA;
+		double gamma_g;
+		gamma_g = calc_gamma_gas_prim(pf_prefloor);
+		wold = pf_prefloor[RHO] + pf_prefloor[UU] * gamma_g;
 		#else
 		wold = pf_prefloor[RHO] + pf_prefloor[UU] * GAMMA;
 		#endif
@@ -7548,7 +7570,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		eos_mode_rhou_pres(gpu_eos_table, pf[RHO], pf[UU], &xP);
 		wnew = pf[RHO] + pf[UU] + xP;
 		#elif(TWO_T)
-		wnew = pf[RHO] + pf[UU] * GAMMA;
+		gamma_g = calc_gamma_gas_prim(pf);
+		wnew = pf[RHO] + pf[UU] * gamma_g;
 		#else
 		wnew = pf[RHO] + pf[UU] * GAMMA;
 		#endif
@@ -7654,38 +7677,6 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			}
 			#endif	
 		}
-	}
-	#endif
-
-	#if(TWO_T)
-	if(dofloor) {
-		#if(CONSTANTGAMMA || FIXEDGAMMA)
-			#if(FULL_ENTROPY)
-			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
-			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
-			#else
-			pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
-			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
-			#endif
-		#elif(VARGAMMA)
-		double Theta, u, C;
-		u = 0.5 * pf[UU];
-		C = u / pf[RHO] * MU_E * MASS_RATIO;
-		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
-			pf[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
-			#else
-			pf[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
-			#endif
-
-		C = u / pf[RHO] * MU_I;
-		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
-			pf[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
-			#else
-			pf[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
-			#endif
-		#endif
 	}
 	#endif
 
