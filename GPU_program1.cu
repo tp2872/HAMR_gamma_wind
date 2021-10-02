@@ -535,7 +535,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 	
 
-			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9)implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -1354,9 +1354,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 		}
 		#if(TWO_T)
-			#if(CONSTANTGAMMA)
-			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-			#elif(FIXEDGAMMA)
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
 			dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 			#elif(VARGAMMA)
 			double Theta_e;
@@ -1903,9 +1901,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				}
 				#if(TWO_T)
-					#if(CONSTANTGAMMA)
-					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-					#elif(FIXEDGAMMA)
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 					#elif(VARGAMMA)
 					double Theta_e;
@@ -2397,9 +2393,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				}
 				#if(TWO_T)
-					#if(CONSTANTGAMMA)
-					dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-					#elif(FIXEDGAMMA)
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 					#elif(VARGAMMA)
 					double Theta_e;
@@ -7405,7 +7399,6 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	struct of_state q;
 	#endif
 	#if(TWO_T)
-	double uu_old = pf[UU];
 	double ue, ui, Theta, gam, C, dis;
 	#endif
 	int dofloor=0, flag = 0, m, k;
@@ -7484,11 +7477,26 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if(TWO_T)
 	if(dofloor) {	
 		#if(CONSTANTGAMMA || FIXEDGAMMA)
+		//Calculate electron entropy
 		ue = pf[ENTRE] * pow(pf[RHO], GAMMAE) / (GAMMAE - 1.0);
+
+		//Calculate ion entropy
 		ui = pf[ENTRI] * pow(pf[RHO], GAMMA) / (GAMMA - 1.0);
+		
+		//Calculate total dissipation
 		dis = pf[UU] - (ue + ui);
 		ue += 0.5 * dis;
-		ui += 0.5 * dis;
+
+		//Check limits
+		if (ue > (1.0 - FLOOR_ENTROPY) * pf[UU]) {
+			ue = (1.0 - FLOOR_ENTROPY) * pf[UU];
+		}
+		if (ue < FLOOR_ENTROPY * pf[UU]) {
+			ue = FLOOR_ENTROPY * pf[UU];
+		}
+		ui = pf[UU] - ue;
+
+			//Calculate electron and ion entropies
 			#if(FULL_ENTROPY)
 			pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
 			pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
@@ -7497,16 +7505,30 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
+		//Calculate ue
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRE]), 2. / 3.)) - 1.0));
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ue = Theta / (MU_E * MASS_RATIO) * pf[RHO] / (gam - 1.0);
 
+		//Calculate ui
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRI]), 2. / 3.)) - 1.0));
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ui = Theta / (MU_I) * pf[RHO] / (gam - 1.0);
 
+		//Calculate total dissipation
 		dis = pf[UU] - (ue + ui);
 		ue += 0.5 * dis;
+
+		//Check limits
+		if (ue > (1.0 - FLOOR_ENTROPY) * pf[UU]) {
+			ue = (1.0 - FLOOR_ENTROPY) * pf[UU];
+		}
+		if (ue < FLOOR_ENTROPY * pf[UU]) {
+			ue = FLOOR_ENTROPY * pf[UU];
+		}
+		ui = pf[UU] - ue;
+
+		//Calculate electron entropy
 		C = ue / pf[RHO] * MU_E * MASS_RATIO;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)
@@ -7515,7 +7537,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
 			#endif
 
-		ui += 0.5 * dis;
+		//Calculate ion entropy
 		C = ui / pf[RHO] * MU_I;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
 			#if(FULL_ENTROPY)

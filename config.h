@@ -350,13 +350,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (1)
+#define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (0)
+#define VARGAMMA (1)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
