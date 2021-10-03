@@ -124,7 +124,7 @@ double calc_entropy(double* pr
 	entr = xentr;
 	//entr = exp(KTOT_FACTOR * entr);
 	#elif(TWO_T)
-		#if(FIXEDGAMMA || VARGAMMA)
+		#if(0)
 		double Theta;
 		//For variable entropy
 		Theta = (gamma_g - 1.0) * pr[UU] / pr[RHO] * MU_G;
@@ -134,11 +134,11 @@ double calc_entropy(double* pr
 			entr = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pr[RHO];
 			#endif
 		#else
-		double P = (gamma_g - 1.0) * pr[UU];
+		double P = (GAMMA - 1.0) * pr[UU];
 			#if(FULL_ENTROPY)
-			entr = 1. / (gamma_g - 1.) * log(P * pow(pr[RHO], -gamma_g));
+			entr = 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 			#else
-			entr = P * pow(pr[RHO], -gamma_g);
+			entr = P * pow(pr[RHO], -GAMMA);
 			#endif
 		#endif
 	#else 
@@ -179,7 +179,7 @@ double calc_Te(double* ph) {
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0)/ (MU_E*MASS_RATIO);
 			#else
 			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
@@ -203,7 +203,7 @@ double calc_Ti(double* ph) {
 			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
 			#else
 			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0) / MU_I;
@@ -327,7 +327,9 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM+P_NUM], ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM], Tg, bsq, dK_dS;
 	int j, k;
 	struct of_state_rad q_rad;
-	
+	#if(TWO_T)
+	double src_coulomb;
+	#endif
 	PLOOP dU[k] = 0.;
 
 	//Add M1 radiation terms
@@ -399,25 +401,32 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 
 	//Electron entropy source term for radiative cooling and coulomb coupling
 	#if(TWO_T)
-		#if(FIXEDGAMMA || CONSTANTGAMMA)
+	#if(FIXEDGAMMA || CONSTANTGAMMA)
 			#if(FULL_ENTROPY)
-			dK_dS = ph[RHO] / (GAMMAE - 1.) * ph[UU]);
+			dK_dS = ph[RHO] / ((GAMMAE - 1.) * ph[UU]);
 			#else
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
 			#endif
 		#elif(VARGAMMA)
-		double Theta_e;
+			double Theta_e, Theta_i, dK_dS_i;
 			//For variable entropy
-			#if(FULL_ENTROPY)
-			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
+			#if(FULL_ENTROPY_VARGAMMA)
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRE])), 2. / 3.)) - 1.0);
 			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRI])), 2. / 3.)) - 1.0);
+			dK_dS_i = (1.0 / Theta_i) * (MU_I);
 			#else
-			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0);
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRE]), 2. / 3.)) - 1.0);
 			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRI]), 2. / 3.)) - 1.0);
+			dK_dS_i = (ph[ENTRI] / Theta_i) * (MU_I);
 			#endif
 		#endif
+		if (!isfinite(dK_dS))dK_dS = 0.0;
 		dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-		dU[ENTRE] += dK_dS * source_Coulomb(ph);
+		src_coulomb = source_Coulomb(ph);
+		dU[ENTRE] += dK_dS * src_coulomb;
+		dU[ENTRI] -= dK_dS_i * src_coulomb;
 	#endif
 
 	#pragma ivdep
@@ -1105,7 +1114,7 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
 		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
 		#else
@@ -1142,9 +1151,9 @@ double calc_gamma_gas_prim(double* pr) {
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRE]), 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pow(pr[ENTRI]), 2. / 3.)) - 1.0));
+        #if(FULL_ENTROPY_VARGAMMA)
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
 		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
@@ -1193,7 +1202,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0)) / MU_I;
 		#else
@@ -1300,7 +1309,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
 		#else
@@ -1368,7 +1377,7 @@ double set_S_w(double* S, double rho, double w, double delta) {
 	C = MU_I / rho;
 	Ti = 1.0 / 40.0 * (sqrt(5.0) * sqrt(5.0 * C * C * quanti * quanti + 44.0 * C * quanti + 20.0) + 5.0 * C * quanti - 10.0) / MU_I;
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
-		#if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
 		S[0] = log(pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
 		S[1] = log(pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho);
 		#else

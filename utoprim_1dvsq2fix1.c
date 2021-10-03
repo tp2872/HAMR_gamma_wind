@@ -595,11 +595,11 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u
         game = GAMMA;
         gami = GAMMA;
             #if(FULL_ENTROPY)
-            T_e = fabs((game - 1.0) * exp(S[0] * pow(*rho, game - 1.0)));
-            T_i = fabs((gami - 1.0) * exp(S[1] * pow(*rho, gami - 1.0)));
+            T_e = fabs((game - 1.0) * exp(S[0] * pow(rho[0], game - 1.0)));
+            T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho[0], gami - 1.0)));
             #else
-            T_e = fabs(S[0] * pow(*rho, game - 1.0));
-            T_i = fabs(S[1] * pow(*rho, gami - 1.0));
+            T_e = fabs(S[0] * pow(rho[0], game - 1.0));
+            T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
             #endif
         #elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
         game = GAMMAE;
@@ -612,39 +612,30 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u
             T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
             #endif
         #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-            #if(FULL_ENTROPY)
-            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+            #if(FULL_ENTROPY_VARGAMMA)
+            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[1])), 2. / 3.)) - 1.0) / MU_I);
             #else
-            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * S[1], 2. / 3.)) - 1.0) / MU_I);
+            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[1]), 2. / 3.)) - 1.0) / MU_I);
             #endif
         #endif
 
         //Calculate gas pressures
-        pe = T_e * rho[0];
-        pi = T_i * rho[0];
+		pe = T_e * rho[0];
+		pi = T_i * rho[0];
 
-        //Calculate ug from kappa
-        #if(CONSTANTGAMMA)
-        p[0] = K_atm2 * pow(rho[0], GAMMA);
-        #elif(FIXEDGAMMA || VARGAMMA)   //  // variable gamma: Sadowski+17 & Chael+19  
-        T_g = 0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * K_atm2, 2. / 3.)) - 1.0) / MU_G;
-        p[0] = T_g * rho[0];
-        #endif
+		//Update internal energy of electrons
+		p[0] = (pe + pi);
 
-        //Update internal energy of electrons
-        double factor = p[0] / (pe + pi);
-        pe *= factor;
-        pi *= factor;
+		//Limit temperature ratios
+		if (pe > (1.0 - 0.5 * FLOOR_ENTROPY) * p[0]) pe = (1.0 - FLOOR_ENTROPY) * p[0];
+		if (pe < 0.5 * FLOOR_ENTROPY * p[0]) pe = FLOOR_ENTROPY * p[0];
+		pi = p[0] - pe;
 
-        if (pe > 0.99 * p[0]) pe = 0.99 * p[0];
-        if (pe < 0.01 * p[0]) pe = 0.01 * p[0];
-        pi = p[0] - pe;
-
-        //Set temperature
-        T_e = pe / rho[0];
-        T_i = pi / rho[0];
+		//Set temperature
+		T_e = pe / rho[0];
+		T_i = pi / rho[0];
 
         //Calculate the internal energy
         #if(CONSTANTGAMMA)
@@ -699,12 +690,12 @@ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
         T_i = fabs(S[1] * pow(rho, gami - 1.0));
         #endif
     #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-        #if(FULL_ENTROPY)
-        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[1]), 2. / 3.)) - 1.0) / MU_I);
+        #if(FULL_ENTROPY_VARGAMMA)
+        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[1])), 2. / 3.)) - 1.0) / MU_I);
         #else
-        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / MU_I);
+        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[1]), 2. / 3.)) - 1.0) / MU_I);
         #endif
     #endif
 
@@ -742,7 +733,7 @@ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
         S[1] = pi * pow(rho, -gami);
         #endif
     #elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-        #if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
         S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
         S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
         #else

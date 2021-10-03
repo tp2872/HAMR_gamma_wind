@@ -179,12 +179,20 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			#endif
 		#elif(VARGAMMA)
 		//Calculate ue
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * exp(pv[ENTRE])), 2. / 3.)) - 1.0));
+		#else
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * pv[ENTRE]), 2. / 3.)) - 1.0));
+		#endif
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ue = Theta / (MU_E * MASS_RATIO) * pv[RHO] / (gam - 1.0);
 
 		//Calculate ui
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * exp(pv[ENTRI])), 2. / 3.)) - 1.0));
+		#else
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * pv[ENTRI]), 2. / 3.)) - 1.0));
+		#endif
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ui = Theta / (MU_I) * pv[RHO] / (gam - 1.0);
 
@@ -204,7 +212,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//Calculate electron entropy
 		C = ue / pv[RHO] * MU_E * MASS_RATIO;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			pv[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
 			#else
 			pv[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];
@@ -213,7 +221,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//Calculate ion entropy
 		C = ui / pv[RHO] * MU_I;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			pv[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
 			#else
 			pv[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];

@@ -1060,12 +1060,12 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
 				#endif
-			#else   // variable gamma: Sadowski+17, Chael+19
+			#elif(VARGAMMA)   // variable gamma: Sadowski+17, Chael+19
 			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
 				#else
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
@@ -1075,7 +1075,7 @@ void init_torus()
 			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * u_i / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
 				#else
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
@@ -1119,12 +1119,12 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 				pi[ENTRE] = (GAMMAE - 1.)* deltaf* pi[UU] * pow(pi[RHO], -GAMMAE);
 				pi[ENTRI] = (GAMMA - 1.)* (1. - deltaf)* pi[UU] * pow(pi[RHO], -GAMMA);
 				#endif
-			#else   // variable gamma: Sadowski+17, Chael+19
+			#elif(VARGAMMA)   // variable gamma: Sadowski+17, Chael+19
 			u_e = deltaf * pi[UU];
 			C = u_e / pi[RHO] * MU_E * MASS_RATIO;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * u_e / pi[RHO] * MU_E * MASS_RATIO;
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				pi[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
 				#else
 				pi[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
@@ -1134,7 +1134,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 			C = u_e / pi[RHO] * MU_I;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 			Theta = (gam - 1.0) * u_i / pi[RHO] * MU_I;
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				pi[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
 				#else
 				pi[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
@@ -1206,12 +1206,12 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		pi[ENTRE] = (GAMMAE - 1.)* deltaf* pi[UU] * pow(pi[RHO], -GAMMAE);
 		pi[ENTRI] = (GAMMA - 1.)* (1. - deltaf)* pi[UU] * pow(pi[RHO], -GAMMA);
 		#endif
-	#else   // variable gamma: Sadowski+17, Chael+19
+	#elif(VARGAMMA)   // variable gamma: Sadowski+17, Chael+19
 	u_e = deltaf * pi[UU];
 	C = u_e / pi[RHO] * MU_E * MASS_RATIO;
 	gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 	Theta = (gam - 1.0) * u_e / pi[RHO] * MU_E * MASS_RATIO;
-		#if(FULL_ENTROPY)
+		#if(FULL_ENTROPY_VARGAMMA)
 		pi[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
 		#else
 		pi[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];
@@ -1221,7 +1221,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 	C = u_e / pi[RHO] * MU_I;
 	gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
 	Theta = (gam - 1.0) * u_i / pi[RHO] * MU_I;
-		#if(FULL_ENTROPY)
+        #if(FULL_ENTROPY_VARGAMMA)
 		pi[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO]);
 		#else
 		pi[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pi[RHO];

@@ -533,7 +533,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//	#endif
 			//);
 
-			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -730,7 +730,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		double Theta, gam, C;
 
 		//Calculate ue
-		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb[RHO] * pb[ENTRE]), 2. / 3.)) - 1.0));
+			#if(FULL_ENTROPY_VARGAMMA)
+			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb[RHO] * exp(pb[ENTRE])), 2. / 3.)) - 1.0));
+			#else
+			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb[RHO] * pb[ENTRE]), 2. / 3.)) - 1.0));
+			#endif
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ue = Theta / (MU_E * MASS_RATIO) * pb[RHO] / (gam - 1.0);
 
@@ -742,12 +746,20 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		//Set electron entropy
 		C = ue / pb[RHO] * MU_E * MASS_RATIO;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-		pb[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+			#if(FULL_ENTROPY_VARGAMMA)
+			pb[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO]);
+			#else
+			pb[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+			#endif
 
 		//Set ion entropy
 		C = ui / pb[RHO] * MU_I;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-		pb[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+			#if(FULL_ENTROPY_VARGAMMA)
+			pb[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO]);
+			#else
+			pb[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
+			#endif
 		get_state(pb, geom, &q);
 		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
 		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
@@ -831,7 +843,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			#elif(VARGAMMA)
 			double Theta_i;
 				//For variable entropy
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb[RHO] * exp(pb[ENTRI]), 2. / 3.)) - 1.0);
 				dK_dS = (1.0 / Theta_i) * (MU_I);
 				#else
@@ -863,7 +875,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		//Q = rho ^ (gamma - 1.0) * d(kappa * rho * uu) / (gamma - 1);
 		double Theta_e;
 			//For variable entropy
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb[RHO] * exp(pb[ENTRE]), 2. / 3.)) - 1.0);
 			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 			#else
@@ -939,7 +951,19 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
-		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+				dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+				#elif(VARGAMMA)
+					//For variable entropy
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+					#else
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+					dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+					#endif
+				#endif
+		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
 		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
@@ -950,8 +974,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
-					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO] * exp(pb_old[ENTRI]), 2. / 3.)) - 1.0);
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRI])), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRI]), 2. / 3.)) - 1.0);
@@ -1013,7 +1037,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					double Theta, gam, C;
 					
 					//Calculate ue
-					Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0));
+						#if(FULL_ENTROPY_VARGAMMA)
+						Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRE])), 2. / 3.)) - 1.0));
+						#else
+						Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0));
+						#endif
 					gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
@@ -1025,12 +1053,20 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					//Set electron entropy
 					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
 					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+						#if(FULL_ENTROPY_VARGAMMA)
+						pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+						#else
+						pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+						#endif
 
 					//Set ion entropy
 					C = ui / pb_new[RHO] * MU_I;
 					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-					pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+						#if(FULL_ENTROPY_VARGAMMA)
+						pb_new[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+						#else
+						pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+						#endif
 					#endif
 				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
@@ -1096,7 +1132,19 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					dEdpb_inv[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dpb;
 				}
 				#if(TWO_T)
-				E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+				#if(CONSTANTGAMMA || FIXEDGAMMA)
+						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+						#elif(VARGAMMA)
+							//For variable entropy
+							#if(FULL_ENTROPY_VARGAMMA)
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+							#else
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
+							#endif
+						#endif
+				E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 				dEdpb_inv[4][i - UU] = (E_new[4] - E_old[4]) / dpb;
 				#endif
 				#if(P_NUM)
@@ -1106,10 +1154,10 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				if (do_entropy == 1) {
 					#if(TWO_T)
 						#if(CONSTANTGAMMA || FIXEDGAMMA)
-						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+						dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 						#elif(VARGAMMA)
 							//For variable entropy
-							#if(FULL_ENTROPY)
+							#if(FULL_ENTROPY_VARGAMMA)
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
@@ -1262,7 +1310,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			double Theta, gam, C;
 
 			//Calculate ue
-			Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0));
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRE])), 2. / 3.)) - 1.0));
+				#else
+				Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0));
+				#endif
 			gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
 
@@ -1281,13 +1333,21 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			if (flag_floor_kappa == 1) {
 				C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
 				Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-				pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+					#if(FULL_ENTROPY_VARGAMMA)
+					pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+					#else
+					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+					#endif
 			}
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
 			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+				#if(FULL_ENTROPY_VARGAMMA)
+				pb_new[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+				#else
+				pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+				#endif
 			#endif
 		U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 		U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
@@ -1370,8 +1430,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
-					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRI])), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRI]), 2. / 3.)) - 1.0);
@@ -1395,7 +1455,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#elif(VARGAMMA)
 			double Theta_e;
 			//For variable entropy
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 				#else
@@ -1566,7 +1626,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY_VARGAMMA)
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO] * exp(pb_old[ENTRI]), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
@@ -1726,7 +1786,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 							dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 							#elif(VARGAMMA)
 								//For variable entropy
-								#if(FULL_ENTROPY)
+								#if(FULL_ENTROPY_VARGAMMA)
 								Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 								dK_dS = (1.0 / Theta_i) * (MU_I);
 								#else
@@ -1974,7 +2034,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 						#elif(VARGAMMA)
 							//For variable entropy
-							#if(FULL_ENTROPY)
+							#if(FULL_ENTROPY_VARGAMMA)
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
@@ -1999,14 +2059,14 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#elif(VARGAMMA)
 					double Theta_e;
 					//For variable entropy
-						#if(FULL_ENTROPY)
+						#if(FULL_ENTROPY_VARGAMMA)
 						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 						#else
 						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * pb_new[ENTRE], 2. / 3.)) - 1.0);
 						dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 						#endif
-#					endif
+					#endif
 				error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 				#endif
 				#if(P_NUM)
@@ -2158,7 +2218,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY_VARGAMMA)
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO] * exp(pb_old[ENTRI]), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
@@ -2308,7 +2368,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 							dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 							#elif(VARGAMMA)
 								//For variable entropy
-								#if(FULL_ENTROPY)
+								#if(FULL_ENTROPY_VARGAMMA)
 								Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 								dK_dS = (1.0 / Theta_i) * (MU_I);
 								#else
@@ -2566,7 +2626,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 						#elif(VARGAMMA)
 							//For variable entropy
-							#if(FULL_ENTROPY)
+							#if(FULL_ENTROPY_VARGAMMA)
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
@@ -2591,7 +2651,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#elif(VARGAMMA)
 					double Theta_e;
 					//For variable entropy
-						#if(FULL_ENTROPY)
+						#if(FULL_ENTROPY_VARGAMMA)
 						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 						#else
@@ -2747,7 +2807,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 			#elif(VARGAMMA)
 				//For variable entropy
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 				dK_dS = (1.0 / Theta_i) * (MU_I);
 				#else
@@ -2770,9 +2830,8 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 		#if(CONSTANTGAMMA || FIXEDGAMMA)
 		dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 		#elif(VARGAMMA)
-		Theta_e;
 		//For variable entropy
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 			#else
@@ -2829,7 +2888,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY_VARGAMMA)
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO] * exp(pb_old[ENTRI]), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
@@ -2984,7 +3043,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 							dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 							#elif(VARGAMMA)
 								//For variable entropy
-								#if(FULL_ENTROPY)
+								#if(FULL_ENTROPY_VARGAMMA)
 								Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 								dK_dS = (1.0 / Theta_i) * (MU_I);
 								#else
@@ -3226,7 +3285,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 						#elif(VARGAMMA)
 							//For variable entropy
-							#if(FULL_ENTROPY)
+							#if(FULL_ENTROPY_VARGAMMA)
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
@@ -3253,7 +3312,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					#elif(VARGAMMA)
 					double Theta_e;
 					//For variable entropy
-						#if(FULL_ENTROPY)
+						#if(FULL_ENTROPY_VARGAMMA)
 						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 						#else
@@ -3387,7 +3446,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 			#elif(VARGAMMA)
 				//For variable entropy
-				#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY_VARGAMMA)
 				Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 				dK_dS = (1.0 / Theta_i) * (MU_I);
 				#else
@@ -3410,9 +3469,8 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		#if(CONSTANTGAMMA || FIXEDGAMMA)
 		dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 		#elif(VARGAMMA)
-		Theta_e;
 		//For variable entropy
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 			#else
@@ -3469,7 +3527,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
 				#elif(VARGAMMA)
 					//For variable entropy
-					#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY_VARGAMMA)
 					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO] * exp(pb_old[ENTRI]), 2. / 3.)) - 1.0);
 					dK_dS = (1.0 / Theta_i) * (MU_I);
 					#else
@@ -3626,7 +3684,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 								dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 								#elif(VARGAMMA)
 									//For variable entropy
-									#if(FULL_ENTROPY)
+									#if(FULL_ENTROPY_VARGAMMA)
 									Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 									dK_dS = (1.0 / Theta_i) * (MU_I);
 									#else
@@ -3879,7 +3937,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
 						#elif(VARGAMMA)
 							//For variable entropy
-							#if(FULL_ENTROPY)
+							#if(FULL_ENTROPY_VARGAMMA)
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
@@ -3906,7 +3964,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#elif(VARGAMMA)
 					double Theta_e;
 					//For variable entropy
-						#if(FULL_ENTROPY)
+						#if(FULL_ENTROPY_VARGAMMA)
 						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
 						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
 						#else
@@ -4071,9 +4129,9 @@ __device__ double source_Coulomb(double* p) {
 		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0);
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(p[RHO] * exp(p[ENTRE])), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(p[RHO] * exp(p[ENTRI])), 2. / 3.)) - 1.0);
 		#else
 		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(p[RHO] * p[ENTRE]), 2. / 3.)) - 1.0);
 		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(p[RHO] * p[ENTRI]), 2. / 3.)) - 1.0);
@@ -4145,9 +4203,9 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0);
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(exp(S[0])), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(exp(S[1])), 2. / 3.)) - 1.0);
 		#else
 		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[0]), 2. / 3.)) - 1.0);
 		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[1]), 2. / 3.)) - 1.0);
@@ -4181,9 +4239,9 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0);
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * fabs(exp(pr[ENTRE])), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * fabs(exp(pr[ENTRI])), 2. / 3.)) - 1.0);
 		#else
 		Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * fabs(pr[ENTRE]), 2. / 3.)) - 1.0);
 		Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * fabs(pr[ENTRI]), 2. / 3.)) - 1.0);
@@ -4231,9 +4289,9 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / MU_I;
+		#if(FULL_ENTROPY_VARGAMMA)
+		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[1])), 2. / 3.)) - 1.0) / MU_I;
 		#else
 		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[1]), 2. / 3.)) - 1.0) / MU_I;
@@ -4335,9 +4393,9 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I);
+		#if(FULL_ENTROPY_VARGAMMA)
+		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(exp(S[1])), 2. / 3.)) - 1.0) / (MU_I);
 		#else
 		Te = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 		Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * fabs(S[1]), 2. / 3.)) - 1.0) / (MU_I);
@@ -4414,7 +4472,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 
 	//Set entropy
-		#if(FULL_ENTROPY)
+		#if(FULL_ENTROPY_VARGAMMA)
 		S[0] = log(pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
 		S[1] = log(pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho);
 		#else
@@ -7102,11 +7160,11 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 		game = GAMMA;
 		gami = GAMMA;
 			#if(FULL_ENTROPY)
-			T_e = fabs((game - 1.0) * exp(S[0] * pow(*rho, game - 1.0)));
-			T_i = fabs((gami - 1.0) * exp(S[1] * pow(*rho, gami - 1.0)));
+			T_e = fabs((game - 1.0) * exp(S[0] * pow(rho[0], game - 1.0)));
+			T_i = fabs((gami - 1.0) * exp(S[1] * pow(rho[0], gami - 1.0)));
 			#else
-			T_e = fabs(S[0] * pow(*rho, game - 1.0));
-			T_i = fabs(S[1] * pow(*rho, gami - 1.0));
+			T_e = fabs(S[0] * pow(rho[0], game - 1.0));
+			T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
 			#endif
 		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		game = GAMMAE;
@@ -7119,12 +7177,12 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 			T_i = fabs(S[1] * pow(rho[0], gami - 1.0));
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY)
-			T_e = 0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-			T_i = 0.2 * (sqrt(1.0 + 25.0 * pow(rho[0] * pow(S[1]), 2. / 3.)) - 1.0) / MU_I;
+			#if(FULL_ENTROPY_VARGAMMA)
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[1])), 2. / 3.)) - 1.0) / MU_I);
 			#else
-			T_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-			T_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[1]), 2. / 3.)) - 1.0) / MU_I;
+			T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+			T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[1]), 2. / 3.)) - 1.0) / MU_I);
 			#endif
 		#endif
 
@@ -7190,9 +7248,9 @@ __device__ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
 		T_i = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		T_e = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-		T_i = 0.2 * (sqrt(1.0 + 25.0 * pow(rho * pow(S[1]), 2. / 3.)) - 1.0) / MU_I;
+		#if(FULL_ENTROPY_VARGAMMA)
+		T_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+		T_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[1])), 2. / 3.)) - 1.0) / MU_I;
 		#else
 		T_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 		T_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[1]), 2. / 3.)) - 1.0) / MU_I;
@@ -7225,7 +7283,7 @@ __device__ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
 		S[1] = pi * pow(rho, -gami);
 		#endif
 	#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
+		#if(FULL_ENTROPY_VARGAMMA)
 		S[0] = log(pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
 		S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
 		#else
@@ -7871,13 +7929,22 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#elif(VARGAMMA)
+		
 		//Calculate ue
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * exp(pf[ENTRE])), 2. / 3.)) - 1.0));
+		#else
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRE]), 2. / 3.)) - 1.0));
+		#endif
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ue = Theta / (MU_E * MASS_RATIO) * pf[RHO] / (gam - 1.0);
 
 		//Calculate ui
+		#if(FULL_ENTROPY_VARGAMMA)
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * exp(pf[ENTRI])), 2. / 3.)) - 1.0));
+		#else
 		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pf[RHO] * pf[ENTRI]), 2. / 3.)) - 1.0));
+		#endif
 		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
 		ui = Theta / (MU_I) * pf[RHO] / (gam - 1.0);
 
@@ -7897,7 +7964,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		//Calculate electron entropy
 		C = ue / pf[RHO] * MU_E * MASS_RATIO;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			pf[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
 			#else
 			pf[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
@@ -7906,7 +7973,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		//Calculate ion entropy
 		C = ui / pf[RHO] * MU_I;
 		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY_VARGAMMA)
 			pf[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO]);
 			#else
 			pf[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pf[RHO];
@@ -8487,21 +8554,25 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
 			#endif
 		#elif(VARGAMMA)
-			double Theta_e;
+			double Theta_e, Theta_i, dK_dS_i;
 			//For variable entropy
-			#if(FULL_ENTROPY)
-			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0);
+			#if(FULL_ENTROPY_VARGAMMA)
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRE])), 2. / 3.)) - 1.0);
 			dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRI])), 2. / 3.)) - 1.0);
+			dK_dS_i = (1.0 / Theta_i) * (MU_I);
 			#else
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRE]), 2. / 3.)) - 1.0);
 			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRI]), 2. / 3.)) - 1.0);
+			dK_dS_i = (ph[ENTRI] / Theta_i) * (MU_I);
 			#endif
 		#endif
 		if (!isfinite(dK_dS))dK_dS = 0.0;
 		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 		src_coulomb = source_Coulomb(ph);
 		dU[ENTRE] += dK_dS * src_coulomb;
-		dU[ENTRI] -= dK_dS * src_coulomb;
+		dU[ENTRI] -= dK_dS_i * src_coulomb;
 	#endif
 
 	#pragma ivdep
@@ -8642,8 +8713,8 @@ __device__ double calc_Te(double* ph) {
 			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY)
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+			#if(FULL_ENTROPY_VARGAMMA)
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRE])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 			#else
 			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(ph[ENTRE]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
 			#endif
@@ -8666,8 +8737,8 @@ __device__ double calc_Ti(double* ph) {
 			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
 			#endif
 		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY)
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
+			#if(FULL_ENTROPY_VARGAMMA)
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRI])), 2. / 3.)) - 1.0) / MU_I;
 			#else
 			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
 			#endif
