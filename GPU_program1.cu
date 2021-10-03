@@ -8570,7 +8570,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM],dK_dS, bsq;
 	int k;
 	#if(TWO_T)
-	double src_coulomb;
+	double src_coulomb, dK_dS_i;
 	#endif
 
 	PLOOP dU[k] = 0.;
@@ -8647,11 +8647,13 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		#if(FIXEDGAMMA || CONSTANTGAMMA)
 			#if(FULL_ENTROPY)
 			dK_dS = ph[RHO] / ((GAMMAE - 1.) * ph[UU]);
+			dK_dS_i = ph[RHO] / ((GAMMA - 1.) * ph[UU]);
 			#else
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
+			dK_dS_i = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0);
 			#endif
 		#elif(VARGAMMA)
-			double Theta_e, Theta_i, dK_dS_i;
+			double Theta_e, Theta_i;
 			//For variable entropy
 			#if(FULL_ENTROPY_VARGAMMA)
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRE])), 2. / 3.)) - 1.0);
