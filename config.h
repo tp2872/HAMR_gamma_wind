@@ -140,8 +140,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 18
+#define BS_1 48
+#define BS_2 36
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -338,7 +338,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)

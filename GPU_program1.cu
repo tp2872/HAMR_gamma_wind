@@ -886,8 +886,10 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / (dK_dS * norm));
 	#endif
 	#if(P_NUM)
-	//norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
-	//if (pflag_rad == 0)error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+	if (pflag_rad == 0) {
+		norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
+		error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+	}
 	#endif
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
 	norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2]) + fabs(U_f[U2]) + fabs(Dt * dU[U2]));
@@ -1132,18 +1134,18 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					dEdpb_inv[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dpb;
 				}
 				#if(TWO_T)
-				#if(CONSTANTGAMMA || FIXEDGAMMA)
-						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-						#elif(VARGAMMA)
-							//For variable entropy
-							#if(FULL_ENTROPY_VARGAMMA)
-							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
-							dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
-							#else
-							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
-							dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
-							#endif
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
+					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					#elif(VARGAMMA)
+						//For variable entropy
+						#if(FULL_ENTROPY_VARGAMMA)
+						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+						#else
+						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+						dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
 						#endif
+					#endif
 				E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 				dEdpb_inv[4][i - UU] = (E_new[4] - E_old[4]) / dpb;
 				#endif
@@ -1158,7 +1160,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 						#elif(VARGAMMA)
 							//For variable entropy
 							#if(FULL_ENTROPY_VARGAMMA)
-							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRI]), 2. / 3.)) - 1.0);
+							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRI])), 2. / 3.)) - 1.0);
 							dK_dS = (1.0 / Theta_i) * (MU_I);
 							#else
 							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRI]), 2. / 3.)) - 1.0);
@@ -1466,8 +1468,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (norm * dK_dS));
 		#endif
 		#if(P_NUM)
-		//norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		//if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+		if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -1592,7 +1594,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
 	#if(TWO_T)
-	double gamma_g, Theta_i;
+	double gamma_g, Theta_i, Theta_e;
 	#endif
 
 	//Set error to 0
@@ -1615,7 +1617,19 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
-		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+			#elif(VARGAMMA)
+				//For variable entropy
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+				#else
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+				dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+				#endif
+			#endif
+		E_old[4] = (1.0/ dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
 		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
@@ -1773,7 +1787,19 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dUb;
 					}
 					#if(TWO_T)
-					E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+						#if(CONSTANTGAMMA || FIXEDGAMMA)
+						dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+						#elif(VARGAMMA)
+							//For variable entropy
+							#if(FULL_ENTROPY_VARGAMMA)
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+							#else
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
+							#endif
+						#endif
+					E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 					dEdUb[4][i - UU] = (E_new[4] - E_old[4]) / dUb;
 					#endif
 					#if(P_NUM)
@@ -2184,7 +2210,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
 	#if(TWO_T)
-	double gamma_g, Theta_i;
+	double gamma_g, Theta_i, Theta_e;
 	#endif
 
 	//Set error to 0
@@ -2207,7 +2233,19 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
-		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+			#elif(VARGAMMA)
+				//For variable entropy
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+				#else
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+				dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+				#endif
+			#endif
+		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);		
 		#endif
 		#if(P_NUM)
 		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
@@ -2305,7 +2343,6 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 					#endif
 
-	
 					//Recalculate gas entropy for consistency
 					#if(DOKTOT)
 					U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
@@ -2355,7 +2392,19 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dUb;
 					}
 					#if(TWO_T)
-					E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+						#if(CONSTANTGAMMA || FIXEDGAMMA)
+						dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+						#elif(VARGAMMA)
+							//For variable entropy
+							#if(FULL_ENTROPY_VARGAMMA)
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+							#else
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
+							#endif
+						#endif
+					E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 					dEdUb[4][i - UU] = (E_new[4] - E_old[4]) / dUb;
 					#endif
 					#if(P_NUM)
@@ -2877,7 +2926,19 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
-		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+				#elif(VARGAMMA)
+					//For variable entropy
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+					#else
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+					dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+					#endif
+				#endif
+		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
 		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
@@ -3030,7 +3091,19 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU_RAD][i - UU_RAD] = (E_new[k - UU_RAD] - E_old[k - UU_RAD]) / dUb;
 					}
 					#if(TWO_T)
-					E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+						#if(CONSTANTGAMMA || FIXEDGAMMA)
+						dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+						#elif(VARGAMMA)
+							//For variable entropy
+							#if(FULL_ENTROPY_VARGAMMA)
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+							#else
+							Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+							dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
+							#endif
+						#endif
+					E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 					dEdUb[4][i - UU_RAD] = (E_new[4] - E_old[4]) / dUb;
 					#endif
 					#if(P_NUM)
@@ -3516,7 +3589,19 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		//Set reference error at start
 		for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
-		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+				#elif(VARGAMMA)
+					//For variable entropy
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+					#else
+					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+					dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+					#endif
+				#endif
+		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
 		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
@@ -3671,7 +3756,19 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 							dEdpb[k - UU_RAD][i - UU_RAD] = (E_new[k - UU_RAD] - E_old[k - UU_RAD]) / dpb;
 						}
 						#if(TWO_T)
-						E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+							#if(CONSTANTGAMMA || FIXEDGAMMA)
+							dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+							#elif(VARGAMMA)
+								//For variable entropy
+								#if(FULL_ENTROPY_VARGAMMA)
+								Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+								dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+								#else
+								Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRE]), 2. / 3.)) - 1.0);
+								dK_dS = (pb_new[ENTRE] / Theta_e) * (MU_E*MASS_RATIO);
+								#endif
+							#endif
+						E_new[4] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
 						dEdpb[4][i - UU_RAD] = (E_new[4] - E_old[4]) / dpb;
 						#endif
 						#if(P_NUM)
