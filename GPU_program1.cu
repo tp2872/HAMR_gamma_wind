@@ -1507,7 +1507,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If total error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-		//	keep_iterating = 0;
+			keep_iterating = 0;
 		}
 
 		//If iterated error increasing stop iterating
@@ -1518,7 +1518,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//If total error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
