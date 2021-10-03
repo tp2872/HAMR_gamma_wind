@@ -444,9 +444,6 @@ MNEMONICS SECTION
 /* mnemonics for primitive vars; conserved vars */
 #define RHO	(0)	
 #define UU	(1)
-#if (DOHELM_TEMPERATURE)
-#define DOHELM_TEMP (UU)
-#endif
 #define U1	(2)
 #define U2	(3)
 #define U3	(4)

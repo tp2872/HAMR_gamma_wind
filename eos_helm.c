@@ -595,7 +595,6 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 void validate_T(double* temp);
 
 void validate_T(double* temp) {
-    //if (*temp < 0.0) *temp = 1e-30;
     if (*temp < eos_temp_low) *temp = eos_temp_low;
     if (*temp > eos_temp_up) *temp = eos_temp_up;
     return;
