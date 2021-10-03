@@ -887,8 +887,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 	#if(P_NUM)
 	if (pflag_rad == 0) {
-		norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
-		error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+		//norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
+		//error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
 	}
 	#endif
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
@@ -954,21 +954,22 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		#if(TWO_T)
 			#if(CONSTANTGAMMA || FIXEDGAMMA)
-				dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
-				#elif(VARGAMMA)
-					//For variable entropy
-					#if(FULL_ENTROPY_VARGAMMA)
-					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
-					dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
-					#else
-					Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
-					dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
-					#endif
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+			#elif(VARGAMMA)
+				//For variable entropy
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+				#else
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * pb_old[ENTRE]), 2. / 3.)) - 1.0);
+				dK_dS = (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 				#endif
+			#endif
 		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
-		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+		E_old[4 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
 		#endif
 		if (do_entropy == 1) {
 			#if(TWO_T)	
@@ -1150,7 +1151,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dEdpb_inv[4][i - UU] = (E_new[4] - E_old[4]) / dpb;
 				#endif
 				#if(P_NUM)
-				E_new[4 + TWO_T] = (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
+				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+				E_new[4 + TWO_T] = T_GAS  * (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
 				dEdpb_inv[4 + TWO_T][i - UU] = (E_new[4 + TWO_T] - E_old[4 + TWO_T]) / dpb;
 				#endif
 				if (do_entropy == 1) {
@@ -1468,8 +1470,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (norm * dK_dS));
 		#endif
 		#if(P_NUM)
-		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		//norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+		//if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -1507,7 +1509,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If total error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			keep_iterating = 0;
+			//keep_iterating = 0;
 		}
 
 		//If iterated error increasing stop iterating
@@ -1518,7 +1520,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//If total error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			if (count_increase >= 5) keep_iterating = 0;
+			//if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
@@ -5975,7 +5977,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	if (prim[4] < 0.0) {
 		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
-		returnval = 1;
+		returnval = 0;
 	}
 	#endif
 
@@ -8668,6 +8670,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 			#endif
 		#endif
 		if (!isfinite(dK_dS))dK_dS = 0.0;
+		if (!isfinite(dK_dS_i))dK_dS_i = 0.0;
 		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 		src_coulomb = source_Coulomb(ph);
 		dU[ENTRE] += dK_dS * src_coulomb;

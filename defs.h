@@ -776,6 +776,7 @@ double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL],
 int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
 int read_M1, read_2T, read_Pnum, read_Res;
+int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 int(*block)[NV];
