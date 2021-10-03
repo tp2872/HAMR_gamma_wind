@@ -3140,7 +3140,7 @@ double calc_refcrit(int n){
 		}
 	}
 	#else
-		if (block[n][AMR_NODE] == rank && t>1000.0){
+	if (block[n][AMR_NODE] == rank){
 		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi, geom, q, bsq)
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
@@ -3157,7 +3157,8 @@ double calc_refcrit(int n){
 			//{
 				if ((p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06)) > ref_val && r < 60.) ref_val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
 				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-			//}
+
+				//}
 		}
 	}
 	#endif

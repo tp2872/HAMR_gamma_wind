@@ -77,6 +77,9 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#else
 	struct of_state q;
 	#endif
+	#if(TWO_T)
+	double ue, ui, Theta, gam, C, dis;
+	#endif
 	struct of_geom geom;
 
 	coord(n, i,j, z, CENT,X) ;
@@ -143,6 +146,82 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
+	//Divide internal energy inject between electrons and ions 1:1
+	#if(TWO_T)
+	if(dofloor) {	
+		#if(CONSTANTGAMMA || FIXEDGAMMA)
+		//Calculate electron entropy
+		ue = pv[ENTRE] * pow(pv[RHO], GAMMAE) / (GAMMAE - 1.0);
+
+		//Calculate ion entropy
+		ui = pv[ENTRI] * pow(pv[RHO], GAMMA) / (GAMMA - 1.0);
+		
+		//Calculate total dissipation
+		dis = pv[UU] - (ue + ui);
+		ue += 0.5 * dis;
+
+		//Check limits
+		if (ue > (1.0 - FLOOR_ENTROPY) * pv[UU]) {
+			ue = (1.0 - FLOOR_ENTROPY) * pv[UU];
+		}
+		if (ue < FLOOR_ENTROPY * pv[UU]) {
+			ue = FLOOR_ENTROPY * pv[UU];
+		}
+		ui = pv[UU] - ue;
+
+			//Calculate electron and ion entropies
+			#if(FULL_ENTROPY)
+			pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
+			pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+			#else
+			pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
+			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+			#endif
+		#elif(VARGAMMA)
+		//Calculate ue
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * pv[ENTRE]), 2. / 3.)) - 1.0));
+		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+		ue = Theta / (MU_E * MASS_RATIO) * pv[RHO] / (gam - 1.0);
+
+		//Calculate ui
+		Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pv[RHO] * pv[ENTRI]), 2. / 3.)) - 1.0));
+		gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+		ui = Theta / (MU_I) * pv[RHO] / (gam - 1.0);
+
+		//Calculate total dissipation
+		dis = pv[UU] - (ue + ui);
+		ue += 0.5 * dis;
+
+		//Check limits
+		if (ue > (1.0 - FLOOR_ENTROPY) * pv[UU]) {
+			ue = (1.0 - FLOOR_ENTROPY) * pv[UU];
+		}
+		if (ue < FLOOR_ENTROPY * pv[UU]) {
+			ue = FLOOR_ENTROPY * pv[UU];
+		}
+		ui = pv[UU] - ue;
+
+		//Calculate electron entropy
+		C = ue / pv[RHO] * MU_E * MASS_RATIO;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			#if(FULL_ENTROPY)
+			pv[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
+			#else
+			pv[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];
+			#endif
+
+		//Calculate ion entropy
+		C = ui / pv[RHO] * MU_I;
+		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+			#if(FULL_ENTROPY)
+			pv[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
+			#else
+			pv[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];
+			#endif
+		#endif
+	}
+	#endif
+
 	#if(DRIFT_FLOOR)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
 		#if(RESISTIVE)
@@ -166,7 +245,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
 		}
 
-
 		Bcon[0] = 0.;
 		for (m = 1; m < NDIM; m++) {
 			Bcon[m] = pv[B1 - 1 + m];
@@ -182,9 +260,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		double xP;
 		eos_mode_rhou_pres(pv_prefloor[RHO], pv_prefloor[UU], &xP);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
+		#elif(TWO_T)
+		double gamma_g;
+		gamma_g = calc_gamma_gas_prim(pv_prefloor);
+		wold = pv_prefloor[RHO] + pv_prefloor[UU] * gamma_g;
 		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
-		#endif 
+		#endif
 
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
 		QdotB = udotB * wold * q.ucon[0];
@@ -193,10 +275,12 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		#if (DOHELM)
 		eos_mode_rhou_pres(pv[RHO], pv[UU], &xP);
 		wnew = pv[RHO] + pv[UU] + xP;
+		#elif(TWO_T)
+		gamma_g = calc_gamma_gas_prim(pv);
+		wnew = pv[RHO] + pv[UU] * gamma_g;
 		#else
-		wnew = pv[RHO] + pv[UU] * gam;
-		//wnew = wold;
-		#endif 
+		wnew = pv[RHO] + pv[UU] * GAMMA;
+		#endif
 
 		x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
 
@@ -225,51 +309,8 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		for (m = 1; m < NDIM; m++) {
 			pv[m + UU] = utcon[m] * trans + pv_prefloor[m + UU] * (1. - trans);
 		}
-
-	
 	}
 	#endif
-
-	if (dofloor) {
-	#if(TWO_T)
-		#if(CONSTANTGAMMA)
-			#if(FULL_ENTROPY)
-			pv[ENTRE] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-			pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-			#else
-			pv[ENTRE] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-			#endif
-		#elif(FIXEDGAMMA)
-			#if(FULL_ENTROPY)
-			pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
-			pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
-			#else
-			pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
-			pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
-			#endif
-		#elif(VARGAMMA)
-		double Theta, u, C;
-		u = 0.5 * pv[UU];
-		C = u / pv[RHO] * MU_E * MASS_RATIO;
-		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
-			pv[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
-			#else
-			pv[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];
-			#endif
-
-		u = 0.5 * pv[UU];
-		C = u / pv[RHO] * MU_I;
-		Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-			#if(FULL_ENTROPY)
-			pv[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO]);
-			#else
-			pv[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pv[RHO];
-			#endif
-		#endif
-	#endif
-	}
 
 	/*#if DOKTOT
 	#if (DOHELM)
