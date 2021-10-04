@@ -2541,9 +2541,9 @@ void set_mag(void){
 			pos_new[1] = r;
 			pos_new[2] = th;
 			pos_new[3] = phi;
-			//sph_to_cart(X_cart, &r, &th, &phi);
-			//rotate_coord(X_cart, -tilt);
-			//cart_to_sph(X_cart, &r, &th, &phi);
+			sph_to_cart(X_cart, &r, &th, &phi);
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
@@ -2590,15 +2590,15 @@ void set_mag(void){
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
-					//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
 					//fprintf(stderr, "Error 1: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
-					//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
 					//fprintf(stderr, "Error 2: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
-					//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					//fprintf(stderr, "Error 3: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				#endif

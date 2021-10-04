@@ -259,7 +259,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)

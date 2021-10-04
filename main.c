@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
 			bound_prim(p, 1);
 			#if(!CARTESIAN)
 			if (dt > 0.5) {
-				fprintf(stderr, "dt too big \n");
-				break;
+				if(rank==0) fprintf(stderr, "\n dt too big \n");
+				exit(0);
 			}
 			#endif
 		}
