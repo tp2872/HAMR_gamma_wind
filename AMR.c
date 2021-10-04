@@ -3089,6 +3089,23 @@ double calc_refcrit(int n){
 			}
 		}
 	}
+	#elif(REFINE_GRB) // jet, inner cocoon and disk maintain high entropy
+	if (block[n][AMR_NODE] == rank){
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r > 50.0){
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+				//if (bsq*r*r>1e-8) ref_val = 100.0;
+				if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU]*r*r > 1e-5) ref_val = MY_MAX(ref_val, 1.01* REFINEMENT_CUTOFF);
+				if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val,0.51* REFINEMENT_CUTOFF);
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 476)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 5e3)) ref_val = 0.51 * REFINEMENT_CUTOFF;			
+			}
+		}
+	}
 	#elif(REFINE_THIN && RAD_M1)
 	if (block[n][AMR_NODE] == rank) {
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
