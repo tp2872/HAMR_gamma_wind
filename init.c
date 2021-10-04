@@ -2506,6 +2506,7 @@ void set_mag(void){
 	double Fe_core = 5e7 / r_rc;
 	double r_hole = 10;
 	double fr;
+	beta = 100.0 / (Bfactor * Bfactor);
 	#endif
 
 	do{
@@ -2750,7 +2751,7 @@ void set_mag(void){
 	#endif
 	if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
 	norm = sqrt(beta_act / beta);
-	
+
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){		
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= norm;
@@ -2823,7 +2824,7 @@ void set_mag(void){
 	#endif
 
 	#if(WHICHPROBLEM==THIN_PROBLEM)
-	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
+	beta_act = (gam - 1.) * ug_sum / (0.5*bsq_sum);
 	#else
 	beta_act = pmax / (0.5*bsq_max);
 	#endif
