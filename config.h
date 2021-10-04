@@ -198,7 +198,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (2*120)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
