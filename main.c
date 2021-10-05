@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 50.0;
+	DTl = 1000.0;
+	DTd = 500.0;
 	DTd_reduced = 5.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -493,7 +493,7 @@ double get_wall_time(){
 void check_input() {
 	
 	//Select a grid that is compatible with DEREFINE_POLE
-	if (DEREFINE_POLE && (NB_2 == 6 || NB_2 == 12 || NB_2 == 24 || NB_2 == 48 || NB_2 == 96)) {}
+	if (DEREFINE_POLE && (NB_2==3 || NB_2 == 6 || NB_2 == 12 || NB_2 == 24 || NB_2 == 48 || NB_2 == 96)) {}
 	else if(DEREFINE_POLE){
 		fprintf(stderr, "Init error 1");
 		exit(0);
@@ -543,24 +543,23 @@ void check_input() {
 
 	//PPM not implemented in CPU version
 	if (CPU_OPENMP && PPM) { 
-		fprintf(stderr, "Init error 9"); 
-		//exit(0);
+		fprintf(stderr, "PPM not suppoerted in CPU version"); 
+		exit(0);
 	}
 
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
-		fprintf(stderr, "Init error 10");
+		fprintf(stderr, "You are choosing the resolution per block too small! Do this only for debugging!");
 		//exit(0);
 	}
 
-	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT) < 4 && N_LEVELS_1D_INT > 0) {
+	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT) < 3 && N_LEVELS_1D_INT > 0) {
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
-		//exit(0);
+		exit(0);
 	}
 
 	if (BS_2 % (int)pow(2, N_LEVELS_1D_INT) != 0 || BS_3 % (int)pow(2, N_LEVELS_1D_INT) != 0) {
-		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! \n");
-		//exit(0);
+		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! This is not allways a problem but know what you are doing! \n");
 	}
 
 	#if(DUMP_SMALL)
@@ -569,4 +568,16 @@ void check_input() {
 		exit(0);
 	}
 	#endif
+
+	//You cannot have more than 9 3D refinement levels
+	if (N_LEVELS_3D > 9) {
+		fprintf(stderr, "N_LEVELS_3D needs to be smaller than 6");
+		exit(0);
+	}
+
+	//You cannot have more than 5 external derefinement refinement levels
+	if (N_LEVELS_1D > 9) {
+		fprintf(stderr, "N_LEVELS_1D needs to be smaller than 6");
+		exit(0);
+	}
 }

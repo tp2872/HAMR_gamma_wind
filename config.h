@@ -40,8 +40,8 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -140,17 +140,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 12
-#define NB_2 6
-#define NB_3 2
+#define NB_1 6
+#define NB_2 3
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 16
 #define BS_2 16
-#define BS_3 16
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 7
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -176,10 +176,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -259,7 +259,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
@@ -898,6 +898,14 @@ Section with derived quantities
 #define N_LEVELS_1D 4
 #elif(NB_2 == 96 && DEREFINE_POLE)
 #define N_LEVELS_1D 5
+#elif(NB_2 == 192 && DEREFINE_POLE)
+#define N_LEVELS_1D 6
+#elif(NB_2 == 384 && DEREFINE_POLE)
+#define N_LEVELS_1D 7
+#elif(NB_2 == 768 && DEREFINE_POLE)
+#define N_LEVELS_1D 8
+#elif(NB_2 == 1536 && DEREFINE_POLE)
+#define N_LEVELS_1D 9
 #else
 #define N_LEVELS_1D 0
 #endif
@@ -915,6 +923,14 @@ Section with derived quantities
 #define NB (NB_1*NB_2*NB_3*(4*(4*(4+1)+1)+1))
 #elif(N_LEVELS==5)
 #define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4+1)+1)+1)+1))
+#elif(N_LEVELS==6)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4+1)+1)+1)+1)+1))
+#elif(N_LEVELS==7)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==8)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==9)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1)+1)+1))
 #endif
 #elif(REF_3+REF_2+REF_1==3)
 #if (N_LEVELS_3D==1)
@@ -932,9 +948,25 @@ Section with derived quantities
 #elif(N_LEVELS_3D==5)
 #define FACTOR1 (8*8*8*8+8*8*8+8*8+8+1)
 #define FACTOR2 ((4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==6)
+#define FACTOR1 (8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==7)
+#define FACTOR1 (8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==8)
+#define FACTOR1 (8*8*8*8*8*8*8+8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6)+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==9)
+#define FACTOR1 (8*8*8*8*8*8*8*8+8*8*8*8*8*8*8+8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8*8*8+2*(4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6)+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
 #endif
 #if (N_LEVELS_1D==0)
+#if(DEREFINE_POLE)
+#define NB (NB_1*NB_3*(1*FACTOR1+2*FACTOR2))
+#else
 #define NB (NB_1*NB_2*NB_3*FACTOR1)
+#endif
 #elif (N_LEVELS_1D==1)
 #define NB (NB_1*NB_3*(2*4*FACTOR1+2*(FACTOR2)+4))
 #elif(N_LEVELS_1D==2)
@@ -945,6 +977,14 @@ Section with derived quantities
 #define NB (NB_1*NB_3*((16*32*FACTOR1)+(8*8*FACTOR1+8*32)+(4*4*FACTOR1+4*40)+(2*2*FACTOR1+2*44)+(2*(FACTOR2)+46)))
 #elif(N_LEVELS_1D==5)
 #define NB (NB_1*NB_3*((32*64*FACTOR1)+(16*16*FACTOR1+16*64)+(8*8*FACTOR1+8*80)+(4*4*FACTOR1+4*88)+(2*2*FACTOR1+2*92)+(2*(FACTOR2)+94)))
+#elif(N_LEVELS_1D==6)
+#define NB (NB_1*NB_3*((64*128*FACTOR1)+(32*32*FACTOR1+32*128)+(16*16*FACTOR1+16*160)+(8*8*FACTOR1+8*176)+(4*4*FACTOR1+4*184)+(2*2*FACTOR1+2*192)+(2*(FACTOR2)+190)))
+#elif(N_LEVELS_1D==7)
+#define NB (NB_1*NB_3*((128*256*FACTOR1)+(64*64*FACTOR1+64*256)+(32*32*FACTOR1+32*320)+(16*16*FACTOR1+16*352)+(8*8*FACTOR1+8*368)+(4*4*FACTOR1+4*384)+(2*2*FACTOR1+2*400)+(2*(FACTOR2)+382)))
+#elif(N_LEVELS_1D==8)
+#define NB (NB_1*NB_3*((256*512*FACTOR1)+(128*128*FACTOR1+128*512)+(64*64*FACTOR1+64*640)+(32*32*FACTOR1+32*704)+(16*16*FACTOR1+16*736)+(8*8*FACTOR1+8*768)+(4*4*FACTOR1+4*800)+(2*2*FACTOR1+2*832)+(2*(FACTOR2)+766)))
+#elif(N_LEVELS_1D==9)
+#define NB (NB_1*NB_3*((512*1024*FACTOR1)+(256*256*FACTOR1+256*1024)+(128*128*FACTOR1+128*1280)+(64*64*FACTOR1+64*1408)+(32*32*FACTOR1+32*1472)+(16*16*FACTOR1+16*1536)+(8*8*FACTOR1+4*1600)+(4*4*FACTOR1+4*1664)+(2*2*FACTOR1+2*1728)+(2*(FACTOR2)+766)))
 #endif
 #elif(REF_3+REF_2+REF_1==1)
 #if (N_LEVELS==1)
@@ -957,6 +997,14 @@ Section with derived quantities
 #define NB (NB_1*NB_2*NB_3*(2*(2*(2+1)+1)+1))
 #elif(N_LEVELS==5)
 #define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2+1)+1)+1)+1))
+#elif(N_LEVELS==6)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2+1)+1)+1)+1)+1))
+#elif(N_LEVELS==7)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==8)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==9)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1)+1)+1))
 #endif
 #endif
 

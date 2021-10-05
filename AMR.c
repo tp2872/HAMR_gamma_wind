@@ -187,7 +187,7 @@ void AMR_set_coord(void){
 		}
 		#endif
 
-		if (!(N_LEVELS_1D == 0 || (NB_2 == 6  && N_LEVELS_1D == 1) || (NB_2 == 12 && N_LEVELS_1D == 2) || (NB_2 == 24 && N_LEVELS_1D == 3) || (NB_2 == 48 && N_LEVELS_1D == 4) || (NB_2 == 96  && N_LEVELS_1D == 5))){
+		if (!(DEREFINE_POLE == 0 || (NB_1 == 3 && N_LEVELS_1D == 0) || (NB_2 == 6  && N_LEVELS_1D == 1) || (NB_2 == 12 && N_LEVELS_1D == 2) || (NB_2 == 24 && N_LEVELS_1D == 3) || (NB_2 == 48 && N_LEVELS_1D == 4) || (NB_2 == 96  && N_LEVELS_1D == 5))){
 			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
 			exit(0);
 		}
@@ -2974,7 +2974,7 @@ int derefine_pole(void){
 	//}
 	if(rank==0)fprintf(stderr, "Derefining in phi by %d levels! \n", N_LEVELS_1D);
 
-	if (NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
+	if (NB_2 != 3 && NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
 		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
 		exit(20);
 		return -1;
@@ -3028,6 +3028,15 @@ void rm_order2(void){
 		}
 	}
 }
+
+//Number of refinement levels before focusing on jet
+#define BASE_LEVELS (2)
+#define R0 (50.0)
+#define R1 (200.0)
+#define R2 (1000.0)
+#define R3 (6000.0)
+#define R4 (25000.0)
+#define R5 (1000000.0)
 
 //Calculate refinement criterion
 double calc_refcrit(int n){
@@ -3094,16 +3103,55 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (r > 50.0){
-				get_geometry(n, i, j, z, CENT, &geom);
-				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-				//if (bsq*r*r>1e-8) ref_val = 100.0;
-				if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU]*r*r > 1e-5) ref_val = MY_MAX(ref_val, 1.01* REFINEMENT_CUTOFF);
-				if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val,0.51* REFINEMENT_CUTOFF);
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 476)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 5e3)) ref_val = 0.51 * REFINEMENT_CUTOFF;			
+			if(block[n][AMR_LEVEL1] >= BASE_LEVELS){
+				if (r > 50.0) {
+					get_geometry(n, i, j, z, CENT, &geom);
+					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+					//if (bsq*r*r>1e-8) ref_val = 100.0;
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 0) && (r < R0)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable first refinement level below r=R0
+					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 1) && (r < R1)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 2) && (r < R2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 3) && (r < R3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4
+					if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				}
 			}
+			else {
+				ref_val = 1.01 * REFINEMENT_CUTOFF;
+			}
+
+
+			//No refinement near black hole; even in case of derefine_pole
+			if(ref_val>=REFINEMENT_CUTOFF){
+				#if(DEREFINE_POLE==0)
+				if ((block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 1) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 2 + 1) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 6 + 1)
+					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 14 + 1) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 30 + 1) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 62 + 1)){
+					ref_val = 0.51 * REFINEMENT_CUTOFF;
+				}
+				#else
+				if ( (block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 4) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 10) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 26)
+					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 42 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 96 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 196 + 2)){
+					ref_val = 0.51 * REFINEMENT_CUTOFF;
+				}
+				#endif
+			}
+			/*// Old refinement criterion without special grid
+			if (block[n][AMR_LEVEL1] > 0) {
+				if (r > 50.0) {
+					get_geometry(n, i, j, z, CENT, &geom);
+					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+					//if (bsq*r*r>1e-8) ref_val = 100.0;
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+					if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 476)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 5e3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				}
+			}
+			*/
 		}
 	}
 	#elif(REFINE_THIN && RAD_M1)
