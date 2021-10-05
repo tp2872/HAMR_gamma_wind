@@ -1263,6 +1263,7 @@ void set_AMR(void){
 
 	//Activate all blocks in arrays n_ord and n_ord_total
 	activate_blocks();
+	fprintf(stderr,"n_active_total: %d \n", n_active_total);
 
 	#if(GPU_ENABLED)
 	//Calculate memory consumption on each GPU

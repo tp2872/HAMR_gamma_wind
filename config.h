@@ -150,7 +150,7 @@ Numerical Parameters section
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 7
+#define N_LEVELS_3D 8
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

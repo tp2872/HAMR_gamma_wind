@@ -86,14 +86,35 @@ int restart_read(void)
 {
 	int n, num;
 	char filename[100], dirpath[100];
-	FILE *rdump;
+	FILE *rdump, *dummy;
 	int int_size = sizeof(int);
 
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
-		num = n_ord[n];
-		if(restart_number==1) sprintf(filename, "rdumps1/rdump%d", num);
-		else if (restart_number == 0)sprintf(filename, "rdumps0/rdump%d", num);
+		if (restart_number == 1) {
+			sprintf(filename, "rdumps1/grid");
+			dummy = fopen(filename, "rb");
+			if(dummy !=NULL){
+				num = n_old[n_ord[n]];
+				fclose(dummy);
+			}
+			else {
+				num = n_ord[n];
+			}
+			sprintf(filename, "rdumps1/rdump%d", num);
+		}
+		else if (restart_number == 0) {
+			sprintf(filename, "rdumps0/grid");
+			dummy = fopen(filename, "rb");
+			if (dummy != NULL) {
+				num = n_old[n_ord[n]];
+				fclose(dummy);
+			}
+			else {
+				num = n_ord[n];
+			}
+			sprintf(filename, "rdumps0/rdump%d", num);
+		}
 		else return 0;
 
 		rdump = fopen(filename, "rb");
@@ -322,8 +343,10 @@ int restart_read_param(void)
 			fclose(param);
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
-			if (param != NULL) gdump_grid_read(param);
-			fclose(param);
+			if (param != NULL) {
+				gdump_grid_read(param);
+				fclose(param);
+			}
 			t0 = t;
 			restart_number = 0;
 		}
@@ -346,8 +369,10 @@ int restart_read_param(void)
 				if (rank == 0) fprintf(stderr, "Reading in rdumps1! \n");
 				sprintf(filename, "rdumps1/grid");
 				param = fopen(filename, "rb");
-				if (param != NULL) gdump_grid_read(param);
-				fclose(param);
+				if (param != NULL) {
+					gdump_grid_read(param);
+					fclose(param);
+				}
 				restart_number = 1;
 			}
 		}
@@ -362,8 +387,10 @@ int restart_read_param(void)
 			fclose(param);
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
-			if (param != NULL) gdump_grid_read(param);
-			fclose(param);
+			if (param != NULL) {
+				gdump_grid_read(param);
+				fclose(param);
+			}
 			restart_number = 0;
 		}
 	}
@@ -494,9 +521,9 @@ void param_read(FILE *fp) {
 		fread(&n2, int_size, 1, fp);
 		block[n2][AMR_ACTIVE] = 1;
 		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
+		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
 		fread(&block[n2][AMR_NODE], int_size, 1, fp);
 		block[n2][AMR_NODE] = -1;
-		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
 	}
 
 	if ( NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3 || a!=BH_SPIN) {
