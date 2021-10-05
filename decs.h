@@ -868,6 +868,7 @@ extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 extern int(*block)[NV];
+extern int(*block_read)[10];
 extern int *lin_coord[N_LEVELS];
 extern int *lin_coord_RM[N_LEVELS];
 extern double ref_val[MY_MAX(NB, 40000)];
@@ -892,6 +893,7 @@ void gdump_new_reduced(void);
 void dump_params(FILE *fp, int dump_reduced); 
 double divb_calc(int n, int i, int j, int z);
 void param_read(FILE *fp);
+void gdump_grid_read(FILE* fp);
 void rdump_block_read(FILE *fp, int n);
 int restart_read_param(void);
 void restart_write(void);

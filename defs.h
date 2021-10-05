@@ -780,6 +780,7 @@ int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 int(*block)[NV];
+int(*block_read)[10];
 int *lin_coord[N_LEVELS];
 int *lin_coord_RM[N_LEVELS];
 double ref_val[MY_MAX(NB, 40000)];

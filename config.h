@@ -696,6 +696,15 @@ MNEMONICS SECTION
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
 
+//Same as above but for old datasets used in grid_read function
+#define READ_AMR_COORD1 (0)
+#define READ_AMR_COORD2 (1)
+#define READ_AMR_COORD3 (2)
+#define READ_AMR_LEVEL1 (3)
+#define READ_AMR_LEVEL2 (4)
+#define READ_AMR_LEVEL3 (5)
+#define READ_AMR_LEVEL (6)
+#define READ_AMR_ACTIVE (7)
 
 /*************************************************************************
 Variable Inversion Section

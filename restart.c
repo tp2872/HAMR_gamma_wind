@@ -320,6 +320,10 @@ int restart_read_param(void)
 		if (param != NULL) {
 			param_read(param);
 			fclose(param);
+			sprintf(filename, "rdumps0/grid");
+			param = fopen(filename, "rb");
+			if (param != NULL) gdump_grid_read(param);
+			fclose(param);
 			t0 = t;
 			restart_number = 0;
 		}
@@ -340,6 +344,10 @@ int restart_read_param(void)
 			t1 = t;
 			if (t1 > t0) {
 				if (rank == 0) fprintf(stderr, "Reading in rdumps1! \n");
+				sprintf(filename, "rdumps1/grid");
+				param = fopen(filename, "rb");
+				if (param != NULL) gdump_grid_read(param);
+				fclose(param);
 				restart_number = 1;
 			}
 		}
@@ -351,6 +359,10 @@ int restart_read_param(void)
 		param = fopen(filename, "rb");
 		if (param != NULL) {
 			param_read(param);
+			fclose(param);
+			sprintf(filename, "rdumps0/grid");
+			param = fopen(filename, "rb");
+			if (param != NULL) gdump_grid_read(param);
 			fclose(param);
 			restart_number = 0;
 		}
@@ -470,10 +482,14 @@ void param_read(FILE *fp) {
 	else read_M1 = 0;
 	fread(&dk, int_size, 1, fp);
 
+	//First deactivate all blocks
 	for (n = 0; n < NB; n++) {
 		block[n][AMR_ACTIVE] = 0;
+		block[n][AMR_NODE] = -1;
+		block[n][AMR_TIMELEVEL] = 1;
 	}
 
+	//Now check which blocks are active in grid
 	for (n = 0; n < n_active_total; n++) {
 		fread(&n2, int_size, 1, fp);
 		block[n2][AMR_ACTIVE] = 1;
