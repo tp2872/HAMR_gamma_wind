@@ -2507,6 +2507,7 @@ void set_mag(void){
 	double r_hole = 10;
 	double fr;
 	beta = 100.0 / (Bfactor * Bfactor);
+	if (numtasks > 100) exit(0);
 	#endif
 
 	do{

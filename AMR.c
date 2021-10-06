@@ -1263,7 +1263,6 @@ void set_AMR(void){
 
 	//Activate all blocks in arrays n_ord and n_ord_total
 	activate_blocks();
-	fprintf(stderr,"n_active_total: %d \n", n_active_total);
 
 	#if(GPU_ENABLED)
 	//Calculate memory consumption on each GPU
@@ -3038,6 +3037,7 @@ void rm_order2(void){
 #define R3 (6000.0)
 #define R4 (25000.0)
 #define R5 (1000000.0)
+#define BLOCKS_PER_THETA (2) //Minimum number of blocks per *half* opening angle of the jet
 
 //Calculate refinement criterion
 double calc_refcrit(int n){
@@ -3100,30 +3100,85 @@ double calc_refcrit(int n){
 		}
 	}
 	#elif(REFINE_GRB) // jet, inner cocoon and disk maintain high entropy
+	int index;
+	float block_angle;
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			if(block[n][AMR_LEVEL1] >= BASE_LEVELS){
 				if (r > 50.0) {
+					//Calc misc quantities
 					get_geometry(n, i, j, z, CENT, &geom);
 					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 					bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-					//if (bsq*r*r>1e-8) ref_val = 100.0;
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 0) && (r < R0)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable first refinement level below r=R0
-					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 1) && (r < R1)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 2) && (r < R2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 3) && (r < R3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-					if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4
+
+					//Matthew's new refinement criterion
+					//Convert indices to appropriate format
+					index = i / pow(1 + REF_1, block[n][AMR_LEVEL1]);
+
+					//Calculate opening angle of a single block
+					block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+
+					//Check if cell is part of the jet; If so set the cell up for refinement
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5)
+					{
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((jet_angle1[index] / block_angle) < BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle1[index] / block_angle) >= BLOCKS_PER_THETA && (jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle2[index] / block_angle) >= BLOCKS_PER_THETA && (jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((jet_angle1[index] / block_angle) < BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle1[index] / block_angle) > BLOCKS_PER_THETA && (jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle2[index] / block_angle) > BLOCKS_PER_THETA && (jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}		
+					}
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) {
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+					}
+				
+					//Old refinement criterion
+					//if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+					//if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 0) && (r < R0)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable first refinement level below r=R0
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 1) && (r < R1)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 2) && (r < R2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 3) && (r < R3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4
+
+					//Do not derefine base grid
 					if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 				}
 			}
 			else {
 				ref_val = 1.01 * REFINEMENT_CUTOFF;
 			}
-
 
 			//No refinement near black hole; even in case of derefine_pole
 			if(ref_val>=REFINEMENT_CUTOFF){
@@ -3132,27 +3187,13 @@ double calc_refcrit(int n){
 					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 14 + 1) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 30 + 1) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 62 + 1)){
 					ref_val = 0.51 * REFINEMENT_CUTOFF;
 				}
-				#else
+				#else //Required to prevent jumps in AMR near pole due to 1D refinement; Another possibility is to prohibit the code from refining blocks neighboring the block touching the pole
 				if ( (block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 4) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 10) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 26)
 					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 42 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 96 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 196 + 2)){
 					ref_val = 0.51 * REFINEMENT_CUTOFF;
 				}
 				#endif
 			}
-			/*// Old refinement criterion without special grid
-			if (block[n][AMR_LEVEL1] > 0) {
-				if (r > 50.0) {
-					get_geometry(n, i, j, z, CENT, &geom);
-					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-					bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-					//if (bsq*r*r>1e-8) ref_val = 100.0;
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-					if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 476)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-					if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 5e3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				}
-			}
-			*/
 		}
 	}
 	#elif(REFINE_THIN && RAD_M1)
@@ -3234,6 +3275,13 @@ double calc_refcrit(int n){
 //Send refinement criterion across cluster
 void synch_refcrit(void){
 	int n, task;
+
+	#if(REFINE_GRB)
+	//Calculate opening angle jet if REFINE_GRB is set
+	calc_opening_jet();
+	#endif
+
+	//Calculate and broadcast refinemetn criterion
 	for (n = 0; n < n_active_total; n++){
 			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
 			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
@@ -3243,6 +3291,88 @@ void synch_refcrit(void){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 		}
+	}
+}
+
+void calc_opening_jet(void) {
+	//Calculate jet opening angle if refining on jet
+	int i, j, n, z, task, index, index0;
+	double X[NDIM], r, th, phi;
+	struct of_geom geom;
+
+	//Initialize jet angle to 0
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		jet_angle1[index] = 0.;
+		jet_angle2[index] = 0.;
+	}
+
+	//Loop over cells in block and add result to float jet_angle1 and jet_angle2 (upper and lower jets)
+	for (n = 0; n < n_active_total; n++) {
+		if (block[n_ord_total[n]][AMR_NODE] == rank) {
+			ZSLOOP3D(N1_GPU_offset[n_ord_total[n]], BS_1 + N1_GPU_offset[n_ord_total[n]] - 1, N2_GPU_offset[n_ord_total[n]], N2_GPU_offset[n_ord_total[n]] + BS_2 - 1, N3_GPU_offset[n_ord_total[n]], N3_GPU_offset[n_ord_total[n]] + BS_3 - 1) {
+				//Convert indices to appropriate format
+				index = i / pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]);
+			
+				//Check if index constraints are satisfied; e.g. block can be not relevant for refinement
+				if (index * pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]) == i) {
+					//Check if refinement criterion is satisfied
+					coord(n_ord_total[n], i, j, z, CENT, X);
+					bl_coord(X, &r, &th, &phi);
+
+					if (p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][UU] / pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], 1.33) > 1.0 && p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][UU] * r * r > 1.0e-5) {
+						get_geometry(n_ord_total[n], i, j, z, CENT, &geom);
+						if(TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) jet_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else jet_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi<1.5*M_PI) jet_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else jet_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Calculate half opening angle
+	//A=pi*(r*theta)^2
+	//theta=sqrt(A/(pi*r^2))
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle1[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		jet_angle1[index] = sqrt(jet_angle1[index] / M_PI + 1.e-30);
+
+		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle2[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		jet_angle2[index] = sqrt(jet_angle2[index] / M_PI + 1.e-30);
+	}
+	
+	//Find jet head location
+	float jet_angle1_max = 0.0, jet_angle2_max = 0.0;
+	float  dx = (log(Rout) - startx[1]) / (NB_1 * BS_1);
+	int index_max1, index_max2;
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		//Calculate radius from internal coordinates assume x1=log(r)
+		r = exp(startx[1] + index * dx);
+
+		//Find maximum cylindrical radius
+		if (jet_angle1[index] * r > jet_angle1_max) {
+			jet_angle1_max = jet_angle1[index] * r;
+			index_max1 = index;
+		}
+		if (jet_angle2[index] * r > jet_angle2_max) {
+			jet_angle2_max = jet_angle2[index] * r;
+			index_max2 = index;
+		}
+	}
+
+	//Assume opening angle is constant after maximum in cylindrical radius
+	for (index = index_max1; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		jet_angle1[index] = jet_angle1[index0];
+	}
+	for (index = index_max2; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		jet_angle2[index] = jet_angle2[index0];
 	}
 }
 
