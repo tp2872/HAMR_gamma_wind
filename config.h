@@ -52,6 +52,9 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
+// Whether electron fraction is evolved
+#define DO_YE (1)
+
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
 
@@ -68,7 +71,7 @@ Physical Parameters section
 
 #define EOS_BISECTION (0)
 
-#define low_rho_correction  (0) // Leave it at 0, breaks 2d inversion
+#define low_rho_correction (0) // Leave it at 0, breaks 2d inversion
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -461,6 +464,7 @@ MNEMONICS SECTION
 #define ENTRE (8+DOKTOT+RAD_M1*4+RESISTIVE*3)
 #define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
 #define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
+#define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -879,7 +883,7 @@ Section with derived quantities
 #define NPR_PH     (1)        /* Number density of photons*/
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -887,7 +891,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

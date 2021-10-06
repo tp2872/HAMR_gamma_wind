@@ -6287,6 +6287,10 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 		}
 	}
 
+	#if (DO_YE)
+	prim[YE] = U[YE] / U[RHO];
+	#endif
+
 	return(ret);
 }
 
@@ -6640,6 +6644,10 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 			prim[i] = prim_tmp[i];
 		}
 	}
+
+	#if (DO_YE)
+	prim[YE] = U[YE] / U[RHO];
+	#endif
 
 	return(ret);
 }
@@ -7062,6 +7070,10 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
 		prim[ENTRI] = S[1];
 		#endif
 	}
+
+	#if (DO_YE)
+	prim[YE] = U[YE] / U[RHO];
+	#endif
 
 	return(ret);
 }
@@ -8579,6 +8591,11 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 		*vmax = MY_MAX(vp, vm);
 		*vmin = MY_MIN(vp, vm);
 	}
+
+	#if (DO_YE)
+	flux[YE] = flux[RHO] * pr[YE];
+	#endif
+
 	return;
 }
 

@@ -943,6 +943,10 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
+				#endif
 			
 			}
 			/* region inside magnetized torus; u^i is calculated in
@@ -1004,6 +1008,10 @@ void init_torus()
 
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
+				#endif
+
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.1;
 				#endif
 			}
 
