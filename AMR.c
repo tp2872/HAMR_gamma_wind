@@ -188,8 +188,8 @@ void AMR_set_coord(void){
 		#endif
 
 		if (!(DEREFINE_POLE == 0 || (NB_1 == 3 && N_LEVELS_1D == 0) || (NB_2 == 6  && N_LEVELS_1D == 1) || (NB_2 == 12 && N_LEVELS_1D == 2) || (NB_2 == 24 && N_LEVELS_1D == 3) || (NB_2 == 48 && N_LEVELS_1D == 4) || (NB_2 == 96  && N_LEVELS_1D == 5))){
-			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
-			exit(0);
+			//if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 3, 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
+			//exit(0);
 		}
 
 		//Based on value of 0-th level block determine the number of 1D refinement levels
@@ -3030,7 +3030,7 @@ void rm_order2(void){
 }
 
 //Number of refinement levels before focusing on jet
-#define BASE_LEVELS (2)
+#define BASE_LEVELS (1)
 #define R0 (50.0)
 #define R1 (200.0)
 #define R2 (1000.0)
