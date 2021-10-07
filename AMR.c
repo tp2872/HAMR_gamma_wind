@@ -3182,7 +3182,7 @@ double calc_refcrit(int n){
 
 			//No refinement near black hole; even in case of derefine_pole
 			if(ref_val>=REFINEMENT_CUTOFF){
-				#if(DEREFINE_POLE==0)
+				#if(DEREFINE_POLE==0 || BS_1<32)
 				if ((block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 1) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 2 + 1) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 6 + 1)
 					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 14 + 1) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 30 + 1) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 62 + 1)){
 					ref_val = 0.51 * REFINEMENT_CUTOFF;
