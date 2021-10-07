@@ -18,7 +18,7 @@ Physical Parameters section
 #define COLLAPSAR 14
 #define NSM 15
 
-#define WHICHPROBLEM COLLAPSAR
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -27,21 +27,21 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (0)
+#define REFINE_THIN (1)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (1)
+#define REFINE_GRB (0)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
-#define BH_SPIN (0.8)
+#define GAMMA	(5./3.)
+#define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -140,17 +140,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
-#define NB_2 3
-#define NB_3 6
+#define NB_1 10
+#define NB_2 12
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 16
-#define BS_2 16
-#define BS_3 16
+#define BS_1 48
+#define BS_2 36
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 6
+#define N_LEVELS_3D 3
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -176,10 +176,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -259,7 +259,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
@@ -327,7 +327,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -343,10 +343,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.01)

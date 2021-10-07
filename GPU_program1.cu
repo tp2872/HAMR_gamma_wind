@@ -541,7 +541,14 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, r
 				#endif
 			);
-
+			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);
 			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			//	#if(DOHELM)
 			//	, gpu_eos_table
@@ -1509,7 +1516,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If total error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
-			//keep_iterating = 0;
+			keep_iterating = 0;
 		}
 
 		//If iterated error increasing stop iterating
@@ -1520,7 +1527,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//If total error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
@@ -1547,7 +1554,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_f[k] = U_new[k];
 				dU[k] = dU_new[k];
 			}
-			if (flag_rad && keep_iterating==0) {
+			/*if (flag_rad && keep_iterating==0) {
 				Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
 
 				//Recompute R_t^mu for consistency
@@ -1572,7 +1579,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				, r
 				#endif
 				);
-			}
+			}*/
 		}
 
 		n_iter++;
@@ -5946,14 +5953,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				else prim[2] = 0.;
 				if (!isfinite(prim[3])){}
 				else prim[3] = 0.;
-				returnval = 0;
+				returnval = 1;
 			}
 			else {
 				prim[0] = 1.e-30;
 				prim[1] = 0.;
 				prim[2] = 0.;
 				prim[3] = 0.;
-				//returnval = 1;
+				returnval = 1;
 			}
 
 		}
@@ -5963,7 +5970,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[2] = 0.;
 			prim[3] = 0.;
 
-			//returnval = 1;
+			returnval = 1;
 		}
 
 		//Floor on photon number+
