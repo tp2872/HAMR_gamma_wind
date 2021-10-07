@@ -2621,7 +2621,7 @@ void set_mag(void){
 	and begin normalization */
 	#if(STAGGERED)
 	gpu = 0;
-	nstep = AMR_SWITCHTIMELEVEL - 1;
+	nstep = 2*AMR_SWITCHTIMELEVEL - 1;
 	set_prestep();
 	const_transport_bound();
 	nstep = 0;
