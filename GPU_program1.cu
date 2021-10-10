@@ -541,14 +541,14 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, r
 				#endif
 			);
-			if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
+			//if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	#if(COOL_STOP)
+			//	, r
+			//	#endif
+			//);
 			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			//	#if(DOHELM)
 			//	, gpu_eos_table
@@ -1503,7 +1503,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		double bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-10 && bsq / pb_new[RHO] <= 1.0) || (n_iter >= 20) || (fabs(error_new[n_iter % 5 + 5]) <= 1.e-8 && bsq / pb_new[RHO]>1.0)) {
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-10 && bsq / pb_new[RHO] <= 1.0) || (n_iter >= 20) || (fabs(error_new[n_iter % 5 + 5]) <= 1.e-10 && bsq / pb_new[RHO]>1.0)) {
 			keep_iterating = 0;
 		}
 
@@ -11052,7 +11052,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] = -0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 	}
 }
@@ -15242,7 +15242,7 @@ __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcur
 
 	//Add cooling term if needed
 	#if (COOL_DISK)
-	misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
+	//misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
 	#endif
 
 	PLOOP dU[k] *= geom->g;
