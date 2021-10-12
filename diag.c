@@ -41,12 +41,13 @@ void diag(int call_code)
 		#if (MPI_enable)
 		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-		//for(k=0;k<NFAIL;k++)MPI_Allreduce(MPI_IN_PLACE, &failimage_counter[k], 1, MPI_INT, MPI_SUM, mpi_cartcomm);
 		#endif
-		
-		if (divbmax==divbmax_local){
+		if (divbmax == divbmax_local) {
 			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
-			//fprintf(stderr, " f1: %d f2: %d f3: %d f4 %d \n", failimage_counter[0], failimage_counter[1], failimage_counter[2], failimage_counter[3]);
+		}
+		if (divbmax > 0.00001) {
+			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
+			exit(0);
 		}
 	}
 
@@ -125,11 +126,11 @@ double divb_calc(int n, int i, int j, int z){
 	double divb=0.0;
 	int zsize = 1, zoffset = 0, zlevel = 0, u;
 
-	#if(N_LEVELS_1D_INT>10 && D3>0)
-	//if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
-	//if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
-	//zsize = round(pow(2.0, (double)zlevel));
-	//zoffset = (z - N3_GPU_offset[n]) % zsize;
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = round(pow(2.0, (double)zlevel));
+	zoffset = (z - N3_GPU_offset[n]) % zsize;
 	#endif
 
 	/* Constrained transport defn */
