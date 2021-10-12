@@ -945,7 +945,7 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 	int j;
 	//Exchange boundary cells for MPI threads
 	//Positive X2
-	if (block[n][AMR_NBR3] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
+	if (block[n][AMR_NBR3] >= 0){
 		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive1_3[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][108]);
@@ -963,7 +963,7 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 			rc += MPI_Irecv(&receive1_8[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][111]);
 		}
 
-		if (block[n][AMR_NBR3P] >= 0){
+		if (block[n][AMR_NBR3P] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
 			if (block[block[n][AMR_NBR3P]][AMR_ACTIVE] == 1){
 				//send to coarser grid
 				pack_send_B2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
@@ -977,7 +977,7 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 	}
 
 	//Negative X2
-	if (block[n][AMR_NBR1] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
+	if (block[n][AMR_NBR1] >= 0){
 		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive3_1[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][112]);
@@ -995,7 +995,7 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 			rc += MPI_Irecv(&receive3_6[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][115]);
 		}
 
-		if (block[n][AMR_NBR1P] >= 0 ){
+		if (block[n][AMR_NBR1P] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
 			if (block[block[n][AMR_NBR1P]][AMR_ACTIVE] == 1){
 				//send to coarser grid
 				pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
@@ -1176,7 +1176,7 @@ void Bp_rec2(int n){
 	int ref_1, ref_2, ref_3;
 	int j;
 	//Positive X2
-	if (block[n][AMR_NBR3] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
+	if (block[n][AMR_NBR3] >= 0){
 		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][108], &Statbound[nl[n]][108]);
@@ -1219,7 +1219,7 @@ void Bp_rec2(int n){
 	}
 
 	//Negative X2
-	if (block[n][AMR_NBR1] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
+	if (block[n][AMR_NBR1] >= 0){
 		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][112], &Statbound[nl[n]][112]);

@@ -402,7 +402,6 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	//Electron entropy source term for radiative cooling and coulomb coupling
 	#if(TWO_T)
 	#if(FIXEDGAMMA || CONSTANTGAMMA)
-		double dK_dS_i;
 			#if(FULL_ENTROPY)
 			dK_dS = ph[RHO] / ((GAMMAE - 1.) * ph[UU]);
 			#else
@@ -424,7 +423,6 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 			#endif
 		#endif
 		if (!isfinite(dK_dS))dK_dS = 0.0;
-		if (!isfinite(dK_dS_i))dK_dS_i = 0.0;
 		dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 		src_coulomb = source_Coulomb(ph);
 		dU[ENTRE] += dK_dS * src_coulomb;

@@ -3037,7 +3037,7 @@ void rm_order2(void){
 #define R3 (6000.0)
 #define R4 (25000.0)
 #define R5 (1000000.0)
-#define BLOCKS_PER_THETA (6) //Minimum number of blocks per *half* opening angle of the jet
+#define BLOCKS_PER_THETA (12) //Minimum number of blocks per *half* opening angle of the jet
 
 //Calculate refinement criterion
 double calc_refcrit(int n){
