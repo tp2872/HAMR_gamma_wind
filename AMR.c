@@ -2579,7 +2579,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 1.200 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -3050,7 +3050,7 @@ double calc_refcrit(int n){
 
 	#if(CARTESIAN)
 	if (block[n][AMR_COORD1] / pow(1 + REF_1, block[n][AMR_LEVEL1]) == 1 && block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]) == 1 && block[n][AMR_COORD3] / pow(1 + REF_3, block[n][AMR_LEVEL3]) == 1) {
-		ref_val = 100.0;
+		ref_val = 1.01 * REFINEMENT_CUTOFF;
 	}
 	#elif(REFINE_GIBWA)
 	if (block[n][AMR_LEVEL2] == 0) {
@@ -3240,7 +3240,7 @@ double calc_refcrit(int n){
 			}
 		}
 	}
-	#elif(REFINE_THIN && RAD_M1)
+	#elif(REFINE_THIN && !REF_3)
 	if (block[n][AMR_NODE] == rank) {
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
@@ -3304,12 +3304,24 @@ double calc_refcrit(int n){
 			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + rho));
 			double v_kepler = r / (pow(r, 1.5) + a);
 			double scaleheight = cs / v_kepler;
+			double val;
 			//#pragma omp critical
 			//{
-				if ((p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06)) > ref_val && r < 60.) ref_val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 25.) + r * (pow(25. / r, 3.0)) * (r <= 25.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-
-				//}
+			val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
+			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			else if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 2) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			else {
+				if (val > 0.01 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			
+			//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 		}
 	}
 	#endif
