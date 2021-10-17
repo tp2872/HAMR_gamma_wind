@@ -1577,7 +1577,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error decreased compared to start value, update variables
-		if (fabs(error_new[n_iter % 5+5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5])<0.01) {
+		if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5 + 5])<0.01) {
 			error_t[0] = error_new[n_iter % 5];
 			error_t[1] = error_new[n_iter % 5 + 5];
 			for (k = 0; k < NPR; k++) {
@@ -5852,7 +5852,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	#if(P_NUM)
 	prim[4] = U[4] / sqrt(gammasq);
 	#endif
-	if (y > y_max || Qdotn > 0.0  || y < 0.) {
+	if (y > y_max || isnan(Qdotn) || prim[0] < 0. || Qdotn > 0.0 || isnan(y) || y < 0. || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
 		Uabs = 0.5 * (fabs(Qdotn) + fabs(Qtsq) + 1.e-150);
 		for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_RAD * Qtcon[i] / Uabs;
 
@@ -5887,10 +5887,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			}
 		}
 
-		prim[0] = 1.e-30;
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
+		//prim[0] = 1.e-30;
+		//prim[1] = 0.;
+		//prim[2] = 0.;
+		//prim[3] = 0.;
 
 		//Floor on photon number+
 		#if(P_NUM)
