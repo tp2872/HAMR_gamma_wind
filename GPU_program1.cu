@@ -2757,33 +2757,6 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						U_f[k] = U_new[k];
 						dU[k] = dU_new[k];
 					}
-
-					/*if (pflag_rad[0] && keep_iterating==0) {
-						Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
-
-						//Recompute R_t^mu for consistency
-						get_state_rad(pb, geom, &q_rad);
-						mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
-						for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
-
-						//Recompute photon number
-						#if(P_NUM)
-						U_f[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-						#endif
-
-						//Recompute radiative source term
-						source_rad(pb_new, geom, &q, &q_rad, dU
-						#if(DOHELM)
-						, gpu_eos_table
-						#endif
-						#if(TWO_T)
-						, gamma_g
-						#endif
-						#if(COOL_STOP)
-						, r
-						#endif
-						);
-					}*/
 				}
 				break;
 			}
@@ -5886,11 +5859,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				prim[0] = pressure * 3.; // Erad = 3*p_rad
 			}
 		}
-
-		//prim[0] = 1.e-30;
-		//prim[1] = 0.;
-		//prim[2] = 0.;
-		//prim[3] = 0.;
+		if (!isfinite(prim[0]))prim[0] = 1.e-30;
+		if (!isfinite(prim[1]))prim[1] = 0.0;
+		if (!isfinite(prim[2]))prim[2] = 0.0;
+		if (!isfinite(prim[3]))prim[3] = 0.0;
+		prim[0] = 1.e-30;
+		prim[1] = 0.;
+		prim[2] = 0.;
+		prim[3] = 0.;
 
 		//Floor on photon number+
 		#if(P_NUM)
