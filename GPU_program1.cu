@@ -966,7 +966,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	double T_GAS, dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, count_increase = 0, count_increase2 = 0;
+	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;
 	#if(TWO_T)
 	int flag_floor_kappa;
 	double gamma_g, ue, ui, Theta_e, Theta_i;
@@ -1425,13 +1425,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 		//Get new radiation primitives using TYPE2 limiter
-		pflag_rad[0] = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
-		if (pflag_rad[0]) {
-			for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
-			#if(P_NUM)
-			U_prev[PHOTON] = U_new[PHOTON];
-			#endif
-		}
+		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
 
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
@@ -1509,7 +1503,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#endif
 		#if(P_NUM)
 		//norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		//if (pflag_rad[0] == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		//if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -1519,7 +1513,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Set total error to iterated error
 		error_new[n_iter % 5 + 5] = error_new[n_iter % 5];
 
-		if (pflag_rad[0] == 0 && do_entropy == 0) {
+		if (flag_rad == 0 && do_entropy == 0) {
 			norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 			error_new[n_iter % 5 + 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 		}
@@ -1580,6 +1574,14 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5 + 5])<0.01) {
 			error_t[0] = error_new[n_iter % 5];
 			error_t[1] = error_new[n_iter % 5 + 5];
+			if (flag_rad) {
+				for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
+				#if(P_NUM)
+				U_prev[PHOTON] = U_new[PHOTON];
+				#endif
+			}
+
+			pflag_rad[0] = flag_rad;
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_new[k];
 				U_f[k] = U_new[k];
@@ -5863,10 +5865,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		if (!isfinite(prim[1]))prim[1] = 0.0;
 		if (!isfinite(prim[2]))prim[2] = 0.0;
 		if (!isfinite(prim[3]))prim[3] = 0.0;
-		prim[0] = 1.e-30;
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
+		//prim[0] = 1.e-30;
+		//prim[1] = 0.;
+		//prim[2] = 0.;
+		//prim[3] = 0.;
 
 		//Floor on photon number+
 		#if(P_NUM)
