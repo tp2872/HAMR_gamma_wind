@@ -764,7 +764,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//Set electron entropy variables after inversion; Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
 	#if(TWO_T)
-	if (pflag == 0) {
+	//if (pflag == 0) {
 		U_i[ENTRE] = pb[ENTRE] * U_i[RHO];
 		U_i[ENTRI] = pb[ENTRI] * U_i[RHO];
 
@@ -808,14 +808,14 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
 		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
 		#endif	
-	}
+	//}
 	U_f[ENTRE] = U_i[ENTRE];
 	U_f[ENTRI] = U_i[ENTRI];
 	#endif
 
 	//Reset guess for p
 	//if (tau > 0.66) {
-	//	//PLOOP if(k!=B1 && k!=B2 && k!=B3) pb[k] = pb_old[k];
+	//	PLOOP if(k!=B1 && k!=B2 && k!=B3) pb[k] = pb_old[k];
 	//}
 
 	//Recompute T_t^mu for consistency
@@ -847,6 +847,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	);
 	if (pflag == 0) U_i[KTOT] = U_f[KTOT];
 	#endif
+
+	//Reset inverted variables (both in case of success and failure)
+	U_i[RHO] = U_f[RHO];
+	U_i[UU] = U_f[UU];
+	U_i[U1] = U_f[U1];
+	U_i[U2] = U_f[U2];
+	U_i[U3] = U_f[U3];
 
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
@@ -1571,7 +1578,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error decreased compared to start value, update variables
-		if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5 + 5])<0.01) {
+		if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 			error_t[0] = error_new[n_iter % 5];
 			error_t[1] = error_new[n_iter % 5 + 5];
 			if (flag_rad) {
@@ -5850,16 +5857,16 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			returnval = 1;
 		}
 		else {
-			if (Qdotn > 0.0) {
+			//if (Qdotn > 0.0) {
 				prim[0] = 1.e-30;
 				prim[1] = 0.;
 				prim[2] = 0.;
 				prim[3] = 0.;
-			}
-			else {
-				pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-				prim[0] = pressure * 3.; // Erad = 3*p_rad
-			}
+			//}
+			//else {
+			//	pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+			//	prim[0] = pressure * 3.; // Erad = 3*p_rad
+			//}
 		}
 		if (!isfinite(prim[0]))prim[0] = 1.e-30;
 		if (!isfinite(prim[1]))prim[1] = 0.0;
