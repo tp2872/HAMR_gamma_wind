@@ -550,7 +550,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			/*if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -566,7 +566,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#if(COOL_STOP)
 				, r
 				#endif
-			);
+			);*/
 			/*if (pflag_rad[0])implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -681,6 +681,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		}
 
+		#if(TWO_T && DO_IMEX)
+		U_ft[ENTRE] = pb_i[ENTRE] * U_ft[RHO];
+		U_ft[ENTRI] = pb_i[ENTRI] * U_ft[RHO];
+		#endif
+
 		//Set final quantitities
 		PLOOP{
 			U_f[k] = U_ft[k];
@@ -777,7 +782,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		U_i[ENTRI] = pb[ENTRI] * U_i[RHO];
 
 		//Set for 2T fluid entropy of ions based on electron entropy
-		#if(VARGAMMA)
+		/*#if(VARGAMMA)
 		double ue, ui;
 		double Theta, gam, C;
 
@@ -815,7 +820,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		get_state(pb, geom, &q);
 		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
 		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
-		#endif	
+		#endif	*/
 	//}
 	U_f[ENTRE] = U_i[ENTRE];
 	U_f[ENTRI] = U_i[ENTRI];
@@ -848,7 +853,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, gamma_g
 		#endif
 	);
-	if (pflag == 0) U_i[KTOT] = U_f[KTOT];
+	U_i[KTOT] = U_f[KTOT];
 	#endif
 
 	//Reset inverted variables (both in case of success and failure)
@@ -877,7 +882,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//Recommpute photon number after inversion
 	#if(P_NUM)
-	U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
+	//U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
+	U_f[PHOTON] = U_i[PHOTON];
 	#endif
 	//U_i[UU_RAD] = U_f[UU_RAD];
 	//U_i[U1_RAD] = U_f[U1_RAD];
@@ -1020,9 +1026,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / (dK_dS * norm));
 	#endif
 	#if(P_NUM)
-	if (pflag_rad[0] == 0) {
-		//norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
+	if (!pflag_rad[0]) {
+		norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
 		//error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+	}
+	else {
+		norm = (fabs(U_i[PHOTON]) + fabs(U_prev[PHOTON]) + fabs(Dt * dU[PHOTON]));
+		//error_t[0] += 0.25 * (fabs(U_prev[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
 	}
 	#endif
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
@@ -1148,8 +1158,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 				#if(TWO_T)
 				else if (i == U3 + TWO_T) {
-					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[ENTRE]);
-					pb_new[ENTRE] = pb_old[ENTRE] + dpb;
+					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[ENTRE]);
+					U_new[ENTRE] = U_old[ENTRE] + dpb;
 				}
 				#endif
 				#if(P_NUM)
@@ -1168,6 +1178,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				U_new[RHO] = U_i[RHO];
 				#if(TWO_T)
+					pb_new[ENTRE] = U_new[ENTRE] / U_new[RHO];
 					//Set for 2T fluid entropy of ions based on electron entropy
 					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
@@ -1211,7 +1222,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 						pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 						#endif
 					#endif
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
 				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
@@ -1251,10 +1262,10 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
-				//Recompute photon number
-				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-				#endif
+				//Recompute photon number for consistency
+				//#if(P_NUM)
+				//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
 
 				//Calculate radiative (including coulomb) source term
 				source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -1407,7 +1418,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			+ E_old[4 + P_NUM] * dEdpb_inv[4][4 + P_NUM]
 			#endif	
 			);
-			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
+			U_new[ENTRE] = U_old[ENTRE] + dpb;
 		#endif
 		#if(P_NUM)
 		dpb = -D * (E_old[0] * dEdpb_inv[4 + TWO_T][0] + E_old[1] * dEdpb_inv[4 + TWO_T][1] + E_old[2] * dEdpb_inv[4 + TWO_T][2] + E_old[3] * dEdpb_inv[4 + TWO_T][3] + E_old[4] * dEdpb_inv[4 + TWO_T][4]
@@ -1423,7 +1434,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		
 		//Make sure that electron entropy stays positive
 		#if(TWO_T)
-		if (pb_new[ENTRE] < 0.0) pb_new[ENTRE] = 0.5 * fabs(pb_new[ENTRE]);
+		if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
 		#endif
 		
 		//Make sure that photon number stays positive
@@ -1436,16 +1447,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
+			pb_new[ENTRE] = U_new[ENTRE] / U_new[RHO];
 			flag_floor_kappa = 0;
 			#if(CONSTANTGAMMA || FIXEDGAMMA)
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
 			}
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
@@ -1493,8 +1505,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				pb_new[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
 				#endif
 			#endif
-		U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-		U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+		//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+		//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
 		gamma_g = calc_gamma_gas_prim(pb_new);
 		#endif
 		mhd_calc(pb_new, 0, &q, &U_new[UU]
@@ -1536,9 +1548,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 		//Recompute photon number
-		#if(P_NUM)
-		U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-		#endif
+		//#if(P_NUM)
+		//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+		//#endif
 
 		//Get radiative source term
 		source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -1605,8 +1617,14 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (norm * dK_dS));
 		#endif
 		#if(P_NUM)
-		norm =  (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-		if (flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		if (flag_rad == 0) {
+			norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+			//error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		}
+		else {
+			norm = (fabs(U_i[PHOTON]) + fabs(U_old_prev[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+			//error_new[n_iter % 5] += 0.25 * (fabs(U_old_prev[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		}
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -1857,10 +1875,10 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[UU] += U_new[RHO];
 
 					//Electron and ion entropies
-					#if(TWO_T)
-					U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-					#endif
+					//#if(TWO_T)
+					//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+					//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+					//#endif
 
 					//Recalculate gas entropy for consistency
 					#if(DOKTOT)
@@ -1889,9 +1907,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 					//Recompute photon number
-					#if(P_NUM)
-					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-					#endif
+					//#if(P_NUM)
+					//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					//#endif
 
 					//Calculate source term using new variables
 					source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -2114,10 +2132,10 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[UU] += U_new[RHO];
 
 				//Electron and ion entropies
-				#if(TWO_T)
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-				#endif
+				//#if(TWO_T)
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				//#endif
 
 				//Recalculate gas entropy for consistency
 				#if(DOKTOT)
@@ -2146,9 +2164,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Recompute photon number
-				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-				#endif
+				//#if(P_NUM)
+				//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -2270,10 +2288,10 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					error_t[1] = error_new[n_iter % 5 + 5];
 
 					if (flag_rad) {
-						U_prev[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
-						U_prev[U1_RAD] = U_i[U1_RAD] - (U_new[U1] - U_i[U1]);
-						U_prev[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
-						U_prev[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);						
+						U_prev[UU_RAD] = U_new[UU_RAD];
+						U_prev[U1_RAD] = U_new[U1_RAD];
+						U_prev[U2_RAD] = U_new[U2_RAD];
+						U_prev[U3_RAD] = U_new[U3_RAD];
 						#if(P_NUM)
 						U_prev[PHOTON] = U_new[PHOTON];
 						#endif
@@ -2475,9 +2493,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 					//Recompute photon number
-					#if(P_NUM)
-					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-					#endif
+					//#if(P_NUM)
+					//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					//#endif
 
 					//Calculate source term using new variables
 					source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -2710,10 +2728,10 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[UU] += U_new[RHO];
 
 				//Electron and ion entropies
-				#if(TWO_T)
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-				#endif
+				//#if(TWO_T)
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				//#endif
 
 				//Recalculate gas entropy for consistency
 				#if(DOKTOT)
@@ -2811,8 +2829,8 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 				#endif
 				#if(P_NUM)
-				//norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-				//error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+				norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+				error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 				#endif
 
 				//Set correct offset for Jacobian for next iteration
@@ -3126,10 +3144,10 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					U_new[UU] += U_new[RHO];
 
 					//Electron and ion entropies
-					#if(TWO_T)
-					U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-					U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-					#endif
+					//#if(TWO_T)
+					//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+					//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+					//#endif
 	
 					//Recalculate gas entropy for consistency
 					#if(DOKTOT)
@@ -3370,10 +3388,10 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				U_new[UU] += U_new[RHO];
 
 				//Electron and ion entropies
-				#if(TWO_T)
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-				#endif
+			//	#if(TWO_T)
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				//#endif
 
 				//Recalculate gas entropy for consistency
 				#if(DOKTOT)
@@ -3765,10 +3783,10 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						U_new[UU] += U_new[RHO];
 
 						//Electron and ion entropies
-						#if(TWO_T)
-						U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-						U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-						#endif
+						//#if(TWO_T)
+						//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+						//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+						//#endif
 	
 						//Recalculate gas entropy for consistency
 						#if(DOKTOT)
@@ -4018,10 +4036,10 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				U_new[UU] += U_new[RHO];
 
 				//Electron and ion entropies
-				#if(TWO_T)
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-				#endif
+				//#if(TWO_T)
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				//U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				//#endif
 	
 				//Recalculate gas entropy for consistency
 				#if(DOKTOT)
@@ -6001,6 +6019,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	if (prim[4] < 0.0) {
 		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		returnval = 1;
 	}
 	#endif
 
