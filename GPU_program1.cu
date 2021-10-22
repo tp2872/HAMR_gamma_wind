@@ -550,7 +550,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			/*if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			if ( pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -566,7 +566,8 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#if(COOL_STOP)
 				, r
 				#endif
-			);*/
+			);
+
 			/*if (pflag_rad[0])implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -681,7 +682,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		}
 
-		#if(TWO_T && DO_IMEX)
+		#if(TWO_T)
 		U_ft[ENTRE] = pb_i[ENTRE] * U_ft[RHO];
 		U_ft[ENTRI] = pb_i[ENTRI] * U_ft[RHO];
 		#endif
@@ -1028,11 +1029,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#if(P_NUM)
 	if (!pflag_rad[0]) {
 		norm = (fabs(U_i[PHOTON]) + fabs(U_f[PHOTON]) + fabs(Dt * dU[PHOTON]));
-		//error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+		error_t[0] += 0.25 * (fabs(U_f[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
 	}
 	else {
 		norm = (fabs(U_i[PHOTON]) + fabs(U_prev[PHOTON]) + fabs(Dt * dU[PHOTON]));
-		//error_t[0] += 0.25 * (fabs(U_prev[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
+		error_t[0] += 0.25 * (fabs(U_prev[PHOTON] - U_i[PHOTON] - Dt * dU[PHOTON]) / norm);
 	}
 	#endif
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
@@ -1619,11 +1620,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#if(P_NUM)
 		if (flag_rad == 0) {
 			norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-			//error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+			error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		}
 		else {
 			norm = (fabs(U_i[PHOTON]) + fabs(U_old_prev[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
-			//error_new[n_iter % 5] += 0.25 * (fabs(U_old_prev[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+			error_new[n_iter % 5] += 0.25 * (fabs(U_old_prev[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
 		}
 		#endif
 
@@ -5951,6 +5952,12 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
+	if (Qtsq < 0.0) {
+		Qtsq = 0.0;
+		Qtcon[1] = 0.;
+		Qtcon[2] = 0.;
+		Qtcon[3] = 0.;
+	}
 
 	y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
@@ -5965,7 +5972,22 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	#if(P_NUM)
 	prim[4] = U[4] / sqrt(gammasq);
 	#endif
-	if (y > y_max || isnan(Qdotn) || prim[0] < 0. || Qdotn > 0.0 || isnan(y) || y < 0. || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
+
+	if (isnan(Qdotn) || Qdotn > 0.0) {
+		prim[0] = 1.e-30;
+		prim[1] = 0.;
+		prim[2] = 0.;
+		prim[3] = 0.;
+
+		//Floor on photon number+
+		#if(P_NUM)
+		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
+
+		returnval = 1;
+	}
+	else if (y > y_max || y < 0. || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
 		Uabs = 0.5 * (fabs(Qdotn) + fabs(Qtsq) + 1.e-150);
 		for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_RAD * Qtcon[i] / Uabs;
 
@@ -5980,29 +6002,28 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[3] *= f;
 
 		//if (y < 1. - 100. * NUMEPSILON) {
-		if (lim == TYPE2) {
+		if (lim==TYPE2) {
 			// Get Ebar and p_rad as usual
-			Qdotn = -(1.e-30 + sqrt(Qtsq / y_max));
+			//if (y > 1. - 100. * NUMEPSILON || Qdotn < 0.0) {
+			//}
+			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
+		
 			returnval = 1;
 		}
 		else {
-			//if (Qdotn > 0.0) {
-				prim[0] = 1.e-30;
-				prim[1] = 0.;
-				prim[2] = 0.;
-				prim[3] = 0.;
-			//}
-			//else {
-			//	pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			//	prim[0] = pressure * 3.; // Erad = 3*p_rad
-			//}
+			prim[0] = 1.e-30;
+			prim[1] = 0.;
+			prim[2] = 0.;
+			prim[3] = 0.;
+			//pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+			//prim[0] = pressure * 3.; // Erad = 3*p_rad
 		}
-		//if (!isfinite(prim[0]))prim[0] = 1.e-30;
-		//if (!isfinite(prim[1]))prim[1] = 0.0;
-		//if (!isfinite(prim[2]))prim[2] = 0.0;
-		//if (!isfinite(prim[3]))prim[3] = 0.0;
+		if (!isfinite(prim[0]))prim[0] = 1.e-30;
+		if (!isfinite(prim[1]))prim[1] = 0.0;
+		if (!isfinite(prim[2]))prim[2] = 0.0;
+		if (!isfinite(prim[3]))prim[3] = 0.0;
 		//prim[0] = 1.e-30;
 		//prim[1] = 0.;
 		//prim[2] = 0.;
@@ -11718,14 +11739,14 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		#endif
 
 		//Set temporary variable
-		for (k = 0; k < NPR; k++) U_n_tmp[k] = U_n[k * (ksize)+global_id];
+		for (k = 0; k < NPR; k++) U_n_tmp[k] = UU1[k];
 
 		//Perform implicit solve
 		#if(TWO_T)
 		fel = calc_delta(p, dot(q.bcon, q.bcov));
 		#endif
 		cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		implicit_rad_solve(p, U_n_tmp, UU1, UU1, &pflag[global_id], &pflag_rad[global_id], &geom, dU, Y_IMEX * Dt, cell_size, y_max
+		implicit_rad_solve(p, U_n_tmp, U_n_tmp, UU1, &pflag[global_id], &pflag_rad[global_id], &geom, dU, Y_IMEX * Dt, cell_size, y_max
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
@@ -11918,7 +11939,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 			}
 		}
 		#endif
-		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC);
+		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, TYPE2);
 
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(ph, radius[icurr], &geom
