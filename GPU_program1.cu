@@ -1532,8 +1532,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
-		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+		//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 		//Recompute photon number
 		#if(P_NUM)
@@ -1669,7 +1669,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error decreased compared to start value, update variables
-		if (((fabs(error_new[n_iter % 5]) < error_t[0]) || (pflag_rad[0] == 1 && flag_rad == 0)) && fabs(error_new[n_iter % 5 + 5]) < 0.0001) {
+		if (((fabs(error_new[n_iter % 5 + 5]) < error_t[1]) || (pflag_rad[0] == 1 && flag_rad == 0)) && fabs(error_new[n_iter % 5 + 5]) < 0.0001) {
 			error_t[0] = error_new[n_iter % 5];
 			error_t[1] = error_new[n_iter % 5 + 5];
 
@@ -1885,8 +1885,8 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
-					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+					//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+					//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 					//Recompute photon number
 					#if(P_NUM)
@@ -2142,8 +2142,8 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
-				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+				//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Recompute photon number
 				#if(P_NUM)
@@ -2227,7 +2227,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5 + 5] = error_new[n_iter % 5];
 
 				//Calculate total error
-				if (do_entropy == 0 && flag_rad == 0) {
+				if (do_entropy == 0) {
 					norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				}
@@ -2471,8 +2471,8 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
-					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+					//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+					//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 					//Recompute photon number
 					#if(P_NUM)
@@ -2737,14 +2737,14 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
 
 				//Recompute R_t^mu for consistency
-				get_state_rad(pb_new, geom, &q_rad);
-				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				//get_state_rad(pb_new, geom, &q_rad);
+				//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Compute photon number
-				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-				#endif
+				//#if(P_NUM)
+				///U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -2823,7 +2823,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5 + 5] = error_new[n_iter % 5];
 
 				//Calculate total error	
-				if (do_entropy == 0 && flag_rad == 0) {
+				if (do_entropy == 0) {
 					norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				}
@@ -3100,13 +3100,13 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
-					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-					for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+					//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+					//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 					//Recompute photon number
-					#if(P_NUM)
-					U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-					#endif
+					//#if(P_NUM)
+					//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+					//#endif
 
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
@@ -3335,16 +3335,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			if (flag == 0) {
 				//Get new radiation primitives using TYPE2 limiter
 				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				//PLOOP U_prev_old[k] = U_new[k];
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
-				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+				//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Recompute photon number
-				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-				#endif
+				//#if(P_NUM)
+				//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
 
 				//Make sure that the photon number stays positive
 				#if(P_NUM)
