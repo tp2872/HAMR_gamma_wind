@@ -343,7 +343,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
@@ -381,15 +381,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
-#define DO_IMEX (0)
+#define DO_IMEX (1)
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
-#define HLLF  (1)
-#define LAXF  (0)
+#define HLLF  (0)
+#define LAXF  (1)
 #else
 #define HLLF  (1)
 #define LAXF  (0)
