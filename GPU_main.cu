@@ -2167,6 +2167,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#if (DOHELM) 
 			, GPU_eos_table[0]
 			#endif
+			#if(RAD_M1)
+			, Bufferpflag_RAD[nl[n]]
+			#endif
 			);
 	}
 	else{
@@ -2174,6 +2177,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
 			, GPU_eos_table[0]
+			#endif
+			#if(RAD_M1)
+			, Bufferpflag_RAD[nl[n]]
 			#endif
 			);
 	}
@@ -2195,6 +2201,25 @@ void GPU_fixuputoprim(int flag, int n)
 	}
 	else{
 		fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
+}
+
+void GPU_fixuputoprim_rad(int flag, int n)
+{
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
+	#if(N_GPU>1)
+	cudaSetDevice(block[n][AMR_GPU]);
+	#endif
+
+	if (flag == 1) {
+		fixuputoprim_rad << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	else {
+		fixuputoprim_rad << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]]);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -2228,6 +2253,9 @@ void GPU_fixup_post(int n, double Dt)
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, 1, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
+		#endif
+		#if(RAD_M1)
+		, Bufferpflag_RAD[nl[n]]
 		#endif
 		);
 
