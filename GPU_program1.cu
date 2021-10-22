@@ -6008,12 +6008,12 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
 			}
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
+			prim[0] = 1.e-30 + pressure * 3.; // Erad = 3*p_rad
 		
 			returnval = 1;
 		}
 		else {
-			if (Qdotn > 0.0) {
+			if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
 				prim[0] = 1.e-30;
 				prim[1] = 0.;
 				prim[2] = 0.;
@@ -6023,10 +6023,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 				prim[0] = pressure * 3.; // Erad = 3*p_rad
 			}
-			//prim[0] = 1.e-30;
-			//prim[1] = 0.;
-			//prim[2] = 0.;
-			//prim[3] = 0.;
+			prim[0] = 1.e-30;
+			prim[1] = 0.;
+			prim[2] = 0.;
+			prim[3] = 0.;
 		}
 		if (!isfinite(prim[0]))prim[0] = 1.e-30;
 		if (!isfinite(prim[1]))prim[1] = 0.0;
