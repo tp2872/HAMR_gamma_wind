@@ -4211,7 +4211,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 __device__ double calc_delta(double* ph, double bsq) {
 	double delta;
 	#if(HEAT_HOWES)
-	double fel, c1, c2, c3, Te, Ti, beta, ratio;
+	double fel, c1, c2, c3, Te, Ti, beta_i, ratio;
 	
 	Te = calc_Te(ph);
 	Ti = calc_Ti(ph);
@@ -4227,21 +4227,32 @@ __device__ double calc_delta(double* ph, double bsq) {
 		c3 = 18.0;
 	}
 
-	beta = ((Te + Ti) * ph[RHO] + 0.3333333 * ph[UU_RAD]) / (0.5 * bsq);
-	if (!isfinite(beta) || beta>10000.0 || beta<0.000001) beta = 10000.0;
-	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
+	beta_i = ((Te + Ti) * ph[RHO] + 0.3333333 * ph[UU_RAD]) / (0.5 * bsq);
+	if (!isfinite(beta) || beta_i >10000.0 || beta_i <0.000001) beta_i = 10000.0;
+	fel = c1 * (c2 * c2 + pow(beta_i, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta_i, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta_i);
 
 	//Calculate delta
 	delta = 1. / (1. + fel);
 	#elif(HEAT_ROWAN)
-	double sigma_w, beta_i, beta_max, Te, Ti;
+	double sigma_w, beta_i, beta_max, Ti;
 
-	Te = calc_Te(ph);
 	Ti = calc_Ti(ph);
 
+	#if(CONSTANTGAMMA)
 	sigma_w = bsq / (ph[RHO] + GAMMA * ph[UU]);
-	beta_i = (Ti * ph[RHO] + Te * ph[RHO]) / (0.5 * bsq);
+	#elif(FIXEDGAMMA)
+	double Ti = calc_Ti(ph);
+	sigma_w = bsq / (ph[RHO] + GAMMAE / (GAMMAE - 1.0) * Te * ph[RHO] + GAMMA / (GAMMA - 1.0) * Ti * ph[RHO]);
+	#else
+	double Te = calc_Te(ph);
+	double game, gami;
+	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	sigma_w = bsq / (ph[RHO] + game / (game - 1.0) * Te * ph[RHO] + gami / (gami - 1.0) * Ti * ph[RHO]);
+	#endif
+
 	beta_max = 1.0 / (4.0 * sigma_w);
+	beta_i = MY_MIN((Ti * ph[RHO]) / (0.5 * bsq), beta_max);
 
 	//Calculate delta
 	delta = 0.5 * exp((beta_i / beta_max - 1.0)) / (0.8 + sqrt(sigma_w));
@@ -6013,20 +6024,16 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			returnval = 1;
 		}
 		else {
-			if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+			//if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
 				prim[0] = 1.e-30;
 				prim[1] = 0.;
 				prim[2] = 0.;
 				prim[3] = 0.;
-			}
-			else {
-				pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-				prim[0] = pressure * 3.; // Erad = 3*p_rad
-			}
-			prim[0] = 1.e-30;
-			prim[1] = 0.;
-			prim[2] = 0.;
-			prim[3] = 0.;
+			//}
+			//else {
+				//pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+				//prim[0] = pressure * 3.; // Erad = 3*p_rad
+			//}
 		}
 		if (!isfinite(prim[0]))prim[0] = 1.e-30;
 		if (!isfinite(prim[1]))prim[1] = 0.0;
