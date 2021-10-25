@@ -216,7 +216,11 @@ void rdump_block_read(FILE *fp, int n)
 			reduce_factor = 1.0 / (double)(red_2 * red_3);
 			if ((i % red_1 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][1] += read[npr_file - (NDIM - 1)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE1];
 			reduce_factor = 1.0 / (double)(red_1 * red_3);
-			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2];
+			double fractheta_old = 1.e-2;
+			if (N2 != 1) {
+				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (TRANS_BOUND == 1);
+			}
+			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
 			reduce_factor = 1.0 / (double)(red_1 * red_2);
 			if ((z % red_3 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][3] += read[npr_file - (NDIM - 3)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE3];
 			#endif
@@ -572,7 +576,7 @@ void param_read(FILE *fp) {
 		if (rank == 0) {
 			fprintf(stderr, "Error reading in input parameters. startx not set properly! \n");
 		}
-		exit_r = 1;
+		//exit_r = 1;
 	}
 	if (cour_read != cour) {
 		if (rank == 0) {
