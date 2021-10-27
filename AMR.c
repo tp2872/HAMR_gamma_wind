@@ -2579,7 +2579,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.2 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2640,8 +2640,7 @@ void check_refcrit(void){
 				
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
-				#if(!REFINE_JET)
-				#if(NB_1<10)
+				#if(NB_1<20 || !DEREFINE_POLE)
 				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
@@ -2668,15 +2667,6 @@ void check_refcrit(void){
 				//		block[n_ord_total[n]][AMR_TAG] = 0;
 				//	}
 				//}
-				#endif
-				#else
-				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && block[n_ord_total[n]][AMR_LEVEL1]==0) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 2 && block[n_ord_total[n]][AMR_LEVEL1] == 1) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 6 && block[n_ord_total[n]][AMR_LEVEL1] == 2) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 14 && block[n_ord_total[n]][AMR_LEVEL1] == 3) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 30 && block[n_ord_total[n]][AMR_LEVEL1] == 4) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 62 && block[n_ord_total[n]][AMR_LEVEL1] == 5) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 126 && block[n_ord_total[n]][AMR_LEVEL1] == 6) block[n_ord_total[n]][AMR_TAG] = 0;
 				#endif
 
 				if (block[n_ord_total[n]][AMR_TAG] >= 1){
@@ -3240,7 +3230,7 @@ double calc_refcrit(int n){
 			}
 		}
 	}
-	#elif(REFINE_THIN && !REF_3)
+	#elif(REFINE_THIN && BS_3==1)
 	if (block[n][AMR_NODE] == rank) {
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
@@ -3288,6 +3278,18 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			enth=1.0+p[nl[n]][index_3D(n, i, j, z)][UU]*gam/p[nl[n]][index_3D(n, i, j, z)][RHO];
 			if (p[nl[n]][index_3D(n, i, j, z)][RHO]*fabs(enth) > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO]*enth;
+		}
+	}
+	#elif(WHICHPROBLEM==THIN_PROBLEM)
+	if (block[n][AMR_NODE] == rank){
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi)
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			//#pragma omp critical
+			//{
+				if ((p[nl[n]][index_3D(n, i, j, z)][RHO]*(r*(r>25.)+r*(pow(25./r,3.0))*(r<=25.))) > ref_val && r < 150.) ref_val = (p[nl[n]][index_3D(n, i, j, z)][RHO]*(r*(r>25.)+r*(pow(25./r,3.0))*(r<=25.)));
+			//}
 		}
 	}
 	#else
