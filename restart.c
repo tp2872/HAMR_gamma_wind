@@ -77,7 +77,7 @@ void rdump_grid(MPI_File *fp)
 	#if(PARALLEL_IO)
 	MPI_File_iwrite_all(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
 	#else
-	MPI_File_iwrite(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
+	MPI_File_iwrite(fp[0], array_rdumpgrid, 1 + scscsNB*NV, MPI_INT, &req_rdumpgrid[0]);
 	#endif
 }
 
@@ -196,7 +196,7 @@ void rdump_block_read(FILE *fp, int n)
 		for (k = 0; k < npr_file; k++) {
 			fread(&(read[k]), double_size, 1, fp);
 		}
-		
+		read_geom = 0;
 		//Initialize variables
 		if (i >= N1_GPU_offset[n] * red_1 && i <= (N1_GPU_offset[n] + BS_1) * red_1 && j >= N2_GPU_offset[n] * red_2 && j <= (N2_GPU_offset[n] + BS_2) * red_2 && z >= N3_GPU_offset[n] * red_3 && z <= (N3_GPU_offset[n] + BS_3) * red_3) {
 			i1 = i / red_1;
@@ -228,7 +228,9 @@ void rdump_block_read(FILE *fp, int n)
 			//If file doesn't contain physics, initiliaze the physics just like in ICs
 			#if(RAD_M1)
 			if (!read_M1) {
-				init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
+				}
 				//dt = 1.e-5;
 			}
 			else {
@@ -241,11 +243,13 @@ void rdump_block_read(FILE *fp, int n)
 			#endif
 			#if(TWO_T)
 			if (!read_2T) {
-				double bsq;
-				get_geometry(n, i1, j1, z1, CENT, &geom);
-				read_geom = 1;
-				bsq = bsq_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom);
-				set_2T_entropy(p[nl[n]][index_3D(n, i1, j1, z1)], bsq);
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double bsq;
+					get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom);
+					set_2T_entropy(p[nl[n]][index_3D(n, i1, j1, z1)], bsq);
+				}
 			}
 			else{
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
@@ -255,17 +259,19 @@ void rdump_block_read(FILE *fp, int n)
 			#endif
 			#if(P_NUM)
 			if (!read_Pnum) {
-				double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM], u_dot_urad, urad_dot_urad, Ehat;
-				if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
-				read_geom = 1;
-				ucon_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon);
-				ucon_calc_rad(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon_rad);
-				lower(ucon_rad, &geom, ucov_rad);
-				u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
-				urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-				Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * (urad_dot_urad));
-				T_new = pow(Ehat / ARAD, 0.25);
-				p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] = p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM], u_dot_urad, urad_dot_urad, Ehat;
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					ucon_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon);
+					ucon_calc_rad(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon_rad);
+					lower(ucon_rad, &geom, ucov_rad);
+					u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+					urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+					Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * (urad_dot_urad));
+					T_new = pow(Ehat / ARAD, 0.25);
+					p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] = p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+				}
 			}
 			else {
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
@@ -274,8 +280,10 @@ void rdump_block_read(FILE *fp, int n)
 			#endif
 			#if(RESISTIVE)
 			if (!read_Res) {
-				if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
-				set_E_init(p[nl[n]][index_3D(n, i1, j1, z1)], geom);
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					set_E_init(p[nl[n]][index_3D(n, i1, j1, z1)], geom);
+				}
 			}
 			else {
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
