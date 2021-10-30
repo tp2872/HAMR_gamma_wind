@@ -550,7 +550,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			if ( pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -559,7 +559,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
-			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -567,6 +567,8 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, r
 				#endif
 			);
+
+
 
 			/*if (pflag_rad[0])implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
@@ -4255,7 +4257,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 	beta_i = MY_MIN((Ti * ph[RHO]) / (0.5 * bsq), beta_max);
 
 	//Calculate delta
-	delta = 0.5 * exp((beta_i / beta_max - 1.0)) / (0.8 + sqrt(sigma_w));
+	delta = 0.5 * exp((beta_i / beta_max - 1.0) / (0.8 + sqrt(sigma_w)));
 	#else
 	//Set delta to constant value
 	delta=0.5;
