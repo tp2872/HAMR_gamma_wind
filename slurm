@@ -1,20 +1,18 @@
-#!/bin/bash -l
-#SBATCH -A AST20011
-#SBATCH --job-name="THIN_RAD_SANE"
-#SBATCH --mail-type=ALL
+#!/bin/bash
+#SBATCH -A m2401_g
+#SBATCH -C gpu
+#SBATCH -q regular
 #SBATCH --mail-user=matthewliska92@gmail.com
-#SBATCH -t 2-00:00:00
-#SBATCH -p v100
-#SBATCH -N 64 #Number of nodes
-#SBATCH -n 256 # Number of cores
+#SBATCH -t 01:00:00
+#SBATCH -n 150
+#SBATCH --ntasks-per-node=4
+#SBATCH -c 32
+#SBATCH --gpus-per-task=1
 
-module load gcc
+module load PrgEnv-gnu
+module load gcc/9.3.0
 module load cuda
-export OMP_NUM_THREADS=10
-export MY_SPECTRUM_OPTIONS="--gpu"
-cd /scratch/03284/tg825826/THIN_RAD_SANE
+ulimit -s unlimited
 
-ibrun -np 256 ./harm
-
-cd /scratch/03284/tg825826/PLASMOID1024_3
-ibrun -np 256 ./harm
+export SLURM_CPU_BIND="cores"
+srun -n150 ./harm
