@@ -541,7 +541,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//	, r
 			//	#endif
 			//);
-			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -550,7 +550,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 			
-			/*if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -574,7 +574,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#if(COOL_STOP)
 				, r
 				#endif
-			);*/
+			);
 			/*if (pflag_rad[0])implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -6031,27 +6031,17 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		if (lim==TYPE2) {
 			// Get Ebar and p_rad as usual
 			//if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
-			if (1) {
-				Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
-				//}
-				gammasq = (2. - y_max + sqrt(4. - 3. * y_max)) / (4. - 4. * y_max);
+			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
+				
+			//Get gammasq
+			gammasq = (2. - y_max + sqrt(4. - 3. * y_max)) / (4. - 4. * y_max);
 
-				// Get Ebar and p_rad as usual
-				pressure = -Qdotn / (4. * gammasq - 1.);
-				prim[0] = pressure * 3.; // Erad = 3*p_rad
+			// Get Ebar and p_rad as usual
+			pressure = -Qdotn / (4. * gammasq - 1.);
+			prim[0] = pressure * 3.; // Erad = 3*p_rad
 
-				// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-				for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
-
-				//pressure = fabs(-Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.));
-				//prim[0] = 1.e-30 + pressure * 3.; // Erad = 3*p_rad
-			}
-			else {
-				prim[0] = 1.e-30;
-				prim[1] = 0.;
-				prim[2] = 0.;
-				prim[3] = 0.;
-			}
+			// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
+			for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
 			returnval = 1;
 		}
@@ -6063,7 +6053,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 				prim[3] = 0.;
 			}
 			else {
-				pressure = -fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+				pressure = fabs(Qdotn) / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 				prim[0] = pressure * 3.; // Erad = 3*p_rad
 			}
 		}
@@ -6079,11 +6069,11 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		#endif
 	}
 	if (prim[0] < 1.e-30) {
-		prim[0] = 1.e-30;
-		prim[1] = 0.0;
-		prim[2] = 0.0;
-		prim[3] = 0.0;
-		returnval = 1;
+		//prim[0] = 1.e-30;
+		//prim[1] = 0.0;
+		//prim[2] = 0.0;
+		//prim[3] = 0.0;
+		//returnval = 1;
 	}
 
 	#if(P_NUM)
