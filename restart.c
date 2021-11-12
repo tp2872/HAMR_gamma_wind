@@ -77,7 +77,7 @@ void rdump_grid(MPI_File *fp)
 	#if(PARALLEL_IO)
 	MPI_File_iwrite_all(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
 	#else
-	MPI_File_iwrite(fp[0], array_rdumpgrid, 1 + scscsNB*NV, MPI_INT, &req_rdumpgrid[0]);
+	MPI_File_iwrite(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
 	#endif
 }
 
