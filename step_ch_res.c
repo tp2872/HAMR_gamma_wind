@@ -88,7 +88,7 @@ double advance_res(int flag)
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 		}
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
-			utoprim_M1_0(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+			utoprim_M1_0_res(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 			fixup(p, n_ord[n]);
 		}
 	}
