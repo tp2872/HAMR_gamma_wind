@@ -724,8 +724,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 20;
-	rmax = 41.;
+	rin = 6;
+	rmax = 12.;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
@@ -2507,7 +2507,6 @@ void set_mag(void){
 	double r_hole = 10;
 	double fr;
 	beta = 100.0 / (Bfactor * Bfactor);
-	if (numtasks > 100) exit(0);
 	#endif
 
 	do{
@@ -2568,7 +2567,7 @@ void set_mag(void){
 			}
 			#else
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
 				#if(WHICHPROBLEM==THIN_PROBLEM)

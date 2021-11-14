@@ -96,6 +96,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 }
 
 void set_iprobe(int mode, int * flag){
+	#if(TASK_BASED)
 	int i ,n;
 	*flag = 0;
 	for (n = 0; n < n_active; n++){
@@ -112,6 +113,9 @@ void set_iprobe(int mode, int * flag){
 			}
 		}
 	}
+	#else
+	*flag = 0;
+	#endif
 	return;
 }
 

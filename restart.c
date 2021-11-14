@@ -600,7 +600,7 @@ void param_read(FILE *fp) {
 	}
 
 	if (exit_r) {
-		exit(0);
+		//exit(0);
 	}
 
 	//Set nstep to 0 for convenience

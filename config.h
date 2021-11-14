@@ -27,7 +27,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (1)
+#define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -36,7 +36,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -140,17 +140,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
-#define NB_2 6
+#define NB_1 4
+#define NB_2 4
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 18
+#define BS_1 256
+#define BS_2 256
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -343,7 +343,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
@@ -385,6 +385,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)
+
+/*Wheter to use task-based parallelism*/
+#define TASK_BASED (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
@@ -429,7 +432,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (0.00120)
+#define MASS_DENSITY_SCALE (0.00031)
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
