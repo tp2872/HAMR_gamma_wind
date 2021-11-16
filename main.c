@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 
 		/* Put out reduced dump file*/
 		#if(DUMP_SMALL)
-		if (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT_REDUCED);
 			close_dump_reduced();
 			close_gdump_reduced();

@@ -8266,6 +8266,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	dU[U1] *= geom->g;
 	dU[U2] *= geom->g;
 	dU[U3] *= geom->g;
+	dU[KTOT] *= geom->g;
 
 	//Add M1 radiation terms
 	#if(RAD_M1)
