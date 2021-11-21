@@ -1880,7 +1880,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 void derefine(int n){
 	int i,j,z,k, n_child;
 	int ref_1, ref_2, ref_3;
-	if (rank == 0 && numtasks<10) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+	if (rank == 0 && numtasks<400) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	if (block[n][AMR_ACTIVE] != 0) fprintf(stderr, "Error: Trying to derefine active block %d! \n", n);
 
 	block[n][AMR_ACTIVE] = 1;
@@ -3052,7 +3052,7 @@ double calc_refcrit(int n){
 		if (block[n][AMR_COORD1] >= 4 && block[n][AMR_COORD1] < 10) {
 			if (block[n][AMR_COORD2] == 11 || block[n][AMR_COORD2] == 12) ref_val = 100.0;
 		}
-		else if(block[n][AMR_COORD1] >= 2 && block[n][AMR_COORD1] < 14){
+		else if (block[n][AMR_COORD1] >= 2 && block[n][AMR_COORD1] < 14) {
 			if (block[n][AMR_COORD2] >= 10 && block[n][AMR_COORD2] < 14) ref_val = 0.6 * REFINEMENT_CUTOFF;
 		}
 	}
@@ -3179,7 +3179,7 @@ double calc_refcrit(int n){
 							}
 						}
 					}
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.05) {
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.005) {
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
 								if ((coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
