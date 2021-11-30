@@ -52,8 +52,13 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
+#define NEUTRINOS_M1 (1)
 // Whether electron fraction is evolved
+#if (NEUTRINOS_M1)
 #define DO_YE (1)
+#else 
+#define DO_YE (1)
+#endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
@@ -116,6 +121,9 @@ Physical Parameters section
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
 #define GAMMAMAX_RAD (50.)
+#if (NEUTRINOS_M1)
+#define GAMMAMAX_NU (50.)
+#endif
 
 /*Max value of electron temperature in Kelvin*/
 #define TMAX (1.e15)
@@ -343,6 +351,31 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
+#if(NEUTRINOS_M1)
+#define NU_NUM (1)              /* enable neutrino number density tracking */
+#define NU_SPECIES (1)       /* number of species evolved */
+
+/* number of Nulib table entries for each variable */
+#define NULIB_RHO (50)
+#define NULIB_TEMP (40)
+#define NULIB_YE (30)
+
+/* Nulib table variable bounds  */
+#define nulib_dhi (15.5)
+#define nulib_dlo (6.0)
+#define nulib_thi (12.24)
+#define nulib_tlo (9.76)
+#define nulib_yhi (0.035)
+#define nulib_ylo (0.55)
+
+/* Nulib table coefficients mnemonics */
+#define NULIB_VARS (4)
+#define NU_EMISSIVITY (1)
+#define NU_ABSORPTION (2)
+#define NU_SCATTERING (3)
+#define NU_EMISSIVITY_N (4)
+#endif
+
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
 #define STOP_SCALEHEIGHT (0.03)
@@ -425,6 +458,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define IONS (0)
 #define ELECTRONS (1)
 
+// Constants needed for neutrinos
+#define MP_CGS (1.6726231e-24)
+#define MN_CGS (1.6749286e-24)
+
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
@@ -432,7 +469,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (0.0000001)
 #else
 //#define MASS_DENSITY_SCALE (0.00001)
-#define MASS_DENSITY_SCALE (1.)
+#define MASS_DENSITY_SCALE (1e10)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
@@ -465,6 +502,15 @@ MNEMONICS SECTION
 #define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
 #define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 #define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
+
+#if (NEUTRINOS_M1)
+/* DIMARK: only heavy lepton neutrinos for now */
+#define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1)
+#define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
+#define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+2)
+#define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+3)
+#define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
+#endif
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -775,6 +821,8 @@ Section with EOS constants
 #define avo (6.0221367e23)
 #define kerg (1.380658e-16)
 #define kev (8.617385e-5)
+#define k2mev (8.617385e-11)
+#define mev2k (1.160445e10)
 #define amu (1.6605402e-24)
 #define avoinv (1.0e0 / avo)
 #define kergavo (kerg * avo)
@@ -881,9 +929,16 @@ Section with derived quantities
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
+#if(NEUTRINOS_M1)
+#define NPR_NU     (4)        /* number of neutrino primitive variables */
+#endif
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
+#if (NEUTRINOS_M1)
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NU_SPECIES*(NPR_NU+NU_NUM))        /* total number of primitive variables */
+#else  
 #define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE)        /* total number of primitive variables */
+#endif
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -891,7 +946,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+5*NEUTRINOS_M1)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

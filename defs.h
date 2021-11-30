@@ -800,3 +800,13 @@ MPI_Request req_block[NB_LOCAL][1], req_block_reduced[NB_LOCAL][1], req_block_rd
 MPI_Request request_timelevel[NB];
 MPI_Request req_local1[N_LEVELS_3D][NB_1*NB_3 * 64], req_local2[N_LEVELS_3D][NB_1*NB_3 * 64];
 int send_tag1[N_LEVELS_3D][MY_MAX(NB, 60000)], send_tag2[N_LEVELS_3D][MY_MAX(NB, 60000)];
+
+#if(NEUTRINOS_M1)
+double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+
+double* nulib_table[1];
+double* GPU_nulib_table[1];
+#endif

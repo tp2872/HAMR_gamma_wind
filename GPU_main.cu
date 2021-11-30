@@ -47,12 +47,38 @@ void GPU_init(void)
 	if (cudaSuccess != status) fprintf(stderr, "Error in setting cache: %d \n", status);
 }
 
+#if(NEUTRINOS_M1)
+void nulib_init_GPU(void) {
+	int i, j, k;
+#if(N_GPU>1)
+	cudaSetDevice(0);
+#endif
+
+	// Danat: 3 is for emiss, kappa_abs, kappa_es
+	cudaMalloc(&GPU_nulib_table[0], (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double));
+	cudaMallocHost(&nulib_table[0], (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double)); 
+
+	// Check for errors: Nulib array allocation
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting Nulib tables: %d \n", status);
+
+	// fill in the host array
+	for (i = 0; i < NULIB_RHO; i++) for (j = 0; j < NULIB_TEMP; j++) for (k = 0; k < NULIB_YE; k++) { // DINU: 3 species
+		nulib_table[0][0 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k] = nu_kappa_emiss	[i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k];
+		nulib_table[0][1 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k] = nu_kappa_abs	[i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k];
+		nulib_table[0][2 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k] = nu_kappa_scatt	[i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k];
+		nulib_table[0][3 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k] = nu_kappa_emiss_N[i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k];
+	}
+	cudaMemcpy(GPU_nulib_table[0], nulib_table[0], ((NULIB_RHO * NULIB_TEMP * NULIB_YE * NULIB_VARS) * sizeof(double)), cudaMemcpyHostToDevice);
+}
+#endif
+
 void set_arrays_GPU(int n, int device){
 	int i;
 
 	if (mem_spot_gpu[nl[n]] == device){
-		block[n][AMR_GPU] = device;
-		//alloc_bounds_GPU(n);
+		block[n][AMR_GPU] = device;	
+		alloc_bounds_GPU(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] != device && mem_spot_gpu[nl[n]] != -1){
@@ -1550,6 +1576,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
+				#endif
 				);
 			#endif
 		}
@@ -1569,6 +1598,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
+				#endif
 				);
 			#endif
 		}
@@ -1587,6 +1619,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 				#if (DOHELM) 
 				, GPU_eos_table[0]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
 				#endif
 				);
 			#endif
@@ -1609,6 +1644,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
+				#endif
 				);
 			#endif
 		}
@@ -1628,6 +1666,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
+				#endif
 				);
 			#endif
 		}
@@ -1646,6 +1687,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				  dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 				#if (DOHELM) 
 				, GPU_eos_table[0]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[0]
 				#endif
 				);
 			#endif
@@ -2129,6 +2173,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#if (DOHELM) 
 			, GPU_eos_table[0]
 			#endif
+			#if (NEUTRINOS_M1) 
+			, GPU_nulib_table[0]
+			#endif
 			);
 	}
 	else{
@@ -2136,6 +2183,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
 			, GPU_eos_table[0]
+			#endif
+			#if (NEUTRINOS_M1) 
+			, GPU_nulib_table[0]
 			#endif
 			);
 	}

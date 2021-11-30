@@ -243,7 +243,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int rd = dump_reduced;
 	int rt = RTRANS;
 	int rb = RB;
-	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000 + DO_YE * 10000;
+	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000 + DO_YE * 10000 + NEUTRINOS_M1 * 100000;
 	int dk = DOKTOT;
 
 	//Print out essential stuff for restart
@@ -311,7 +311,7 @@ void dump_params(FILE *fp, int dump_reduced)
 void dump_block(MPI_File *fp, int n)
 {
 	int i, j, z, k;
-	double ucon[NDIM], ucon_rad[NDIM];
+	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
 	struct of_geom geom;
 
     #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad)
@@ -356,6 +356,15 @@ void dump_block(MPI_File *fp, int n)
 
 		#if(DO_YE)
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (YE + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][YE];
+		#endif
+
+		#if(NEUTRINOS_M1)
+		ucon_calc_nu(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_nu);
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_NU];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 1)] = (float)ucon_nu[0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 2)] = (float)ucon_nu[1];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 3)] = (float)ucon_nu[2];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 4)] = (float)ucon_nu[3];
 		#endif
 	}
 	#if(PARALLEL_IO)

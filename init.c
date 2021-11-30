@@ -1023,6 +1023,15 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
+
+			// initialize neutrinos
+			#if (NEUTRINOS_M1) // DINU: 3 species
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] = 1e-30;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_NU] = ur;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_NU] = uh;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_NU] = up;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+			#endif
 		}
 	}
 	a = temp;
@@ -1038,10 +1047,12 @@ void init_torus()
 		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
 
+	double torus_mass = 0.;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
 			#if(RAD_M1)
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 
@@ -1078,6 +1089,10 @@ void init_torus()
 			}
 			#endif
 		}
+	}
+
+	if (rank == 0) {
+		fprintf(stderr, "torus mass: %g\n", torus_mass);
 	}
 
 	umax /= rhomax ;
@@ -1118,6 +1133,7 @@ void init_torus()
 			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 		}
 	}
+
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	
 	#if (DOHELM_TEMPERATURE)

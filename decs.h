@@ -920,6 +920,9 @@ void E_average(void);
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom);
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double *restrict gamma);
 int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad);
+#if(NEUTRINOS_M1)
+int gamma_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_nu);
+#endif
 void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon);
 void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
@@ -967,6 +970,9 @@ void fixup_utoprim(double(*restrict pv[NB_LOCAL])[NPR], int n);
 void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon);
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
+#if(NEUTRINOS_M1)
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu);
+#endif
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd
@@ -1387,4 +1393,19 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres
 void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* pres, double* u, double* dpdrho, double* dudrho);
 // Floor
 void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* pres);
+#endif
+
+/*Neutrino function*/
+#if(NEUTRINOS_M1)
+void init_nulib_table(void);
+void interp_nulib_table(double* restrict ph, int quantity, double* opacity);
+void nulib_init_GPU(void);
+
+extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+
+extern double* nulib_table[1];
+extern double* GPU_nulib_table[1];
 #endif

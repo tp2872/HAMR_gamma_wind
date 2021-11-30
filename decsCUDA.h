@@ -61,6 +61,9 @@ __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(NEUTRINOS_M1)
+	, const double* __restrict__ gpu_nulib_table
+	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
 	const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
@@ -71,6 +74,9 @@ __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_2, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2, double y_max
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if (NEUTRINOS_M1)
+	, const  double* __restrict__ gpu_nulib_table
 	#endif
 );
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2

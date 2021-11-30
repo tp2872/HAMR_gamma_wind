@@ -589,6 +589,51 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 	return;
 }
 
+#if (NEUTRINOS_M1)
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu)
+{
+	double alpha, gamma_nu;
+	double beta[NDIM];
+	int j;
+
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	#pragma ivdep
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+
+	if (gamma_calc_nu(pr, geom, &gamma_nu)) {
+		fflush(stderr);
+		fprintf(stderr, "\nucon_calc_nu(): gamma_nu failure \n");
+		fflush(stderr);
+		fail(FAIL_GAMMA);
+	}
+
+	ucon_nu[0] = gamma_nu / alpha;
+	#pragma ivdep
+	SLOOPA ucon_nu[j] = pr[U1_NU + j - 1] - gamma_nu*beta[j] / alpha;
+
+	return;
+}
+
+int gamma_calc_nu(double* restrict pr, struct of_geom* restrict geom, double* restrict gamma_nu)
+{
+	double qsq;
+	qsq = geom->gcov[1][1] * pr[U1_NU] * pr[U1_NU] + geom->gcov[2][2] * pr[U2_NU] * pr[U2_NU] + geom->gcov[3][3] * pr[U3_NU] * pr[U3_NU] + 2. * (geom->gcov[1][2] * pr[U1_NU] * pr[U2_NU] + geom->gcov[1][3] * pr[U1_NU] * pr[U3_NU] + geom->gcov[2][3] * pr[U2_NU] * pr[U3_NU]);
+	if (qsq < 0.) {
+		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
+			fprintf(stderr, "gamma_calc_nu():  failed: qsq = %28.18e \n", qsq);
+			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1_NU], pr[U2_NU], pr[U3_NU]);
+			*gamma_nu = 1.;
+			return (1);
+		}
+		else qsq = 1.E-10; // set floor
+	}
+
+	*gamma_nu = sqrt(1. + qsq);
+
+	return(0);
+}
+#endif
+
 /* find gamma-factor wrt normal observer */
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {

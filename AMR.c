@@ -298,7 +298,7 @@ void set_AMR(void){
 	int y;
 
 	#if(RAD_M1)
-	calc_ymax();
+	calc_ymax(); // DIMARK: neutrinos?
 	#endif
 
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps

@@ -110,12 +110,17 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if(RAD_M1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < (u + pv[UU_RAD]) / UORHOMAX)  rhoflr = (u + pv[UU_RAD]) / (UORHOMAX);
+	#elif(NEUTRINOS_M1)
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < (u + pv[UU_NU]) / UORHOMAX)  rhoflr = (u + pv[UU_NU]) / (UORHOMAX); // DINU: 3 species
 	#else
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < u / UORHOMAX) rhoflr = u / (UORHOMAX);
 	#endif
+	//printf("floors: %e %e\n", rhoflr, uuflr);
 	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
 	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+	//printf("2 floors: %e %e\n", rhoflr, uuflr);
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	for (k = 0; k < NPR_U; k++) pv_prefloor[k] = pv[k];
@@ -130,6 +135,15 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		u = uuflr - pv[UU_RAD];
 		dofloor = 1;
 	}
+	#elif(NEUTRINOS_M1)
+	if (u + pv[UU_NU] < uuflr) {
+		u = uuflr - pv[UU_NU];// DINU: 3 species
+		#if (!(DOHELM_TEMPERATURE == 2))
+		pv[UU] = u;
+		#endif
+		dofloor = 1;
+	}
+
 	#else
 	if (u < uuflr) {
 		u = uuflr;
@@ -139,6 +153,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		dofloor = 1;
 	}
 	#endif
+	//printf("3 floors: %e %e\n", rhoflr, uuflr);
 
 	//Floor on radiation internal energy
 	#if(RAD_M1)
@@ -150,6 +165,17 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		double Tr;
 		Tr = pow(pv[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		pv[PHOTON] = pv[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
+	}
+	#endif
+	
+	#if(NEUTRINOS_M1)
+	if (pv[UU_NU] < pow(10., -30.)) {
+		pv[UU_NU] = pow(10., -30.);// DINU: 3 species
+
+		//Floor on photon number+
+		#if(NU_NUM)
+		pv[NUMBER_NU] = 1e-30;
 		#endif
 	}
 	#endif

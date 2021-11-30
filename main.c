@@ -80,6 +80,13 @@ int main(int argc, char *argv[])
 	#endif
 	#endif
 
+	#if(NEUTRINOS_M1)
+	init_nulib_table();
+	#if(GPU_ENABLED || GPU_DEBUG )
+	nulib_init_GPU();
+	#endif
+	#endif
+
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
 		derefine_pole();
