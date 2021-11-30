@@ -13,6 +13,9 @@ __device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], do
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
@@ -25,6 +28,9 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     #if (DOHELM_TEMPERATURE)
     , double* temp_prev
     #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
@@ -37,6 +43,9 @@ __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], dou
     #if (DOHELM_TEMPERATURE)
     , double* temp_prev
     #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
@@ -54,10 +63,16 @@ __device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, doubl
 	#if (DOHELM_TEMPERATURE)
 	, double* temp_prev
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 );
 __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(DO_YE)
+	, double ye
 	#endif
 );
 __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
@@ -67,6 +82,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	#if(DOHELM_TEMPERATURE)
 	, double* temp_prev
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 );
 __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance
 	#if (DOHELM)
@@ -74,6 +92,9 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	#endif
 	#if(DOHELM_TEMPERATURE)
 	, double* temp_prev
+	#endif
+	#if (DO_YE)
+	, double ye
 	#endif
 );
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
@@ -272,6 +293,9 @@ __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
 __device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double* W, double* dWdvsq
 	#if(DOHELM_TEMPERATURE)
 	, double* temp_prev
+	#endif
+	#if (DO_YE)
+	, double ye
 	#endif
 );
 #endif
@@ -6108,9 +6132,21 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
     // -- to get min. pressure for a given density, set T = T_min
     double xpres;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres(gpu_eos_table, prim[RHO], eos_temp_low, &xpres);
+	eos_mode_rhotemp_pres(gpu_eos_table, prim[RHO], eos_temp_low, 
+		#if(DO_YE)
+		prim[YE],
+		#else
+		1.0, 
+		#endif
+		&xpres);
 	#else 
-    eos_mode_rhotemp_pres_min (gpu_eos_table, prim[RHO], &xpres);
+    eos_mode_rhotemp_pres_min (gpu_eos_table, prim[RHO], 
+		#if(DO_YE)
+		prim[YE],
+		#else
+		1.0,
+		#endif
+		&xpres);
 	#endif
     p_array[0] = xpres;
 	#else
@@ -6150,7 +6186,13 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
 		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(gpu_eos_table, rho0, &prim[UU], w - rho0, &xpres, &u);
+		eos_mode_rhotemp_w_pres_u(gpu_eos_table, rho0, &prim[UU], 
+			#if(DO_YE)
+			prim[YE],
+			#else
+			1.0,
+			#endif
+			w - rho0, &xpres, &u);
 		#else
 		eos_mode_rhow_pres_u(gpu_eos_table, p_temp, &xpres, &u);
 		#endif
@@ -6218,7 +6260,13 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
 		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(gpu_eos_table, rho0, &prim[UU], w - rho0, &p_new, &u);
+		eos_mode_rhotemp_w_pres_u(gpu_eos_table, rho0, &prim[UU],
+			#if(DO_YE)
+			prim[YE], 
+			#else
+			1.0, 
+			#endif
+			w - rho0, &p_new, &u);
 		#else
         eos_mode_rhow_pres_u (gpu_eos_table, prim, &p_new, &u);
 		#endif
@@ -6635,6 +6683,9 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if (DO_YE)
+		, prim[YE]
+		#endif
 	);
 
 	//Transform new primitive variables back if there was no problem
@@ -6655,6 +6706,9 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(DO_YE)
+	, double ye
 	#endif
 ){
 	double x_1d[1];
@@ -6727,7 +6781,13 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	prim_tmp[RHO] = rho0;
 	prim_tmp[UU] = K_atm;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_s_pres_u(gpu_eos_table, rho0, &prim[UU], K_atm, &p, &u, &dpdrho, &dudrho);
+	eos_mode_rhotemp_s_pres_u(gpu_eos_table, rho0, &prim[UU],
+		#if (DO_YE)
+		ye, 
+		#else
+		1.0,
+		#endif
+		K_atm, &p, &u, &dpdrho, &dudrho);
 	#else
 	eos_mode_rhos_upres(gpu_eos_table, prim_tmp, &p, &u, &dpdrho, &dudrho);
 	#endif
@@ -6747,6 +6807,9 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 		#endif
 		#if(DOHELM_TEMPERATURE)
 		, &prim[UU]
+		#endif
+		#if (DO_YE)
+		, ye
 		#endif
 	);
 
@@ -6770,6 +6833,9 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 		#endif
 		#if(DOHELM_TEMPERATURE)
 		, &prim[UU]
+		#endif
+		#if(DO_YE)
+		, ye
 		#endif
 	);
 	//if (u > 0.02 || rho0 > 1.02)
@@ -6812,6 +6878,9 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	#if(DOHELM_TEMPERATURE)
 	, double *temp_prev
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 ){
 	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
@@ -6840,6 +6909,9 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 			#if(DOHELM_TEMPERATURE)
 			, temp_prev
 			#endif
+			#if (DO_YE)
+			, ye
+			#endif
 		);/* returns with new dx, f, df */
 
 		//Set old values
@@ -6863,6 +6935,9 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 			#endif
 			#if(DOHELM_TEMPERATURE)
 			, temp_prev
+			#endif
+			#if(DO_YE)
+			, ye
 			#endif
 		);
 		errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
@@ -6905,6 +6980,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	#if(DOHELM_TEMPERATURE)
 	, double *temp_prev
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 ){
 	double W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
 	//vsq = x[0];
@@ -6915,6 +6993,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	dWdvsq_calc2_helmholtz(gpu_eos_table, x[0], D, K_atm, &W, &dWdvsq
 		#if(DOHELM_TEMPERATURE)
 		, temp_prev
+		#endif
+		#if (DO_YE)
+		, ye
 		#endif
 	);
 	Wsq = W * W;
@@ -6927,6 +7008,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 		#endif
 		#if(DOHELM_TEMPERATURE)
 		, temp_prev
+		#endif
+		#if(DO_YE)
+		, ye
 		#endif
 	);
 	Wsq = W * W;
@@ -6950,6 +7034,9 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	#if(DOHELM_TEMPERATURE)
 	, double *temp_prev
 	#endif
+	#if(DO_YE)
+	, double ye
+	#endif
 ){
 	double gtmp;
 	gtmp = (1. - vsq);
@@ -6960,7 +7047,13 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	prim_tmp[RHO] = *rho;
 	prim_tmp[UU] = K_atm;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_s_pres_u(gpu_eos_table, *rho, temp_prev, K_atm, p, u, &dpdrho, &dudrho);
+	eos_mode_rhotemp_s_pres_u(gpu_eos_table, *rho, temp_prev,
+		#if (DO_YE)
+		ye, 
+		#else 
+		1.0,
+		#endif
+		K_atm, p, u, &dpdrho, &dudrho);
 	#else
 	eos_mode_rhos_upres(gpu_eos_table, prim_tmp, p, u, &dpdrho, &dudrho);
 	#endif
@@ -6986,6 +7079,9 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
 	#if(DOHELM_TEMPERATURE)
 	, double *temp_prev
 	#endif
+	#if (DO_YE)
+	, double ye
+	#endif
 )
 {
 	double gtmp, prim_tmp[UU + 1];
@@ -6995,7 +7091,13 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
 
 	double p, u, dpdrho, dudrho;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_s_pres_u(gpu_eos_table, D * sqrt(gtmp), temp_prev, K_atm, &p, &u, &dpdrho, &dudrho);
+	eos_mode_rhotemp_s_pres_u(gpu_eos_table, D * sqrt(gtmp), temp_prev,
+		#if(DO_YE)
+		ye, 
+		#else
+		1.0,
+		#endif
+		K_atm, &p, &u, &dpdrho, &dudrho);
 	#else
 	eos_mode_rhos_upres(gpu_eos_table, prim_tmp, &p, &u, &dpdrho, &dudrho);
 	#endif
@@ -7052,6 +7154,9 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
 		#if (DOHELM)
 		, gpu_eos_table
 		#endif
+		#if (DO_YE)
+		, prim[YE]
+		#endif
 		#if(TWO_T)
 		, S
 		, fel
@@ -7081,6 +7186,9 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
 __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if (DO_YE)
+	, double ye
 	#endif
 	#if(TWO_T)
 	, double *S
@@ -7164,7 +7272,13 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // 1. Helmholtz EOS
     prim[RHO] = rho0;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres_u(gpu_eos_table, rho0, prim[UU], &p, &u);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, rho0, prim[UU],
+		#if (DO_YE)
+		ye, 
+		#else 
+		1.0,
+		#endif
+		&p, &u);
 	#else
     eos_mode_rhou_pres (gpu_eos_table, prim, &p);
 	#endif
@@ -7197,6 +7311,9 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
         #if(DOHELM_TEMPERATURE)
         , &prim[UU]
         #endif
+		#if (DO_YE)
+		, prim[YE]
+		#endif
 		#if(TWO_T)
 		, S
 		, fel
@@ -7237,7 +7354,13 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     prim[RHO] = rho0;
     prim[UU] = w - rho0;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &prim[UU], w-rho0, &p, &u);
+	eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &prim[UU],
+		#if (DO_YE)
+		ye,
+		#else 
+		1.0,
+		#endif
+		w-rho0, &p, &u);
 	#else
 	eos_mode_rhow_pres_u (gpu_eos_table, prim, &p, &u);
 	#endif
@@ -7324,6 +7447,9 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     #if (DOHELM_TEMPERATURE)
     , double *temp_prev
     #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 	#if(TWO_T)
 	, double *S
 	, double fel
@@ -7352,6 +7478,9 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
             #if (DOHELM_TEMPERATURE)
             , temp_prev
             #endif
+			#if (DO_YE)
+			, ye
+			#endif
 			#if(TWO_T)
 			, S
 			, fel
@@ -7407,6 +7536,9 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
     #if (DOHELM_TEMPERATURE)
     , double* temp_prev
     #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 	#if(TWO_T)
 	, double *S
 	, double fel
@@ -7431,7 +7563,13 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
     prim[RHO] = rho;
     prim[UU] = (x[0]*gtmp) - rho;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(gpu_eos_table, rho, temp_prev, (x[0] * gtmp) - rho, &p_tmp, &dpdrho, &dpde_d);
+	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(gpu_eos_table, rho, temp_prev,
+		#if (DO_YE)
+		ye,
+		#else
+		1.0, 
+		#endif
+		(x[0] * gtmp) - rho, &p_tmp, &dpdrho, &dpde_d);
 	#else
 	eos_mode_rhow_pres_dpdrho_dpde_d(gpu_eos_table, prim, &p_tmp, &dpdrho, &dpde_d);
 	#endif
@@ -7564,7 +7702,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (pf[UU] < eos_temp_low) pf[UU] = eos_temp_low;
 
 	// Get the value of internal energy for other floors
-	eos_mode_rhotemp_pres_u(gpu_eos_table, pf[RHO], pf[UU], &xP, &u);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, pf[RHO], pf[UU],
+		#if (DO_YE)
+		pf[YE],
+		#else 
+		1.0,
+		#endif
+		&xP, &u);
 	
 	// Pre-floor value of internal energy
 	double prefloor_u = u;
@@ -7672,7 +7816,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		#if (DOHELM)
 		#if (DOHELM_TEMPERATURE)
 		// DITEMP: haven't finished it here!
-		eos_mode_rhotemp_u_pres_floor(gpu_eos_table, pf[RHO], &pf[UU], u, &xP);
+		eos_mode_rhotemp_u_pres_floor(gpu_eos_table, pf[RHO], &pf[UU],
+			#if (DO_YE)
+			pf[YE],
+			#else 
+			1.0,
+			#endif
+			u, &xP);
 		wnew = pf[RHO] + u + xP; // DITEMP: note that xP is unchanged!
 		#else
 		eos_mode_rhou_pres(gpu_eos_table, pf, &xP);
@@ -7868,7 +8018,13 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	#if (DOHELM)
 	// Helmholtz EOS
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], &P, &u);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU],
+		#if (DO_YE)
+		ph[YE],
+		#else 
+		1.0,
+		#endif
+		&P, &u);
 	#else
 	eos_mode_rhou_pres(gpu_eos_table, ph, &P);
 	#endif
@@ -8103,7 +8259,13 @@ __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mh
     #if (DOHELM)
     // 1. Helmholtz EOS
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres_u(gpu_eos_table, r, pr[UU], &P, &u);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, r, pr[UU],
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&P, &u);
 	#else
     eos_mode_rhou_pres (gpu_eos_table, pr, &P);
 	#endif
@@ -8442,7 +8604,13 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
     #if (DOHELM)
     double cs2_helm;
     #if (DOHELM_TEMPERATURE)
-    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], &P, &u, &cs2_helm);
+    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&P, &u, &cs2_helm);
 	#else
     eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &P, &cs2_helm);
 	#endif
@@ -8501,7 +8669,13 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 		#if(DOHELM)
 		double xentr;
 		#if(DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
+		eos_mode_rhotemp_entr(gpu_eos_table, pr[RHO], pr[UU],
+			#if (DO_YE)
+			pr[YE],
+			#else 
+			1.0,
+			#endif
+			&xentr);
 		#else
 		eos_mode_rhou_entr(gpu_eos_table, pr, &xentr);
 		#endif
@@ -9863,7 +10037,13 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	#if (DOHELM)
 	// 1. Helmholtz EOS
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres_u(gpu_eos_table, pr[RHO], pr[UU], &P, &u);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, pr[RHO], pr[UU],
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&P, &u);
 	#else
 	eos_mode_rhou_pres(gpu_eos_table, pr, &P);
 	#endif
@@ -9891,7 +10071,13 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	#if(DOHELM)
 	double xentr;
 	#if(DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
+	eos_mode_rhotemp_entr(gpu_eos_table, pr[RHO], pr[UU],
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&xentr);
 	#else
 	eos_mode_rhou_entr(gpu_eos_table, pr, &xentr);
 	#endif
@@ -9926,7 +10112,13 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	double xpres;
 	#if (DOHELM_TEMPERATURE)
 	double u;
-	eos_mode_rhotemp_pres_u_cs2(gpu_eos_table, pr[RHO], pr[UU], &xpres, &u, &cs2);
+	eos_mode_rhotemp_pres_u_cs2(gpu_eos_table, pr[RHO], pr[UU],
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&xpres, &u, &cs2);
 	EF = pr[RHO] + u + xpres;
 	#else
 	eos_mode_rhou_pres_cs2(gpu_eos_table, pr, &xpres, &cs2);
@@ -10037,7 +10229,13 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
     double xpres;
 	#if (DOHELM_TEMPERATURE)
 	double u;
-    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], &xpres, &u, &cs2);
+    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+		#if (DO_YE)
+		pr[YE],
+		#else 
+		1.0,
+		#endif
+		&xpres, &u, &cs2);
     w = pr[RHO] + u + xpres;
 	#else
     eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &xpres, &cs2);
@@ -13259,24 +13457,36 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 	double deni = 1.0 / den;
 	double tempi = 1.0 / btemp;
 
+	/* 
+		ye = zbar/abar
+		abar = zbar / ye
+		ytot1 = 1/abar
+
+		Xp = np/(np+nn)
+		Ye = np/(np+nn) = Xp
+		Xn = 1-Xp
+		abar = Xp/1 + Xn/1 + Xa/4 = 1 - 3Xa/4
+	*/
     // Useful relations
-    double ytot1 = 1.0 / abar;
-    double ye = ytot1 * zbar;
+    //double ytot1 = 1.0 / abar;
+    //double ye = ytot1 * zbar;
+	double abar = 1.0; // since we only have protons and neutrons
+	double ytot1 = 1.0; // since we only have protons and neutrons
     double kt = kerg * btemp;
-    double din = zbar * ytot1 * den;
+    double din = ye * den;
 	double kavoy = kergavo * ytot1;
 
     //Look up the desired quantities in the eos table
-	double free, df_d, df_t, df_tt, df_dt, etaele;
+	double free, df_d, df_t, df_tt, df_dt;
 	if (reset_elepos) {
-		free = df_d = df_t = df_tt = df_dt = dpepdd = etaele = 1e-30;
+		free = df_d = df_t = df_tt = df_dt = dpepdd = *etaele = 1e-30;
 		is_density_low = 0;
 	}
 	else {
 		#if (EOS_LINEAR)
-		interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+		interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
 		#else
-		interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+		interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
 		#endif
 	}
 
@@ -13419,6 +13629,11 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double* prim, double *pres) {
     double den = prim[RHO];
     double u_goal = prim[UU];
+	#if (DO_YE)
+	double ye = prim[YE];
+	#else 
+	double ye = 1.0;
+	#endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:
@@ -13520,6 +13735,11 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
 __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double* prim, double *pres, double *cs2) {
     double den = prim[RHO];
     double u_goal = prim[UU];
+	#if (DO_YE)
+	double ye = prim[YE];
+	#else 
+	double ye = 1.0;
+	#endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:
@@ -13623,7 +13843,11 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     double deni = 1.0 / den;
     // prim[UU] is w - rho for this function only
     double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
-    
+	#if (DO_YE)
+	double ye = prim[YE];
+	#else 
+	double ye = 1.0;
+	#endif
 	// check if the input is valid:
 	#if (enable_input_check)
 	if (prim[UU] < 0.0) {
