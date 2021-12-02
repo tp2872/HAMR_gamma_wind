@@ -356,7 +356,7 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 		interpolation is handled by interp_eos(): biquintic Hermite polynomials
 		pressure, specific internal energy, entropy and their derivatives are outputs
 */
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dpresdd, double* cs2)
+void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dpresdd, double* cs2)
 {
     // Local variables
     double prad, dpraddt, erad, deraddt, srad, dsraddt;
@@ -414,10 +414,10 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     double tempi = 1.0 / btemp;
 
     // Useful relations
-    double ytot1 = 1.0 / abar;
-    double ye = ytot1 * zbar;
+    double abar = 1.0;
+    double ytot1 = 1.0;
     double kt = kerg * btemp;
-    double din = zbar * ytot1 * den;
+    double din = ye * den;
     double kavoy = kergavo * ytot1;
 
     //Look up the desired quantities in the eos table
@@ -631,6 +631,11 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
     
     double den = prim[RHO];
     double u_goal = prim[UU];
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     double ener_goal = u_goal / den;
     
     // initial guess : temperature
@@ -649,7 +654,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
     temp_old = temp_ini_guess;
     while (i < EOS_ITERATIONS && more_iterations)
     {
-        eos_helm(1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, &pres, &ener_tmp, entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -678,11 +683,11 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
 
     if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, den, ye, &pres, &enerA, entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, den, 1.0, 1.0, &pres, &enerB, entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, den, ye, &pres, &enerB, entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) return;
@@ -691,7 +696,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
         while (i < 2 * EOS_ITERATIONS) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, den, 1.0, 1.0, &pres, &enerC, entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, den, ye, &pres, &enerC, entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = enerC - ener_goal;
             error_q = fabs(fC / ener_goal);
 
@@ -721,7 +726,11 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
     double den = prim[RHO];
     double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-    
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
@@ -738,7 +747,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
     temp_old = temp_ini_guess;
     while (i < EOS_ITERATIONS && more_iterations)
     {
-        eos_helm(1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -767,11 +776,11 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
 
     if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, den, ye, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, den, ye, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) return;
@@ -780,7 +789,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
         while (i < 2 * EOS_ITERATIONS) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, den, ye, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = enerC - ener_goal;
             error_q = fabs(fC / ener_goal);
 
@@ -802,7 +811,11 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     double den = prim[RHO];
     double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-    
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
@@ -819,7 +832,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     temp_old = temp_ini_guess;
     while (i < EOS_ITERATIONS && more_iterations)
     {
-        eos_helm(1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, cs2);
+        eos_helm(1, temp_old, den, ye, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -848,11 +861,11 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
 
     if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, cs2);
+        eos_helm(1, tempA, den, ye, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, cs2);
+        eos_helm(1, tempB, den, ye, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) return;
@@ -861,7 +874,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
         while (i < 2 * EOS_ITERATIONS) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, cs2);
+            eos_helm(1, tempC, den, ye, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, cs2);
             fC = enerC - ener_goal;
             error_q = fabs(fC / ener_goal);
 
@@ -884,7 +897,11 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrh
     double deni = 1.0 / den;
     // prim[UU] is w - rho for this function only
     double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
-    
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (xenth < 0.0) temp_ini_guess = eos_temp_low;
@@ -904,7 +921,7 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrh
     temp_old = temp_ini_guess;
     while (i < EOS_ITERATIONS && more_iterations)
     {
-        eos_helm(1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, pres, &xener, &entr, &dpdt, &dedt, dpdrho, &cs2);
         h_tmp = xener + (*pres) * deni;
         dhdt = dedt + dpdt * deni;
         temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdt * xenth;
@@ -940,7 +957,11 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     double deni = 1.0 / den;
     // prim[UU] is w - rho for this function only
     double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
-    
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (xenth < 0.0) temp_ini_guess = eos_temp_low;
@@ -964,7 +985,7 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     temp_old = temp_ini_guess;
     
     for(i = 0; i < EOS_ITERATIONS; i++){
-        eos_helm(1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, pres, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         
         h_tmp = xener + (*pres) * deni;
         dhdtemp = dedt + dpdt * deni;
@@ -988,13 +1009,13 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     *u = xener * den;
 }
 
-void eos_mode_rhotemp_pres_min (double den, double *pres) {
+void eos_mode_rhotemp_pres_min (double den, double ye, double *pres) {
     // implementation in Newman-Hamlin inversion
     // Parameters of Newton-Raphson iterations
     double temp = 1.0e4;
     double ener, dpdt, dedt, dpdrho;
     double entr, cs2;
-    eos_helm(1, temp, den, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+    eos_helm(1, temp, den, ye, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
 }
 
 void eos_mode_rhopres_u (double* prim) {
@@ -1005,7 +1026,11 @@ void eos_mode_rhopres_u (double* prim) {
     double deni = 1.0 / den;
     // prim[UU] is p_goal for this function only
     double p_goal = prim[UU];
-
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (p_goal <= 0.0) temp_ini_guess = 1.0e3;
@@ -1026,7 +1051,7 @@ void eos_mode_rhopres_u (double* prim) {
     
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     for(i = 0; i < EOS_ITERATIONS; i++){
-        eos_helm(1, temp_old, den, 1.0, 1.0, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         
         temp_new = temp_old - (p_tmp - p_goal) / dpdt;
         
@@ -1056,11 +1081,11 @@ void eos_mode_rhopres_u (double* prim) {
 
     if (error_p > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, den, 1.0, 1.0, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, den, ye, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = presA - p_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, den, 1.0, 1.0, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, den, ye, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = presB - p_goal;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1069,7 +1094,7 @@ void eos_mode_rhopres_u (double* prim) {
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, den, 1.0, 1.0, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, den, ye, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = presC - p_goal;
             error_p = fabs(fC / p_goal);
 
@@ -1094,7 +1119,11 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
     double den = prim[RHO];
     double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-    
+    #if(DO_YE)
+    double ye = prim[YE];
+    #else
+    double ye = 1.0;
+    #endif
     // initial guess : temperature
     double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
@@ -1124,7 +1153,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
     // DIMARK: end of the code snippet
 
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, den, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -1151,11 +1180,11 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
 
     if (error_e > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, den, ye, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, den, 1.0, 1.0, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, den, ye, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) return;
@@ -1164,7 +1193,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
         while (i < 2 * EOS_ITERATIONS) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, den, 1.0, 1.0, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, den, ye, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = enerC - ener_goal;
             error_e = fabs(fC / ener_goal);
 
@@ -1188,28 +1217,28 @@ void test_eos(void) {
 // DITEMP: eos wrapper functions 
 #if (DOHELM_TEMPERATURE)
 
-void eos_mode_rhotemp_pres_u(double dens, double temp, double* pres, double* u) {
+void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, double* u) {
     double ener;
     double entr, dpdt, dedt, dsdt, dpdrho, dedrho, cs2;
-    eos_helm(1, temp, dens, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+    eos_helm(1, temp, dens, ye, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
     *u = dens * ener;
 }
 
-void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double* pres, double* u, double* cs2) {
+void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pres, double* u, double* cs2) {
     double ener;
     double entr, dpdt, dedt, dsdt, dpdrho, dedrho;
-    eos_helm(1, temp, dens, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
+    eos_helm(1, temp, dens, ye, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
     *u = dens * ener;
 }
 
-void eos_mode_rhotemp_pres(double dens, double temp, double* pres) {
+void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres) {
     double ener, entr, dpdt, dedt, dsdt, dpdrho, dedrho, cs2;
-    eos_helm(1, temp, dens, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+    eos_helm(1, temp, dens, ye, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 }
 
-void eos_mode_rhotemp_entr(double dens, double temp, double* entr) {
+void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr) {
     double pres, ener, dpdt, dedt, dsdt, dpdrho, dedrho, cs2;
-    eos_helm(1, temp, dens, 1.0, 1.0, &pres, &ener, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+    eos_helm(1, temp, dens, ye, &pres, &ener, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 
     // Convert entropy to kappa
     #if (!DOHELM_FULLENTROPY)
@@ -1218,7 +1247,7 @@ void eos_mode_rhotemp_entr(double dens, double temp, double* entr) {
 }
 
 
-void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal) {
+void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal) {
     double ener_goal = u_goal / dens;
 
     // initial guess : temperature
@@ -1239,7 +1268,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal) {
     temp_old = temp_ini_guess;
 
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -1267,11 +1296,11 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal) {
 
     if (error_e > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, dens, ye, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, dens, ye, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) return;
@@ -1280,7 +1309,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal) {
         while (i < 2 * EOS_ITERATIONS) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, dens, ye, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = enerC - ener_goal;
             error_e = fabs(fC / ener_goal);
 
@@ -1297,7 +1326,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double u_goal) {
 }
 
 
-void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
+void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_goal) {
     // Parameters of Newton-Raphson iterations
     double tolerance_p = EOS_TOL;
     double deni = 1.0 / dens;
@@ -1322,7 +1351,7 @@ void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
 
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
 
         temp_new = temp_old - (p_tmp - p_goal) / dpdt;
 
@@ -1353,11 +1382,11 @@ void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
 
     if (error_p > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempA, dens, ye, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = presA - p_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        eos_helm(1, tempB, dens, ye, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fB = presB - p_goal;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1366,7 +1395,7 @@ void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            eos_helm(1, tempC, dens, ye, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
             fC = presC - p_goal;
             error_p = fabs(fC / p_goal);
 
@@ -1383,7 +1412,7 @@ void eos_mode_rhopres_temp_init(double dens, double* temp, double p_goal) {
 }
 
 
-void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* pres, double* u, double* dpdrho, double* dudrho) {
+void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho) {
     double deni = 1.0 / dens;
     // prim[UU] is K_atm for this function only
     double entr_goal = entr;
@@ -1419,7 +1448,7 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* p
 
     temp_old = temp_ini_guess;
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, pres, &xener, &xentr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, pres, &xener, &xentr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
 
         temp_new = temp_old - (xentr - entr_goal) / dsdt;
 
@@ -1449,11 +1478,11 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* p
 
     if (error_p > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, pres, &xener, &entrA, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempA, dens, ye, pres, &xener, &entrA, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
         fA = entrA - entr_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, pres, &xener, &entrB, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempB, dens, ye, pres, &xener, &entrB, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
         fB = entrB - entr_goal;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1462,7 +1491,7 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* p
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, pres, &xener, &entrC, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+            eos_helm(1, tempC, dens, ye, pres, &xener, &entrC, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
             fC = entrC - entr_goal;
             error_p = fabs(fC / entr_goal);
 
@@ -1485,7 +1514,7 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double entr, double* p
     #endif
 }
 
-void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres, double* u) {
+void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, double* pres, double* u) {
     // implementation in Newman-Hamlin inversion
     double deni = 1.0 / dens;
     // w is w - rho for this function only
@@ -1519,7 +1548,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres
 
     temp_old = temp_ini_guess;
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 
         h_tmp = xener + (*pres) * deni;
         dhdtemp = dedt + dpdt * deni;
@@ -1552,11 +1581,11 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres
 
     if (error_h > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempA, dens, ye, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
         fA = enerA + presA * deni - xenth;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempB, dens, ye, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
         fB = enerB + presB * deni - xenth;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1565,7 +1594,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+            eos_helm(1, tempC, dens, ye, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
             fC = enerC + presC * deni - xenth;
             error_h = fabs(fC / xenth);
 
@@ -1593,7 +1622,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double w, double* pres
     #endif
 }
 
-void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, double* pres, double* dpdrho, double* dpde_d) {
+void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d) {
     double deni = 1.0 / dens;
     // w is w - rho for this function
     double xenth = w * deni; // Helmholtz EOS takes non-relativistic enthalpy
@@ -1626,7 +1655,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, 
 
     temp_old = temp_ini_guess;
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
 
         h_tmp = xener + (*pres) * deni;
         dhdt = dedt + dpdt * deni;
@@ -1658,11 +1687,11 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, 
 
     if (error_h > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempA, dens, ye, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
         fA = enerA + presA * deni - xenth;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempB, dens, ye, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
         fB = enerB + presB * deni - xenth;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1671,7 +1700,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, 
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+            eos_helm(1, tempC, dens, ye, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
             fC = enerC + presC * deni - xenth;
             error_h = fabs(fC / xenth);
 
@@ -1705,7 +1734,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double w, 
 }
 
 
-void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* pres) {
+void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double u, double* pres) {
     double ener_goal = u / dens;
 
     // check if the input is valid:
@@ -1734,7 +1763,7 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* 
 
     temp_old = temp_ini_guess;
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, temp_old, dens, ye, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
@@ -1764,11 +1793,11 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* 
 
     if (error_e > EOS_TOL) {
         tempA = eos_temp_low;
-        eos_helm(1, tempA, dens, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempA, dens, ye, pres, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
         fA = enerA - ener_goal;
 
         tempB = eos_temp_up;
-        eos_helm(1, tempB, dens, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        eos_helm(1, tempB, dens, ye, pres, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
         fB = enerB - ener_goal;
 
         if (fA * fB >= 0.0) flag = 0;
@@ -1777,7 +1806,7 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double u, double* 
         while (i < 2 * EOS_ITERATIONS && flag) {
             tempC = 0.5 * ((tempA)+(tempB));
 
-            eos_helm(1, tempC, dens, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+            eos_helm(1, tempC, dens, ye, pres, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
             fC = enerC - ener_goal;
             error_e = fabs(fC / ener_goal);
 

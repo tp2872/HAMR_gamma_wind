@@ -29,8 +29,16 @@ double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2], fel;
 
 // Declarations:
 static double vsq_calc(double W);
-static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim);
-static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[NPR_2T], double tolerance, int lim);
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[NPR_2T], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+);
 static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *
 #if (DOHELM_TEMPERATURE)
     , double*
@@ -44,6 +52,9 @@ static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double 
 #if (DOHELM_TEMPERATURE)
     , double* temp_prev
 #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 );
 
 static double x1_of_x0(double x0);
@@ -124,7 +135,11 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	fel = fel_input;
 	#endif
 
-	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
+	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
+		#if (DO_YE)
+		, prim[YE]
+		#endif
+	);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -183,7 +198,11 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim)
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+)
 {
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
@@ -279,6 +298,9 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 #if(DOHELM_TEMPERATURE)
                                     , &prim[UU]
 #endif
+		#if (DO_YE)
+		, ye
+		#endif
                                     );
 
 	W = x_2d[0];
@@ -523,6 +545,9 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 #if (DOHELM_TEMPERATURE)
     , double* temp_prev
 #endif
+	#if (DO_YE)
+	, double ye
+	#endif
 )
 {
 	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
@@ -544,7 +569,13 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     prim[RHO] = rho;
     prim[UU] = w - rho;
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(rho, temp_prev, w - rho, &p_tmp, &dpdrho, &dpde_d);
+	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(rho, temp_prev, 
+		#if (DO_YE)
+		ye, 
+		#else
+		1.0,
+		#endif
+		w - rho, &p_tmp, &dpdrho, &dpde_d);
 	#else
     eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d);
 	#endif
@@ -709,7 +740,11 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	#endif
 	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error \n");
 
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim
+		#if (DO_YE)
+		, prim[YE]
+		#endif
+	);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -732,7 +767,11 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	return(ret);
 }
 
-static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[2], double tolerance, int lim)
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[2], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+)
 {
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, w,  gamma, gamma_eos, vsq, errx=10000.;
@@ -777,9 +816,21 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     xdens = prim[RHO];
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K
 	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres(xdens, eos_temp_low, &xpres);
+	eos_mode_rhotemp_pres(xdens, eos_temp_low, 
+		#if (DO_YE)
+		ye, 
+		#else 
+		1.0, 
+		#endif
+		&xpres);
 	#else 
-    eos_mode_rhotemp_pres_min (xdens, &xpres);
+    eos_mode_rhotemp_pres_min (xdens, 
+		#if (DO_YE)
+		ye,
+		#else
+		1.0, 
+		#endif
+		&xpres);
 	#endif
     p_array[0] = xpres;
     #else
@@ -821,7 +872,13 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
 		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU], w - rho0, &xpres, &u);
+		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU],
+			#if(DO_YE)
+			ye,
+			#else
+			1.0,
+			#endif
+			w - rho0, &xpres, &u);
 		#else
         eos_mode_rhow_pres_u (p_temp, &xpres, &u); // DI_helmT
 		#endif
@@ -891,7 +948,13 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
 		#if(DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU], w - rho0, &p_new, &u);
+		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU],
+			#if(DO_YE)
+			ye, 
+			#else
+			1.0, 
+			#endif
+			w - rho0, &p_new, &u);
 		#else
         eos_mode_rhow_pres_u (p_temp, &p_new, &u);
 		#endif
