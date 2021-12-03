@@ -53,6 +53,7 @@ Physical Parameters section
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
+#define NU_EXPLICIT (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
