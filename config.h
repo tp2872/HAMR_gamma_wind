@@ -353,7 +353,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RAD_M1 (0)
 
 #if(NEUTRINOS_M1)
-#define NU_NUM (1)              /* enable neutrino number density tracking */
 #define NU_SPECIES (1)       /* number of species evolved */
 
 /* number of Nulib table entries for each variable */
@@ -931,15 +930,11 @@ Section with derived quantities
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
 #if(NEUTRINOS_M1)
-#define NPR_NU     (4)        /* number of neutrino primitive variables */
+#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #endif
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#if (NEUTRINOS_M1)
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NU_SPECIES*(NPR_NU+NU_NUM))        /* total number of primitive variables */
-#else  
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE)        /* total number of primitive variables */
-#endif
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */

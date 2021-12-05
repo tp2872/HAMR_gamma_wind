@@ -174,9 +174,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[UU_NU] = pow(10., -30.);// DINU: 3 species
 
 		//Floor on photon number+
-		#if(NU_NUM)
 		pv[NUMBER_NU] = 1e-30;
-		#endif
 	}
 	#endif
 
