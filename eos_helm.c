@@ -1,29 +1,4 @@
 #include "decs_MPI.h"
-#if (NEUTRINOS_M1)
-void init_nulib_table(void) {
-
-    FILE* fp;
-    char fname_nulib_table[] = "nulib_table.bdat";
-
-    fp = fopen(fname_nulib_table, "rb");
-    if (NULL == fp) {
-        fprintf(stderr, "Couldn't open %s for reading, exiting\n", fname_nulib_table);
-        exit(1234);
-    }
-
-    //..read the nulib table
-    fread(&nu_kappa_emiss[0], sizeof(double), NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES, fp);
-    fread(&nu_kappa_abs[0], sizeof(double), NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES, fp);
-    fread(&nu_kappa_scatt[0], sizeof(double), NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES, fp);
-    fread(&nu_kappa_emiss_N[0], sizeof(double), NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES, fp);
-
-    fclose(fp);
-
-    return;
-}
-#endif
-
-
 #if (DOHELM)
 
 /*	

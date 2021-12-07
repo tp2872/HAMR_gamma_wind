@@ -297,7 +297,7 @@ void set_AMR(void){
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag;
 	int y;
 
-	#if(RAD_M1)
+	#if(RAD_M1 || NEUTRINOS_M1)
 	calc_ymax(); // DIMARK: neutrinos?
 	#endif
 

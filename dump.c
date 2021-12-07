@@ -365,6 +365,7 @@ void dump_block(MPI_File *fp, int n)
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 2)] = (float)ucon_nu[1];
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 3)] = (float)ucon_nu[2];
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 4)] = (float)ucon_nu[3];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 5)] = (float)p[nl[n]][index_3D(n, i, j, z)][NUMBER_NU];
 		#endif
 	}
 	#if(PARALLEL_IO)

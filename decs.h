@@ -1023,6 +1023,9 @@ double calc_ufromsrho(double s, double rho, int type);
 #endif
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
+#if (NEUTRINOS_M1)
+int Rtoprim_nu(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
+#endif
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
 void calc_Gcon(double* restrict ph, double Gcon[NDIM + P_NUM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
