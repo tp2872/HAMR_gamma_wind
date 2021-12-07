@@ -352,8 +352,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#if(NEUTRINOS_M1)
 #define NU_SPECIES (1)       /* number of species evolved */
+#if(NEUTRINOS_M1)
 
 /* number of Nulib table entries for each variable */
 #define NULIB_RHO (50)
@@ -929,9 +929,7 @@ Section with derived quantities
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
-#if(NEUTRINOS_M1)
 #define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
-#endif
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
@@ -942,7 +940,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+5*NEUTRINOS_M1)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+(5+1)*NEUTRINOS_M1)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

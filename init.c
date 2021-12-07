@@ -873,6 +873,7 @@ void init_torus()
 	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
+	double Tnu;
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1026,11 +1027,14 @@ void init_torus()
 
 			// initialize neutrinos
 			#if (NEUTRINOS_M1) // DINU: 3 species
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] = 1e-30;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] = 1e-25;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_NU] = ur;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_NU] = uh;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_NU] = up;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+
+			Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
 			#endif
 		}
 	}
@@ -1118,7 +1122,7 @@ void init_torus()
 
 	bound_prim(p, 1);
 
-	set_mag();
+	//set_mag();
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)

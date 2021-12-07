@@ -170,11 +170,14 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 	
 	#if(NEUTRINOS_M1)
+	double Tnu;
 	if (pv[UU_NU] < pow(10., -30.)) {
 		pv[UU_NU] = pow(10., -30.);// DINU: 3 species
 
 		//Floor on photon number+
-		pv[NUMBER_NU] = 1e-30;
+		//pv[NUMBER_NU] = 1e-30;
+		Tnu = pow(pv[UU_NU] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		pv[NUMBER_NU] = pv[UU_NU] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
 	}
 	#endif
 
