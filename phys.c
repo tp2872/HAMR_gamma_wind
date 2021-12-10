@@ -600,7 +600,7 @@ void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double *
 	#pragma ivdep
 	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
 
-	if (gamma_calc_nu(pr, geom, &gamma_nu)) {
+	if (gamma_calc_nu(pr, geom, &gamma_nu, species)) {
 		fflush(stderr);
 		fprintf(stderr, "\nucon_calc_nu(): gamma_nu failure \n");
 		fflush(stderr);
@@ -609,7 +609,7 @@ void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double *
 
 	ucon_nu[0] = gamma_nu / alpha;
 	#pragma ivdep
-	SLOOPA ucon_nu[j] = pr[U1_NU + j - 1] - gamma_nu*beta[j] / alpha;
+	SLOOPA ucon_nu[j] = pr[index_nu(U1_NU, species) + j - 1] - gamma_nu*beta[j] / alpha;
 
 	return;
 }
@@ -617,11 +617,11 @@ void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double *
 int gamma_calc_nu(double* restrict pr, struct of_geom* restrict geom, double* restrict gamma_nu, int species)
 {
 	double qsq;
-	qsq = geom->gcov[1][1] * pr[U1_NU] * pr[U1_NU] + geom->gcov[2][2] * pr[U2_NU] * pr[U2_NU] + geom->gcov[3][3] * pr[U3_NU] * pr[U3_NU] + 2. * (geom->gcov[1][2] * pr[U1_NU] * pr[U2_NU] + geom->gcov[1][3] * pr[U1_NU] * pr[U3_NU] + geom->gcov[2][3] * pr[U2_NU] * pr[U3_NU]);
+	qsq = geom->gcov[1][1] * pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)] + geom->gcov[2][2] * pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[3][3] * pr[index_nu(U3_NU, species)] * pr[index_nu(U3_NU, species)] + 2. * (geom->gcov[1][2] * pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[1][3] * pr[index_nu(U1_NU, species)] * pr[index_nu(U3_NU, species)] + geom->gcov[2][3] * pr[index_nu(U2_NU, species)] * pr[index_nu(U3_NU, species)]);
 	if (qsq < 0.) {
 		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
 			fprintf(stderr, "gamma_calc_nu():  failed: qsq = %28.18e \n", qsq);
-			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1_NU], pr[U2_NU], pr[U3_NU]);
+			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[index_nu(U1_NU, species)], pr[index_nu(U2_NU, species)], pr[index_nu(U3_NU, species)]);
 			*gamma_nu = 1.;
 			return (1);
 		}

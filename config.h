@@ -352,7 +352,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#define NU_SPECIES (3)       /* number of species evolved */
+#define NU_SPECIES (1)       /* number of species evolved */
 
 #if(NEUTRINOS_M1)
 

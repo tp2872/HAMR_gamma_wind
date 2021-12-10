@@ -16,18 +16,20 @@ int Rtoprim_nu(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
 
-	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha 
-	for (i = 0; i < NPR_NU; i++) U_tmp[i] = alpha * U[i + UU_NU] / gdet;
+	for (int sp = 0; sp < NU_SPECIES; sp++) {
+		//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha 
+		for (i = 0; i < NPR_NU; i++) U_tmp[i] = alpha * U[i + index_nu(UU_NU, sp)] / gdet;
 
-	//Transform the PRIMITIVE variables into the new system
-	for (i = 0; i < NPR_NU; i++) prim_tmp[i] = prim[i + UU_NU];
+		//Transform the PRIMITIVE variables into the new system
+		for (i = 0; i < NPR_NU; i++) prim_tmp[i] = prim[i + index_nu(UU_NU, sp)];
 
-	//Do inversion
-	ret = Rtoprim_nu_calc(U_tmp, gcov, gcon, gdet, prim_tmp, lim);
+		//Do inversion
+		ret = Rtoprim_nu_calc(U_tmp, gcov, gcon, gdet, prim_tmp, lim);
 
-	//Transform new primitive variables back if there was no problem
-	for (i = 0; i < NPR_NU; i++) {
-		prim[i + UU_NU] = prim_tmp[i];
+		//Transform new primitive variables back if there was no problem
+		for (i = 0; i < NPR_NU; i++) {
+			prim[i + index_nu(UU_NU, sp)] = prim_tmp[i];
+		}
 	}
 
 	return(ret);

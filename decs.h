@@ -921,7 +921,7 @@ double bsq_calc(double * restrict pr, struct of_geom * restrict geom);
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double *restrict gamma);
 int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad);
 #if(NEUTRINOS_M1)
-int gamma_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_nu);
+int gamma_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_nu, int species);
 #endif
 void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon);
 void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
@@ -971,7 +971,7 @@ void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon);
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
 #if(NEUTRINOS_M1)
-void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu);
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu, int species);
 #endif
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();

@@ -293,6 +293,7 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
 							#endif
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
@@ -587,37 +588,40 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 	}
 	#endif
 
-	#if(NEUTRINOS_M1) // nux
+	#if(NEUTRINOS_M1)
 	double ucon_nu[NDIM], gamma_nu, vsq_nu;
-	ucon_calc_nu(pr, &geom, ucon_nu);
-	if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
-		/* find gamma and remove it from primitives */
-		if (gamma_calc_nu(pr, &geom, &gamma_nu)) {
-			fprintf(stderr, "\ninflow_check(): gamma failure \n");
-			fail(FAIL_GAMMA);
+	int sp;
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		ucon_calc_nu(pr, &geom, ucon_nu, sp);
+		if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
+			/* find gamma and remove it from primitives */
+			if (gamma_calc_nu(pr, &geom, &gamma_nu, sp)) {
+				fprintf(stderr, "\ninflow_check(): gamma failure \n");
+				fail(FAIL_GAMMA);
+			}
+			pr[index_nu(U1_NU, sp)] /= gamma_nu;
+			pr[index_nu(U2_NU, sp)] /= gamma_nu;
+			pr[index_nu(U3_NU, sp)] /= gamma_nu;
+			alpha = 1. / sqrt(-geom.gcon[0][0]);
+			beta1 = geom.gcon[0][1] * alpha * alpha;
+
+			/* reset radial velocity so radial 4-velocity is zero */
+			pr[index_nu(U1_NU, sp)] = beta1 / alpha;
+
+			/* now find new gamma and put it back in */
+			vsq_nu = 0.;
+			SLOOP vsq_nu += geom.gcov[j][k] * pr[index_nu(U1_NU, sp) + j - 1] * pr[index_nu(U1_NU, sp) + k - 1];
+			if (fabs(vsq_nu) < 1.e-13)  vsq_nu = 1.e-13;
+			if (vsq_nu >= 1.) {
+				vsq_nu = 1. - 1. / (GAMMAMAX_NU * GAMMAMAX_NU);
+			}
+			gamma_nu = 1. / sqrt(1. - vsq_nu);
+			pr[index_nu(U1_NU, sp)] *= gamma_nu;
+			pr[index_nu(U2_NU, sp)] *= gamma_nu;
+			pr[index_nu(U3_NU, sp)] *= gamma_nu;
+
+			/* done */
 		}
-		pr[U1_NU] /= gamma_nu;
-		pr[U2_NU] /= gamma_nu;
-		pr[U3_NU] /= gamma_nu;
-		alpha = 1. / sqrt(-geom.gcon[0][0]);
-		beta1 = geom.gcon[0][1] * alpha * alpha;
-
-		/* reset radial velocity so radial 4-velocity is zero */
-		pr[U1_NU] = beta1 / alpha;
-
-		/* now find new gamma and put it back in */
-		vsq_nu = 0.;
-		SLOOP vsq_nu += geom.gcov[j][k] * pr[U1_NU + j - 1] * pr[U1_NU + k - 1];
-		if (fabs(vsq_nu) < 1.e-13)  vsq_nu = 1.e-13;
-		if (vsq_nu >= 1.) {
-			vsq_nu = 1. - 1. / (GAMMAMAX_NU * GAMMAMAX_NU);
-		}
-		gamma_nu = 1. / sqrt(1. - vsq_nu);
-		pr[U1_NU] *= gamma_nu;
-		pr[U2_NU] *= gamma_nu;
-		pr[U3_NU] *= gamma_nu;
-
-		/* done */
 	}
 	#endif
 }

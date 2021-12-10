@@ -359,13 +359,15 @@ void dump_block(MPI_File *fp, int n)
 		#endif
 
 		#if(NEUTRINOS_M1)
-		ucon_calc_nu(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_nu);
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_NU];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 1)] = (float)ucon_nu[0];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 2)] = (float)ucon_nu[1];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 3)] = (float)ucon_nu[2];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 4)] = (float)ucon_nu[3];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_NU + !DOKTOT + 5)] = (float)p[nl[n]][index_3D(n, i, j, z)][NUMBER_NU];
+		for (int sp = 0; sp < NU_SPECIES; sp++) {
+			ucon_calc_nu(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_nu, sp);
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i, j, z)][index_nu(UU_NU, sp)];
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT + 1)] = (float)ucon_nu[0];
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT + 2)] = (float)ucon_nu[1];
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT + 3)] = (float)ucon_nu[2];
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT + 4)] = (float)ucon_nu[3];
+			array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (index_nu(UU_NU, sp) + !DOKTOT + 5)] = (float)p[nl[n]][index_3D(n, i, j, z)][index_nu(NUMBER_NU, sp)];
+		}
 		#endif
 	}
 	#if(PARALLEL_IO)

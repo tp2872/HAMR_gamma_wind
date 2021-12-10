@@ -1026,15 +1026,17 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
 
 			// initialize neutrinos
-			#if (NEUTRINOS_M1) // DINU: 3 species
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] = 1e-25;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_NU] = ur;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_NU] = uh;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_NU] = up;
+			#if (NEUTRINOS_M1)
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-25;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U2_NU, sp)] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U3_NU, sp)] = up;
 
-			Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_NU] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+				Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+			}
 			#endif
 		}
 	}
