@@ -53,7 +53,7 @@ Physical Parameters section
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
-#define NU_EXPLICIT (1)
+#define NU_EXPLICIT (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -352,7 +352,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#define NU_SPECIES (1)       /* number of species evolved */
+#define NU_SPECIES (3)       /* number of species evolved */
+
 #if(NEUTRINOS_M1)
 
 /* number of Nulib table entries for each variable */
@@ -504,12 +505,28 @@ MNEMONICS SECTION
 #define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
 
 #if (NEUTRINOS_M1)
-/* DIMARK: only heavy lepton neutrinos for now */
+
 #define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1)
 #define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
 #define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+2)
 #define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+3)
 #define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
+
+#define index_nu(PRIM_NU, species) ((UU_NU + NU_SPECIES * species) + (PRIM_NU - UU_NU)) // species = 0, 1, 2
+
+#if (NU_SPECIES > 1)
+#define UU_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+5)
+#define U1_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+6)
+#define U2_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+7)
+#define U3_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+8)
+#define NUMBER_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+9)
+
+#define UU_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+10)
+#define U1_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+11)
+#define U2_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+12)
+#define U3_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+13)
+#define NUMBER_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+14)
+#endif
 #endif
 
 /* mnemonics for centering of grid functions */
@@ -940,7 +957,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+(5+1)*NEUTRINOS_M1)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+(5+1)*NEUTRINOS_M1*NU_SPECIES)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

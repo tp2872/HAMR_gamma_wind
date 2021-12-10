@@ -152,7 +152,7 @@ void calc_ymax(void) {
 	y_old = 0.9998; //Gives gamma=25
 
 	//Calculate deviation from 0
-	E_old = GAMMAMAX_RAD * GAMMAMAX_RAD - (2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old);
+	E_old = GAMMAMAX_NU * GAMMAMAX_NU - (2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old);
 
 	while (keep_iterating) {
 		//Calculate gradient dEdy
@@ -162,12 +162,12 @@ void calc_ymax(void) {
 		y_new = MY_MIN(y_old - (E_old) / dEdy, 0.99999999999999);
 
 		//Calculate deviation from 0
-		E_new = GAMMAMAX_RAD * GAMMAMAX_RAD - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
+		E_new = GAMMAMAX_NU * GAMMAMAX_NU - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = fabs(E_new) / (GAMMAMAX_RAD * GAMMAMAX_RAD);
+		errx = fabs(E_new) / (GAMMAMAX_NU * GAMMAMAX_NU);
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */

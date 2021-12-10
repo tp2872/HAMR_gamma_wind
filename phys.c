@@ -590,7 +590,7 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 }
 
 #if (NEUTRINOS_M1)
-void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu)
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu, int species)
 {
 	double alpha, gamma_nu;
 	double beta[NDIM];
@@ -614,7 +614,7 @@ void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double *
 	return;
 }
 
-int gamma_calc_nu(double* restrict pr, struct of_geom* restrict geom, double* restrict gamma_nu)
+int gamma_calc_nu(double* restrict pr, struct of_geom* restrict geom, double* restrict gamma_nu, int species)
 {
 	double qsq;
 	qsq = geom->gcov[1][1] * pr[U1_NU] * pr[U1_NU] + geom->gcov[2][2] * pr[U2_NU] * pr[U2_NU] + geom->gcov[3][3] * pr[U3_NU] * pr[U3_NU] + 2. * (geom->gcov[1][2] * pr[U1_NU] * pr[U2_NU] + geom->gcov[1][3] * pr[U1_NU] * pr[U3_NU] + geom->gcov[2][3] * pr[U2_NU] * pr[U3_NU]);

@@ -239,6 +239,12 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
+							#if (NU_SPECIES > 1)
+							else if (k == index_nu(U2_NU, 1) || k == index_nu(U2_NU, 2)) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
+							}
+							#endif
 							#endif
 							else {
 								//everything else copy (both poles)
@@ -278,6 +284,11 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							#endif
 							#if(NEUTRINOS_M1)
 							else if (k == U2_NU) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
+							}
+							#if (NU_SPECIES > 1)
+							else if (k == index_nu(U2_NU, 1) || k == index_nu(U2_NU, 2)) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
@@ -381,6 +392,10 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						#endif
 						#if(NEUTRINOS_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
@@ -401,6 +416,10 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						#endif
 						#if(NEUTRINOS_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.;
+						#if(NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
@@ -433,6 +452,12 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 						#if(NEUTRINOS_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3_NU] *= -1.0;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 2)] *= -1.0;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
@@ -467,10 +492,15 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 						#if(NEUTRINOS_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3_NU] *= -1.0;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 2)] *= -1.0;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
-						#
 						#if(STAGGERED)
 						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1, (z + BS_3 / 2) % BS_3)][1];
 						#if(N3>1)
@@ -557,7 +587,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 	}
 	#endif
 
-	#if(NEUTRINOS_M1)
+	#if(NEUTRINOS_M1) // nux
 	double ucon_nu[NDIM], gamma_nu, vsq_nu;
 	ucon_calc_nu(pr, &geom, ucon_nu);
 	if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
