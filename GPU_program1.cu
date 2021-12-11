@@ -7421,7 +7421,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#elif(NEUTRINOS_M1)
 	#if (NU_SPECIES > 1)
 	if (u + pf[UU_NU] + pf[index_nu(UU_NU, 1)] + pf[index_nu(UU_NU, 2)] < uuflr) {
-		u = uuflr - pf[UU_NU] + pf[index_nu(UU_NU, 1)] + pf[index_nu(UU_NU, 2);
+		u = uuflr - pf[UU_NU] + pf[index_nu(UU_NU, 1)] + pf[index_nu(UU_NU, 2)];
 		dofloor = 1;
 	}
 	#else
@@ -11995,7 +11995,7 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			#endif
 			#if(NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
-			pv[U2_NU * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[U2_NU * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
+			pv[index_nu(U2_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[index_nu(U2_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			pv[index_nu(UU_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[index_nu(UU_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			pv[index_nu(U1_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[index_nu(U1_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			pv[index_nu(U3_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[index_nu(U3_NU, sp) * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
@@ -15000,11 +15000,11 @@ __device__ int gamma_calc_nu(double* pr, struct of_geom* geom, double* gamma_nu,
 {
 	double qsq_nu;
 	#if AMD
-	qsq_nu = fma(geom->gcov[4], pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)], fma(geom->gcov[7], pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)], geom->gcov[9] * pr[U3_NU] * pr[U3_NU]))
-		+ 2. * fma(geom->gcov[5], pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)], fma(geom->gcov[6], pr[index_nu(U1_NU, species)] * pr[U3_NU], geom->gcov[8] * pr[index_nu(U2_NU, species)] * pr[U3_NU]));
+	qsq_nu = fma(geom->gcov[4], pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)], fma(geom->gcov[7], pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)], geom->gcov[9] * pr[index_nu(U3_NU, species)] * pr[index_nu(U3_NU, species)]))
+		+ 2. * fma(geom->gcov[5], pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)], fma(geom->gcov[6], pr[index_nu(U1_NU, species)] * pr[index_nu(U3_NU, species)], geom->gcov[8] * pr[index_nu(U2_NU, species)] * pr[index_nu(U3_NU, species)]));
 	#else
-	qsq_nu = geom->gcov[4] * pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)] + geom->gcov[7] * pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[9] * pr[U3_NU] * pr[U3_NU]
-		+ 2. * (geom->gcov[5] * pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[6] * pr[index_nu(U1_NU, species)] * pr[U3_NU] + geom->gcov[8] * pr[index_nu(U2_NU, species)] * pr[U3_NU]);
+	qsq_nu = geom->gcov[4] * pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)] + geom->gcov[7] * pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[9] * pr[index_nu(U3_NU, species)] * pr[index_nu(U3_NU, species)]
+		+ 2. * (geom->gcov[5] * pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[6] * pr[index_nu(U1_NU, species)] * pr[index_nu(U3_NU, species)] + geom->gcov[8] * pr[index_nu(U2_NU, species)] * pr[index_nu(U3_NU, species)]);
 	#endif
 
 	if (qsq_nu < 0.) {
@@ -15245,7 +15245,6 @@ __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, d
 	jat = MY_MAX(1, MY_MIN(jat, NULIB_TEMP - 1)) - 1;
 	kat = MY_MAX(1, MY_MIN(kat, NULIB_YE - 1)) - 1;
 
-	// DINU: Do something if we are outside of bounds !
 	double dstp = (nulib_dhi - nulib_dlo) / (double)(NULIB_RHO - 1);
 	double tstp = (nulib_thi - nulib_tlo) / (double)(NULIB_TEMP - 1);
 	double ystp = (nulib_yhi - nulib_ylo) / (double)(NULIB_YE - 1);
@@ -15263,14 +15262,14 @@ __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, d
 	double mxt = 1.0 - xt;
 	double mxy = 1.0 - xy;
 
-	*opacity =	gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat) * NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat)	* NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES]	* mxt * mxd * mxy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES]	* mxt * xd * mxy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat) * NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES]	* xt  * mxd * mxy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES]	* xt  * xd * mxy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES] * mxt * mxd * xy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES] * mxt * xd * xy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES] * xt * mxd * xy +
-				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES] * xt * xd * xy;
+	*opacity =	gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat) * NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat)	* NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES + species]	* mxt * mxd * mxy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES + species]	* mxt * xd * mxy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat) * NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES + species]	* xt  * mxd * mxy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat) * NU_SPECIES + species]	* xt  * xd * mxy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES + species] * mxt * mxd * xy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES + species] * mxt * xd * xy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES	 + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES + species] * xt * mxd * xy +
+				gpu_nulib_table[(quantity - 1) * (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES) + (iat+1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat+1) * NULIB_YE * NU_SPECIES	+ (kat+1) * NU_SPECIES + species] * xt * xd * xy;
 
 	return;
 }

@@ -511,22 +511,9 @@ MNEMONICS SECTION
 #define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+2)
 #define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+3)
 #define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
+#define NPR_NU (5)
+#define index_nu(PRIM_NU, species) ((UU_NU + NPR_NU * species) + (PRIM_NU - UU_NU)) // species = 0, 1, 2
 
-#define index_nu(PRIM_NU, species) ((UU_NU + NU_SPECIES * species) + (PRIM_NU - UU_NU)) // species = 0, 1, 2
-
-#if (NU_SPECIES > 1)
-#define UU_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+5)
-#define U1_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+6)
-#define U2_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+7)
-#define U3_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+8)
-#define NUMBER_NU_2 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+9)
-
-#define UU_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+10)
-#define U1_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+11)
-#define U2_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+12)
-#define U3_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+13)
-#define NUMBER_NU_3 (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+14)
-#endif
 #endif
 
 /* mnemonics for centering of grid functions */
@@ -946,7 +933,7 @@ Section with derived quantities
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
-#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
+//#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
