@@ -15139,7 +15139,7 @@ __device__ double calc_nu_kappa_emiss(const double* __restrict__ gpu_nulib_table
 	interp_nulib_check_bounds(gpu_nulib_table, ph, sp, NU_EMISSIVITY, &kappa_emiss);
 
 	// Multiply by applicable units
-	return kappa_emiss * R_G_CGS / C_CGS; // erg/cm^3/s --> erg/cm^4 * Rg
+	return kappa_emiss * R_G_CGS / C_CGS / (ENERGY_DENSITY_SCALE); // erg/cm^3/s --> erg/cm^4 * Rg
 }
 
 __device__ double calc_nu_kappa_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp) {

@@ -190,7 +190,7 @@ void calc_ymax(void) {
 
 void init_nulib_table(void) {
 	FILE* fp;
-	char fname_nulib_table[] = "nulib_table.bdat";
+	char fname_nulib_table[] = "nulib_table_Nsp3.bdat";
 
 	fp = fopen(fname_nulib_table, "rb");
 	if (NULL == fp) {
