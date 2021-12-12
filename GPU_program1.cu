@@ -15197,7 +15197,7 @@ __device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, c
 
 /* NULIB tables part */
 __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity) {
-	double temp_prev, Tnu_over_Tgas;
+	double temp_prev, Tnu_over_Tgas, nulib_temp_low;
 	
 	// Density bounds:
 	if (ph[RHO] * MASS_DENSITY_SCALE < pow(10., nulib_dlo)) {
@@ -15212,29 +15212,32 @@ __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_t
 	}
 
 	// Temperature bounds:
-	if (ph[UU] < pow(10.,nulib_tlo)) {
+	nulib_temp_low = pow(10., nulib_tlo);
+	if (ph[UU] < nulib_temp_low) {
 		// Save the temperature value
 		temp_prev = ph[UU];
-		ph[UU] = pow(10.,nulib_tlo);
+		ph[UU] = nulib_temp_low;
 		
 		// Get the opacity at the lower bound of the table
 		interp_nulib_table(gpu_nulib_table, ph, species, quantity, opacity);
 
 		// Based on quantity, get the correct scaling
 		if (quantity == NU_EMISSIVITY) {
-			*opacity *= pow((temp_prev / nulib_tlo), 6.0);
+			*opacity *= pow((temp_prev / nulib_temp_low), 6.0);
 		}
 		else if (quantity == NU_ABSORPTION || quantity == NU_SCATTERING) {
-			*opacity *= pow((temp_prev / nulib_tlo), 2.0);
+			*opacity *= pow((temp_prev / nulib_temp_low), 2.0);
 		}
 		else { // DINU: idk, number emissivity
-			*opacity *= pow((temp_prev / nulib_tlo), 6.0);
+			*opacity *= pow((temp_prev / nulib_temp_low), 6.0);
 		}
 
 		ph[UU] = temp_prev;
 
 		return;
 	}
+
+	interp_nulib_table(gpu_nulib_table, ph, species, quantity, opacity);
 }
 
 __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity) {
