@@ -660,30 +660,32 @@ __device__ void semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doub
 			pb_i[k] = pb[k];
 	}
 
-		//Calculate optical depth (neutrinos)
-		//struct of_state q;
-		//struct of_state_nu q_nu[NU_SPECIES];
-		//get_state(pb, geom, &q);
-		//for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(pb, geom, &q_nu[sp]);
+	//Calculate optical depth (neutrinos)
+	struct of_state q;
+	struct of_state_nu q_nu[NU_SPECIES];
+	double mhd_nu0[NDIM];
+	double ener_nu_avg;
+	double eta_avg, kappa_abs, kappa_scatt, tau;
+	double Tnu_over_Tgas;
+	get_state(pb, geom, &q);
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		get_state_nu(pb, geom, &q_nu[sp], sp);
+		mhd_calc_nu(pb, 0, &q_nu[sp], mhd_nu0, sp);
+		ener_nu_avg = -((mhd_nu0[0] * q.ucon[0] + mhd_nu0[1] * q.ucon[1] + mhd_nu0[2] * q.ucon[2] + mhd_nu0[3] * q.ucon[3])) / (pb[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
+		eta_avg = calc_nu_kappa_emiss(gpu_nulib_table, pb, sp);
+		kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg, sp);
+		kappa_scatt = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg, sp);
+		tau = (kappa_abs + kappa_scatt) * cell_size;
+		calc_neutrino_temperature(gpu_eos_table, pb, ener_nu_avg, &Tnu_over_Tgas, sp);
 
-		//double mhd_nu0[NDIM];
-		//mhd_calc_nu(pb, 0, &q_nu, mhd_nu0);
-		//double ener_nu_avg = -((mhd_nu0[0] * q.ucon[0] + mhd_nu0[1] * q.ucon[1] + mhd_nu0[2] * q.ucon[2] + mhd_nu0[3] * q.ucon[3])) / (pb[NUMBER_NU] * q_nu.ucon[0]);
+		//if (pb[RHO]*MASS_DENSITY_SCALE > pow(10., nulib_dlo) && pb[UU] > pow(10., nulib_tlo)) printf("\t[sp=%d] Explicit step, rho,T,ye=%e %e %e, <e>=%e, Ncon0=%e, T_nu/T_g=%e, eta,kA,kS = %e %e, %e \t[tau=%e]\n", sp, pb[RHO]*MASS_DENSITY_SCALE, pb[UU]*k2mev, pb[YE], ener_nu_avg, (pb[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]), Tnu_over_Tgas, eta_avg, kappa_abs, kappa_scatt, tau);
+	}
 
-		//double kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg);
-		//double kappa_scatt = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg);
-		//double tau = (kappa_abs + kappa_scatt) * cell_size;
-
-		//double Tnu_over_Tgas;
-		//calc_neutrino_temperature(gpu_eos_table, pb, ener_nu_avg, &Tnu_over_Tgas, 2);
-
-		//if (pb[RHO] > 1e-4 && pb[UU] > pow(10., nulib_tlo)) printf("\t-2. Explicit step, rho,T,ye=%e %e %e, Tnu=%e, kA,kS = %e, %e\n", pb[RHO], pb[UU], pb[YE], Tnu_over_Tgas, kappa_abs, kappa_scatt);
-
-		* pflag = Utoprim_2d(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-		);
+	* pflag = Utoprim_2d(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+	);
 	#if(DO_FONT_FIX)
 	if (*pflag) {
 		*pflag = Utoprim_1dvsq2fix1(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC, 1
@@ -697,10 +699,10 @@ __device__ void semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doub
 	//Even if MHD inversion fails, use updated value of radiation variable as guess
 	* pflag_nu = Rtoprim_nu(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, y_max, TYPE2);
 
-	/*if (*pflag || *pflag_nu) {
-		printf("-1. Failed MHD inversion! Explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e\n\tNU vars:(%e %e %e %e %e)\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas,
+	if (*pflag || *pflag_nu) {
+		printf("\n-1. Failed MHD inversion! Explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e \tNU vars:(%e %e %e %e %e)\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas,
 			pb[UU_NU], pb[U1_NU], pb[U2_NU], pb[U3_NU], pb[NUMBER_NU]);
-	}*/
+	}
 
 	// NOTE: I can create a function that does a single explicit timestep and calculate the error associated with it: if smaller than tolerance -> no implicit step needed; otherwise continue
 	// IDEA: most regions in the postmerger disk will be low optical depth for neutrinos, therefore explicit timestepping might be enough
@@ -711,9 +713,10 @@ __device__ void semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doub
 
 	PLOOP{
 		U_ft[k] = U_i_temp[k] + dU[k] * Dt;
-	//if (k == UU) {
-		//printf("\n\t\t == energy change ratio: dU/U_i = %e", dU[k] * Dt / U_i_temp[k]);
-		//}
+		
+		if (k == UU && dU[UU] > 0.0) {
+			printf("\n\t\t == energy change ratio: dU/U_i = %e", dU[k] * Dt / U_i_temp[k]);
+		}
 	}
 
 	*pflag = Utoprim_2d(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC, gpu_eos_table);
@@ -725,10 +728,10 @@ __device__ void semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doub
 
 	* pflag_nu = Rtoprim_nu(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, y_max, TYPE2);
 
-	/*if (*pflag || *pflag_nu) {
-		printf(" 0. Failed MHD inversion! Explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e\n\tNU vars:(%e %e %e %e %e)\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas,
+	if (*pflag || *pflag_nu) {
+		printf("\n 0. Failed MHD inversion! Explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e \tNU vars:(%e %e %e %e %e)\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas,
 			pb[UU_NU], pb[U1_NU], pb[U2_NU], pb[U3_NU], pb[NUMBER_NU]);
-	}*/
+	}
 
 	#else
 	// Implicit step
@@ -1031,25 +1034,16 @@ __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, const  d
 	}
 
 	//Entropy source term
-	#if(0)
-	//#if(DOKTOT)
-	#if (DOHELM)
-	#if (DOHELM_TEMPERATURE)
-	Tg = ph[UU];
-	#else
-	eos_mode_rhou_temp(gpu_eos_table, ph, &Tg);
-	#endif
-	Tg *= BOLTZ_CGS * MASS_DENSITY_SCALE / (MMW * MH_CGS * ENERGY_DENSITY_SCALE);
-	#else
-	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
-	#endif
+	//#if(0)
+	#if(DOKTOT)
+	Tg = ph[UU] * BOLTZ_CGS * MASS_DENSITY_SCALE / (1.0 * MH_CGS * ENERGY_DENSITY_SCALE);
 
-	#if(FULL_ENTROPY)
-	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#else
-	dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0);
-	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#endif
+	//#if(FULL_ENTROPY)
+	dU[KTOT] = -1. / Tg * (dU[UU] * ucon[0] + dU[U1] * ucon[1] + dU[U2] * ucon[2] + dU[U3] * ucon[3]);
+	//#else
+	//dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0);
+	//dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	//#endif
 	#endif
 
 	#pragma ivdep
@@ -14366,9 +14360,9 @@ __device__ void eos_mode_rhotemp_entr(const  double* __restrict__ gpu_eos_table,
 	eos_helm(gpu_eos_table, 1, temp, dens, ye, &pres, &ener, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele);
 
 	// Convert entropy to kappa
-	#if (!DOHELM_FULLENTROPY)
-	* entr = exp((*entr) * KTOT_FACTOR);
-	#endif
+	//#if (!DOHELM_FULLENTROPY)
+	//* entr = exp((*entr) * KTOT_FACTOR);
+	//#endif
 }
 
 #if (NEUTRINOS_M1)
@@ -14397,9 +14391,9 @@ __device__ void eos_mode_rhotemp_s_pres_u(const  double* __restrict__ gpu_eos_ta
 	#endif
 
 	// Convert kappa to entropy
-	#if (!DOHELM_FULLENTROPY)
-	entr_goal = log(entr_goal) / KTOT_FACTOR;
-	#endif
+	//#if (!DOHELM_FULLENTROPY)
+	//entr_goal = log(entr_goal) / KTOT_FACTOR;
+	//#endif
 
 	// initial guess : temperature
 	double temp_ini_guess = *temp;

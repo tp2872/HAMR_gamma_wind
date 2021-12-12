@@ -172,8 +172,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
+#define BS_1 16
+#define BS_2 16
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -352,7 +352,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#define NU_SPECIES (3)       /* number of species evolved */
+#define NU_SPECIES (1)       /* number of species evolved */
 
 #if(NEUTRINOS_M1)
 
@@ -471,7 +471,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (0.0000001)
 #else
 //#define MASS_DENSITY_SCALE (0.00001)
-#define MASS_DENSITY_SCALE (1e10)
+#define MASS_DENSITY_SCALE (1e7)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
