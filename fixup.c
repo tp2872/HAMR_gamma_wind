@@ -142,7 +142,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#elif(NEUTRINOS_M1)
 	#if (NU_SPECIES > 1)
 	if (u + pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)] < uuflr) {
-		u = uuflr - (pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2));
+		u = uuflr - (pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)]);
 	#else
 	if (u + pv[UU_NU] < uuflr) {
 		u = uuflr - pv[UU_NU];

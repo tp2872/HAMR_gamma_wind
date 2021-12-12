@@ -53,7 +53,7 @@ Physical Parameters section
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
-#define NU_EXPLICIT (0)
+#define NU_EXPLICIT (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -352,7 +352,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#define NU_SPECIES (1)       /* number of species evolved */
+#define NU_SPECIES (3)       /* number of species evolved */
 
 #if(NEUTRINOS_M1)
 
@@ -512,7 +512,7 @@ MNEMONICS SECTION
 #define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+3)
 #define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
 #define NPR_NU (5)
-#define index_nu(PRIM_NU, species) ((UU_NU + NPR_NU * species) + (PRIM_NU - UU_NU)) // species = 0, 1, 2
+#define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2    
 
 #endif
 
