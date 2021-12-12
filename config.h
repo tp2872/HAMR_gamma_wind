@@ -366,8 +366,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define nulib_dlo (6.0)
 #define nulib_thi (12.24)
 #define nulib_tlo (9.76)
-#define nulib_yhi (0.035)
-#define nulib_ylo (0.55)
+#define nulib_yhi (0.55)
+#define nulib_ylo (0.035)
+
 
 /* Nulib table coefficients mnemonics */
 #define NULIB_VARS (4)
