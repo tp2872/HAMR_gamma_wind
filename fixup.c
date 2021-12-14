@@ -164,6 +164,12 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 	//printf("3 floors: %e %e\n", rhoflr, uuflr);
 
+	// Floor on Ye
+	#if (DO_YE)
+	pv[YE] = MY_MAX(nulib_ylo, pv[YE]);
+	pv[YE] = MY_MIN(nulib_yhi, pv[YE]);
+	#endif
+
 	//Floor on radiation internal energy
 	#if(RAD_M1)
 	if (pv[UU_RAD] < pow(10., -30.)) {

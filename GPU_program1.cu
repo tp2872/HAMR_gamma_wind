@@ -7398,8 +7398,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//DI: floor on electron fraction
 	#if (DO_YE)
-	pf[YE] = MY_MAX(0.01, pf[YE]);
-	pf[YE] = MY_MIN(0.5, pf[YE]);
+	pf[YE] = MY_MAX(nulib_ylo, pf[YE]);
+	pf[YE] = MY_MIN(nulib_yhi, pf[YE]);
 	#endif
 
 	//Internal energy floor
