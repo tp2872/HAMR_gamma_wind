@@ -172,8 +172,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 16
-#define BS_2 16
+#define BS_1 128
+#define BS_2 128
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -352,7 +352,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
-#define NU_SPECIES (1)       /* number of species evolved */
+#define NU_SPECIES (3)       /* number of species evolved */
 
 #if(NEUTRINOS_M1)
 
