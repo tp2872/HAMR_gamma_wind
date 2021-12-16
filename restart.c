@@ -86,14 +86,35 @@ int restart_read(void)
 {
 	int n, num;
 	char filename[100], dirpath[100];
-	FILE *rdump;
+	FILE *rdump, *dummy;
 	int int_size = sizeof(int);
 
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
-		num = n_ord[n];
-		if(restart_number==1) sprintf(filename, "rdumps1/rdump%d", num);
-		else if (restart_number == 0)sprintf(filename, "rdumps0/rdump%d", num);
+		if (restart_number == 1) {
+			sprintf(filename, "rdumps1/grid");
+			dummy = fopen(filename, "rb");
+			if(dummy !=NULL){
+				num = n_old[n_ord[n]];
+				fclose(dummy);
+			}
+			else {
+				num = n_ord[n];
+			}
+			sprintf(filename, "rdumps1/rdump%d", num);
+		}
+		else if (restart_number == 0) {
+			sprintf(filename, "rdumps0/grid");
+			dummy = fopen(filename, "rb");
+			if (dummy != NULL) {
+				num = n_old[n_ord[n]];
+				fclose(dummy);
+			}
+			else {
+				num = n_ord[n];
+			}
+			sprintf(filename, "rdumps0/rdump%d", num);
+		}
 		else return 0;
 
 		rdump = fopen(filename, "rb");
@@ -136,20 +157,142 @@ int restart_read(void)
 
 void rdump_block_read(FILE *fp, int n)
 {
-	int i, j, z, k;
+	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
+	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM;
+	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + NDIM * STAGGERED;
+	int red_1, red_2, red_3, i1, j1, z1;
+	double reduce_factor;
+	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + NDIM * STAGGERED];
+	struct of_geom geom;
+	#if(RAD_M1)
+	int uu_rad = (8 + DOKTOT);
+	int u1_rad = (8 + DOKTOT + 1);
+	int u2_rad = (8 + DOKTOT + 2);
+	int u3_rad = (8 + DOKTOT + 3);
+	#endif
+	#if(RESISTIVE)
+	int e1 = (8 + DOKTOT + read_M1 * 4);
+	int e2 = (8 + DOKTOT + read_M1 * 4 + 1);
+	int e3 = (8 + DOKTOT + read_M1 * 4 + 2);
+	#endif
+	#if(TWO_T)
+	int entre = (8 + DOKTOT + read_M1 * 4 + read_Res * 3);
+	int entri = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + 1);
+	#endif
+	#if(P_NUM)
+	int photon = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2);
+	#endif
 
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
-		PLOOP fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
-		#if(STAGGERED)
-		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
-		ps[nl[n]][index_3D(n, i, j, z)][1] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
-		ps[nl[n]][index_3D(n, i, j, z)][2] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
-		ps[nl[n]][index_3D(n, i, j, z)][3] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
-		#endif
-		p[nl[n]][index_3D(n, i, j, z)][B1] *= 1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B2] *= 1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B3] *= 1.0;
+	//Set grid reduction factor
+	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
+		red_1 = BS1_read / BS_1;
+		red_2 = BS2_read / BS_2;
+		red_3 = BS3_read / BS_3;
+	}
+	else red_1 = red_2 = red_3 = 1.0;
+
+	ZSLOOP3D(-N1G + N1_GPU_offset[n] * red_1, (N1_GPU_offset[n] + BS_1) * red_1 - 1 + N1G, -N2G + N2_GPU_offset[n] * red_2, (N2_GPU_offset[n] + BS_2) * red_2 - 1 + N2G, -N3G + N3_GPU_offset[n] * red_3, (N3_GPU_offset[n] + BS_3) * red_3 - 1 + N3G) {
+		for (k = 0; k < npr_file; k++) {
+			fread(&(read[k]), double_size, 1, fp);
+		}
+		read_geom = 0;
+		//Initialize variables
+		if (i >= N1_GPU_offset[n] * red_1 && i <= (N1_GPU_offset[n] + BS_1) * red_1 && j >= N2_GPU_offset[n] * red_2 && j <= (N2_GPU_offset[n] + BS_2) * red_2 && z >= N3_GPU_offset[n] * red_3 && z <= (N3_GPU_offset[n] + BS_3) * red_3) {
+			i1 = i / red_1;
+			j1 = j / red_2;
+			z1 = z / red_3;
+			if ((i % red_1 == 0) && (j % red_2 == 0) && (z % red_3 == 0)) {
+				for (k = 0; k < NPR; k++) p[nl[n]][index_3D(n, i1, j1, z1)][k] = 0.0;
+				for (k = 0; k < NDIM; k++) ps[nl[n]][index_3D(n, i1, j1, z1)][k] = 0.0;
+			}
+		
+			//Read in normal variables
+			reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+			for (k = 0; k < NPR_U; k++) p[nl[n]][index_3D(n, i1, j1, z1)][k] += read[k] * reduce_factor;
+
+			//Read in staggered grid
+			#if(STAGGERED)
+			reduce_factor = 1.0 / (double)(red_2 * red_3);
+			if ((i % red_1 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][1] += read[npr_file - (NDIM - 1)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE1];
+			reduce_factor = 1.0 / (double)(red_1 * red_3);
+			double fractheta_old = 1.e-2;
+			if (N2 != 1) {
+				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (TRANS_BOUND == 1);
+			}
+			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
+			reduce_factor = 1.0 / (double)(red_1 * red_2);
+			if ((z % red_3 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][3] += read[npr_file - (NDIM - 3)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE3];
+			#endif
+
+			//If file doesn't contain physics, initiliaze the physics just like in ICs
+			#if(RAD_M1)
+			if (!read_M1) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
+				}
+				//dt = 1.e-5;
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] += read[uu_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U1_RAD] += read[u1_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U2_RAD] += read[u2_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U3_RAD] += read[u3_rad] * reduce_factor;
+			}
+			#endif
+			#if(TWO_T)
+			if (!read_2T) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double bsq;
+					get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom);
+					set_2T_entropy(p[nl[n]][index_3D(n, i1, j1, z1)], bsq);
+				}
+			}
+			else{
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][ENTRE] += read[entre] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][ENTRI] += read[entri] * reduce_factor;
+			}
+			#endif
+			#if(P_NUM)
+			if (!read_Pnum) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM], u_dot_urad, urad_dot_urad, Ehat;
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					ucon_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon);
+					ucon_calc_rad(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon_rad);
+					lower(ucon_rad, &geom, ucov_rad);
+					u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+					urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+					Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * (urad_dot_urad));
+					T_new = pow(Ehat / ARAD, 0.25);
+					p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] = p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] += read[photon] * reduce_factor;
+			}
+			#endif
+			#if(RESISTIVE)
+			if (!read_Res) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					set_E_init(p[nl[n]][index_3D(n, i1, j1, z1)], geom);
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][E1] += read[e1] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][E2] += read[e2] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][E3] += read[e3] * reduce_factor;
+			}
+			#endif
+		}
 	}
 }
 
@@ -210,6 +353,12 @@ int restart_read_param(void)
 		if (param != NULL) {
 			param_read(param);
 			fclose(param);
+			sprintf(filename, "rdumps0/grid");
+			param = fopen(filename, "rb");
+			if (param != NULL) {
+				gdump_grid_read(param);
+				fclose(param);
+			}
 			t0 = t;
 			restart_number = 0;
 		}
@@ -230,6 +379,12 @@ int restart_read_param(void)
 			t1 = t;
 			if (t1 > t0) {
 				if (rank == 0) fprintf(stderr, "Reading in rdumps1! \n");
+				sprintf(filename, "rdumps1/grid");
+				param = fopen(filename, "rb");
+				if (param != NULL) {
+					gdump_grid_read(param);
+					fclose(param);
+				}
 				restart_number = 1;
 			}
 		}
@@ -242,6 +397,12 @@ int restart_read_param(void)
 		if (param != NULL) {
 			param_read(param);
 			fclose(param);
+			sprintf(filename, "rdumps0/grid");
+			param = fopen(filename, "rb");
+			if (param != NULL) {
+				gdump_grid_read(param);
+				fclose(param);
+			}
 			restart_number = 0;
 		}
 	}
@@ -259,9 +420,15 @@ void param_read(FILE *fp) {
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
 	int u, n, n2;
+	int exit_r = 0;
 	double dummy;
 	u = rdump_cnt + 1;
-	//Print out essential stuff for restart
+
+
+	if (rank == 0) {
+		fprintf(stderr, "Error asdas! \n");
+	}
+	//Read in essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
 	fread(&n_active_total, int_size, 1, fp);
@@ -274,10 +441,7 @@ void param_read(FILE *fp) {
 	fread(&dt, double_size, 1, fp);
 	fread(&failed, int_size, 1, fp);
 
-	//Print out stuff that should be checked later
-	int BS1_print = BS_1;
-	int BS2_print = BS_2;
-	int BS3_print = BS_3;
+	//Read in stuff that should be checked later
 	int NB_print = NB;
 	int NB1_print = NB_1;
 	int NB2_print = NB_2;
@@ -296,28 +460,36 @@ void param_read(FILE *fp) {
 	int rb = RB;
 	int docyl = DOCYLINDRIFYCOORDS;
 	int dk = DOKTOT;
+	double Rin_read;
+	double Rout_read;
+	double R0_read;
+	double gam_read;
+	double a_read;
+	double cour_read;
+	double startx_read[NDIM];
+	double dx_read[NDIM];
 
-	fread(&BS1_print, int_size, 1, fp);
-	fread(&BS2_print, int_size, 1, fp);
-	fread(&BS3_print, int_size, 1, fp);
+	fread(&BS1_read, int_size, 1, fp);
+	fread(&BS2_read, int_size, 1, fp);
+	fread(&BS3_read, int_size, 1, fp);
 	fread(&NB_print, int_size, 1, fp);
 	fread(&NB1_print, int_size, 1, fp);
 	fread(&NB2_print, int_size, 1, fp);
 	fread(&NB3_print, int_size, 1, fp);
-	fread(&startx[1], double_size, 1, fp);
-	fread(&startx[2], double_size, 1, fp);
-	fread(&startx[3], double_size, 1, fp);
-	fread(&dx[0][1], double_size, 1, fp);
-	fread(&dx[0][2], double_size, 1, fp);
-	fread(&dx[0][3], double_size, 1, fp);
+	fread(&startx_read[1], double_size, 1, fp);
+	fread(&startx_read[2], double_size, 1, fp);
+	fread(&startx_read[3], double_size, 1, fp);
+	fread(&dx_read[1], double_size, 1, fp);
+	fread(&dx_read[2], double_size, 1, fp);
+	fread(&dx_read[3], double_size, 1, fp);
 	fread(&tf, double_size, 1, fp);
-	fread(&a, double_size, 1, fp);
-	fread(&gam, double_size, 1, fp);
-	fread(&cour, double_size, 1, fp);
-	fread(&Rin, double_size, 1, fp);
-	fread(&Rout, double_size, 1, fp);
-	fread(&R0, double_size, 1, fp);
-	fread(&fractheta, double_size, 1, fp);
+	fread(&a_read, double_size, 1, fp);
+	fread(&gam_read, double_size, 1, fp);
+	fread(&cour_read, double_size, 1, fp);
+	fread(&Rin_read, double_size, 1, fp);
+	fread(&Rout_read, double_size, 1, fp);
+	fread(&R0_read, double_size, 1, fp);
+	fread(&dummy, double_size, 1, fp);
 	fread(&lim, int_size, 1, fp);
 	fread(&stag, int_size, 1, fp);
 	fread(&dump_cnt_reduced, int_size, 1, fp);
@@ -332,22 +504,114 @@ void param_read(FILE *fp) {
 	fread(&rt, int_size, 1, fp);
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
+	if (docyl >= 1000) {
+		read_Pnum = 1;
+		docyl -= 1000;
+	}
+	else read_Pnum = 0;
+	if (docyl >= 100) {
+		read_2T = 1;
+		docyl -= 100;
+	}
+	else read_2T = 0;
+	if (docyl >= 10) {
+		read_Res = 1;
+		docyl -= 10;
+	}
+	else read_Res = 0;
+	if (docyl >= 1) {
+		read_M1 = 1;
+		docyl -= 1;
+	}
+	else read_M1 = 0;
 	fread(&dk, int_size, 1, fp);
 
-	for (n = 0; n < NB; n++) {
-		block[n][AMR_ACTIVE] = 0;
+	if (rank == 0) {
+		fprintf(stderr, "Error asdas! \n");
 	}
 
+	//First deactivate all blocks
+	for (n = 0; n < NB; n++) {
+		block[n][AMR_ACTIVE] = 0;
+		block[n][AMR_NODE] = -1;
+		block[n][AMR_TIMELEVEL] = 1;
+	}
+
+	//Now check which blocks are active in grid
 	for (n = 0; n < n_active_total; n++) {
 		fread(&n2, int_size, 1, fp);
+		if (n2 > NB - 1)fprintf(stderr, "Param read error 1. \n");
+
 		block[n2][AMR_ACTIVE] = 1;
 		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
+		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
 		fread(&block[n2][AMR_NODE], int_size, 1, fp);
 		block[n2][AMR_NODE] = -1;
 	}
 
-	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3) {
-		if (rank == 0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
+	if ( NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3 || a!=BH_SPIN) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
+		}
+		exit_r = 1;
+	}
+	if (stag != STAGGERED) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. Staggered grid not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (Rout_read != Rout) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. Rout not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (Rin_read != Rin) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. Rin not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (R0_read != R0) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. R0 not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (a_read != a) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. a not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (gam_read != gam) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. gam not set properly! \n");
+		}
+		exit_r = 1;
+	}
+	if (startx_read[1] != startx[1] || startx_read[2] != startx[2] || startx_read[3] != startx[3]) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. startx not set properly! \n");
+		}
+		//exit_r = 1;
+	}
+	if (cour_read != cour) {
+		if (rank == 0) {
+			fprintf(stderr, "Warning reading in input parameters. Changin courant factor from %f to %f! \n", cour_read, cour);
+		}
+	}
+	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
+		if(BS1_read % BS_1 == 0 && BS2_read % BS_2 == 0 && BS3_read % BS_3 == 0)if (rank == 0) fprintf(stderr, "Downscaling bigger data set of original resolution of %dx%dx%d to resolution %dx%dx%d! \n", BS1_read, BS2_read, BS3_read, BS_1, BS_2, BS_3);
+		else {
+			if (rank == 0) fprintf(stderr, "Error reading in input parameters. Failed upscaling resolution due to incompatible ratios! \n");
+			exit_r = 1;
+		}
+	}
+
+	if (exit_r) {
+		//exit(0);
 	}
 
 	//Set nstep to 0 for convenience

@@ -775,14 +775,17 @@ int *array_gdumpgrid, *array_rdumpgrid;
 double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
+int read_M1, read_2T, read_Pnum, read_Res;
+int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 int(*block)[NV];
+int(*block_read)[10];
 int *lin_coord[N_LEVELS];
 int *lin_coord_RM[N_LEVELS];
 double ref_val[MY_MAX(NB, 40000)];
 double bench_time[NB];
-int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB],(*n_ord_node)[NB_LOCAL];
+int n_ord[NB_LOCAL], nl[NB], n_old[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB],(*n_ord_node)[NB_LOCAL];
 int n_active, *n_active_node, n_active_total, n_max;
 int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL], mem_spot_gpu_bound[NB_LOCAL];
 int count_node[1], count_gpu[N_GPU];

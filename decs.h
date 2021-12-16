@@ -863,14 +863,17 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
+extern int read_M1, read_2T, read_Pnum, read_Res;
+extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 extern int(*block)[NV];
+extern int(*block_read)[10];
 extern int *lin_coord[N_LEVELS];
 extern int *lin_coord_RM[N_LEVELS];
 extern double ref_val[MY_MAX(NB, 40000)];
 extern double bench_time[NB];
-extern int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB], (*n_ord_node)[NB_LOCAL];
+extern int n_ord[NB_LOCAL], nl[NB], n_old[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB], (*n_ord_node)[NB_LOCAL];
 extern int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL], mem_spot_gpu_bound[NB_LOCAL];
 extern int n_active, *n_active_node, n_active_total, n_max;
 extern int count_node[1], count_gpu[N_GPU];
@@ -889,6 +892,7 @@ void gdump_new_reduced(void);
 void dump_params(FILE *fp, int dump_reduced); 
 double divb_calc(int n, int i, int j, int z);
 void param_read(FILE *fp);
+void gdump_grid_read(FILE* fp);
 void rdump_block_read(FILE *fp, int n);
 int restart_read_param(void);
 void restart_write(void);
