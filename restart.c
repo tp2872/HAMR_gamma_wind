@@ -159,11 +159,11 @@ void rdump_block_read(FILE *fp, int n)
 {
 	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
-	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM;
-	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + NDIM * STAGGERED;
+	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
+	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
 	int red_1, red_2, red_3, i1, j1, z1;
 	double reduce_factor;
-	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + NDIM * STAGGERED];
+	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
 	struct of_geom geom;
 	#if(RAD_M1)
 	int uu_rad = (8 + DOKTOT);
@@ -182,6 +182,16 @@ void rdump_block_read(FILE *fp, int n)
 	#endif
 	#if(P_NUM)
 	int photon = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2);
+	#endif
+	#if(DO_YE)
+	int ye = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1);
+	#endif
+	#if(NEUTRINOS_M1)
+	int uu_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
+	int u1_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
+	int u2_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 2);
+	int u3_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 3);
+	int number_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 4);
 	#endif
 
 	//Set grid reduction factor
@@ -290,6 +300,42 @@ void rdump_block_read(FILE *fp, int n)
 				p[nl[n]][index_3D(n, i1, j1, z1)][E1] += read[e1] * reduce_factor;
 				p[nl[n]][index_3D(n, i1, j1, z1)][E2] += read[e2] * reduce_factor;
 				p[nl[n]][index_3D(n, i1, j1, z1)][E3] += read[e3] * reduce_factor;
+			}
+			#endif
+			#if(DO_YE)
+			if (!read_Ye) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][YE] = 1.0;
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][YE] += read[ye] * reduce_factor;
+			}
+			#endif
+			#if(NEUTRINOS_M1)
+			int sp;
+			if (!read_neutrinos) {
+				double Tnu;
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					for (sp = 0; sp < NU_SPECIES; sp++) {
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] = 1e-25;
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U1];
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U2];
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U3];
+
+						Tnu = pow(p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+					}
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][UU_NU] += read[uu_nu] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U1_NU] += read[u1_nu] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U2_NU] += read[u2_nu] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U3_NU] += read[u3_nu] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][NUMBER_NU] += read[number_nu] * reduce_factor;
 			}
 			#endif
 		}
@@ -504,6 +550,16 @@ void param_read(FILE *fp) {
 	fread(&rt, int_size, 1, fp);
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
+	if (docyl >= 100000) {
+		read_neutrinos = 1;
+		docyl -= 100000;
+	}
+	else read_neutrinos = 0;
+	if (docyl >= 10000) {
+		read_Ye = 1;
+		docyl -= 10000;
+	}
+	else read_Ye = 0;
 	if (docyl >= 1000) {
 		read_Pnum = 1;
 		docyl -= 1000;
