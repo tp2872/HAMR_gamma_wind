@@ -1124,7 +1124,7 @@ void init_torus()
 
 	bound_prim(p, 1);
 
-	//set_mag();
+	set_mag();
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)

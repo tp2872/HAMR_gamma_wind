@@ -51,14 +51,15 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
-#define NEUTRINOS_M1 (1)
-#define NU_EXPLICIT (1)
+#define DOHELM (0)
+#define NEUTRINOS_M1 (0)
+#define NU_EXPLICIT (0)
+#define NU_DEBUG (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
