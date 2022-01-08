@@ -1090,6 +1090,22 @@ void init_torus()
 	}
 	#endif
 
+	//Set constant boundary conditions
+	#if(CONSTANT_BC)
+	int i1, k;
+	for (n = 0; n < n_active; n++) {
+		if (block[n_ord[n]][AMR_NBR2] == -1) {
+			for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++)for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z++) {
+				for (i1 = 0; i1 < N1G; i1++) {
+					PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][k] = p[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][k];
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][2] = ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][2];
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][3];
+				}
+			}
+		}
+	}
+	#endif
+
 	bound_prim(p, 1);
 
 }
@@ -1477,7 +1493,12 @@ void init_rad_pres(double pi[NPR]) {
 	int keep_iterating=1, i, n_iter=0;
 
 	//Calculate old pressure
+	#if(TWO_T)
+	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MU_E * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	#else
 	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	#endif
+
 	if (read_M1 == 1) {
 		T_old = (GAMMA - 1.) * pi[UU] / pi[RHO];
 		T_new = T_old;

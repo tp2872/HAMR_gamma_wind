@@ -1,6 +1,11 @@
 /* restart functions; restart_init and restart_dump */
 #include "decs_MPI.h"
 
+//Insert a toroidal field of beta=2 in a thin disk after restart. Works only with axisymmetric AMR for non-tilted disks!
+#define INSERT_TOROIDAL (1)
+
+void add_toroidal_B(void);
+
 /*Write restart file*/
 void restart_write(void)
 {
@@ -138,6 +143,16 @@ int restart_read(void)
 	if (rank == 0){
 		fprintf(stderr, "done with restart init %s \n", filename);
 	}
+
+	#if(INSERT_TOROIDAL)
+	add_toroidal_B();
+		#if (MPI_enable)
+		MPI_Barrier(mpi_cartcomm);
+		#endif
+		if (rank == 0) {
+			fprintf(stderr, "done with adding magnetic fields %s \n", filename);
+		}
+	#endif
 
 	#if (MPI_enable)
 	MPI_Barrier(mpi_cartcomm);
@@ -294,6 +309,80 @@ void rdump_block_read(FILE *fp, int n)
 			#endif
 		}
 	}
+}
+
+void add_toroidal_B(void) {
+	int n, i, j, z, i0, j0, z0;
+	double *rho_avg, *rho_avg_phi, *ug_avg, *ug_avg_phi, p_avg_phi, uu_avg_phi[NDIM], bsq_avg_phi, bsq_desired, r_avg_phi, *B3_avg_phi, X_avg_phi[NDIM], gcov_avg_phi[NDIM][NDIM], factor;
+	double beta_desired = 2.0; //Target beta in thin disk
+
+	//Allocate memory
+	rho_avg = (double*)calloc((BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G) * (BS_3 * NB_3 + 2 * N3G), sizeof(double));
+	rho_avg_phi = (double*)calloc((BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), sizeof(double));
+	ug_avg = (double*)calloc((BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G) * (BS_3 * NB_3 + 2 * N3G), sizeof(double));
+	ug_avg_phi = (double*)calloc((BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), sizeof(double));
+	B3_avg_phi = (double*)calloc((BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), sizeof(double));
+
+	//Calculate average ug and rho on 0th grid level
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3) {
+			i0 = i / pow(1 + REF_1, block[n_ord[n]][AMR_LEVEL1]);
+			j0 = j / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]);
+			z0 = z / pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL3]);
+			factor = pow(1 + REF_1, block[n_ord[n]][AMR_LEVEL1]) * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) * pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL3]);
+			rho_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / factor;
+			ug_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / factor;
+		}
+	}
+
+	//Calculate average in phi of all values
+	for (i0 = 0; i0 < BS_1 * NB_1; i0++)for (j0 = 0; j0 < BS_2 * NB_2; j0++)for (z0 = 0; z0 < BS_3 * NB_3; z0++) {
+		rho_avg_phi[i0 * BS_2 * NB_2 + j0] += rho_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] / (BS_3 * NB_3);
+		ug_avg_phi[i0 * BS_2 * NB_2 + j0] += ug_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] / (BS_3 * NB_3);
+	}
+
+	//Set toroidal magnetic field at lowest AMR level
+	for (i0 = 0; i0 < BS_1 * NB_1; i0++)for (j0 = 0; j0 < BS_2 * NB_2; j0++) {
+		//Set coordinates and calculate the metric compoment
+		X_avg_phi[1] = startx[1] + (i0 + 0.5) * dx[0][1];
+		X_avg_phi[2] = startx[2] + (j0 + 0.5) * dx[0][2];
+		X_avg_phi[3] = 0.0;
+		
+		//Calculate radius
+		r_avg_phi = exp(X_avg_phi[1]);
+
+		if (rho_avg_phi[i0 * BS_2 * NB_2 + j0] > 0.1 && r_avg_phi>20.0) {
+			//Calculate metric
+			gcov_func(X_avg_phi, gcov_avg_phi);
+
+			//Calculate present beta
+			bsq_avg_phi = gcov_avg_phi[3][3]; //Rough approximation for bsq not taking into account the velocity of the fluid, which is <<c
+			p_avg_phi = (GAMMA - 1.0) * ug_avg_phi[i0 * BS_2 * NB_2 + j0];
+			bsq_desired = 2.0 * p_avg_phi / beta_desired;
+
+			//Set normalized B strengths
+			B3_avg_phi[i0 * BS_2 * NB_2 + j0] = sqrt(bsq_desired / bsq_avg_phi);
+		}
+	}
+
+	//Insert toroidal field into disk
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3) {
+			i0 = i / pow(1 + REF_1, block[n_ord[n]][AMR_LEVEL1]);
+			j0 = j / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] += B3_avg_phi[i0 * BS_2 * NB_2 + j0];
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] += B3_avg_phi[i0 * BS_2 * NB_2 + j0];
+		}
+	}
+
+	//Free memory
+	free(rho_avg); 
+	free(rho_avg_phi);
+	free(ug_avg); 
+	free(ug_avg_phi);
+	free(B3_avg_phi);
+
+	return;
 }
 
 void close_rdump(void) {

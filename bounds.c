@@ -147,6 +147,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		}
 	}
 
+	#if(CONSTANT_BC)
 	if (block[n][AMR_NBR2] == -1){
 		// outer r BC: outflow 		
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
@@ -167,6 +168,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			}
 		}
 	}
+	#endif
 
 	// make sure there is no inflow at the inner boundary 
 	if (block[n][AMR_NBR4] == -1){
@@ -187,6 +189,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		}
 	}
 	// make sure there is no inflow at the outer boundary
+	#if(CONSTANT_BC)
 	if (block[n][AMR_NBR2] == -1){
 		for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i <= N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G - 1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
@@ -204,6 +207,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			}
 		}
 	}
+	#endif
 }
 
 void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){

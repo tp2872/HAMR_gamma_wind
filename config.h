@@ -49,7 +49,7 @@ Physical Parameters section
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (0)
-#define H_OVER_R (0.05)
+#define H_OVER_R (0.1)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -326,8 +326,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+/*Enable constant boundary conditions*/
+#define CONSTANT_BC (1)
+
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -337,7 +340,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (1)
+#define COMPTON (0)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -346,10 +349,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Fractional floor on entropy*/
-#define FLOOR_ENTROPY (0.01)
+#define FLOOR_ENTROPY (0.0001)
 
 /*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
 #define HEAT_HOWES (0)
@@ -381,7 +384,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
-#define DO_IMEX (1)
+#define DO_IMEX (0)
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)

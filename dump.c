@@ -409,7 +409,7 @@ void dump_block_reduced(MPI_File *fp, int n){
 			#endif
 
 			#if(P_NUM)
-			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (PHOTON + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][PHOTON] * factor;
+			array_reduced[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (PHOTON + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][PHOTON] * factor;
 			#endif
 		}
 	}

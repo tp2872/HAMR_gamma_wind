@@ -1447,7 +1447,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		
 		//Make sure that photon number stays positive
 		#if(P_NUM)
-		if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+		//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 		#endif
 
 		//Obtain new conserved quantaties from MHD variables
@@ -2119,7 +2119,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Make sure that the photon number stays positive
 				#if(P_NUM)
-				if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 				#endif
 
 				//Recompute T_t^mu for consistency
@@ -2714,7 +2714,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Make sure that the photon number stays positive
 				#if(P_NUM)
-				if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 				#endif
 
 				//Recompute T_t^mu for consistency
@@ -3374,7 +3374,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 				//Make sure that the photon number stays positive
 				#if(P_NUM)
-				if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 				#endif
 
 				//Recompute T_t^mu for consistency
@@ -4001,7 +4001,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			//#endif
 
 			//Make sure that photon number stays positive
-			if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+			//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 
 			//Obtain new radiation conserved quantaties from radiation primitive variables
 			get_state_rad(pb_new, geom, &q_rad);
@@ -9468,8 +9468,8 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 	//Calculate electron scattering opacity
 	if (kappa_es != NULL) {
-		//kappa_es[0] = 0.2 * (1 + X_AB) / (1. + pow(Te / (4.5 * pow(10., 8.)), 0.86));
-		kappa_es[0] = 0.2 * (1 + X_AB);
+		kappa_es[0] = 0.2 * (1 + X_AB) / (1. + pow(fabs(Te) / (4.5 * pow(10., 8.)), 0.86));
+		//kappa_es[0] = 0.2 * (1 + X_AB);
 		if (!isfinite(kappa_es[0])) kappa_es[0] = 0.0;
 		else kappa_es[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 	}
@@ -12494,6 +12494,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	}
 
 	// outer r BC: outflow
+	#if(CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -12507,7 +12508,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 			prim5[k] = prim6[k];
 		}
 
-		/*Make sure there is no inflow at outer boundary*/
+		//Make sure there is no inflow at outer boundary
 		inflow_check(prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
 		inflow_check(prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
 		#if(N1G==3)
@@ -12538,6 +12539,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		#endif
 		#endif
 	}
+	#endif
 }
 
 __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
