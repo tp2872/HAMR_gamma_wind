@@ -344,8 +344,8 @@ void add_toroidal_B(void) {
 		rho_avg_phi[i0 * BS_2 * NB_2 + j0] += rho_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] / (BS_3 * NB_3);
 		ug_avg_phi[i0 * BS_2 * NB_2 + j0] += ug_avg[i0 * BS_3 * NB_3 * BS_2 * NB_2 + j0 * BS_3 * NB_3 + z0] / (BS_3 * NB_3);
 	}
-	MPI_Allreduce(MPI_IN_PLACE, &(rho_avg_phi), (BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &(ug_avg_phi), (BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, rho_avg_phi, (BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, ug_avg_phi, (BS_1 * NB_1 + 2 * N1G) * (BS_2 * NB_2 + 2 * N2G), MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 
 	//Set toroidal magnetic field at lowest AMR level
 	for (i0 = 0; i0 < BS_1 * NB_1; i0++)for (j0 = 0; j0 < BS_2 * NB_2; j0++) {
