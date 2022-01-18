@@ -62,7 +62,13 @@ void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_ge
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
-void set_mag(void);
+void set_mag(
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	double rhomax_postmerger, double beta_postmerger
+	#else
+	void
+	#endif
+);
 void init_thindisk();
 double compute_Amax(double(*restrict A[NB])[NPR]);
 double compute_B_from_A(void);
@@ -797,7 +803,7 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
-	set_mag();
+	//set_mag();
 
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
@@ -946,7 +952,7 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.55;
 				#endif
 			
 			}
@@ -1012,7 +1018,7 @@ void init_torus()
 				#endif
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.1;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.15;
 				#endif
 			}
 
@@ -1028,7 +1034,7 @@ void init_torus()
 			// initialize neutrinos
 			#if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-25;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-30;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U2_NU, sp)] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U3_NU, sp)] = up;
@@ -1124,7 +1130,11 @@ void init_torus()
 
 	bound_prim(p, 1);
 
-	set_mag();
+	set_mag(
+		#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+		1.0, 10.0
+		#endif
+	);
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
@@ -1257,474 +1267,458 @@ void init_rad_pres(double pi[NPR]) {
 #define VARVUPHI 13
 #define NVARS 14
 
-void init_postmerger()
-{
-  int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
-  char* read_first_line(char *s, size_t size, FILE *fp);
-  char* read_last_line(char *s, size_t size, FILE *fp);
-  int i,j,z,n ;
-  extent ext;
-  double r,th,phi,sth,cth ;
-  double ur,uh,up,u,rho ;
-  double bl_gcov[NDIM][NDIM];
-  double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
-  double tilt, eccentricity;
-  struct of_geom geom ;
+void init_postmerger() {
+	int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
+	char* read_first_line(char *s, size_t size, FILE *fp);
+	char* read_last_line(char *s, size_t size, FILE *fp);
+	int i,j,z,n ;
+	extent ext;
+	double r,th,phi,sth,cth ;
+	double ur,uh,up,u,rho ;
+	double bl_gcov[NDIM][NDIM];
+	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+	double tilt, eccentricity;
+	struct of_geom geom ;
 
-  /* for disk interior */
-  double l,rin,lnh,expm2chi,up1 ;
-  double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
-  double kappa,hm1 ;
+	/* for disk interior */
+	double l,rin,lnh,expm2chi,up1 ;
+	double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
+	double kappa,hm1 ;
 
-  /*For MPI*/
-  double inmsg;
+	/*For MPI*/
+	double inmsg;
 
-  /* for magnetic field */
-  double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-  double lfish_calc(double rmax) ;
+	/* for magnetic field */
+	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
+	double lfish_calc(double rmax) ;
 
-  /* for ICs */
-  double r_unit = 8.07; //conversion factor = (Mbh/Msun)
-  FILE *fp1, *fp2;
-  int ind;
-  int nitems_read, nitems_expected;
-# define MAXLEN (1024)
-  int nvars, nx, ny, nz;
-  int res;
-  double *icdata;
+	/* for ICs */
+	double r_unit = 8.07; //conversion factor = (Mbh/Msun)
+	FILE *fp1, *fp2;
+	int ind;
+	int nitems_read, nitems_expected;
+	# define MAXLEN (1024)
+	int nvars, nx, ny, nz;
+	int res;
+	double *icdata;
 
-#if (READBINARY)
-  char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";
-  int mult = 4;
-#else
-  char fname1[] = "PointsToInterpolateHAMR.dat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
+	#if (READBINARY)
+	char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
+	char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";	
+	int mult = 4;
+	// for reading in binary
+	double *temp_array_grid, *temp_array_prims;
+	int file_size_grid, file_size_prims, num_var, index_grid_final;
+	size_t double_size = sizeof(double);
+	size_t len_grid, len_prims;
 
-  // In case you want to read the whole ICs table -- set all of them to 1.
-  // Initial resolution is 512 x 256 x 128
-  int stride1 = 4;
-  int stride2 = 2; 
-  int stride3 = 1;
-#endif
-  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
-  size_t memsize, nitems, nread;
-  double prim[NPR];
-  int k, ii, jj, kk;
-  double udphi;
+	#else
+	char fname1[] = "PointsToInterpolateHAMR.dat";
+	char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
 
-  // for reading in binary
-  double *temp_array_grid, *temp_array_prims;
-  int file_size_grid, file_size_prims, num_var, index_grid_final;
-  size_t double_size = sizeof(double);
-  size_t len_grid, len_prims;
+	// In case you want to read the whole ICs table -- set all of them to 1.
+	// Initial resolution is 512 x 256 x 128
+	int stride1 = 4;
+	int stride2 = 4; 
+	int stride3 = 4;
+	#endif
+	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
+	size_t memsize, nitems, nread;
+	double prim[NPR];
+	int k, ii, jj, kk;
+	double udphi;
 
+	/* disk parameters (use fishbone.m to select new solutions) */
+	a = BH_SPIN ;
+	beta = 100.;
 
-  /* disk parameters (use fishbone.m to select new solutions) */
-  a = BH_SPIN ;
-  beta = 10. ;
+	coord(0, 5, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	
+	if (rank == 0) {
+		fprintf(stderr, "r[5]: %g\n", r);
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
+			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+		}
+		else {
+			fprintf(stderr, "\n");
+		}
+	}
 
-  coord(0,5, 0, 0, CENT, X);
-  bl_coord(X, &r, &th, &phi);
-  if (rank == 0) {
-    fprintf(stderr, "r[5]: %g\n", r);
-    fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
-    if (r > 1. + sqrt(1. - a*a)) {
-      fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
-    }
-    else {
-      fprintf(stderr, "\n");
-    }
-  }
+	/* output choices */
+	tf = 200000000.0 ;
+	// DTd = 25.0;  /* dumping frequency, in units of M */
+	// DTl = 50.0;  /* logfile frequency, in units of M */
+	// DTi = 100.0;   /* image file frequ., in units of M */
+	// DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
 
-  /* output choices */
-  tf = 200000000.0 ;
-  // DTd = 25.0;  /* dumping frequency, in units of M */
-  // DTl = 50.0;  /* logfile frequency, in units of M */
-  // DTi = 100.0;   /* image file frequ., in units of M */
-  // DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
+	/* start diagnostic counters */
+	dump_cnt = 0 ;
+	image_cnt = 0 ;
+	rdump_cnt = 0 ;
 
-  /* start diagnostic counters */
-  dump_cnt = 0 ;
-  image_cnt = 0 ;
-  rdump_cnt = 0 ;
+	ext.nvars = NVARS;
+	//read ICs from file
+	//for this, loop over all MPI processes
+	//and let them read the IC data from file, one by one
 
-  ext.nvars = NVARS;
-  //read ICs from file
-  //for this, loop over all MPI processes
-  //and let them read the IC data from file, one by one
+	#if (READBINARY)
+	for (ind=0; ind<numtasks; ind++) {
+	if (ind == rank) {
+	fp1 = fopen(fname1, "rb");
+	if (NULL == fp1 && 0 == rank) {
+	fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
+	exit(1234);
+	}
+	fp2 = fopen(fname2, "rb");
+	if (NULL == fp2 && 0 == rank) {
+	fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
+	fclose(fp1);
+	exit(1234);
+	}
 
-#if (READBINARY)
-  for (ind=0; ind<numtasks; ind++) {
-    if (ind == rank) {
-      fp1 = fopen(fname1, "rb");
-      if (NULL == fp1 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
-        exit(1234);
-      }
-      fp2 = fopen(fname2, "rb");
-      if (NULL == fp2 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
-        fclose(fp1);
-        exit(1234);
-      }
+	// reading the first file:
+	// a) allocation of memory for the array
+	// b) reading the array into the memory
+	fseek(fp1, 0L, SEEK_END);
+	file_size_grid = ftell(fp1);
+	num_var = 6;
+	len_grid = file_size_grid/double_size;
+	index_grid_final = len_grid/num_var;
 
-      // reading the first file:
-      // a) allocation of memory for the array
-      // b) reading the array into the memory
-      fseek(fp1, 0L, SEEK_END);
-      file_size_grid = ftell(fp1);
-      num_var = 6;
-      len_grid = file_size_grid/double_size;
-      index_grid_final = len_grid/num_var;
+	// reading the second file:
+	fseek(fp2, 0L, SEEK_END);
+	file_size_prims = ftell(fp2);
+	len_prims = file_size_prims/double_size;
 
-      // reading the second file:
-      fseek(fp2, 0L, SEEK_END);
-      file_size_prims = ftell(fp2);
-      len_prims = file_size_prims/double_size;
+	memsize = file_size_grid+file_size_prims;
+	icdata = (double *) malloc(memsize);
+	if(NULL == icdata) {
+	fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+	fclose(fp1);
+	fclose(fp2);
+	exit(1235);
+	}
 
-      memsize = file_size_grid+file_size_prims;
-      icdata = (double *) malloc(memsize);
-      if(NULL == icdata) {
-        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-        fclose(fp1);
-        fclose(fp2);
-        exit(1235);
-      }
+	fseek(fp1, 0L, SEEK_SET);
+	fread(&icdata[0], double_size, len_grid, fp1);
 
-      fseek(fp1, 0L, SEEK_SET);
-      fread(&icdata[0], double_size, len_grid, fp1);
+	fseek(fp2, 0L, SEEK_SET);
+	fread(&icdata[len_grid], double_size, len_prims, fp2);
 
-      fseek(fp2, 0L, SEEK_SET);
-      fread(&icdata[len_grid], double_size, len_prims, fp2);
+	ext.nx = (int)icdata[1*index_grid_final-1];
+	ext.ny = (int)icdata[2*index_grid_final-1];
+	ext.nz = (int)icdata[3*index_grid_final-1];
+	ext.xmin = icdata[3*index_grid_final];
+	ext.xmax = icdata[4*index_grid_final-1];
+	ext.ymin = icdata[4*index_grid_final];
+	ext.ymax = icdata[5*index_grid_final-1];
+	ext.zmin = icdata[5*index_grid_final];
+	ext.zmax = icdata[6*index_grid_final-1];
 
-      ext.nx = (int)icdata[1*index_grid_final-1];
-      ext.ny = (int)icdata[2*index_grid_final-1];
-      ext.nz = (int)icdata[3*index_grid_final-1];
-      ext.xmin = icdata[3*index_grid_final];
-      ext.xmax = icdata[4*index_grid_final-1];
-      ext.ymin = icdata[4*index_grid_final];
-      ext.ymax = icdata[5*index_grid_final-1];
-      ext.zmin = icdata[5*index_grid_final];
-      ext.zmax = icdata[6*index_grid_final-1];
+	ext.nx = ext.nx/mult + 1;
+	ext.ny = ext.ny/mult + 1;
+	ext.nz = ext.nz/mult + 1;
 
-      ext.nx = ext.nx/mult + 1;
-      ext.ny = ext.ny/mult + 1;
-      ext.nz = ext.nz/mult + 1;
+	ext.xmin/=r_unit;
+	ext.xmax/=r_unit;
 
-      ext.xmin/=r_unit;
-      ext.xmax/=r_unit;
+	int ix;
+	for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
+	icdata[ix] /= r_unit;
+	}
 
-      int ix;
-      for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
-        icdata[ix] /= r_unit;
-      }
-
-      if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
-                rank,
-                ext.nvars, ext.nx, ext.ny, ext.nz,
-                ext.xmin, ext.xmax,
-                ext.ymin, ext.ymax,
-                ext.zmin, ext.zmax,
-                fname1, fname2);
-        fflush(stderr);
-      }
+	if (0 == rank) {
+	fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
+			rank,
+			ext.nvars, ext.nx, ext.ny, ext.nz,
+			ext.xmin, ext.xmax,
+			ext.ymin, ext.ymax,
+			ext.zmin, ext.zmax,
+			fname1, fname2);
+	fflush(stderr);
+	}
 
 
-      nx = ext.nx;
-      ny = ext.ny;
-      nz = ext.nz;
-      nvars = ext.nvars;
-      nitems = (size_t)nvars*nx*ny*nz;
+	nx = ext.nx;
+	ny = ext.ny;
+	nz = ext.nz;
+	nvars = ext.nvars;
+	nitems = (size_t)nvars*nx*ny*nz;
 
-      /*
-      memsize = double_size*nitems;
+	/*
+	memsize = double_size*nitems;
 
-      if (memsize == file_size_grid+file_size_prims) {
-        fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
-      }
-      else {
-        fprintf(stderr, "memory allocation size DOES NOT match the size of the input files ... Exiting ... \n");
-        exit(1234);
-      }
-      */
+	if (memsize == file_size_grid+file_size_prims) {
+	fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
+	}
+	else {
+	fprintf(stderr, "memory allocation size DOES NOT match the size of the input files ... Exiting ... \n");
+	exit(1234);
+	}
+	*/
 
-      if(ferror(fp1) || ferror(fp2) ||
-         (!feof(fp1)) ||
-         (!feof(fp2)) ) {
-        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
-      }
-      fclose(fp1); fp1 = NULL;
-      fclose(fp2); fp2 = NULL;
+	if(ferror(fp1) || ferror(fp2) ||
+		(!feof(fp1)) ||
+		(!feof(fp2)) ) {
+	fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
+	}
+	fclose(fp1); fp1 = NULL;
+	fclose(fp2); fp2 = NULL;
 
-      if (0 == rank) {
-        fprintf(stderr, " done\n");
-        fflush(stderr);
-      }
-      //now icdata contains the IC information
-    }
-  }
+	if (0 == rank) {
+	fprintf(stderr, " done\n");
+	fflush(stderr);
+	}
+	//now icdata contains the IC information
+	}
+	}
 
-#else
-  for (ind=0; ind<numtasks; ind++) {
-    if (ind == rank) {
-      fp1 = fopen(fname1, "rb");
-      if (NULL == fp1 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
-        exit(1234);
-      }
-      fp2 = fopen(fname2, "rb");
-      if (NULL == fp2 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
-        fclose(fp1);
-        exit(1234);
-      }
-      read_last_line(last_line, MAXLEN, fp1);
-      sscanf(last_line, "%d %d %d %lf %lf %lf ",
-             &ext.nx, &ext.ny, &ext.nz,
-             &ext.xmax, &ext.ymax, &ext.zmax);
+	#else
+	for (ind = 0; ind < numtasks; ind++) {
+		if (ind == rank) {
+			fp1 = fopen(fname1, "rb");
+			if (NULL == fp1 && 0 == rank) {
+				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
+				exit(1234);
+			}
+			fp2 = fopen(fname2, "rb");
+			if (NULL == fp2 && 0 == rank) {
+				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
+				fclose(fp1);
+				exit(1234);
+			}
+			
+			read_last_line(last_line, MAXLEN, fp1);
+			sscanf(last_line, "%d %d %d %lf %lf %lf ", &ext.nx, &ext.ny, &ext.nz, &ext.xmax, &ext.ymax, &ext.zmax);
 
-      //rewind the file to the beginning for subsequent reading
-      rewind(fp1);
+			//rewind the file to the beginning for subsequent reading
+			rewind(fp1);
 
-      //skip comment lines in the first file and read in the first non-comment line
-      read_first_line(first_line, MAXLEN, fp1);
-      sscanf(first_line, "%*d %*d %*d %lf %lf %lf ",
-             &ext.xmin, &ext.ymin, &ext.zmin);
-      //read_first_line leaves file at the start of the first non-comment line
+			//skip comment lines in the first file and read in the first non-comment line
+			read_first_line(first_line, MAXLEN, fp1);
+			sscanf(first_line, "%*d %*d %*d %lf %lf %lf ", &ext.xmin, &ext.ymin, &ext.zmin);
+			//read_first_line leaves file at the start of the first non-comment line
 
-      //skip comment lines in the second file
-      read_first_line(first_line, MAXLEN, fp2);
-      //read_first_line leaves file at the start of the first non-comment line
+			//skip comment lines in the second file
+			read_first_line(first_line, MAXLEN, fp2);
+			//read_first_line leaves file at the start of the first non-comment line
 
-      //account for coordinates counted off from zero
-      ext.nx += 1;
-      ext.ny += 1;
-      ext.nz += 1;
+			//account for coordinates counted off from zero
+			ext.nx += 1;
+			ext.ny += 1;
+			ext.nz += 1;
 
-      ext.xmin/=r_unit;
-      ext.xmax/=r_unit;
+			ext.xmin/=r_unit;
+			ext.xmax/=r_unit;
 
-      if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
-                rank,
-                ext.nvars, ext.nx, ext.ny, ext.nz,
-                ext.xmin, ext.xmax,
-                ext.ymin, ext.ymax,
-                ext.zmin, ext.zmax,
-                fname1, fname2);
-        fflush(stderr);
-      }
+			if (0 == rank) {
+				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1, fname2);
+				fflush(stderr);
+			}
 
-	  ext.nx = ext.nx / stride1;
-	  ext.ny = ext.ny / stride2;
-	  ext.nz = ext.nz / stride3;
+			ext.nx = ext.nx / stride1;
+			ext.ny = ext.ny / stride2;
+			ext.nz = ext.nz / stride3;
 
-      nx = ext.nx;
-      ny = ext.ny;
-      nz = ext.nz;
-      nvars = ext.nvars;
-      nitems = (size_t)nvars*nx*ny*nz;
-	  memsize = sizeof(double) * nitems;
-      icdata = malloc(memsize);
-      if(NULL == icdata) {
-        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-        fclose(fp1);
-        fclose(fp2);
-        exit(1235);
-      }
-      //read in the data block from file
+			nx = ext.nx;
+			ny = ext.ny;
+			nz = ext.nz;
+			nvars = ext.nvars;
+			nitems = (size_t) nvars * nx * ny * nz;
+			memsize = sizeof(double) * nitems;
+			icdata = malloc(memsize);
 
-      do{
-        //first file, containing grid information
-        ptr1 = fgets(buf1, MAXLEN, fp1);
-        if(NULL == ptr1) break;
+			if(NULL == icdata) {
+				fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+				fclose(fp1);
+				fclose(fp2);
+				exit(1235);
+			}
+			//read in the data block from file
 
-		//second file, containing data information
-		ptr2 = fgets(buf2, MAXLEN, fp2);
-		if (NULL == ptr2) break;
+			do {
+				//first file, containing grid information
+				ptr1 = fgets(buf1, MAXLEN, fp1);
+				if(NULL == ptr1) break;
 
-        nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
-        nitems_expected = 3;
-        if(nitems_expected != nitems_read) break;
+				//second file, containing data information
+				ptr2 = fgets(buf2, MAXLEN, fp2);
+				if (NULL == ptr2) break;
 
-		if (ii % stride1 != 0 || jj % stride2 != 0 || kk % stride3 != 0) 
-			continue;
+				nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
+				nitems_expected = 3;
+				if(nitems_expected != nitems_read) break;
+
+				if (ii % stride1 != 0 || jj % stride2 != 0 || kk % stride3 != 0) continue;
         
-		ii = ii / stride1;
-		jj = jj / stride2;
-		kk = kk / stride3;
+				ii = ii / stride1;
+				jj = jj / stride2;
+				kk = kk / stride3;
 
-		dd(ii,jj,kk,VARI) = (double)ii;
-        dd(ii,jj,kk,VARJ) = (double)jj;
-        dd(ii,jj,kk,VARK) = (double)kk;
+				dd(ii, jj, kk, VARI) = (double) ii;
+				dd(ii, jj, kk, VARJ) = (double) jj;
+				dd(ii, jj, kk, VARK) = (double) kk;
 
-        nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n",
-               &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
-        dd(ii,jj,kk,VARR) /= r_unit;
-        nitems_expected = 3;
-        if(nitems_expected != nitems_read) break;
+				nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI));
+				dd(ii, jj, kk, VARR) /= r_unit;
+				nitems_expected = 3;
+				if(nitems_expected != nitems_read) break;
 
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n",
-                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
-        nitems_expected = 8;
-        if(nitems_expected != nitems_read) break;
+				nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
+				nitems_expected = 8;
+				if(nitems_expected != nitems_read) break;
 
-      }
-      while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
+			} while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
 
-      if( nitems_expected != nitems_read ||
-         ferror(fp1) || ferror(fp2) ||
-         (NULL == ptr1 && !feof(fp1)) ||
-         (NULL == ptr2 && !feof(fp2)) ) {
-        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
-      }
-      fclose(fp1); fp1 = NULL;
-      fclose(fp2); fp2 = NULL;
+			if( nitems_expected != nitems_read || ferror(fp1) || ferror(fp2) || (NULL == ptr1 && !feof(fp1)) || (NULL == ptr2 && !feof(fp2)) ) {
+				fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
+			}
+			fclose(fp1); fp1 = NULL;
+			fclose(fp2); fp2 = NULL;
 
-      if (0 == rank) {
-        fprintf(stderr, " done\n");
-        fflush(stderr);
-      }
-      //now icdata contains the IC information
-    }
-  }
-#endif
+			if (0 == rank) {
+				fprintf(stderr, " done\n");
+				fflush(stderr);
+			}
+		//now icdata contains the IC information
+		}
+	}
+	#endif
 
-#if (MPI_enable)
-  MPI_Barrier(mpi_cartcomm);
-#endif
-  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
-  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	//vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+	//ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+	//mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 
-  rhomax = 0. ;
-  umax = 0. ;
-#if(!NSY)
-  tilt = (TILT_ANGLE) / 180.*M_PI;
-#else
-  tilt = -(TILT_ANGLE) / 180.*M_PI;
-#endif
-  eccentricity = 0.0;
-  for (n = 0; n < n_active; n++){
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi);
-      pos_new[1] = r;
-      pos_new[2] = th;
-      pos_new[3] = phi;
+	rhomax = 0.;
+	umax = 0.;
 
-      sth = sin(th) ;
-      cth = cos(th) ;
+	#if(!NSY)
+	tilt = (TILT_ANGLE) / 180.*M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180.*M_PI;
+	#endif
 
-      prim[RHO] = dd(i,j,z,VARRHO);
-      prim[UU] = dd(i,j,z,VARP); prim[UU] /= (gam - 1);
-      prim[U1] = dd(i,j,z,VARVUR);
-      prim[U2] = dd(i,j,z,VARVUTHETA);
-      prim[U3] = dd(i,j,z,VARVUPHI);
-      udphi = dd(i,j,z,VARUDPHI)/r_unit;
+	eccentricity = 0.0;
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
 
-      res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
+			sth = sin(th) ;
+			cth = cos(th) ;
 
-      /* regions outside stream */
+			prim[RHO] = dd(i, j, z, VARRHO);
+			prim[UU] = dd(i, j, z, VARP) / (gam - 1);
+			prim[U1] = dd(i, j, z, VARVUR);
+			prim[U2] = dd(i, j, z, VARVUTHETA);
+			prim[U3] = dd(i, j, z, VARVUPHI);
+			#if (DO_YE)
+			prim[YE] = dd(i, j, z, VARYE);
+			#endif
+			udphi = dd(i, j, z, VARUDPHI) / r_unit;
 
+			res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
 
-      if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
-        rho = 1.e-30/(r*r);
-        u = 1.e-31/(r*r*r*r);
+			/* regions outside stream */
+			/*
+			if ((0. == prim[U1] && 0. == prim[U2] && 0. == prim[U3])) {
+				rho = 1.e-30/(r*r);
+				u = 1.e-31/(r*r*r*r);
 
-        ur = 0. ;
-        uh = 0. ;
-        up = 0. ;
+				ur = 0. ;
+				uh = 0. ;
+				up = 0. ;
 
-        prim[RHO] = rho;
-        prim[UU] = u;
-        prim[U1] = ur;
-        prim[U2] = uh;
-        prim[U3] = up;
-      }
-      if(1) {
-        /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-        //vconbl_to_utcon(prim, n_ord[n], i, j, z);
-        utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
-      }
-      //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
-      prim[B1] = 0.;
-      prim[B2] = 0.;
-      prim[B3] = 0.;
-      //copy back to full prim array
-      PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
-      if(prim[RHO]>rhomax) {
-        rhomax = prim[RHO];
-      }
-    }
-  }
-  if(icdata) {
-    free(icdata);
-    icdata = NULL;
-  }
-#if (MPI_enable)
-  /*Share rhomax among MPI processes*/
-  MPI_Barrier(mpi_cartcomm);
-  MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+				prim[RHO] = rho;
+				prim[UU] = u;
+				prim[U1] = ur;
+				prim[U2] = uh;
+				prim[U3] = up;
+			} */
+			/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
+			//vconbl_to_utcon(prim, n_ord[n], i, j, z);
+			utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
+			//if (prim[RHO] < 0.01) prim[RHO] = 0.0;
+			prim[B1] = 0.;
+			prim[B2] = 0.;
+			prim[B3] = 0.;
 
-  /*Share umax among MPI processes*/
-  MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  MPI_Barrier(mpi_cartcomm);
-#endif
+			//copy back to full prim array
+			PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
 
-  /* Normalize the densities so that max(rho) = 1 */
-  if (rank == 0){
-    fprintf(stderr, "rhomax: %g\n", rhomax);
-  }
-  //ZSLOOP(0,N1-1,0,N2-1) {
-  //for (n = 0; n < n_active; n++){
-  //  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-  //  }
-  //}
-  // umax /= rhomax ;
-  // rhomax = 1. ;
-  for (n = 0; n < n_active; n++){
-    fixup(p, n_ord[n]);
-  }
-  bound_prim(p,1);
+			if(prim[RHO] > rhomax) {
+				rhomax = prim[RHO];
+			}
+		}
+	}
 
-  //set_mag();
+	if (icdata) {
+		free(icdata);
+		icdata = NULL;
+	}
 
-  sourceflag=0.;
-#if(ELLIPTICAL2)
-  calc_source();
-#endif
+	#if (MPI_enable)
+	/*Share rhomax among MPI processes*/
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
-#if DOHELM
-  // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-  //double den, ener, pres;
-  for (n = 0; n < n_active; n++) {
-	  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      //coord(n_ord[n], i, j, z, CENT, X);
-      //bl_coord(X, &r, &th, &phi);
-		  //den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-		  //ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-		  //pres = ener * (gam - 1.0);
-      p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+	/*Share umax among MPI processes*/
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+
+	/* Normalize the densities so that max(rho) = 1 */
+	if (rank == 0){
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
+	//ZSLOOP(0,N1-1,0,N2-1) {
+	//for (n = 0; n < n_active; n++){
+	//  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+	//    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+	//    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+	//  }
+	//}
+	// umax /= rhomax ;
+	// rhomax = 1. ;
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	bound_prim(p,1);
+
+	set_mag(rhomax, beta);
+
+	sourceflag=0.;
+	#if(ELLIPTICAL2)
+	calc_source();
+	#endif
+
+	#if DOHELM
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	//double den, ener, pres;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//coord(n_ord[n], i, j, z, CENT, X);
+			//bl_coord(X, &r, &th, &phi);
+			//den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+			//ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			//pres = ener * (gam - 1.0);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
 		  
-		  eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-		  //p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
-	  }
-  }
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+		}
+	}
 
-  for (n = 0; n < n_active; n++) {
-	  fixup(p, n_ord[n]);
-  }
-  bound_prim(p, 1);
-#endif
-
-// #if (GPU_ENABLED)
-//   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
-// #endif
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	bound_prim(p, 1);
+	#endif
 }
 
 //returns the pointer to the first non-comment line in the file fp
@@ -1775,7 +1769,7 @@ char* read_last_line(char *s, size_t size, FILE *fp)
   }
   last_line = last_newline+1;
 
-  if(0 == strlen(last_line)) {
+  if((int) strlen(last_line) == 0) {
     *last_newline = '\0';
     /* and find the last newline character (there must be one, right?) */
     last_newline = strrchr(s, '\n');
@@ -2007,8 +2001,9 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 	res = interpolate_spec_var(r, th, ph, ext, data, VARRHO, &p[RHO]);
 	//note that this is pressure, not internal energy
 	res += interpolate_spec_var(r, th, ph, ext, data, VARP, &p[UU]); p[UU] /= (gam - 1);
-	//not yet ready for it
-	//res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+	#if(DO_YE)
+	res += interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+	#endif
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUR, &p[U1]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUTHETA, &p[U2]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUPHI, &p[U3]);
@@ -2022,48 +2017,49 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 
 int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
-  int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
-  double vx, vy, vz, poten, x, y, z, R;
-  double bl_gcov[NDIM][NDIM];
-  int res;
-  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
-  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
-  if(res) return(res);
-  res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
-  res = interpolate_var(r,th,ph,ext,data,5,&vx);
-  res = interpolate_var(r,th,ph,ext,data,6,&vy);
-  res = interpolate_var(r,th,ph,ext,data,7,&vz);
-  res = interpolate_var(r,th,ph,ext,data,8,&poten);
-  double x1, y1, z1;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  R = sqrt(x*x+y*y);
-  //Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
- // bl_gcov_func(r, th, bl_gcov);
+	int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
+	double vx, vy, vz, poten, x, y, z, R;
+	double bl_gcov[NDIM][NDIM];
+	int res;
+	//vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+	//ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+	res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
+	if(res) return(res);
+	res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
+	res = interpolate_var(r,th,ph,ext,data,5,&vx);
+	res = interpolate_var(r,th,ph,ext,data,6,&vy);
+	res = interpolate_var(r,th,ph,ext,data,7,&vz);
+	res = interpolate_var(r,th,ph,ext,data,8,&poten);
+	
+	double x1, y1, z1;
+	x = r*sin(th)*cos(ph);
+	y = r*sin(th)*sin(ph);
+	z = r*cos(th);
+	R = sqrt(x*x+y*y);
+	//Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
+	// bl_gcov_func(r, th, bl_gcov);
 
-  if (vx*vx + vy*vy + vz*vz>1.0){
-	  poten = vx*vx + vy*vy + vz*vz;
-	  vx /= poten;
-	  vy /= poten;
-	  vz /= poten;
-  }
-  p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
-  p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
-  p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
-  p[UU] = p[UU]*p[RHO];
+	if (vx*vx + vy*vy + vz*vz>1.0){
+		poten = vx*vx + vy*vy + vz*vz;
+		vx /= poten;
+		vy /= poten;
+		vz /= poten;
+	}
+	p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
+	p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
+	p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
+	p[UU] = p[UU]*p[RHO];
 
-//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
- // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
- /// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
+	//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
+	// p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
+	/// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
 
  
-  p[B1] = 0.;
-  p[B2] = 0.;
-  p[B3] = 0.;
+	p[B1] = 0.;
+	p[B2] = 0.;
+	p[B3] = 0.;
 
-  return(0);
+	return(0);
 }
 
 //define compact form for array indexing
@@ -2071,45 +2067,45 @@ int interpolate_prims( double r, double th, double ph, extent ext, double *data,
 
 int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
 {
-  double x, y, z, dx, dy, dz;
-  double i, j, k, di, dj, dk;
-  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
-  double c00, c01, c10, c11, c0, c1, c;
+	double x, y, z, dx, dy, dz;
+	double i, j, k, di, dj, dk;
+	int i0, j0, k0, i1, j1, k1, nx, ny, nz;
+	double c00, c01, c10, c11, c0, c1, c;
 
-  nx = ext.nx;
-  ny = ext.ny;
-  nz = ext.nz;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  dx = (ext.xmax-ext.xmin)/(nx-1);
-  dy = (ext.ymax-ext.ymin)/(ny-1);
-  dz = (ext.zmax-ext.zmin)/(nz-1);
-  i = (x-ext.xmin)/dx;
-  j = (y-ext.ymin)/dy;
-  k = (z-ext.zmin)/dz;
-  i0 = floor(i);
-  j0 = floor(j);
-  k0 = floor(k);
-  i1 = (int)ceil(i);
-  j1 = (int)ceil(j);
-  k1 = (int)ceil(k);
-  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
-    return(1);
-  }
-  di = i - floor(i);
-  dj = j - floor(j);
-  dk = k - floor(k);
-  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
-  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
-  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
-  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
-  c0 = c00*(1-dj) + c10*dj;
-  c1 = c01*(1-dj) + c11*dj;
-  c = c0*(1-dk) + c1*dk;
-  if (isnan(c))  return(1);
-  *val = c;
-  return(0);
+	nx = ext.nx;
+	ny = ext.ny;
+	nz = ext.nz;
+	x = r * sin(th)*cos(ph);
+	y = r * sin(th)*sin(ph);
+	z = r * cos(th);
+	dx = (ext.xmax-ext.xmin)/(nx-1);
+	dy = (ext.ymax-ext.ymin)/(ny-1);
+	dz = (ext.zmax-ext.zmin)/(nz-1);
+	i = (x-ext.xmin)/dx;
+	j = (y-ext.ymin)/dy;
+	k = (z-ext.zmin)/dz;
+	i0 = floor(i);
+	j0 = floor(j);
+	k0 = floor(k);
+	i1 = (int)ceil(i);
+	j1 = (int)ceil(j);
+	k1 = (int)ceil(k);
+	if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
+		return(1);
+	}
+	di = i - floor(i);
+	dj = j - floor(j);
+	dk = k - floor(k);
+	c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
+	c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
+	c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
+	c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
+	c0 = c00*(1-dj) + c10*dj;
+	c1 = c01*(1-dj) + c11*dj;
+	c = c0*(1-dk) + c1*dk;
+	if (isnan(c))  return(1);
+	*val = c;
+	return(0);
   
 }
 //undefine array shortcut to avoid name conflicts
@@ -2186,12 +2182,17 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	if (isnan(c))  return(1);
 	*val = c;
 	return(0);
-
 }
 //undefine array shortcut to avoid name conflicts
 #undef d
 
-void set_mag(void){
+void set_mag(
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	double rhomax_postmerger, double beta_postmerger
+	#else
+	void
+	#endif
+){
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
@@ -2199,6 +2200,11 @@ void set_mag(void){
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;
+
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	rhomax = rhomax_postmerger;
+	beta = beta_postmerger;
+	#endif
 
 	#if(!NSY)
 	double tilt = (TILT_ANGLE) / 180.*M_PI;

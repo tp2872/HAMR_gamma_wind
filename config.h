@@ -19,6 +19,7 @@ Physical Parameters section
 
 #define WHICHPROBLEM TORUS_PROBLEM
 
+#define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
 #define KAPPARADPULSE (10.)
 
@@ -33,7 +34,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.86) //(0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -51,10 +52,11 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
-#define NEUTRINOS_M1 (0)
+#define DOHELM (1)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
-#define NU_DEBUG (0)
+#define NU_SUBCYCLING (0)
+#define NU_DEBUG (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -84,15 +86,15 @@ Physical Parameters section
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
 #if (DOHELM)
 // Danat: otherwise EOS fails, since the densities are too low outside the torus
-    #define RHOMIN (1.e-14)     
-    #define UUMIN (1.e-16)      
+    #define RHOMIN      (1.e-14)     
+    #define UUMIN       (1.e-16)      
     #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT (1.e-20) 
+    #define UUMINLIMIT  (1.e-20) 
 #else
-    #define RHOMIN      (1.e-26)
-    #define UUMIN       (1.e-27)
-    #define RHOMINLIMIT (1.e-40)
-    #define UUMINLIMIT  (1.e-40)
+    #define RHOMIN      (1.e-14) //(1.e-26)
+    #define UUMIN       (1.e-16) //(1.e-27)
+    #define RHOMINLIMIT (1.e-20) //(1.e-40)
+    #define UUMINLIMIT  (1.e-20) //(1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
     #define RHOMIN	(1.e-7)
@@ -355,8 +357,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 #define NU_SPECIES (3)       /* number of species evolved */
 
-#if(NEUTRINOS_M1)
-
 /* number of Nulib table entries for each variable */
 #define NULIB_RHO (50)
 #define NULIB_TEMP (40)
@@ -377,7 +377,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NU_ABSORPTION (2)
 #define NU_SCATTERING (3)
 #define NU_EMISSIVITY_N (4)
-#endif
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
@@ -434,7 +433,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // CGS constants needed for radiation
 #define ARAD (7.5657e-15) /*Radiation density constant*/
 #define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
-#define ME_CGS (9.1094e-28) /*Mass hydrogen molecule*/
+#define ME_CGS (9.1094e-28) /*Mass of electron*/
 #define MMW (1.69) /*Mean molecular weight*/
 #define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
 #define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
@@ -446,6 +445,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
 #if (RADM1_SUBCYCLING)
 #define M_SGRA_SOLAR (0.1) /* Solar masses */
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#define M_SGRA_SOLAR (8.07) /* Solar masses */
 #else
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #endif
@@ -470,8 +471,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
 #else
-//#define MASS_DENSITY_SCALE (0.00001)
 #define MASS_DENSITY_SCALE (1e7)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
@@ -506,8 +508,6 @@ MNEMONICS SECTION
 #define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 #define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
 
-#if (NEUTRINOS_M1)
-
 #define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1)
 #define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
 #define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+2)
@@ -515,8 +515,6 @@ MNEMONICS SECTION
 #define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
 #define NPR_NU (5)
 #define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2    
-
-#endif
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)

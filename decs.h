@@ -45,6 +45,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+// for strrchr() in init.c
+#include <string.h>
 #include <time.h>
 #ifdef __unix__
 #include <sys/time.h>
@@ -1159,7 +1161,13 @@ void coord(int n, int i, int j, int z, int loc, double *X);
 void diag(int call_code);
 void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
-void set_mag(void);
+void set_mag(
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	double rhomax_postmerger, double beta_postmerger
+	#else
+	void
+	#endif
+);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);
 void get_geometry(int n, int i, int j, int z, int loc, struct of_geom *geom);

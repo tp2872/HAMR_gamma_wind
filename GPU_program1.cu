@@ -620,6 +620,7 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table);
 __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* ncon, double ncov0, double* U_old, double* U_new, double Dt, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, int species);
 __device__ void calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double *U_old, double* U_new, int species, double* error_tmp);
+__device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double Ncon0_i, double* Ncon0_f, double Dt, int species);
 
 // Neutrino functions declarations
 __device__ int Rtoprim_nu(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
@@ -637,13 +638,13 @@ __device__ double calc_nu_kappa_scatt(const double* __restrict__ gpu_eos_table, 
 __device__ double calc_nu_number_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
 __device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
 __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity);
-__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity);
+__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity);
 __device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_table, double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
 __device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
 
 // explicit part:
 __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table);
-__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, int species);
+__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, double *source_ye, int species);
 
 // Functions
 __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table) {
@@ -661,26 +662,6 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 		pb_i[k] = pb[k];
 	}
 
-	//Calculate optical depth (neutrinos)
-	struct of_state q;
-	struct of_state_nu q_nu[NU_SPECIES];
-	double mhd_nu0[NDIM];
-	double ener_nu_avg;
-	double eta_avg, kappa_abs, kappa_scatt, tau;
-	double Tnu_over_Tgas;
-	get_state(pb, geom, &q);
-	for (sp = 0; sp < NU_SPECIES; sp++) {
-		get_state_nu(pb, geom, &q_nu[sp], sp);
-		mhd_calc_nu(pb, 0, &q_nu[sp], mhd_nu0, sp);
-		ener_nu_avg = -((mhd_nu0[0] * q.ucon[0] + mhd_nu0[1] * q.ucon[1] + mhd_nu0[2] * q.ucon[2] + mhd_nu0[3] * q.ucon[3])) / (pb[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
-		eta_avg = calc_nu_kappa_emiss(gpu_nulib_table, pb, sp);
-		kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg, sp);
-		kappa_scatt = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pb, ener_nu_avg, sp);
-		tau = (kappa_abs + kappa_scatt) * cell_size;
-		calc_neutrino_temperature(gpu_eos_table, pb, ener_nu_avg, &Tnu_over_Tgas, sp);
-
-		//if (pb[RHO]*MASS_DENSITY_SCALE > pow(10., nulib_dlo) && pb[UU] > pow(10., nulib_tlo)) printf("\t[sp=%d] Explicit step, rho,T,ye=%e %e %e, <e>=%e, Ncon0=%e, T_nu/T_g=%e, eta,kA,kS = %e %e, %e \t[tau=%e]\n", sp, pb[RHO]*MASS_DENSITY_SCALE, pb[UU]*k2mev, pb[YE], ener_nu_avg, (pb[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]), Tnu_over_Tgas, eta_avg, kappa_abs, kappa_scatt, tau);
-	}
 
 	*pflag = Utoprim_2d(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC
 		#if (DOHELM)
@@ -699,8 +680,31 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 
 	*pflag_nu = Rtoprim_nu(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, y_max, TYPE2);
 
-	if (*pflag || *pflag_nu) {
-		//printf("\nFailed MHD inversion! Pre-explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas);
+
+	//Calculate optical depth (neutrinos)
+	struct of_state q;
+	struct of_state_nu q_nu[NU_SPECIES];
+	double mhd_nu0[NDIM];
+	double ener_nu_avg;
+	double eta_avg, kappa_abs, kappa_scatt, tau;
+	double Tnu_over_Tgas;
+	get_state(pb_i, geom, &q);
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		get_state_nu(pb_i, geom, &q_nu[sp], sp);
+		mhd_calc_nu(pb_i, 0, &q_nu[sp], mhd_nu0, sp);
+		ener_nu_avg = -((mhd_nu0[0] * q.ucon[0] + mhd_nu0[1] * q.ucon[1] + mhd_nu0[2] * q.ucon[2] + mhd_nu0[3] * q.ucon[3])) / (pb_i[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
+		eta_avg = calc_nu_kappa_emiss(gpu_nulib_table, pb_i, sp);
+		kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pb_i, ener_nu_avg, sp);
+		kappa_scatt = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pb_i, ener_nu_avg, sp);
+		tau = (kappa_abs + kappa_scatt) * cell_size;
+		calc_neutrino_temperature(gpu_eos_table, pb_i, ener_nu_avg, &Tnu_over_Tgas, sp);
+
+		//if ((pb_i[RHO]*MASS_DENSITY_SCALE > pow(10., nulib_dlo) && pb_i[UU] > pow(10., nulib_tlo)) && tau > 1.) printf("\t[sp=%d, dt=%e] Explicit step, rho,T,ye=%e %e %e, <e>=%e, Ncon0=%e, T_nu/T_g=%e, eta,kA,kS = %e %e, %e \t[tau=%e]\n", sp, Dt, pb_i[RHO], pb_i[UU], pb_i[YE], ener_nu_avg, (pb_i[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]), Tnu_over_Tgas, eta_avg, kappa_abs, kappa_scatt, tau);
+	}
+	if ((*pflag || *pflag_nu) && tau > 0.0) {
+		#if (NU_DEBUG)
+		printf("\nFailed MHD inversion! Pre-neutrino step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas);
+		#endif
 		return(1);
 	}
 
@@ -725,7 +729,7 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 
 	*pflag_nu = Rtoprim_nu(U_ft, geom->gcov, geom->gcon, geom->g, pb_i, y_max, TYPE2);
 
-	if (*pflag || *pflag_nu) {
+	if ((*pflag || *pflag_nu) && tau > 0.0) {
 		#if(NU_DEBUG)
 		printf("\nFailed MHD inversion! Post-explicit step, [flags=%d %d] rho,T,ye=[%e %e %e], tau=%e \t%e %e\n", *pflag, *pflag_nu, pb_i[RHO], pb_i[UU], pb_i[YE], tau, ener_nu_avg, Tnu_over_Tgas);
 		#endif
@@ -753,7 +757,6 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	struct of_state q;
 	struct of_state_nu q_nu[NU_SPECIES];
 
-	double errE[5], errF[5], error_subcycling[5];
 	double U_1[NPR], U_2[NPR];
 	// Set temporary variables to their initial values
 	for (k = 0; k < NPR; k++) {
@@ -769,7 +772,11 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 		U_2[k] = U_i[k];
 	}
 
-	//Get primitive variables belonging to U_i
+	//111.
+	if (pb_old[0] > 10. || pb_old[1] > 1e15)
+		printf("\n\t[1] too large = %e %e\n", pb_old[0], pb_old[1]);
+
+	//Get primitive variables belonging to U_i --> pb_old
 	flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2
 		#if (DOHELM)
 		, gpu_eos_table
@@ -796,15 +803,18 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	// If the MHD inversion didn't fail, continue:
 	// Get NU primitive variables
 	Rtoprim_nu(U_i, geom->gcov, geom->gcon, geom->g, pb_old, y_max, TYPE2);
-
+	
+	//111.
+	if (pb_old[0] > 10. || pb_old[1] > 1e15)
+		printf("\n\t[2] too large = %e %e\n", pb_old[0], pb_old[1]);
 
 	// Compute n_0, n^mu
 	double ncon[NDIM], ncov0;
-	ncon[0] = sqrt(-geom->gcon[0]);
-	ncon[1] = -geom->gcon[1] / ncon[0];
-	ncon[2] = -geom->gcon[2] / ncon[0];
-	ncon[3] = -geom->gcon[3] / ncon[0];
-	ncov0 = -1. / ncon[0];
+	ncov0 = -sqrt(-1. / geom->gcon[0]);
+	ncon[0] = geom->gcon[0] * ncov0;
+	ncon[1] = geom->gcon[1] * ncov0;
+	ncon[2] = geom->gcon[2] * ncov0;
+	ncon[3] = geom->gcon[3] * ncov0;
 
 	// Do a single implicit step for now:
 	/*
@@ -814,7 +824,8 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 
 	// Update conserved variables given the NU source term
 	// -- update of the cons. variables happens inside this function:
-	int iter, iter_max=20;
+	#if (NU_SUBCYCLING)
+	int iter, iter_max=20, is_finished = 0, flag1;
 	double factor = 1.0, remainder = 1.0;
 	double error, error_tmp, error_max = 10.0, error_const = 0.9;
 	for (iter = 0; iter < iter_max; iter++) {
@@ -834,6 +845,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 
 			error = MY_MAX(error, error_tmp);
 		}
+		//printf("\n\t error=%e", error);
 
 		// after we finished the timestep for all species and estimated the max. error, check whether the error is within bounds
 		if (error >= error_max) {
@@ -844,24 +856,27 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 			#endif
 		}
 		else {
+			//printf("\n\t 123 %e", error);
+
+			U_new[UU] = U_old[UU];
+			U_new[U1] = U_old[U1];
+			U_new[U2] = U_old[U2];
+			U_new[U3] = U_old[U3];
+
 			for (sp = 0; sp < NU_SPECIES; sp++) {
 				// UU --> U3 source terms
-				U_new[UU] = U_old[UU] - (U_new[index_nu(UU_NU, sp)] - U_old[index_nu(UU_NU, sp)]);
-				U_new[U1] = U_old[U1] - (U_new[index_nu(U1_NU, sp)] - U_old[index_nu(U1_NU, sp)]);
-				U_new[U2] = U_old[U2] - (U_new[index_nu(U2_NU, sp)] - U_old[index_nu(U2_NU, sp)]);
-				U_new[U3] = U_old[U3] - (U_new[index_nu(U3_NU, sp)] - U_old[index_nu(U3_NU, sp)]);
-				// YE source term
-				if (sp == 0)
-					U_new[YE] = U_old[YE] - (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]);
-				else if (sp == 1)
-					U_new[YE] = U_old[YE] + (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]);
-				else
-					U_new[YE] = U_old[YE];
+				U_new[UU] -= (U_new[index_nu(UU_NU, sp)] - U_old[index_nu(UU_NU, sp)]);
+				U_new[U1] -= (U_new[index_nu(U1_NU, sp)] - U_old[index_nu(U1_NU, sp)]);
+				U_new[U2] -= (U_new[index_nu(U2_NU, sp)] - U_old[index_nu(U2_NU, sp)]);
+				U_new[U3] -= (U_new[index_nu(U3_NU, sp)] - U_old[index_nu(U3_NU, sp)]);
 			}
 
-			#if(DOKTOT)
+			// 222.
+			if (fabs((U_new[UU] - U_old[UU]) / U_old[UU]) > 1e-3) printf("\n\t (rho,t,ye=%e %e %e) UU change ratio: %e [%e %e]", pb_old[RHO], pb_old[UU], pb_old[YE], (U_new[UU] - U_old[UU]) / U_old[UU], U_old[UU], U_new[UU]);
+
 			get_state(pb_old, geom, &q);
-			double Tg = ph[UU] * BOLTZ_CGS * MASS_DENSITY_SCALE / (1.0 * MH_CGS * ENERGY_DENSITY_SCALE);
+			#if(DOKTOT)
+			double Tg = pb_old[UU] * BOLTZ_CGS * MASS_DENSITY_SCALE / (1.0 * MH_CGS * ENERGY_DENSITY_SCALE);
 			U_new[KTOT] = U_old[KTOT] - 1. / Tg * ((U_new[UU] - U_old[UU]) * q.ucon[0] + (U_new[U1] - U_old[U1]) * q.ucon[1] + (U_new[U2] - U_old[U2]) * q.ucon[2] + (U_new[U3] - U_old[U3]) * q.ucon[3]);
 			#endif
 
@@ -872,6 +887,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1, gpu_eos_table);
 			}
 			#endif
+			flag1 = flag;
 			if (flag) {
 				#if(NU_DEBUG)
 				printf("\n\t In the middle-failed MHD inversion! Semi-implicit step, [flag=%d] rho=%e\n", flag, pb[RHO]);
@@ -880,9 +896,28 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 			}
 			Rtoprim_nu(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
 
+			U_new[YE] = U_old[YE];
+			/* compute the number density evolution */
+			for (sp = 0; sp < NU_SPECIES; sp++) {
+				implicit_evolve_neutrino_num(gpu_eos_table, gpu_nulib_table, pb_new, geom, q.ucon, q.ucov, U_old[index_nu(NUMBER_NU, sp)], &(U_new[index_nu(NUMBER_NU, sp)]), factor * Dt, sp);
+				// YE source term
+				if (sp == 0)
+					U_new[YE] -= (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]) * MP_CGS / MASS_DENSITY_SCALE;
+				else if (sp == 1)
+					U_new[YE] += (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]) * MP_CGS / MASS_DENSITY_SCALE;
+				else
+					U_new[YE] += 0.0;
+
+			}
+			// compute Ye primitive var
+			pb_new[YE] = U_new[YE] / U_new[RHO];
+
+			if (pb_new[0] > 10. || pb_new[1] > 1e15)
+				printf("\n\t[3] too large = %e %e\n", pb_new[0], pb_new[1]);
+
 			// increase the next timestep; save the results
 			remainder -= factor;
-			factor *= sqrt(error_const / MY_MAX(0.1, error));
+			factor *= sqrt(error_const / MY_MAX(0.3, error));
 			if (iter > 0) {
 				#if(NU_DEBUG)
 				printf("\n\t %d: error exceeded error_max (%e); factor: %e remainder: %2.4f \t(%e %e %e)\n", iter, error, factor, remainder, pb_old[RHO], pb_old[UU], pb_old[YE]);
@@ -899,10 +934,76 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 		if (factor > remainder) factor = remainder;
 
 		if (remainder < 1e-4) {
+			is_finished = 1;
 			break;
 		}
 	}
+
+	#else
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		// One full dt timestep
+		source_linearized_nu(pb_old, geom, &ncon[0], ncov0, U_old, U_new, 1.0 * Dt, gpu_eos_table, gpu_nulib_table, sp);
+	}
+
+	U_new[UU] = U_old[UU];
+	U_new[U1] = U_old[U1];
+	U_new[U2] = U_old[U2];
+	U_new[U3] = U_old[U3];
+
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		// UU --> U3 source terms
+		U_new[UU] -= (U_new[index_nu(UU_NU, sp)] - U_old[index_nu(UU_NU, sp)]);
+		U_new[U1] -= (U_new[index_nu(U1_NU, sp)] - U_old[index_nu(U1_NU, sp)]);
+		U_new[U2] -= (U_new[index_nu(U2_NU, sp)] - U_old[index_nu(U2_NU, sp)]);
+		U_new[U3] -= (U_new[index_nu(U3_NU, sp)] - U_old[index_nu(U3_NU, sp)]);
+	}
+
+	// 222.
+	if (fabs((U_new[UU] - U_old[UU]) / U_old[UU]) > 1e-3) printf("\n\t (rho,t,ye=%e %e %e) UU change ratio: %e [%e %e]", pb_old[RHO], pb_old[UU], pb_old[YE], (U_new[UU] - U_old[UU]) / U_old[UU], U_old[UU], U_new[UU]);
+
+	get_state(pb_old, geom, &q);
+	#if(DOKTOT)
+	double Tg = pb_old[UU] * BOLTZ_CGS * MASS_DENSITY_SCALE / (1.0 * MH_CGS * ENERGY_DENSITY_SCALE);
+	U_new[KTOT] = U_old[KTOT] - 1. / Tg * ((U_new[UU] - U_old[UU]) * q.ucon[0] + (U_new[U1] - U_old[U1]) * q.ucon[1] + (U_new[U2] - U_old[U2]) * q.ucon[2] + (U_new[U3] - U_old[U3]) * q.ucon[3]);
+	#endif
+
+	// first, invert U2P
+	flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, gpu_eos_table);
+	#if(DO_FONT_FIX)
+	if (flag) {
+		flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1, gpu_eos_table);
+	}
+	#endif
+	int flag1 = flag;
+	if (flag) {
+		#if(NU_DEBUG)
+		printf("\n\t In the middle-failed MHD inversion! Semi-implicit step, [flag=%d] rho=%e\n", flag, pb[RHO]);
+		#endif
+		return (1);
+	}
+	Rtoprim_nu(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+
+	/* compute the number density evolution */
+	U_new[YE] = U_old[YE];
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		implicit_evolve_neutrino_num(gpu_eos_table, gpu_nulib_table, pb_new, geom, q.ucon, q.ucov, U_old[index_nu(NUMBER_NU, sp)], &(U_new[index_nu(NUMBER_NU, sp)]), 1.0 * Dt, sp);
+		// YE source term
+		if (sp == 0)
+			U_new[YE] -= (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]) * MP_CGS / MASS_DENSITY_SCALE;
+		else if (sp == 1)
+			U_new[YE] += (U_new[index_nu(NUMBER_NU, sp)] - U_old[index_nu(NUMBER_NU, sp)]) * MP_CGS / MASS_DENSITY_SCALE;
+		else
+			U_new[YE] += 0.0;
 	
+	}
+	// compute Ye primitive var
+	pb_new[YE] = U_new[YE] / U_new[RHO];
+
+	if (pb_new[0] > 10. || pb_new[1] > 1e15)
+		printf("\n\t[3] too large = %e %e\n", pb_new[0], pb_new[1]);
+
+	#endif // end of #if (NU_SUBCYCLING)
+
 	// Compute new MHD primitive variables
 	flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2
 		#if (DOHELM)
@@ -922,7 +1023,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	// In case MHD inversion fails, terminate with this error message
 	if (flag) {
 		#if(NU_DEBUG)
-		printf("\n\t Post-failed MHD inversion! Semi-implicit step, [flag=%d] rho=%e\n", flag, pb[RHO]);
+		printf("\n\t Post-failed MHD inversion! Semi-implicit step, [flag=%d %d] rho=%e\n", flag, flag1, pb[RHO]);
 		#endif
 		return (1);
 	}
@@ -930,7 +1031,12 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	// Compute new NU primitive variables
 	Rtoprim_nu(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
 
+	//111.
+	if (pb_new[0] > 10. || pb_new[1] > 1e15)
+		printf("\n\t[4] too large = %e %e\n", pb_new[0], pb_new[1]);
+
 	//Recompute T_t^mu for consistency
+	U_new[RHO] = U_i[RHO];
 	get_state(pb_new, geom, &q);
 	mhd_calc(pb_new, 0, &q, &U_new[UU], gpu_eos_table);
 	for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
@@ -940,11 +1046,9 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	double xentr;
 	eos_mode_rhotemp_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], pb_new[YE], &xentr);
 	U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
-	//#if(FULL_ENTROPY)
-	//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-	//#else					 
-	//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-	//#endif
+
+	// Recompute Ye
+	U_new[YE] = geom->g * pb_new[YE] * q.ucon[0];
 
 	//Recompute R_t^mu for consistency
 	for (sp = 0; sp < NU_SPECIES; sp++) {
@@ -1009,7 +1113,6 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
 	// Set the opacities and the emissivity given (rho, T, Ye)
 	double kappa_abs, eta, kappa_es, lambda;
 	double ener_nu_avg = -((mhd_nu[0][0] * ucon[0] + mhd_nu[0][1] * ucon[1] + mhd_nu[0][2] * ucon[2] + mhd_nu[0][3] * ucon[3])) / (ph[index_nu(NUMBER_NU, species)] * q_nu.ucon[0]);
-	double T_nu_over_T_gas;
 
 	kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, ph, ener_nu_avg, species);
 	kappa_es = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, ph, ener_nu_avg, species);
@@ -1036,7 +1139,7 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
 	implicit_A[3][0] = -Dt * ((kappa_abs + kappa_es) * P_dot_ucov[3] + kappa_es * ucov[3] * (W * W + Puu));
 
 	for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++)
-		implicit_A[i][j] = delta(i, j) * (1. + dt * W * (kappa_abs + kappa_es)) + dt * kappa_es * 2. * W * ucov[i] * (ucon[j] - W * ncon[j]);
+		implicit_A[i][j] = delta(i, j) * (1. + Dt * W * (kappa_abs + kappa_es)) + dt * kappa_es * 2. * W * ucov[i] * (ucon[j] - W * ncon[j]);
 
 	// Invert implicit_A matrix
 	int flag = invert_matrix_4D(implicit_A, implicit_A_inv);
@@ -1050,26 +1153,7 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
 	for (i = 0; i < NDIM; i++)
 		U_f[i] = implicit_A_inv[i][0] * implicit_RHS[0] + implicit_A_inv[i][1] * implicit_RHS[1] + implicit_A_inv[i][2] * implicit_RHS[2] + implicit_A_inv[i][3] * implicit_RHS[3];
 
-	if (U_f[0] <= 0.0) {
-		//printf("\n\t Implicit step: energy in inertial frame is negative: %e --> %e\n", U_i[0], U_f[0]);
-	}
-	// Update for neutrino number density term
-	/* step 1: compute average neutrino energy */
-	ener_nu_avg = U_f[0];
-	for (i = 1; i < NDIM; i++) ener_nu_avg -= U_f[i] * (ucon[i] / W - ncon[i]);
-	ener_nu_avg *= W / U_old[index_nu(NUMBER_NU, species)];
-
-	/* step 2: compute energy density in the fluid frame */
-	double J = U_f[0] * (W * W + Puu);
-	for (i = 1; i < NDIM; i++) J -= 2 * W * W * U_f[i] * (ucon[i] / W - ncon[i]);
-	J *= fabs(ncov0) / (geom->g);
-
-	/* step 3: compute the source term gdet*C_{(0)} */
-	double nu_num_source;
-	calc_source_numdens_nu(gpu_eos_table, gpu_nulib_table, ph, J, ener_nu_avg, &nu_num_source, species);
-
-	/* step 4: add the source term */
-	U_new[index_nu(NUMBER_NU, species)] = U_old[index_nu(NUMBER_NU, species)] + geom->g * nu_num_source * dt;
+	//for (i = 0; i < NDIM; i++) U_f[i] = U_i[i];
 
 	// Convert the conserved variables from SPEC (U_f) to HAMR (U_new)
 	U_new[index_nu(UU_NU, species)] = ncov0 * (U_f[0] + ncon[1] * U_f[1] + ncon[2] * U_f[2] + ncon[3] * U_f[3]);
@@ -1077,29 +1161,123 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
 	U_new[index_nu(U2_NU, species)] = U_f[2];
 	U_new[index_nu(U3_NU, species)] = U_f[3];
 
-	// U_new[UU] = U_old[UU] - (U_new[index_nu(UU_NU, species)] - U_old[index_nu(UU_NU, species)]);
-	// U_new[U1] = U_old[U1] - (U_new[index_nu(U1_NU, species)] - U_old[index_nu(U1_NU, species)]);
-	// U_new[U2] = U_old[U2] - (U_new[index_nu(U2_NU, species)] - U_old[index_nu(U2_NU, species)]);
-	// U_new[U3] = U_old[U3] - (U_new[index_nu(U3_NU, species)] - U_old[index_nu(U3_NU, species)]);
-
-
-	// DIMARK: what the entropy source term is in the presence of neutrinos?
-	// Add DOKTOT
-	#if(DOKTOT)
-	//double Tg;
-	//Tg = ph[UU] * BOLTZ_CGS * MASS_DENSITY_SCALE / (1.0 * MH_CGS * ENERGY_DENSITY_SCALE);
-	//#if(FULL_ENTROPY)
-	//U_new[KTOT] = U_old[KTOT]-1. / Tg * ((U_new[UU]-U_old[UU]) * ucon[0] + (U_new[U1]-U_old[U1]) * ucon[1] + (U_new[U2]-U_old[U2]) * ucon[2] + (U_new[U3]-U_old[U3]) * ucon[3]);
-	//#else
-	//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to getevolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-	//dU[KTOT] = -dK_dS / Tg * (dU[UU] * ucon[0] + dU[U1] * ucon[1] + dU[U2] * ucon[2] + dU[U3] * ucon[3]);
-	//#endif
+	#if (NU_DEBUG)
+	//if (ph[RHO] > 1e-3) printf("\n\t222. [rho=%e] ratio of energy density change: %e\n", ph[RHO], (U_new[index_nu(UU_NU, species)] - U_old[index_nu(UU_NU, species)]) / (U_old[index_nu(UU_NU, species)]));
 	#endif
-	
+	//// Update for neutrino number density term
+	///* step 1: compute average neutrino energy */
+	//ener_nu_avg = U_f[0];
+	//for (i = 1; i < NDIM; i++) ener_nu_avg -= U_f[i] * (ucon[i] / W - ncon[i]);
+	//ener_nu_avg *= W / U_old[index_nu(NUMBER_NU, species)];
+
+	///* step 2: compute energy density in the fluid frame */
+	//double J = U_f[0] * (W * W + Puu);
+	//for (i = 1; i < NDIM; i++) J -= 2 * W * W * U_f[i] * (ucon[i] / W - ncon[i]);
+	//J *= fabs(ncov0) / (geom->g);
+
+	///* step 3: compute the source term gdet*C_{(0)} */
+	//double nu_num_source;
+	//calc_source_numdens_nu(gpu_eos_table, gpu_nulib_table, ph, J, ener_nu_avg, &nu_num_source, species);
+
+	///* step 4: add the source term */
+	//U_new[index_nu(NUMBER_NU, species)] = U_old[index_nu(NUMBER_NU, species)] + geom->g * nu_num_source * dt;
 
 	return;
 }
 
+
+__device__ void calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double* U_old, double* U_new, int species, double* error_tmp) {
+	/* convert conserved vars from HAMR to SPEC */
+	double U_1_spec[NPR_NU - 1], U_2_spec[NPR_NU - 1];
+	double alphaRel = 1e-2;
+	U_1_spec[0] = -(ncon[0] * U_1[index_nu(UU_NU, species)] + ncon[1] * U_1[index_nu(U1_NU, species)] + ncon[2] * U_1[index_nu(U2_NU, species)] + ncon[3] * U_1[index_nu(U3_NU, species)]);
+	U_1_spec[1] = U_1[index_nu(U1_NU, species)];
+	U_1_spec[2] = U_1[index_nu(U2_NU, species)];
+	U_1_spec[3] = U_1[index_nu(U3_NU, species)];
+
+	U_2_spec[0] = -(ncon[0] * U_2[index_nu(UU_NU, species)] + ncon[1] * U_2[index_nu(U1_NU, species)] + ncon[2] * U_2[index_nu(U2_NU, species)] + ncon[3] * U_2[index_nu(U3_NU, species)]);
+	U_2_spec[1] = U_2[index_nu(U1_NU, species)];
+	U_2_spec[2] = U_2[index_nu(U2_NU, species)];
+	U_2_spec[3] = U_2[index_nu(U3_NU, species)];
+
+	double errE, errF;
+	errE = fabs(U_2_spec[0] - U_1_spec[0]) / fabs(2 * U_2_spec[0] - U_1_spec[0]) / alphaRel;
+	errF =
+		fabs(U_2_spec[1] - U_1_spec[1]) * (
+			(gcon[4] + ncon[1] * ncon[1]) * fabs(U_2_spec[1] - U_1_spec[1]) +
+			(gcon[5] + ncon[1] * ncon[2]) * fabs(U_2_spec[2] - U_1_spec[2]) +
+			(gcon[6] + ncon[1] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3])) +
+		fabs(U_2_spec[2] - U_1_spec[2]) * (
+			(gcon[7] + ncon[2] * ncon[2]) * fabs(U_2_spec[2] - U_1_spec[2]) +
+			(gcon[8] + ncon[2] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3])) +
+		fabs(U_2_spec[3] - U_1_spec[3]) * (
+			(gcon[9] + ncon[3] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3]));
+	errF /= (alphaRel * fabs(2 * U_2_spec[0] - U_1_spec[0]));
+
+	*error_tmp = MY_MAX(errE, errF);
+
+	// Check if energy density is negative:
+	//if (U_2_spec[0] < 0.0) printf("\n\t yo, energy is < 0, U2:%e", U_2_spec[0]);
+	// Check if fluxes violate causality:
+	double Fsq = 
+		U_2_spec[1] * (
+			(gcon[4] + ncon[1] * ncon[1]) * U_2_spec[1] +
+			(gcon[5] + ncon[1] * ncon[2]) * U_2_spec[2] +
+			(gcon[6] + ncon[1] * ncon[3]) * U_2_spec[3]) +
+		U_2_spec[2] * (
+			(gcon[7] + ncon[2] * ncon[2]) * U_2_spec[2] +
+			(gcon[8] + ncon[2] * ncon[3]) * U_2_spec[3]) +
+		U_2_spec[3] * (
+			(gcon[9] + ncon[3] * ncon[3]) * U_2_spec[3]);
+	//if (Fsq > U_2_spec[0] * U_2_spec[0]) printf("\n\t yo, fluxes against causality, U2:%e", U_2_spec[0]);
+
+	// Update U_new
+	U_new[index_nu(UU_NU, species)] =
+		2 * ncov0 * (U_2_spec[0] + ncon[1] * U_2_spec[1] + ncon[2] * U_2_spec[2] + ncon[3] * U_2_spec[3]) -
+		ncov0 * (U_1_spec[0] + ncon[1] * U_1_spec[1] + ncon[2] * U_1_spec[2] + ncon[3] * U_1_spec[3]);
+	U_new[index_nu(U1_NU, species)] = 2 * U_2_spec[1] - U_1_spec[1];
+	U_new[index_nu(U2_NU, species)] = 2 * U_2_spec[2] - U_1_spec[2];
+	U_new[index_nu(U3_NU, species)] = 2 * U_2_spec[3] - U_1_spec[3];
+	//U_new[index_nu(UU_NU, species)] = U_2[index_nu(UU_NU, species)];
+	//U_new[index_nu(U1_NU, species)] = U_2[index_nu(U1_NU, species)];
+	//U_new[index_nu(U2_NU, species)] = U_2[index_nu(U2_NU, species)];
+	//U_new[index_nu(U3_NU, species)] = U_2[index_nu(U3_NU, species)];
+}
+
+
+__device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double Ncon0_i, double* Ncon0_f, double Dt, int species) {
+	struct of_state_nu q_nu;
+	double mhd_nu[NDIM][NDIM];
+
+	get_state_nu(ph, geom, &q_nu, species);
+	mhd_calc_nu(ph, 0, &q_nu, mhd_nu[0], species);
+	mhd_calc_nu(ph, 1, &q_nu, mhd_nu[1], species);
+	mhd_calc_nu(ph, 2, &q_nu, mhd_nu[2], species);
+	mhd_calc_nu(ph, 3, &q_nu, mhd_nu[3], species);
+
+	double R_dot_ucon[NDIM];
+	for (int i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_nu[i][0] * ucon[0] + mhd_nu[i][1] * ucon[1] + mhd_nu[i][2] * ucon[2] + mhd_nu[i][3] * ucon[3]);
+
+	// R_dot_ucon[0] = -(J u^t + H^t)
+	// Note that Ju^t+H^t is based on updated cons. variables
+	double ener_nu_avg = -R_dot_ucon[0] / (ph[index_nu(NUMBER_NU, species)] * q_nu.ucon[0]);
+
+	// Energy density in the fluid frame
+	double J = (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]);
+
+	// Get the number emissivity and absorption opacity
+	double eta_N = calc_nu_number_emiss(gpu_nulib_table, ph, species);
+	double kappa_N = calc_nu_number_abs(gpu_eos_table, gpu_nulib_table, ph, ener_nu_avg, species);
+
+	//*Ncon0_f = (geom->g * eta_N * Dt + Ncon0_i) / (1. - (kappa_N * Dt * J) / (R_dot_ucon[0]));
+	*Ncon0_f = Ncon0_i + geom->g * Dt * (eta_N - (kappa_N * J) / (ener_nu_avg));
+
+	// Compute the number density primitive variable
+	ph[index_nu(NUMBER_NU, species)] = (*Ncon0_f) / (geom->g * q_nu.ucon[0]);
+}
+
+
+// For explicit step:
 
 __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table)
 {
@@ -1123,7 +1301,7 @@ __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, const  d
 
 		double Ncon0 = ph[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0];
 
-		calc_Gcon_nu(ph, Gcon, ucon, ucov, mhd_nu, Ncon0, gpu_eos_table, gpu_nulib_table, &(dU[index_nu(NUMBER_NU, sp)]), sp);
+		calc_Gcon_nu(ph, Gcon, ucon, ucov, mhd_nu, Ncon0, gpu_eos_table, gpu_nulib_table, &(dU[index_nu(NUMBER_NU, sp)]), &(dU[YE]), sp);
 		lower(Gcon, geom->gcov, Gcov);
 
 		dU[UU] += Gcov[0];
@@ -1155,7 +1333,7 @@ __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, const  d
 }
 
 
-__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, int species)
+__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, double *source_ye, int species)
 {
 	int i;
 	double R_dot_ucon[NDIM];
@@ -1183,6 +1361,14 @@ __device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], d
 
 	// number density source term
 	calc_source_numdens_nu(gpu_eos_table, gpu_nulib_table, ph, J, ener_nu_avg, source_number_nu, species);
+
+	if (species == 0)
+		*source_ye += -(*source_number_nu) * MP_CGS / MASS_DENSITY_SCALE;
+	else if (species == 1)
+		*source_ye += (*source_number_nu) * MP_CGS / MASS_DENSITY_SCALE;
+	else
+		*source_ye += 0.0;
+
 }
 
 // Source term for neutrino number density equation
@@ -1195,45 +1381,6 @@ __device__ void calc_source_numdens_nu(const double* __restrict__ gpu_eos_table,
 
 	*source_nu_num = (eta_N - kappa_N * J); // / ener_nu_avg
 }
-
-__device__ void calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double *U_old, double* U_new, int species, double* error_tmp) {
-	/* convert conserved vars from HAMR to SPEC */
-	double U_1_spec[NPR_NU-1], U_2_spec[NPR_NU-1];
-	double alphaRel = 1e-2;
-	U_1_spec[0] = -(ncon[0] * U_1[index_nu(UU_NU, species)] + ncon[1] * U_1[index_nu(U1_NU, species)] + ncon[2] * U_1[index_nu(U2_NU, species)] + ncon[3] * U_1[index_nu(U3_NU, species)]);
-	U_1_spec[1] = U_1[index_nu(U1_NU, species)];
-	U_1_spec[2] = U_1[index_nu(U2_NU, species)];
-	U_1_spec[3] = U_1[index_nu(U3_NU, species)];	
-	
-	U_2_spec[0] = -(ncon[0] * U_2[index_nu(UU_NU, species)] + ncon[1] * U_2[index_nu(U1_NU, species)] + ncon[2] * U_2[index_nu(U2_NU, species)] + ncon[3] * U_2[index_nu(U3_NU, species)]);
-	U_2_spec[1] = U_2[index_nu(U1_NU, species)];
-	U_2_spec[2] = U_2[index_nu(U2_NU, species)];
-	U_2_spec[3] = U_2[index_nu(U3_NU, species)];
-
-	double errE, errF;
-	errE = fabs(U_2_spec[0] - U_1_spec[0]) / fabs(2 * U_2_spec[0] - U_1_spec[0]) / alphaRel;
-	errF =
-		fabs(U_2_spec[1] - U_1_spec[1]) * (
-			(gcon[4] + ncon[1] * ncon[1]) * fabs(U_2_spec[1] - U_1_spec[1]) +
-			(gcon[5] + ncon[1] * ncon[2]) * fabs(U_2_spec[2] - U_1_spec[2]) +
-			(gcon[6] + ncon[1] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3])) +
-		fabs(U_2_spec[2] - U_1_spec[2]) * (
-			(gcon[7] + ncon[2] * ncon[2]) * fabs(U_2_spec[2] - U_1_spec[2]) +
-			(gcon[8] + ncon[2] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3])) +
-		fabs(U_2_spec[3] - U_1_spec[3]) * (
-			(gcon[9] + ncon[3] * ncon[3]) * fabs(U_2_spec[3] - U_1_spec[3]));
-	errF /= (alphaRel * fabs(2 * U_2_spec[0] - U_1_spec[0]));
-
-	*error_tmp = errE;// , errF);
-
-	// Update U_new
-	U_new[index_nu(UU_NU, species)] = 
-		2 * ncov0 * (U_2_spec[0] + ncon[1] * U_2_spec[1] + ncon[2] * U_2_spec[2] + ncon[3] * U_2_spec[3]) - 
-			ncov0 * (U_1_spec[0] + ncon[1] * U_1_spec[1] + ncon[2] * U_1_spec[2] + ncon[3] * U_1_spec[3]);
-	for (int k = 1; k < NPR_NU - 1; k++) U_new[index_nu(k+UU_NU, species)] = 2 * U_2_spec[k] - U_1_spec[k];
-}
-
-
 
 #endif
 
@@ -6485,11 +6632,11 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+		#if (DO_YE)
+		prim[YE] = U[YE] / U[RHO];
+		#endif
 	}
 
-	#if (DO_YE)
-	prim[YE] = U[YE] / U[RHO];
-	#endif
 
 	return(ret);
 }
@@ -6965,11 +7112,10 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
 		prim[ENTRE] = S[0];
 		prim[ENTRI] = S[1];
 		#endif
+		#if (DO_YE)
+		prim[YE] = U[YE] / U[RHO];
+		#endif
 	}
-
-	#if (DO_YE)
-	prim[YE] = U[YE] / U[RHO];
-	#endif
 
 	return(ret);
 }
@@ -7103,7 +7249,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
         , &prim[UU]
         #endif
 		#if (DO_YE)
-		, prim[YE]
+		, ye
 		#endif
 		#if(TWO_T)
 		, S
@@ -7588,8 +7734,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#endif
 
 	// Floor on neutrino energy density
-	double Tnu;
 	#if(NEUTRINOS_M1)
+	double Tnu;
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
 		if (pf[index_nu(UU_NU, sp)] < pow(10., -30.)) {
 			pf[index_nu(UU_NU, sp)] = pow(10., -30.);
@@ -10000,6 +10146,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		if (local_id == 0){
 			dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
+			//dtij[group_id] = 0.0005;
 		}
 	}
 }
@@ -14973,9 +15120,7 @@ __device__ int Rtoprim_nu(double* U, double gcov[10], double gcon[10], double gd
 		ret = Rtoprim_nu_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim);
 
 		//Transform new primitive variables back if there was no problem
-		for (i = 0; i < NPR_NU; i++) {
-			prim[i + index_nu(UU_NU, sp)] = prim_tmp[i];
-		}
+		for (i = 0; i < NPR_NU; i++) prim[i + index_nu(UU_NU, sp)] = prim_tmp[i];
 	}
 
 	return(ret);
@@ -15009,7 +15154,7 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 
 	// Get Ebar and p_rad as usual
 	pressure = -Qdotn / (4. * gammasq - 1.);
-	prim[0] = pressure * 3.; // Erad = 3*p_rad
+	prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad
 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
@@ -15179,11 +15324,11 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 		Acon_js = geom->gcon[9];
 	}
 
-	/* find radiation wave speed at 1./3. speed of light (==isotropic in radiation frame) */
-	crad2 = 1.0 / 3.0;
 
-	/* now require that speed of wave measured by observer q->ucon is crad2 */
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
+		/* find radiation wave speed at 1./3. speed of light (==isotropic in radiation frame) */
+		crad2 = 1.0 / 3.0;
+		/* now require that speed of wave measured by observer q->ucon is crad2 */
 		Asq = Acon_js;
 		Bsq = geom->gcon[0];// dot(Bcon, Bcov);
 		Au = q_nu[sp].ucon[dir];
@@ -15216,15 +15361,15 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 
 		/* find radiation wave speed in fluid frame based on optical depth */
 		// calculate avg. energy of neutrinos
-		//double mhd_nu0[NDIM];
-		//mhd_calc_nu(pr, 0, &q_nu[sp], mhd_nu0, sp);
-		//double ener_nu_avg = -((mhd_nu0[0] * q->ucon[0] + mhd_nu0[1] * q->ucon[1] + mhd_nu0[2] * q->ucon[2] + mhd_nu0[3] * q->ucon[3])) / (pr[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
+		double mhd_nu0[NDIM];
+		mhd_calc_nu(pr, 0, &q_nu[sp], mhd_nu0, sp);
+		double ener_nu_avg = -((mhd_nu0[0] * q->ucon[0] + mhd_nu0[1] * q->ucon[1] + mhd_nu0[2] * q->ucon[2] + mhd_nu0[3] * q->ucon[3])) / (pr[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
 
 		//Calculate optical depth
-		//kappa_tot = (calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + (calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + SMALL; // to make it non-zero
-		//tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
-		//crad2 = 16. / (9. * tau * tau);
-		crad2 = 1.0; // given that tau << 1 in post-merger scenario, this simplifies things
+		kappa_tot = (calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + (calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + SMALL; // to make it non-zero
+		tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
+		crad2 = 16. / (9. * tau * tau);
+		//crad2 = 1.0; // given that tau << 1 in post-merger scenario, this simplifies things
 
 		/* check on it! */
 		if (crad2 < 0.) crad2 = SMALL;
@@ -15334,53 +15479,51 @@ __device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, c
 
 /* NULIB tables part */
 __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity) {
-	double temp_prev, Tnu_over_Tgas, nulib_temp_low;
-	
+	double factor = 1.0;
+	double rho = ph[RHO] * MASS_DENSITY_SCALE;
+	double Tgas = ph[UU];
+	double ye = ph[YE];
+
 	// Density bounds:
-	if (ph[RHO] * MASS_DENSITY_SCALE < pow(10., nulib_dlo)) {
-		*opacity = 0.0; // DINU: reset all opacities for now; later could add extrapolation from the lower bound of the table
-		return;
+	double nulib_rho_low = pow(10., nulib_dlo);
+	if (rho < nulib_rho_low) {
+		factor *= pow(rho / nulib_rho_low, 3.0);
+		rho = nulib_rho_low;
+		//*opacity = 0.0; // DINU: reset all opacities for now; later could add extrapolation from the lower bound of the table
+		//return;
 	}
-	
+
 	// Electron fraction bounds:
 	if (ph[YE] < nulib_ylo || ph[YE] > nulib_yhi) {
-		*opacity = 0.0; // DINU: reset for now; 
-		return;
+		factor *= 0.0; // DINU: reset for now; 
+		ye = nulib_ylo;
+		//return;
 	}
 
 	// Temperature bounds:
-	nulib_temp_low = pow(10., nulib_tlo);
+	double nulib_temp_low = pow(10., nulib_tlo);
 	if (ph[UU] < nulib_temp_low) {
-		// Save the temperature value
-		temp_prev = ph[UU];
-		ph[UU] = nulib_temp_low;
-		
-		// Get the opacity at the lower bound of the table
-		interp_nulib_table(gpu_nulib_table, ph, species, quantity, opacity);
-
 		// Based on quantity, get the correct scaling
 		if (quantity == NU_EMISSIVITY) {
-			*opacity *= pow((temp_prev / nulib_temp_low), 6.0);
+			factor *= pow((Tgas / nulib_temp_low), 6.0);
 		}
 		else if (quantity == NU_ABSORPTION || quantity == NU_SCATTERING) {
-			*opacity *= pow((temp_prev / nulib_temp_low), 2.0);
+			factor *= pow((Tgas / nulib_temp_low), 2.0);
 		}
 		else { // DINU: idk, number emissivity
-			*opacity *= pow((temp_prev / nulib_temp_low), 6.0);
+			factor *= pow((Tgas / nulib_temp_low), 6.0);
 		}
-
-		ph[UU] = temp_prev;
-
-		return;
+		Tgas = nulib_temp_low;
 	}
 
-	interp_nulib_table(gpu_nulib_table, ph, species, quantity, opacity);
+	interp_nulib_table(gpu_nulib_table, rho, Tgas, ye, species, quantity, opacity);
+	*opacity *= factor;
 }
 
-__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity) {
-	int iat = (int)((log10(ph[RHO] * MASS_DENSITY_SCALE) - nulib_dlo) * (double)(NULIB_RHO - 1) / (nulib_dhi - nulib_dlo)) + 1;
-	int jat = (int)((log10(ph[UU]) - nulib_tlo) * (double)(NULIB_TEMP - 1) / (nulib_thi - nulib_tlo)) + 1;
-	int kat = (int)((ph[YE] - nulib_ylo) * (double)(NULIB_YE - 1) / (nulib_yhi - nulib_ylo)) + 1;
+__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity) {
+	int iat = (int)((log10(rho * MASS_DENSITY_SCALE) - nulib_dlo) * (double)(NULIB_RHO - 1) / (nulib_dhi - nulib_dlo)) + 1;
+	int jat = (int)((log10(Tgas) - nulib_tlo) * (double)(NULIB_TEMP - 1) / (nulib_thi - nulib_tlo)) + 1;
+	int kat = (int)((ye - nulib_ylo) * (double)(NULIB_YE - 1) / (nulib_yhi - nulib_ylo)) + 1;
 	iat = MY_MAX(1, MY_MIN(iat, NULIB_RHO - 1)) - 1;
 	jat = MY_MAX(1, MY_MIN(jat, NULIB_TEMP - 1)) - 1;
 	kat = MY_MAX(1, MY_MIN(kat, NULIB_YE - 1)) - 1;
@@ -15395,9 +15538,9 @@ __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, d
 	double nulib_dt_jat = pow(10.0, (nulib_tlo + (jat + 1) * tstp)) - pow(10.0, (nulib_tlo + jat * tstp));
 	double nulib_dy_kat = ystp;
 
-	double xd = MY_MAX((ph[RHO] * MASS_DENSITY_SCALE - nulib_d_iat) / nulib_dd_iat, 0.0);
-	double xt = MY_MAX((ph[UU] - nulib_t_jat) / nulib_dt_jat, 0.0);
-	double xy = MY_MAX((ph[YE] - nulib_y_kat) / nulib_dy_kat, 0.0);
+	double xd = MY_MAX((rho * MASS_DENSITY_SCALE - nulib_d_iat) / nulib_dd_iat, 0.0);
+	double xt = MY_MAX((Tgas - nulib_t_jat) / nulib_dt_jat, 0.0);
+	double xy = MY_MAX((ye - nulib_y_kat) / nulib_dy_kat, 0.0);
 	double mxd = 1.0 - xd;
 	double mxt = 1.0 - xt;
 	double mxy = 1.0 - xy;
@@ -15427,7 +15570,7 @@ __device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_tab
 
 	double mu_n, mu_p, mu_nu;
 	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
-	mu_nu = mu_p + mu_ele - mu_n;
+	mu_nu = mu_p + mu_ele - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
 
 	double F2, F3;
 
@@ -15452,6 +15595,9 @@ __device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_tab
 	}
 
 	*Tnu_over_Tgas = (ener_nu_avg * C_CGS * C_CGS) * F2 / F3 / (BOLTZ_CGS * ph[UU]);
+	*Tnu_over_Tgas = MY_MIN(1.0, *Tnu_over_Tgas);
+	// 222.
+	//printf("\n\t [sp=%d] T_nu/T_g = %e, <e>=%e, T_g=%e (F2, F3 = %e %e)", species, *Tnu_over_Tgas, ener_nu_avg, ph[UU], F2, F3);
 }
 
 __device__ double calc_fermiint2(double x) {
@@ -15471,6 +15617,9 @@ __device__ double calc_fermiint3(double x) {
 // Neutron-proton chemical potentials assuming ideal gas
 // From: NuLib code
 __device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p) {
+	x_n = MY_MAX(x_n, 1e-20);
+	x_p = MY_MAX(x_p, 1e-20);
+
 	double n_n = x_n * rho * MASS_DENSITY_SCALE / MN_CGS;
 	double n_p = x_p * rho * MASS_DENSITY_SCALE / MP_CGS;
 
