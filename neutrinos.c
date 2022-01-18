@@ -211,4 +211,87 @@ void init_nulib_table(void) {
 
 	return;
 }
+
+// Neutrino temperature calculation: needs EOS
+void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species) {
+
+	// Call EOS to get gas temperature and electron chemical potential
+	double mu_ele;
+	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_ele);
+
+	double mu_n, mu_p, mu_nu;
+	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
+	mu_nu = mu_p + mu_ele - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
+
+	double F2, F3;
+
+	#if (NU_SPECIES == 1) 
+	species = 2;
+	#endif
+
+	// 0 == electron neutrino
+	// 1 == electron antineutrino (mu_nua = - mu_nu)
+	// 2 == heavy lepton neutrinos (mu_nux = 0)
+	if (species == 0) {
+		F2 = calc_fermiint2(mu_nu);
+		F3 = calc_fermiint3(mu_nu);
+	}
+	else if (species == 1) {
+		F2 = calc_fermiint2(-mu_nu);
+		F3 = calc_fermiint3(-mu_nu);
+	}
+	else if (species == 2) {
+		F2 = calc_fermiint2(0.0);
+		F3 = calc_fermiint3(0.0);
+	}
+
+	*Tnu_over_Tgas = (ener_nu_avg * C_CGS * C_CGS) * F2 / (F3 + 1e-30) / (BOLTZ_CGS * ph[UU]);
+	//*Tnu_over_Tgas = MY_MIN(1.0, *Tnu_over_Tgas);
+	// 222.
+	//if (*Tnu_over_Tgas != *Tnu_over_Tgas) printf("\n\t [sp=%d] T_nu/T_g = %e, <e>=%e, T_g=%e (F2, F3 = %e %e)", species, *Tnu_over_Tgas, ener_nu_avg, ph[UU], F2, F3);
+}
+
+double calc_fermiint2(double x) {
+	if (x > 0.001)
+		return (x * x * x / 3.0 + 3.2899 * x) / (1.0 - exp(-1.8246 * x));
+	else
+		return 2.0 * exp(x) / (1.0 + 0.1092 * exp(0.8908 * x));
+}
+
+double calc_fermiint3(double x) {
+	if (x > 0.001)
+		return (x * x * x * x / 4.0 + 4.9348 * x * x + 11.3644) / (1.0 + exp(-1.9039 * x));
+	else
+		return 6.0 * exp(x) / (1.0 + 0.0559 * exp(0.9069 * x));
+}
+
+// Neutron-proton chemical potentials assuming ideal gas
+// From: NuLib code
+void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p) {
+	x_n = MY_MAX(x_n, 1e-20);
+	x_p = MY_MAX(x_p, 1e-20);
+
+	double n_n = x_n * rho * MASS_DENSITY_SCALE / MN_CGS;
+	double n_p = x_p * rho * MASS_DENSITY_SCALE / MP_CGS;
+
+	if (n_n > 0.0)
+		*mu_n = log(0.5 * n_n * pow(PLANCK_CGS * PLANCK_CGS / (2.0 * M_PI * MN_CGS * BOLTZ_CGS * T_gas), 1.5));
+	else
+		*mu_n = 0.0;
+
+	if (n_p > 0.0)
+		*mu_p = log(0.5 * n_p * pow(PLANCK_CGS * PLANCK_CGS / (2.0 * M_PI * MP_CGS * BOLTZ_CGS * T_gas), 1.5));
+	else
+		*mu_p = 0.0;
+
+	// Danat: didn't include Coulomb corrections for mu_p for now
+}
+
+void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele) {
+	double free, df_d, df_t, df_dd, df_tt, df_dt, etaele, dpepdd;
+	temp *= conv_T_CODE2CGS;
+	dens *= conv_dens_CODE2CGS;
+	interp_eostable(dens, temp, dens * ye, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+	*mu_ele = etaele;
+}
 #endif

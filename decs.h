@@ -1416,6 +1416,13 @@ void init_nulib_table(void);
 void interp_nulib_table(double* restrict ph, int quantity, double* opacity);
 void nulib_init_GPU(void);
 
+void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
+void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
+void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele);
+// Fermi integrals from Takahashi, El Eid & Hillebrandt '78
+double calc_fermiint2(double x);
+double calc_fermiint3(double x);
+
 extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];

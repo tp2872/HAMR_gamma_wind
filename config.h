@@ -55,8 +55,8 @@ Physical Parameters section
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
-#define NU_SUBCYCLING (0)
-#define NU_DEBUG (1)
+#define NU_SUBCYCLING (1)
+#define NU_DEBUG (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)

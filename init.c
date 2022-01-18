@@ -879,7 +879,7 @@ void init_torus()
 	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
-	double Tnu;
+	double Tnu, ucon_nu[NDIM], ucov_nu[NDIM], ucon[NDIM], ener_nu_avg;
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1042,6 +1042,15 @@ void init_torus()
 				Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
 				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+				
+				ucon_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon);
+				ucon_calc_nu(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon_nu, sp);
+				lower(ucon_nu, &geom, ucov_nu);
+
+				ener_nu_avg = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * (4./3. * ucon_nu[0] * (ucov_nu[0] * ucon[0] + ucov_nu[1] * ucon[1] + ucov_nu[2] * ucon[2] + ucov_nu[3] * ucon[3]) + 1./3. * ucon[0]) / (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] * ucon_nu[0]);
+
+				calc_neutrino_temperature(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ener_nu_avg, &Tnu, sp);
+				fprintf(stderr, "\n\tinit.c:(r, t, y = %e %e %e) <e> = %e, Tnu = %e", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], ener_nu_avg, Tnu);
 			}
 			#endif
 		}
@@ -2196,7 +2205,7 @@ void set_mag(
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 10.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 1e20, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;
