@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 #if (WHICHPROBLEM == RAD_PULSE)
 	DTd = 10.;
 #else 
-	DTd = 2.;// 0.1;
+	DTd = 25.;// 0.1;
 #endif
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	diag(DUMP_OUT);
-	diag(FINAL_OUT) ;
+	diag(FINAL_OUT);
 
 	/*Close GPU*/
 	for (n = 0; n < n_active; n++){

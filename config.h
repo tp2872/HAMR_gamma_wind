@@ -55,13 +55,14 @@ Physical Parameters section
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
-#define NU_SUBCYCLING (1)
-#define NU_DEBUG (0)
+#define NU_SUBCYCLING (0)
+#define NU_DEBUG (1)
+#define DUMP_EACH_STEP (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
 #else 
-#define DO_YE (0)
+#define DO_YE (1)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
@@ -472,9 +473,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
+#define MASS_DENSITY_SCALE (1e-4 * M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
 #else
-#define MASS_DENSITY_SCALE (1e7)
+#define MASS_DENSITY_SCALE (1e10)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)

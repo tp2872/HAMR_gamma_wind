@@ -879,7 +879,7 @@ void init_torus()
 	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
-	double Tnu, ucon_nu[NDIM], ucov_nu[NDIM], ucon[NDIM], ener_nu_avg;
+	double Tnu;
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1042,15 +1042,6 @@ void init_torus()
 				Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
 				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
-				
-				ucon_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon);
-				ucon_calc_nu(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon_nu, sp);
-				lower(ucon_nu, &geom, ucov_nu);
-
-				ener_nu_avg = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * (4./3. * ucon_nu[0] * (ucov_nu[0] * ucon[0] + ucov_nu[1] * ucon[1] + ucov_nu[2] * ucon[2] + ucov_nu[3] * ucon[3]) + 1./3. * ucon[0]) / (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] * ucon_nu[0]);
-
-				calc_neutrino_temperature(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ener_nu_avg, &Tnu, sp);
-				fprintf(stderr, "\n\tinit.c:(r, t, y = %e %e %e) <e> = %e, Tnu = %e", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], ener_nu_avg, Tnu);
 			}
 			#endif
 		}
@@ -1171,7 +1162,25 @@ void init_torus()
 	#endif
 	#endif
 
+	#if(0)
+	double ucon_nu[NDIM], ucov_nu[NDIM], ucon[NDIM], ener_nu_avg;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
 
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+				ucon_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon);
+				ucon_calc_nu(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon_nu, sp);
+				lower(ucon_nu, &geom, ucov_nu);
+
+				ener_nu_avg = -p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * (4. / 3. * ucon_nu[0] * (ucov_nu[0] * ucon[0] + ucov_nu[1] * ucon[1] + ucov_nu[2] * ucon[2] + ucov_nu[3] * ucon[3]) + 1. / 3. * ucon[0]) / (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] * ucon_nu[0]);
+
+				calc_neutrino_temperature(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ener_nu_avg, &Tnu, sp);
+				if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] > 1e-3) fprintf(stderr, "\n\tinit.c:[sp=%d](r, t, y = %e %e %e) <e> = %e, Tnu = %e", sp, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], ener_nu_avg, Tnu);
+			}
+		}
+	}
+	#endif
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
 	double delta, u_e, u_i, bsq;
@@ -1327,9 +1336,9 @@ void init_postmerger() {
 
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
-	int stride1 = 4;
+	int stride1 = 2;
 	int stride2 = 4; 
-	int stride3 = 4;
+	int stride3 = 128;
 	#endif
 	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
 	size_t memsize, nitems, nread;
@@ -1613,6 +1622,7 @@ void init_postmerger() {
 	#endif
 
 	eccentricity = 0.0;
+	double Tnu;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			
@@ -1660,6 +1670,20 @@ void init_postmerger() {
 			prim[B1] = 0.;
 			prim[B2] = 0.;
 			prim[B3] = 0.;
+
+			// initialize neutrinos
+			#if (NEUTRINOS_M1)
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+				prim[index_nu(UU_NU, sp)] = 1e-30;
+				prim[index_nu(U1_NU, sp)] = ur;
+				prim[index_nu(U2_NU, sp)] = uh;
+				prim[index_nu(U3_NU, sp)] = up;
+
+				Tnu = pow(prim[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				prim[index_nu(NUMBER_NU, sp)] = prim[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+				//prim[index_nu(NUMBER_NU, sp)] = 1e-30;
+			}
+			#endif
 
 			//copy back to full prim array
 			PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
@@ -1710,22 +1734,24 @@ void init_postmerger() {
 
 	#if DOHELM
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-	//double den, ener, pres;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			//coord(n_ord[n], i, j, z, CENT, X);
-			//bl_coord(X, &r, &th, &phi);
-			//den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-			//ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			//pres = ener * (gam - 1.0);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
-		  
 			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 		}
 	}
 
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	#if (DOHELM_TEMPERATURE)
+	// Set temperatures given u:
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+		}
+	}
+	#endif
+
 	bound_prim(p, 1);
 	#endif
 }

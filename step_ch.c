@@ -827,6 +827,13 @@ void GPU_step_ch()
 		fprintf(stderr, "f");
 	}
 
+	#if (DUMP_EACH_STEP)
+	#if (GPU_ENABLED==1)
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	#endif
+	diag(DUMP_OUT);
+	#endif
+
 	/* Determine next time increment based on current characteristic speeds: */
 	if (dt < 1.e-9) {
 		if(rank==0) fprintf(stderr, "timestep too small\n");
