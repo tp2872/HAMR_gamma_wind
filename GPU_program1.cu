@@ -7291,7 +7291,6 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     #if (DOHELM)
     // 1. Helmholtz EOS
     prim[RHO] = rho0;
-    prim[UU] = w - rho0;
 	#if (DOHELM_TEMPERATURE)
 	eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &prim[UU],
 		#if (DO_YE)
@@ -7301,6 +7300,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 		#endif
 		w-rho0, &p, &u);
 	#else
+    prim[UU] = w - rho0;
 	eos_mode_rhow_pres_u (gpu_eos_table, prim, &p, &u);
 	#endif
 	#elif(TWO_T)
@@ -11658,12 +11658,13 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		#elif(NEUTRINOS_M1)
 		double U_0[NPR];
-		int pflag_local, pflag_nu_local;
+		int pflag_nu_local;
 		PLOOP dU[k] = 0.;
 
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		semiimplicit_solve_nu(pf, U, U, U_0, &pflag_local, &pflag_nu_local, &geom, dU, Dt, cell_size, y_max, gpu_eos_table, gpu_nulib_table); // DIMARK: nusolve
+		semiimplicit_solve_nu(pf, U, U, U_0, &pflag[global_id], &pflag_nu_local, &geom, dU, Dt, cell_size, y_max, gpu_eos_table, gpu_nulib_table); // DIMARK: nusolve
+		if (pflag[global_id]) failimage[1 * (ksize)+global_id]++;
 
 		#else
 		#if(RESISTIVE)
@@ -15151,6 +15152,13 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
+	if (Qtsq < 0.0) {
+		Qtsq = 0.0;
+		Qtcon[1] = 0.;
+		Qtcon[2] = 0.;
+		Qtcon[3] = 0.;
+	}
+
 	y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
 
@@ -15162,38 +15170,14 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
 	prim[4] = U[4] / sqrt(gammasq);
-	if (prim[4] < 0.0) {
-		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-		//prim[4] = 1e-30;
-	}
 
-	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0.) {
-		prim[0] = 1.e-30;
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
-
-		// Get Ebar and p_rad as usual
-		if (!isnan(Qdotn) && Qdotn < 0.0) {
-			pressure = -Qdotn / (4. - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-		}
-
-		//Floor on photon number+
-		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-		//prim[4] = 1e-30;
-
-		return 0;
-	}
-	if (y > y_max) {
+	if (y > y_max || y < 0. || isnan(Qdotn) || Qdotn > 0.0 || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
 		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
+		for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_NU * Qtcon[i] / Uabs;
 
 		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
 			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-		if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+		if (qsq < 0. || fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
 		gammasq = 1. + qsq;
 
 		f = sqrt((GAMMAMAX_NU * GAMMAMAX_NU - 1.) / (gammasq - 1.));
@@ -15201,27 +15185,48 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 		prim[2] *= f;
 		prim[3] *= f;
 
-		if (y < 1. - 100. * NUMEPSILON) {
-			if (lim == TYPE2) Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
+		if (lim == TYPE2) {
+			if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+				Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
+			}
 			pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
-			returnval = (prim[0] < 0.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad		
+			prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
+			
+			returnval = 1;
 		}
 		else {
+			if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+				prim[0] = 1.e-30;
+				prim[1] = 0.;
+				prim[2] = 0.;
+				prim[3] = 0.;
+			}
+			else {
+				pressure = -fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+				prim[0] = pressure * 3.; // Erad = 3*p_rad
+			}
+			prim[0] = 1.e-30;
 			prim[1] = 0.;
 			prim[2] = 0.;
 			prim[3] = 0.;
-			pressure = -Qdotn / (4. * 1. - 1.);
-			prim[0] = 1.e-30;
 		}
+		if (!isfinite(prim[0]))prim[0] = 1.e-30;
+		if (!isfinite(prim[1]))prim[1] = 0.0;
+		if (!isfinite(prim[2]))prim[2] = 0.0;
+		if (!isfinite(prim[3]))prim[3] = 0.0;
 
 		//Floor on photon number+
 		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
 		//prim[4] = 1e-30;
-
-		return 0;
 	}
+
+	if (prim[4] < 0.0) {
+		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+		//prim[4] = 1e-30;	
+	}
+
 	return(returnval);
 }
 
@@ -15476,7 +15481,10 @@ __device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, c
 		return 0.;
 	}
 	else {
-		return kappa_abs * (kappa_number_emiss / kappa_emiss) / Tnu_over_Tgas / MASS_DENSITY_SCALE ; //1/cm^3 // * ener_nu_avg
+		/* Notes:
+			1. 1 / MASS_DENSITY_SCALE factor is already in eta_N
+		*/
+		return kappa_abs * (kappa_number_emiss / kappa_emiss) / Tnu_over_Tgas; //1/cm^3 // * ener_nu_avg
 	}
 }
 
@@ -15519,12 +15527,17 @@ __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_t
 		Tgas = nulib_temp_low;
 	}
 
+	if (factor == 0.0) {
+		*opacity = 0.0;
+		return;
+	}
+
 	interp_nulib_table(gpu_nulib_table, rho, Tgas, ye, species, quantity, opacity);
 	*opacity *= factor;
 }
 
 __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity) {
-	int iat = (int)((log10(rho * MASS_DENSITY_SCALE) - nulib_dlo) * (double)(NULIB_RHO - 1) / (nulib_dhi - nulib_dlo)) + 1;
+	int iat = (int)((log10(rho) - nulib_dlo) * (double)(NULIB_RHO - 1) / (nulib_dhi - nulib_dlo)) + 1;
 	int jat = (int)((log10(Tgas) - nulib_tlo) * (double)(NULIB_TEMP - 1) / (nulib_thi - nulib_tlo)) + 1;
 	int kat = (int)((ye - nulib_ylo) * (double)(NULIB_YE - 1) / (nulib_yhi - nulib_ylo)) + 1;
 	iat = MY_MAX(1, MY_MIN(iat, NULIB_RHO - 1)) - 1;
@@ -15541,7 +15554,7 @@ __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, d
 	double nulib_dt_jat = pow(10.0, (nulib_tlo + (jat + 1) * tstp)) - pow(10.0, (nulib_tlo + jat * tstp));
 	double nulib_dy_kat = ystp;
 
-	double xd = MY_MAX((rho * MASS_DENSITY_SCALE - nulib_d_iat) / nulib_dd_iat, 0.0);
+	double xd = MY_MAX((rho - nulib_d_iat) / nulib_dd_iat, 0.0);
 	double xt = MY_MAX((Tgas - nulib_t_jat) / nulib_dt_jat, 0.0);
 	double xy = MY_MAX((ye - nulib_y_kat) / nulib_dy_kat, 0.0);
 	double mxd = 1.0 - xd;
