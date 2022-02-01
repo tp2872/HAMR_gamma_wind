@@ -9983,7 +9983,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	struct of_state_rad state_rad;
 	#endif
 	#if(NEUTRINOS_M1)
-	double cmax_r_nu, cmin_r_nu, cmax_l_nu, cmin_l_nu, cmax_nu, cmin_nu, ctop_nu;
+	double cmax_r_nu[NU_SPECIES], cmin_r_nu[NU_SPECIES], cmax_l_nu[NU_SPECIES], cmin_l_nu[NU_SPECIES], cmax_nu[NU_SPECIES], cmin_nu[NU_SPECIES], ctop_nu[NU_SPECIES];
 	struct of_state_nu state_nu[NU_SPECIES];
 	int sp;
 	#endif
@@ -10084,7 +10084,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(p, &geom, &state_nu[sp], sp);
 		primtoflux_nu(p, state_nu, dir, &geom, temp1);
 		primtoflux_nu(p, state_nu, 0, &geom, temp2);
-		vchar_nu(p, &state, state_nu, &geom, dir, &cmax_l_nu, &cmin_l_nu, factor/cour, gpu_eos_table, gpu_nulib_table);
+		vchar_nu(p, &state, state_nu, &geom, dir, &cmax_l_nu[0], &cmin_l_nu[0], factor/cour, gpu_eos_table, gpu_nulib_table);
 		#endif
 
 		//Get right state
@@ -10181,22 +10181,25 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux_nu(p, state_nu, dir, &geom, temp3);
 		primtoflux_nu(p, state_nu, 0, &geom, temp4);
 
-		vchar_nu(p, &state, state_nu, &geom, dir, &cmax_r_nu, &cmin_r_nu, factor / cour, gpu_eos_table, gpu_nulib_table);
-		cmax_nu = fabs(MY_MAX(MY_MAX(0., cmax_l_nu), cmax_r_nu));
-		cmin_nu = fabs(MY_MAX(MY_MAX(0., -cmin_l_nu), -cmin_r_nu));
-		ctop_nu = MY_MAX(cmax_nu, cmin_nu);
+		vchar_nu(p, &state, state_nu, &geom, dir, &cmax_r_nu[0], &cmin_r_nu[0], factor / cour, gpu_eos_table, gpu_nulib_table);
+		for (sp = 0; sp < NU_SPECIES; sp++) {
+			cmax_nu[sp] = fabs(MY_MAX(MY_MAX(0., cmax_l_nu[sp]), cmax_r_nu[sp]));
+			cmin_nu[sp] = fabs(MY_MAX(MY_MAX(0., -cmin_l_nu[sp]), -cmin_r_nu[sp]));
+			ctop_nu[sp] = MY_MAX(cmax_nu[sp], cmin_nu[sp]);
+		}
 
 		for (k = 0; k < NPR; k++) {
-			#if (NU_SPECIES > 1)
-			if (k == UU_NU || k == U1_NU || k == U2_NU || k == U3_NU || k == NUMBER_NU ||
-				k == index_nu(UU_NU, 1) || k == index_nu(U1_NU, 1) || k == index_nu(U2_NU, 1) || k == index_nu(U3_NU, 1) || k == index_nu(NUMBER_NU, 1) || 
-				k == index_nu(UU_NU, 2) || k == index_nu(U1_NU, 2) || k == index_nu(U2_NU, 2) || k == index_nu(U3_NU, 2) || k == index_nu(NUMBER_NU, 2)) 
-			#else
-			if (k == UU_NU || k == U1_NU || k == U2_NU || k == U3_NU || k == NUMBER_NU)
-			#endif
-			{
-				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_nu * (temp4[k] - temp2[k]));
+			if (k == UU_NU || k == U1_NU || k == U2_NU || k == U3_NU || k == NUMBER_NU) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_nu[0] * (temp4[k] - temp2[k]));
 			}
+			#if (NU_SPECIES > 1)
+			else if (k == index_nu(UU_NU, 1) || k == index_nu(U1_NU, 1) || k == index_nu(U2_NU, 1) || k == index_nu(U3_NU, 1) || k == index_nu(NUMBER_NU, 1)) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_nu[1] * (temp4[k] - temp2[k]));
+			}
+			else if (k == index_nu(UU_NU, 2) || k == index_nu(U1_NU, 2) || k == index_nu(U2_NU, 2) || k == index_nu(U3_NU, 2) || k == index_nu(NUMBER_NU, 2)) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_nu[2] * (temp4[k] - temp2[k]));
+			}
+			#endif
 			else {
 				#if(HLLF)
 				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
@@ -10205,6 +10208,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 				#endif
 			}
 		}
+
 		#else
 		for (k = 0; k < NPR; k++) {
 			#if(HLLF)
@@ -10220,7 +10224,11 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop = MY_MAX(ctop, ctop_rad);
 		#endif
 		#if(NEUTRINOS_M1)
-		ctop = MY_MAX(ctop, ctop_nu);
+		#if (NU_SPECIES > 1)
+		ctop = MY_MAX(ctop, MY_MAX(ctop_nu[0], MY_MAX(ctop_nu[1], ctop_nu[2])));
+		#else
+		ctop = MY_MAX(ctop, ctop_nu[0]);
+		#endif
 		#endif
 		local_dtij[local_id] = factor / ctop;
 	}
@@ -15400,10 +15408,6 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 	double Acon_0, Acon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 
-	double vmax_tmp, vmin_tmp;
-	*vmax = 1.0;
-	*vmin = 0.0;
-
 	if (dir == 1) {
 		Acon_0 = geom->gcon[1];
 		Acon_js = geom->gcon[4];
@@ -15416,7 +15420,6 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 		Acon_0 = geom->gcon[3];
 		Acon_js = geom->gcon[9];
 	}
-
 
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
 		/* find radiation wave speed at 1./3. speed of light (==isotropic in radiation frame) */
@@ -15497,11 +15500,8 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 			cmin_mhd = vp;
 		}
 
-		vmax_tmp = MY_MIN(cmax_mhd, cmax_nu);
-		vmin_tmp = MY_MAX(cmin_mhd, cmin_nu);
-
-		*vmax = MY_MIN(vmax_tmp, *vmax);
-		*vmin = MY_MAX(vmin_tmp, *vmin);
+		vmax[sp] = MY_MIN(cmax_mhd, cmax_nu);
+		vmin[sp] = MY_MAX(cmin_mhd, cmin_nu);
 	}
 
 	return;
