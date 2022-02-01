@@ -952,7 +952,7 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.55;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
 				#endif
 			
 			}

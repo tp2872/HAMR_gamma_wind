@@ -337,6 +337,7 @@ extern double * Bufferdtij2[NB_LOCAL];
 extern double * Bufferdtij3[NB_LOCAL];
 extern int * Bufferpflag[NB_LOCAL];
 extern int * Bufferpflag_RAD[NB_LOCAL];
+extern int * Bufferpflag_NU[NB_LOCAL];
 extern int * Bufferfailimage[NB_LOCAL];
 extern double * BufferKatm[NB_LOCAL];
 extern double * Buffersend1[NB_LOCAL];
@@ -1413,7 +1414,7 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 /*Neutrino function*/
 #if(NEUTRINOS_M1)
 void init_nulib_table(void);
-void interp_nulib_table(double* restrict ph, int quantity, double* opacity);
+void interp_nulib_table(double rho, double Tgas, double ye, int species, double* nu_avg, double* kappa_A, double* kappa_S, double* nu_N);
 void nulib_init_GPU(void);
 
 void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);

@@ -219,6 +219,9 @@ void set_arrays_GPU(int n, int device){
 	#if(RAD_M1)
 	cudaMalloc(&Bufferpflag_RAD[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
 	#endif
+	#if(NEUTRINOS_M1)
+	cudaMalloc(&Bufferpflag_NU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
+	#endif
 	cudaMalloc(&Bufferfailimage[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
 	//cudaMalloc(&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
 	if (cudaSuccess != cudaSuccess ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaSuccess);
@@ -2687,6 +2690,9 @@ void GPU_finish(int n, int force_delete)
 	status += cudaFree(Bufferpflag[nl[n]]);
 	#if(RAD_M1)
 	status += cudaFree(Bufferpflag_RAD[nl[n]]);
+	#endif
+	#if(NEUTRINOS_M1)
+	status += cudaFree(Bufferpflag_NU[nl[n]]);
 	#endif
 	status += cudaFree(Bufferfailimage[nl[n]]);
 	//status += cudaFree(BufferdU[nl[n]]);

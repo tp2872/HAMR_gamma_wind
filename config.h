@@ -98,8 +98,8 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-20) //(1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN	(1.e-7)
-    #define UUMIN	(1.e-9)
+    #define RHOMIN	(1.e-5)
+    #define UUMIN	(1.e-7)
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20)
     //#define RHOMIN    (1.e-14)
@@ -359,15 +359,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NU_SPECIES (3)       /* number of species evolved */
 
 /* number of Nulib table entries for each variable */
-#define NULIB_RHO (50)
-#define NULIB_TEMP (40)
-#define NULIB_YE (30)
+#define NULIB_RHO   (345) // (50)
+#define NULIB_TEMP  (136) // (40)
+#define NULIB_YE    (50) // (30)
 
 /* Nulib table variable bounds  */
-#define nulib_dhi (15.5)
-#define nulib_dlo (6.0)
-#define nulib_thi (12.24)
-#define nulib_tlo (9.76)
+#define nulib_dhi (14.0) // (15.5)
+#define nulib_dlo (5.0) // (6.0)
+#define nulib_thi (12.464298190399795) // (12.240715727974438)
+#define nulib_tlo (8.064624468918757) // (9.763594473254775)
 #define nulib_yhi (0.55)
 #define nulib_ylo (0.035)
 

@@ -167,7 +167,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	// Floor on Ye
 	#if (DO_YE)
 	pv[YE] = MY_MAX(nulib_ylo, pv[YE]);
-	pv[YE] = MY_MIN(nulib_yhi, pv[YE]);
+	pv[YE] = MY_MIN(1.0, pv[YE]);
 	#endif
 
 	//Floor on radiation internal energy

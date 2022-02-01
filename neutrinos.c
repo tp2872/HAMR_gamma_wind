@@ -212,6 +212,72 @@ void init_nulib_table(void) {
 	return;
 }
 
+// Nulib tables interpolation
+void interp_nulib_table(double rho, double Tgas, double ye, int species, double* nu_avg, double* kappa_A, double* kappa_S, double* nu_N) {
+	int iat = (int)((log10(rho) - nulib_dlo) * (double)(NULIB_RHO - 1) / (nulib_dhi - nulib_dlo)) + 1;
+	int jat = (int)((log10(Tgas) - nulib_tlo) * (double)(NULIB_TEMP - 1) / (nulib_thi - nulib_tlo)) + 1;
+	int kat = (int)((ye - nulib_ylo) * (double)(NULIB_YE - 1) / (nulib_yhi - nulib_ylo)) + 1;
+	iat = MY_MAX(1, MY_MIN(iat, NULIB_RHO - 1)) - 1;
+	jat = MY_MAX(1, MY_MIN(jat, NULIB_TEMP - 1)) - 1;
+	kat = MY_MAX(1, MY_MIN(kat, NULIB_YE - 1)) - 1;
+
+	double dstp = (nulib_dhi - nulib_dlo) / (double)(NULIB_RHO - 1);
+	double tstp = (nulib_thi - nulib_tlo) / (double)(NULIB_TEMP - 1);
+	double ystp = (nulib_yhi - nulib_ylo) / (double)(NULIB_YE - 1);
+	double nulib_d_iat = pow(10.0, (nulib_dlo + iat * dstp));
+	double nulib_t_jat = pow(10.0, (nulib_tlo + jat * tstp));
+	double nulib_y_kat = (nulib_ylo + kat * ystp);
+	double nulib_dd_iat = pow(10.0, (nulib_dlo + (iat + 1) * dstp)) - pow(10.0, (nulib_dlo + iat * dstp));
+	double nulib_dt_jat = pow(10.0, (nulib_tlo + (jat + 1) * tstp)) - pow(10.0, (nulib_tlo + jat * tstp));
+	double nulib_dy_kat = ystp;
+
+	double xd = MY_MAX((rho - nulib_d_iat) / nulib_dd_iat, 0.0);
+	double xt = MY_MAX((Tgas - nulib_t_jat) / nulib_dt_jat, 0.0);
+	double xy = MY_MAX((ye - nulib_y_kat) / nulib_dy_kat, 0.0);
+	double mxd = 1.0 - xd;
+	double mxt = 1.0 - xt;
+	double mxy = 1.0 - xy;
+
+	*nu_avg = 
+		nu_kappa_emiss[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt* mxd* mxy +
+		nu_kappa_emiss[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt * xd * mxy +
+		nu_kappa_emiss[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * mxd * mxy +
+		nu_kappa_emiss[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * xd * mxy +
+		nu_kappa_emiss[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * mxd * xy +
+		nu_kappa_emiss[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * xd * xy +
+		nu_kappa_emiss[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * mxd * xy +
+		nu_kappa_emiss[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * xd * xy;
+	*kappa_A = 
+		nu_kappa_abs[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt* mxd* mxy +
+		nu_kappa_abs[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt * xd * mxy +
+		nu_kappa_abs[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * mxd * mxy +
+		nu_kappa_abs[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * xd * mxy +
+		nu_kappa_abs[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * mxd * xy +
+		nu_kappa_abs[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * xd * xy +
+		nu_kappa_abs[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * mxd * xy +
+		nu_kappa_abs[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * xd * xy;
+	*kappa_S = 
+		nu_kappa_scatt[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt* mxd* mxy +
+		nu_kappa_scatt[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt * xd * mxy +
+		nu_kappa_scatt[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * mxd * mxy +
+		nu_kappa_scatt[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * xd * mxy +
+		nu_kappa_scatt[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * mxd * xy +
+		nu_kappa_scatt[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * xd * xy +
+		nu_kappa_scatt[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * mxd * xy +
+		nu_kappa_scatt[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * xd * xy;
+	*nu_N = 
+		nu_kappa_emiss_N[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt* mxd* mxy +
+		nu_kappa_emiss_N[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * mxt * xd * mxy +
+		nu_kappa_emiss_N[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * mxd * mxy +
+		nu_kappa_emiss_N[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat)*NU_SPECIES + species] * xt * xd * mxy +
+		nu_kappa_emiss_N[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * mxd * xy +
+		nu_kappa_emiss_N[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat)*NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * mxt * xd * xy +
+		nu_kappa_emiss_N[(iat)*NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * mxd * xy +
+		nu_kappa_emiss_N[(iat + 1) * NULIB_TEMP * NULIB_YE * NU_SPECIES + (jat + 1) * NULIB_YE * NU_SPECIES + (kat + 1) * NU_SPECIES + species] * xt * xd * xy;
+
+	return;
+}
+
 // Neutrino temperature calculation: needs EOS
 void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species) {
 
