@@ -57,7 +57,8 @@ Physical Parameters section
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
 #define NU_DEBUG (1)
-#define DUMP_EACH_STEP (1)
+#define DUMP_EACH_STEP (0)
+#define ZERO_TAU_MODE (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -98,8 +99,8 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-20) //(1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN	(1.e-5)
-    #define UUMIN	(1.e-7)
+    #define RHOMIN	(1.e-7)
+    #define UUMIN	(1.e-9)
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20)
     //#define RHOMIN    (1.e-14)
@@ -244,7 +245,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 100.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.5)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -252,7 +253,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -473,7 +474,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define MASS_DENSITY_SCALE (1e-4 * M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
 #else
 #define MASS_DENSITY_SCALE (1e10)
 #endif

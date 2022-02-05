@@ -1337,8 +1337,8 @@ void init_postmerger() {
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
 	int stride1 = 2;
-	int stride2 = 4; 
-	int stride3 = 128;
+	int stride2 = 2; 
+	int stride3 = 2;
 	#endif
 	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
 	size_t memsize, nitems, nread;
@@ -2231,7 +2231,7 @@ void set_mag(
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 1e20, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 1e1, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;

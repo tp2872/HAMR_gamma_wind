@@ -182,6 +182,7 @@ int main(int argc, char *argv[])
 						esq = dot(q_res.econ, q_res.ecov);
 						fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
 
+
 						get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
@@ -239,11 +240,11 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 50.;// 100.;
+	DTl = 150.;
 #if (WHICHPROBLEM == RAD_PULSE)
 	DTd = 10.;
 #else 
-	DTd = 25.;// 0.1;
+	DTd = 1.;// 0.1;
 #endif
 	DTd_reduced = 50.0;
 	tdump = t + DTd;

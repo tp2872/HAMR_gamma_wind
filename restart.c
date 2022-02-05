@@ -8,7 +8,7 @@ void restart_write(void)
 	char filename[100], dirpath[100];
 	int int_size = sizeof(int);
 	FILE *checkfile;
-	int zero = 0;
+	int zero = 1;
 
 	//First close rdump files in progress
 	close_rdump();
@@ -331,11 +331,13 @@ void rdump_block_read(FILE *fp, int n)
 			}
 			else {
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
-				p[nl[n]][index_3D(n, i1, j1, z1)][UU_NU] += read[uu_nu] * reduce_factor;
-				p[nl[n]][index_3D(n, i1, j1, z1)][U1_NU] += read[u1_nu] * reduce_factor;
-				p[nl[n]][index_3D(n, i1, j1, z1)][U2_NU] += read[u2_nu] * reduce_factor;
-				p[nl[n]][index_3D(n, i1, j1, z1)][U3_NU] += read[u3_nu] * reduce_factor;
-				p[nl[n]][index_3D(n, i1, j1, z1)][NUMBER_NU] += read[number_nu] * reduce_factor;
+				for (sp = 0; sp < NU_SPECIES; sp++) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU,sp)] += read[uu_nu] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU,sp)] += read[u1_nu] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU,sp)] += read[u2_nu] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU,sp)] += read[u3_nu] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU,sp)] += read[number_nu] * reduce_factor;
+				}
 			}
 			#endif
 		}
