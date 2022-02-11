@@ -47,15 +47,15 @@ USEICC = 0
 
 ifeq ($(USEICC),0)
 CC       = cc 
-CCFLAGS  =  -fopenmp -O3
+CCFLAGS  =  -fopenmp -g -O2 -I /global/common/software/nersc/cos1.3/cuda/11.0.3/include
 endif
 
-EXTRALIBS = -lm -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L /global/common/software/nersc/cos1.3/cuda/11.0.3/lib64 -lstdc++ -lcudart -lcuda -lmpi
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_60 -code=sm_60 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
+CUDA_COMPILE  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = nvcc -arch=compute_60 -code=sm_60 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -dlink
+CUDA_LOAD  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -67,9 +67,9 @@ all: $(EXE)
 	
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
-bounds.o coord.o diag.o dump.o fixup.o \
+bounds.o coord.o diag.o dump.o fixup.o memory.o \
 init.o interp.o main.o metric.o lu.o \
-phys.o ranc.o restart.o step_ch.o radiation.o \
+phys.o ranc.o restart.o step_ch.o radiation.o neutrinos.c eos_helm.c \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\

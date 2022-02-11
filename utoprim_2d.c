@@ -298,9 +298,6 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 #if(DOHELM_TEMPERATURE)
                                     , &prim[UU]
 #endif
-		#if (DO_YE)
-		, ye
-		#endif
                                     );
 
 	W = x_2d[0];
