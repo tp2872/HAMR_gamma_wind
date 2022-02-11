@@ -8,7 +8,7 @@ void restart_write(void)
 	char filename[100], dirpath[100];
 	int int_size = sizeof(int);
 	FILE *checkfile;
-	int zero = 1;
+	int zero = 0;
 
 	//First close rdump files in progress
 	close_rdump();

@@ -296,8 +296,8 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = 0.6;// 0.85 * (1. + sqrt(1. - a * a));
-	Rout = 1e4;
+	Rin = 0.6 * (1. + sqrt(1. - a * a));
+	Rout = 5e3;
 	lim = MC;
 	failed = 0;
 	cour = COUR;

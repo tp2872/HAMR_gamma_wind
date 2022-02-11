@@ -17,7 +17,7 @@ Physical Parameters section
 #define POSTMERGER_PROBLEM 13
 #define RAD_PULSE 14
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
@@ -59,6 +59,8 @@ Physical Parameters section
 #define NU_DEBUG (1)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
+#define DANAT_GDET_INTERP (0)
+#define NU_INNER_STOP (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -172,14 +174,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 4
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
-#define BS_3 1
+#define BS_1 64
+#define BS_2 64
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1

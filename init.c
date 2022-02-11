@@ -94,6 +94,7 @@ void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
 void init_rad_pres(double pi[NPR]);
+void init_neutrinos(double ph[NPR]);
 void init_sndwave();
 void init_entwave();
 void init_radpulse();
@@ -979,7 +980,7 @@ void init_torus()
 					#pragma omp critical
 					rhomax = rho;
 				}
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;// *(1. + 4.e-2 * (ranc(0) - 0.5));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u *(1. + 4.e-2 * (ranc(0) - 0.5));
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
@@ -1032,9 +1033,9 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
 
 			// initialize neutrinos
-			#if (NEUTRINOS_M1)
+			#if (0)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-30;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-15;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U2_NU, sp)] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U3_NU, sp)] = up;
@@ -1162,6 +1163,15 @@ void init_torus()
 	#endif
 	#endif
 
+	/* Initialize neutrinos */
+	#if(NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+
 	#if(0)
 	double ucon_nu[NDIM], ucov_nu[NDIM], ucon[NDIM], ener_nu_avg;
 	for (n = 0; n < n_active; n++) {
@@ -1212,6 +1222,49 @@ void init_torus()
 
 	bound_prim(p, 1);
 
+}
+
+void init_neutrinos(double ph[NPR]) {
+#if (NEUTRINOS_M1)
+	double F2, F3, mu_nu, mu_p, mu_n, mu_e;
+	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_e);
+	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
+	mu_nu = mu_p + mu_e - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
+
+	for (int sp = 0; sp < NU_SPECIES; sp++) {
+		if (sp == 0) {
+			F2 = calc_fermiint2(mu_nu);
+			F3 = calc_fermiint3(mu_nu);
+		}
+		else if (sp == 1) {
+			F2 = calc_fermiint2(-mu_nu);
+			F3 = calc_fermiint3(-mu_nu);
+		}
+		else if (sp == 2) {
+			F2 = calc_fermiint2(0.0);
+			F3 = calc_fermiint3(0.0);
+		}
+
+		// if (ph[RHO] > pow(10., nulib_dlo) || ph[YE] < nulib_yhi || ph[YE] > nulib_ylo) {
+		// 	// Energy density
+		// 	ph[index_nu(UU_NU, sp)] = 8. * M_PI * pow(BOLTZ_CGS * ph[UU], 4.) / pow(PLANCK_CGS * C_CGS, 3.) * F3 / (ENERGY_DENSITY_SCALE);
+		// 	ph[index_nu(UU_NU, sp)] = MY_MAX(ph[index_nu(UU_NU, sp)], 1e-30);
+		// 
+		// 	// Number density
+		// 	ph[index_nu(NUMBER_NU, sp)] = 8. * M_PI * pow(BOLTZ_CGS * ph[UU], 3.) / pow(PLANCK_CGS * C_CGS, 3.) * F2 / MASS_DENSITY_SCALE;
+		// 	ph[index_nu(NUMBER_NU, sp)] = MY_MAX(ph[index_nu(NUMBER_NU, sp)], 1e-30);
+		// }
+		// else {
+			ph[index_nu(UU_NU, sp)] = 1e-30;
+			ph[index_nu(NUMBER_NU, sp)] = 1e-30;
+		// }
+
+		ph[index_nu(U1_NU, sp)] = ph[U1];
+		ph[index_nu(U2_NU, sp)] = ph[U2];
+		ph[index_nu(U3_NU, sp)] = ph[U3];
+	}
+
+#endif
 }
 
 void init_rad_pres(double pi[NPR]) {
@@ -1348,7 +1401,7 @@ void init_postmerger() {
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	a = BH_SPIN ;
-	beta = 100.;
+	beta = 10.;
 
 	coord(0, 5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
