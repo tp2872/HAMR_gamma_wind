@@ -1,22 +1,29 @@
-#!/bin/bash -l
-#SBATCH --job-name="THIN_GIBWA"
-#SBATCH --account="s952"
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=matthewliska92@gmail.com
-#SBATCH --time=00:15:00
-#SBATCH --nodes=200
-#SBATCH --ntasks-per-core=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --partition=normal
-#SBATCH --constraint=gpu
-#SBATCH --hint=multithread
+#!/bin/bash
+#SBATCH -A m2401_g
+#SBATCH -C gpu
+#SBATCH -q regular
+#SBATCH --job-name="bhns_nuM1"
+#SBATCH --mail-user=danat.issa@gmail.com
+#SBATCH -t 06:00:00
+#SBATCH -n 24
+#SBATCH --ntasks-per-node=4
+#SBATCH -c 32
+#SBATCH -d singleton
+#SBATCH --gpus-per-task=1
+#SBATCH --gpu-bind=single:1
+module load PrgEnv-gnu
+module load gcc/9.3.0
+module load cudatoolkit
+export CRAY_ACCEL_TARGET=nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+ulimit -s unlimited
+export SLURM_CPU_BIND="cores"
 
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-export MPICH_RDMA_ENABLED_CUDA=1
-module load cdt/20.08
-module switch PrgEnv-cray PrgEnv-gnu
-module load daint-gpu
-module load craype-accel-nvidia60
-cd /scratch/snx3000/mliska/test
-srun ./harm
+mkdir -p restart_dumps
+
+if test -e rdumps0; then
+    cp -r rdumps0 restart_dumps/rdumps0-$SLURM_JOB_ID
+    cp -r rdumps1 restart_dumps/rdumps1-$SLURM_JOB_ID
+fi
+
+srun -n24 ./harm

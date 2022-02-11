@@ -1385,7 +1385,7 @@ void eos_init(void);
 void eos_init_GPU(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
-void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dpresdd, double* cs2);
+void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
 void eos_mode_rhou_entr(double* prim, double* entr);
 void eos_mode_rhou_pres (double* prim, double *pres);
 void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2);
