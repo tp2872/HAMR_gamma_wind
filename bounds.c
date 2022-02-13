@@ -96,6 +96,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 }
 
 void set_iprobe(int mode, int * flag){
+	#if(TASK_BASED)
 	int i ,n;
 	*flag = 0;
 	for (n = 0; n < n_active; n++){
@@ -112,6 +113,9 @@ void set_iprobe(int mode, int * flag){
 			}
 		}
 	}
+	#else
+	*flag = 0;
+	#endif
 	return;
 }
 
@@ -489,16 +493,6 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 						#if(RAD_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] *= -1.0;
-						#endif
-						#if(NEUTRINOS_M1)
-						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.0;
-						prim[nl[n]][index_3D(n, i, j, z)][U3_NU] *= -1.0;
-						#if (NU_SPECIES > 1)
-						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.0;
-						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.0;
-						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 1)] *= -1.0;
-						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 2)] *= -1.0;
-						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;

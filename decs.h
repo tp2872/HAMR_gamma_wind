@@ -883,6 +883,9 @@ extern int count_node[1], count_gpu[N_GPU];
 extern int N1_GPU_offset[NB];
 extern int N2_GPU_offset[NB];
 extern int N3_GPU_offset[NB];
+extern int max_blocks;
+extern int communicator_set;
+extern float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
 
 /*************************************************************************
 FUNCTION DECLARATIONS
@@ -908,6 +911,7 @@ void close_rdump();
 void close_gdump();
 void close_gdump_reduced();
 double get_wall_time();
+void check_input();
 
 /** Evolution/physics functions **/
 double advance(int flag);
@@ -1219,12 +1223,16 @@ void balance_load_gpu(void);
 void set_arrays_image(void);
 void set_arrays(int n);
 void set_grid(int n);
+void calc_opening_jet(void);
+void calc_opening_coccoon(void);
 void alloc_bounds_GPU(int n);
 void free_bound_gpu(int n);
 void set_points(int n);
 void set_gridparam(void);
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);
 double calc_mem(int n_blocks);
+double calc_mem_gpu(int n);
+void calc_mem_cpu(int n);
 double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB_LOCAL])[NDIM],
 	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
 	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,

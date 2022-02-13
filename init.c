@@ -2288,6 +2288,7 @@ void set_mag(
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;
+	double gamma_g;
 
 	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 	rhomax = rhomax_postmerger;
@@ -2367,6 +2368,18 @@ void set_mag(
 				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
+				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+					//fprintf(stderr, "Error 1: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
+				}
+				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					//fprintf(stderr, "Error 2: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
+				}
+				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					//fprintf(stderr, "Error 3: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
+				}
 				#endif
 			}
 		}
@@ -2385,7 +2398,7 @@ void set_mag(
 	and begin normalization */
 	#if(STAGGERED)
 	gpu = 0;
-	nstep = AMR_SWITCHTIMELEVEL - 1;
+	nstep = 2*AMR_SWITCHTIMELEVEL - 1;
 	set_prestep();
 	const_transport_bound();
 	nstep = 0;
@@ -2403,7 +2416,7 @@ void set_mag(
 		if (block[n_ord[n]][AMR_NBR3] == -1 || block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][3] = 0.;
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][1] = 0.;
 			}
 		}
 
@@ -2461,14 +2474,25 @@ void set_mag(
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+			
+			/* Since bsq_calc returns 2 times the magnetic pressure, 0.5 should be in the  denominator*/
+			//beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+			beta_ij = (gam - 1.0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / (0.5 * bsq_ij);
+
+			#if(TWO_T)
+			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#else
+			gamma_g = GAMMA;
+			#endif
+
 			#if(RAD_M1)
-			if (((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
+			if (((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
-			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
-				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
@@ -2564,12 +2588,12 @@ void set_mag(
 				bsq_max = bsq_ij;
 			}
 			#if(RAD_M1)
-			if (((GAMMA - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
+			if (((gamma_g - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
-			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -3020,7 +3044,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	}
 
 	/*Calculate length of vector wrt orthonormal basis instead of coordinate basis*/
-	X[1] = pow(log(*r - RB), 1. / RADEXP);
+	X[1] = log(*r - RB);
 	X[2] = 2. / M_PI*(*th) - 1.;
 	X[3] = *phi;
 	/*do{
@@ -3035,9 +3059,9 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		step++;
 	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(*r, *th, bl_gcov);
-	invert_matrix(bl_gcov, bl_gcon);
+	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 0 %f %f\n", *r, *th);
 	dxdxp_func(X, dxdxp);
-	invert_matrix(dxdxp, dxpdx);
+	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 1 \n");
 
 	for (i = 0; i<NDIM; i++){
 		for (j = 0; j<NDIM; j++){
@@ -3054,9 +3078,9 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		}
 	}
 	gdet1 = gdet_func(bl_gcov1);
-	V_tmp[1] *= sqrt(bl_gcon1[1][1]);
-	V_tmp[2] *= sqrt(bl_gcon1[2][2]);
-	V_tmp[3] *= sqrt(bl_gcon1[3][3]);
+	V_tmp[1] *= sqrt(fabs(bl_gcon1[1][1]));
+	V_tmp[2] *= sqrt(fabs(bl_gcon1[2][2]));
+	V_tmp[3] *= sqrt(fabs(bl_gcon1[3][3]));
 
 	/*Calculate Cartesian components (x, y, z) at pos_newition (r, th, phi) of vector V*/
 	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
@@ -3067,7 +3091,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	rotate_coord(X_tmp, tilt);
 
 	/*Tranform vector back to coordinate basis (r, th, phi) at pos_newition (pos_new[1], pos_new[2], pos_new[3])*/
-	X[1] = pow(log(pos_new[1] - RB), 1. / RADEXP);
+	X[1] = log(pos_new[1] - RB);
 	X[2] = 2. / M_PI*pos_new[2] - 1.;
 	X[3] = pos_new[3];
 	step = 0;
@@ -3083,10 +3107,10 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		step++;
 	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
-	invert_matrix(bl_gcov, bl_gcon);
+	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 2 \n");
 
 	dxdxp_func(X, dxdxp);
-	invert_matrix(dxdxp, dxpdx);
+	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 3 \n");
 
 	for (i = 0; i<NDIM; i++){
 		for (j = 0; j<NDIM; j++){

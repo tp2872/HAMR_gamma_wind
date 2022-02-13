@@ -5,13 +5,12 @@ void set_timelevel(int tag){
 	int n;
 	int i, j, z, l, ni, nj, nz;
 	int task, n_block, min_timelevel;
-	int min_j[NB_1*32];
 	ni = NB_1;
 	nj = NB_2;
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
-	#if(CARTESIAN == -10)
+	#if(CARTESIAN==-10)
 	if (nstep > 0) {
 		for (n = 0; n < n_active; n++) {
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
@@ -44,6 +43,9 @@ void set_timelevel(int tag){
 
 	//Send timelevel of all blocks to all nodes only when load balancing, otherwise send only to neighbouring nodes/blocks
 	if (tag) {
+		int *min_j;
+		min_j = (int*)malloc(NB_1 * pow(1 + REF_1, N_LEVELS_3D) * sizeof(int));
+
 		//First make sure all nodes have the same information regarding the timestep
 		//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
 		for (n = 0; n < n_active_total; n++) {
@@ -112,6 +114,7 @@ void set_timelevel(int tag){
 				}
 			}
 		}
+		free(min_j);
 	}
 	else {
 		//First set the timestep around the poles

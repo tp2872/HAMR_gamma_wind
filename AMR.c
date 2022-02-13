@@ -5,6 +5,25 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 void rm_order2(void);
 void AMR_set_coord(void);
 
+//Number of refinement levels before focusing on jet
+#define BASE_LEVELS (1)
+#define R0 (50.0)
+#define R1 (200.0)
+#define R2 (1000.0)
+#define R3 (6000.0)
+#define R4 (25000.0)
+#define R5 (1000000.0)
+
+//Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
+#define HIGH_CUTOFF (1E-1)
+#define LOW_CUTOFF (1E-3)
+
+//Define the free-fall time for initial gap to close//
+#define t_ff (pow(R_BONDI,1.5))
+
+#define BLOCKS_PER_THETA_JET (1) //Minimum number of blocks per *half* opening angle of the jet
+#define BLOCKS_PER_THETA_COCCOON (1) //Minimum number of blocks per *half* opening angle of the coccoon
+
 void test_AMR(void){
 }
 
@@ -187,9 +206,9 @@ void AMR_set_coord(void){
 		}
 		#endif
 
-		if (!(N_LEVELS_1D == 0 || (NB_2 == 6  && N_LEVELS_1D == 1) || (NB_2 == 12 && N_LEVELS_1D == 2) || (NB_2 == 24 && N_LEVELS_1D == 3) || (NB_2 == 48 && N_LEVELS_1D == 4) || (NB_2 == 96  && N_LEVELS_1D == 5))){
-			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
-			exit(0);
+		if (!(DEREFINE_POLE == 0 || (NB_1 == 3 && N_LEVELS_1D == 0) || (NB_2 == 6  && N_LEVELS_1D == 1) || (NB_2 == 12 && N_LEVELS_1D == 2) || (NB_2 == 24 && N_LEVELS_1D == 3) || (NB_2 == 48 && N_LEVELS_1D == 4) || (NB_2 == 96  && N_LEVELS_1D == 5))){
+			//if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 3, 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
+			//exit(0);
 		}
 
 		//Based on value of 0-th level block determine the number of 1D refinement levels
@@ -298,7 +317,7 @@ void set_AMR(void){
 	int y;
 
 	#if(RAD_M1 || NEUTRINOS_M1)
-	calc_ymax(); // DIMARK: neutrinos?
+	calc_ymax();
 	#endif
 
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps
@@ -1261,7 +1280,37 @@ void set_AMR(void){
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
 
+	//Activate all blocks in arrays n_ord and n_ord_total
 	activate_blocks();
+
+	#if(GPU_ENABLED)
+	//Calculate memory consumption on each GPU
+	double total_mem = 0.;
+	for (n = 0; n < n_active_total; n++) {
+		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
+	}
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
+
+	if (max_blocks * numtasks < n_active_total) {
+		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
+		exit(0);
+	}
+	#else
+	double total_mem = 0.;
+	for (n = 0; n < n_active_total; n++) {
+		//total_mem += calc_mem_cpu(n_ord_total[n]) / pow(10., 9.);
+	}
+	double mem_per_block = total_mem / n_active_total;
+	//max_blocks = (int)(n_active_total + (numtasks * CPU_MEM - total_mem) / mem_per_block);
+
+	if (max_blocks * numtasks < n_active_total) {
+		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d Quiting! \n", max_blocks);
+		exit(0);
+	}
+	max_blocks =100000;
+	#endif
+
 	balance_load();
 	for (n = 0; n < n_active; n++) {
 		alloc_bounds_GPU(n_ord[n]);
@@ -1279,7 +1328,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL * (1 + 31 * RAD_M1), 8 * (1 + 31 * RAD_M1));
+	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL * (1 + 3 * RAD_M1 * DYNAMIC_LOADBALANCE), 32 * (1 + 3 * RAD_M1 * DYNAMIC_LOADBALANCE));
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	double val;
@@ -1301,9 +1350,9 @@ void balance_load(void){
 		double min_time = 1000000000000.0;
 		double avg_time = 0.0;
 		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (rank == 0) fprintf(stderr, "Starting benchmarking step! \n");
+	
 		//First benchmark blocks on node
+		if (rank == 0) fprintf(stderr, "Starting benchmarking step! \n");
 		for (n = 0; n < n_active; n++)benchmark_GPU(n_ord[n]);
 
 		//Synchronize with other nodes
@@ -1320,14 +1369,24 @@ void balance_load(void){
 
 		if (rank == 0)  fprintf(stderr, "max_time: %f, min_time: %f, avg_time: %f \n", max_time, min_time, avg_time);
 		for (n = 0; n < n_active_total; n++) {
-			block[n_ord_total[n]][AMR_WEIGHT] = 32;
-			if (bench_time[n_ord_total[n]] > 0.25 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
-			if (bench_time[n_ord_total[n]] > 0.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 8;
-			if (bench_time[n_ord_total[n]] > 1.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 4;
-			if (bench_time[n_ord_total[n]] > 3.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
-			if (bench_time[n_ord_total[n]] > 6.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			//if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.67 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			//if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			//if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
 			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
 		}
+
+		/*for (n = 0; n < n_active_total; n++) {
+			block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			//if (bench_time[n_ord_total[n]] > 0.34 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.5 * max_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 1.33 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			//if (bench_time[n_ord_total[n]] > 2.66 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			//if (bench_time[n_ord_total[n]] > 5.32 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
+		}*/
 
 		//for (n = 0; n < n_active_total; n++) {
 		//	block[n_ord_total[n]][AMR_WEIGHT] = (int)pow(2, round(log(max_time / bench_time[n_ord_total[n]]) / log(2)));
@@ -1441,10 +1500,10 @@ void balance_load(void){
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
 
-		if ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
-	} while ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
+		if ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
+	} while ((n_active_local_max> max_blocks/numtasks || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 	
-	if (n_active_local_max > MAX_BLOCKS) {
+	if (n_active_local_max > max_blocks/numtasks) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
 		//exit(0);
 	}
@@ -1566,6 +1625,48 @@ void balance_load(void){
 
 	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, n_active_local_min, n_active_local_max);
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
+
+	#if(GPU_ENABLED)
+	//Calculate memory consumption on each GPU
+	double max_mem = 0.;
+	double min_mem = 0.;
+	double total_mem = 0.;
+	double mem = 0.;
+	for (n = 0; n < n_active; n++) {
+		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+		max_mem += mem;
+		min_mem += mem;
+		total_mem += mem;
+	}
+	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
+
+	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#else
+	//Calculate memory consumption on each CPU
+	double max_mem = 0.;
+	double min_mem = 0.;
+	double total_mem = 0.;
+	double mem = 0.;
+	for (n = 0; n < n_active; n++) {
+		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+		max_mem += mem;
+		min_mem += mem;
+		total_mem += mem;
+	}
+	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (CPU_MEM * numtasks - total_mem) / mem_per_block);
+
+	if (rank == 0) fprintf(stderr, "CPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#endif
 
 	bound_prim(p, 1);
 	//Copy the B-field to make the code resilient against two bit ECC errors
@@ -1908,7 +2009,8 @@ void derefine(int n){
 		if (block[block[n][i]][AMR_TIMELEVEL] < min_timelevel) min_timelevel = block[block[n][i]][AMR_TIMELEVEL];
 		block[block[n][i]][AMR_GPU] = -1;
 	}
-	block[n][AMR_TIMELEVEL] = MY_MIN(2 * min_timelevel, AMR_MAXTIMELEVEL);
+	block[n][AMR_TIMELEVEL] = MY_MIN(2 * AMR_MAXTIMELEVEL, 1);
+	if (block[n][AMR_POLE] >= 1)block[n][AMR_TIMELEVEL] = 1;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_ACTIVE] = 0;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_TIMELEVEL] = 1;
 
@@ -2271,7 +2373,7 @@ int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
 
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > max_blocks/numtasks){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -2293,10 +2395,12 @@ int refine(int n){
 				#pragma omp for collapse(3) schedule(static, (BS_1+2*D1)*(BS_2+2*D2)*(BS_3+2*D3)/nthreads)
 				ZSLOOP3D(-D1, BS_1 - 1 + D1, -D2, BS_2 - 1 + D2, -D3, BS_3 - 1 + D3) {
 					PLOOP{
-						F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-						F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - 1, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 1, z + N3_GPU_offset[n])][k]);
+						F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+						F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - D2, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + D2, z + N3_GPU_offset[n])][k]);
 						#if(N3>1)
-						F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - 1)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 1)][k]);
+						F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - D3)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + D3)][k]);
+						#else	
+						F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = 0.0;
 						#endif
 					}
 				}
@@ -2494,7 +2598,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.200 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2505,7 +2609,7 @@ void check_refcrit(void){
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	if (max_levels == 0) max_levels = N_LEVELS_3D;
+	if (max_levels == 0) max_levels = N_LEVELS_3D - 3;
 	int tag, count=0, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
@@ -2556,7 +2660,7 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				#if(NB_1<10)
+				#if(NB_1<100)
 				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
@@ -2610,7 +2714,7 @@ void check_refcrit(void){
 
 		if(one_block_refined==1) post_refine();
 
-		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU){
+		if (tag != 0 && n_active_total<max_blocks){
 			MPI_Barrier(mpi_cartcomm);
 			if(rank==0) fprintf(stderr, "Intermediate load balance! \n");
 			balance_load();
@@ -2619,7 +2723,7 @@ void check_refcrit(void){
 			#endif
 			pre_refine();
 		}
-	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU && count<10);
+	} while (tag != 0 && n_active_total<max_blocks && count<10);
 
 	if (tag == 1){
 		if(rank==0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
@@ -2699,7 +2803,7 @@ void check_refcrit(void){
 				//#pragma omp critical
 				//{
 					node = block[n_ord_total[n]][AMR_NODE];
-					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
+					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < max_blocks/numtasks + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
 						for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
 							i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 							if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
@@ -2711,7 +2815,7 @@ void check_refcrit(void){
 						}
 					}
 					else {
-						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == 0;
+						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 						tag = 1;
 					}
 				//}
@@ -2890,7 +2994,7 @@ int derefine_pole(void){
 	//}
 	if(rank==0)fprintf(stderr, "Derefining in phi by %d levels! \n", N_LEVELS_1D);
 
-	if (NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
+	if (NB_2 != 3 && NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
 		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
 		exit(20);
 		return -1;
@@ -2945,6 +3049,26 @@ void rm_order2(void){
 	}
 }
 
+#if(0)
+//Number of refinement levels before focusing on jet
+#define BASE_LEVELS (1)
+#define R0 (50.0)
+#define R1 (200.0)
+#define R2 (1000.0)
+#define R3 (6000.0)
+#define R4 (25000.0)
+#define R5 (1000000.0)
+
+//Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
+#define HIGH_CUTOFF (1E-1)
+#define LOW_CUTOFF (1E-3)
+
+//Define the free-fall time for initial gap to close//
+#define t_ff (pow(R_BONDI,1.5))
+
+#define BLOCKS_PER_THETA_JET (1) //Minimum number of blocks per *half* opening angle of the jet
+#define BLOCKS_PER_THETA_COCCOON (1) //Minimum number of blocks per *half* opening angle of the coccoon
+#endif
 //Calculate refinement criterion
 double calc_refcrit(int n){
 	int i, j, z;
@@ -2954,22 +3078,243 @@ double calc_refcrit(int n){
 
 	#if(CARTESIAN)
 	if (block[n][AMR_COORD1] / pow(1 + REF_1, block[n][AMR_LEVEL1]) == 1 && block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]) == 1 && block[n][AMR_COORD3] / pow(1 + REF_3, block[n][AMR_LEVEL3]) == 1) {
-		ref_val = 100.0;
+		ref_val = 1.01 * REFINEMENT_CUTOFF;
 	}
 	#elif(REFINE_GIBWA)
-	if (block[n][AMR_COORD2]/pow(1+REF_2, block[n][AMR_LEVEL2]) == 1) {
-		ref_val = 100.0;
+	if (block[n][AMR_LEVEL2] == 0) {
+		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] < 7) {
+			if (block[n][AMR_COORD2] == 5 || block[n][AMR_COORD2] == 6)ref_val = 100.0;
+		}
+	}
+	if (block[n][AMR_LEVEL2] == 1) {
+		if (block[n][AMR_COORD1] >= 4 && block[n][AMR_COORD1] < 10) {
+			if (block[n][AMR_COORD2] == 11 || block[n][AMR_COORD2] == 12) ref_val = 100.0;
+		}
+		else if(block[n][AMR_COORD1] >= 2 && block[n][AMR_COORD1] < 14){
+			if (block[n][AMR_COORD2] >= 10 && block[n][AMR_COORD2] < 14) ref_val = 0.6 * REFINEMENT_CUTOFF;
+		}
+	}
+	if (block[n][AMR_LEVEL2] == 2) {
+		if (block[n][AMR_COORD1] >= 8 && block[n][AMR_COORD1] < 20) {
+			if (block[n][AMR_COORD2] >= 22 && block[n][AMR_COORD2] < 26) ref_val = 0.6 * REFINEMENT_CUTOFF;
+		}
 	}
 	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (r > 50.0){
+
+
+
+			if ((r > 50.0) && (phi>0.5*3.14) && (phi<1.5*3.14)){
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-				if (log(q.ucon[0]) / log(10.0) > 0.5 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 1.0 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.2) ref_val = 100.0;
+
+				//Ore's criterion
+				//if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.1) || (bsq/p[nl[n]][index_3D(n, i, j, z)][RHO] > 1.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.05) || (bsq / p[nl[n]][index_3D(n, i, j, z)][RHO] > 0.5)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+
+				//Matthew's criterion
+				if (log10(q.ucon[0]) > 0.5 || log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.3 || log10(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) > -0.2) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (log10(q.ucon[0]) > 0.25 || log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15 || log10(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) > -0.4) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				//if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.3) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if (log10(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) > 0.15) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (r < 250.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (r < 1000.)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (n_active_total > 0.95 * max_blocks/numtasks)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+			}
+		}
+	}
+	#elif(REFINE_GRB) // jet, inner cocoon and disk maintain high entropy
+	int index;
+	float block_angle;
+	if (block[n][AMR_NODE] == rank){
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if(block[n][AMR_LEVEL1] >= BASE_LEVELS){
+				if (r > 6.5) {
+					//Calc misc quantities
+					get_geometry(n, i, j, z, CENT, &geom);
+					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+
+					//Matthew's new refinement criterion
+					//Convert indices to appropriate format
+					index = i / pow(1 + REF_1, block[n][AMR_LEVEL1]);
+
+					//Calculate opening angle of a single block
+					block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+
+					//Check if cell is part of the jet; If so set the cell up for refinement
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > HIGH_CUTOFF && t>t_ff)
+					{
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((jet_angle1[index] / block_angle) < BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle1[index] / block_angle) >= BLOCKS_PER_THETA_JET && (jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle2[index] / block_angle) >= BLOCKS_PER_THETA_JET && (jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((jet_angle1[index] / block_angle) < BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle1[index] / block_angle) > BLOCKS_PER_THETA_JET && (jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((jet_angle2[index] / block_angle) > BLOCKS_PER_THETA_JET && (jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}		
+					}
+
+					if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < HIGH_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*HIGH_CUTOFF) && t>t_ff) {
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((jet_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+					}
+				
+					//Check if cell is part of the coccoon; If so set the cell up for refinement
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > LOW_CUTOFF && t>t_ff)
+					{
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((coccoon_angle1[index] / block_angle) < BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((coccoon_angle1[index] / block_angle) >= BLOCKS_PER_THETA_COCCOON && (coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((coccoon_angle2[index] / block_angle) < BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((coccoon_angle2[index] / block_angle) >= BLOCKS_PER_THETA_COCCOON && (coccoon_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((coccoon_angle1[index] / block_angle) < BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((coccoon_angle1[index] / block_angle) > BLOCKS_PER_THETA_COCCOON && (coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((coccoon_angle2[index] / block_angle) < BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+								else if ((coccoon_angle2[index] / block_angle) > BLOCKS_PER_THETA_COCCOON && (coccoon_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+					}
+					if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < LOW_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*LOW_CUTOFF) && t>t_ff) {
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) {
+								if ((coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((coccoon_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) {
+								if ((coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+							else {
+								if ((coccoon_angle2[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+							}
+						}
+					}
+					//Old refinement criterion
+					//if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+					//if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 0) && (r < R0)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable first refinement level below r=R0
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 1) && (r < R1)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 2) && (r < R2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 3) && (r < R3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4
+
+					//Do not derefine base grid
+					if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				}
+				else{
+					ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				}
+			}
+			else {
+				if (r > 6.5) {
+					ref_val = 1.01 * REFINEMENT_CUTOFF;
+				}
+			}
+			
+			//No refinement near black hole; even in case of derefine_pole
+			/*if(ref_val>=REFINEMENT_CUTOFF){
+				#if(DEREFINE_POLE==0 || BS_1<32)
+				if ((block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 2) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 4 + 2) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 12 + 2)
+					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 28 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 60 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 124 + 2)
+					|| (block[n][AMR_LEVEL1] == 6 && block[n][AMR_COORD1] < 252 + 2) || (block[n][AMR_LEVEL1] == 7 && block[n][AMR_COORD1] < 508 + 2) || (block[n][AMR_LEVEL1] == 8 && block[n][AMR_COORD1] < 1020 + 2)){
+					ref_val = 0.51 * REFINEMENT_CUTOFF;
+				}
+				#else //Required to prevent jumps in AMR near pole due to 1D refinement; Another possibility is to prohibit the code from refining blocks neighboring the block touching the pole
+				if ( (block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 4) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 10) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 26)
+					|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 42 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 96 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 196 + 2)){
+					ref_val = 0.51 * REFINEMENT_CUTOFF;
+				}
+				#endif
+			}*/
+		}
+	}
+	#elif(REFINE_THIN && !REF_3)
+	if (block[n][AMR_NODE] == rank) {
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+
+			if (r > 5.0 && t>500.0) {
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+
+				//Calculate target vs real scaleheight
+				double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+				#if(TWO_T)
+				double gamma_g = calc_gamma_gas_prim(p[nl[n]][index_3D(n, i, j, z)]);
+				#else
+				double gamma_g = GAMMA;
+				#endif
+				double ptot = ((gamma_g - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU] + (1.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD]);
+				double cs = sqrt(2.0 / M_PI * ptot / (gamma_g * p[nl[n]][index_3D(n, i, j, z)][UU] + (4.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] + rho));
+				double v_kepler = r / (pow(r, 3. / 2.) + BH_SPIN);
+				double scaleheight = cs / v_kepler;
+				double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
+
+				//Only refine if number of cells is insufficient
+				//if ((cells_per_scaleheight < 12) && (rho > 0.02)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				//else if ((cells_per_scaleheight < 30) && (rho > 0.01)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if (rho * r > 1.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (rho* r > 0.66) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+
+				//Don't refine too close to BH
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 0) && (block[n][AMR_COORD1] <= 0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (block[n][AMR_COORD1] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (block[n][AMR_COORD1] <= 6)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 3) && (block[n][AMR_COORD1] <= 14)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 4) && (block[n][AMR_COORD1] <= 30)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+
+				//Don't refine too close to pole
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] >= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}
 	}
@@ -2982,14 +3327,36 @@ double calc_refcrit(int n){
 	}
 	#else
 	if (block[n][AMR_NODE] == rank){
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi, geom, q, bsq)
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			#pragma omp critical
-			{
-				if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r < 150.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			get_geometry(n, i, j, z, CENT, &geom);
+			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+			double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			double ptot = ((GAMMA - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU]);
+			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + rho));
+			double v_kepler = r / (pow(r, 1.5) + a);
+			double scaleheight = cs / v_kepler;
+			double val;
+			//#pragma omp critical
+			//{
+			val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
+			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 			}
+			else if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 2) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			else {
+				if (val > 0.01 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			
+			//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 		}
 	}
 	#endif
@@ -2999,6 +3366,14 @@ double calc_refcrit(int n){
 //Send refinement criterion across cluster
 void synch_refcrit(void){
 	int n, task;
+
+	#if(REFINE_GRB)
+	//Calculate opening angle jet if REFINE_GRB is set
+	calc_opening_jet();
+	calc_opening_coccoon();
+	#endif
+
+	//Calculate and broadcast refinemetn criterion
 	for (n = 0; n < n_active_total; n++){
 			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
 			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
@@ -3008,6 +3383,170 @@ void synch_refcrit(void){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 		}
+	}
+}
+
+void calc_opening_jet(void) {
+	//Calculate jet opening angle if refining on jet
+	int i, j, n, z, task, index, index0;
+	double X[NDIM], r, th, phi;
+	struct of_geom geom;
+
+	//Initialize jet angle to 0
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		jet_angle1[index] = 0.;
+		jet_angle2[index] = 0.;
+	}
+
+	//Loop over cells in block and add result to float jet_angle1 and jet_angle2 (upper and lower jets)
+	for (n = 0; n < n_active_total; n++) {
+		if (block[n_ord_total[n]][AMR_NODE] == rank) {
+			ZSLOOP3D(N1_GPU_offset[n_ord_total[n]], BS_1 + N1_GPU_offset[n_ord_total[n]] - 1, N2_GPU_offset[n_ord_total[n]], N2_GPU_offset[n_ord_total[n]] + BS_2 - 1, N3_GPU_offset[n_ord_total[n]], N3_GPU_offset[n_ord_total[n]] + BS_3 - 1) {
+				//Convert indices to appropriate format
+				index = i / pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]);
+			
+				//Check if index constraints are satisfied; e.g. block can be not relevant for refinement
+				if (index * pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]) == i) {
+					//Check if refinement criterion is satisfied
+					coord(n_ord_total[n], i, j, z, CENT, X);
+					bl_coord(X, &r, &th, &phi);
+
+					if (p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][UU] / pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], GAMMA) > HIGH_CUTOFF) {
+						get_geometry(n_ord_total[n], i, j, z, CENT, &geom);
+						if(TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) jet_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else jet_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi<1.5*M_PI) jet_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else jet_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Calculate half opening angle
+	//A=pi*(r*theta)^2
+	//theta=sqrt(A/(pi*r^2))
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle1[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		jet_angle1[index] = sqrt(jet_angle1[index] / M_PI + 1.e-30);
+
+		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle2[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		jet_angle2[index] = sqrt(jet_angle2[index] / M_PI + 1.e-30);
+	}
+	
+	//Find jet head location
+	float jet_angle1_max = 0.0, jet_angle2_max = 0.0;
+	float  dx = (log(Rout) - startx[1]) / (NB_1 * BS_1);
+	int index_max1, index_max2;
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		//Calculate radius from internal coordinates assume x1=log(r)
+		r = exp(startx[1] + index * dx);
+
+		//Find maximum cylindrical radius
+		if (jet_angle1[index] * r > jet_angle1_max) {
+			jet_angle1_max = jet_angle1[index] * r;
+			index_max1 = index;
+		}
+		if (jet_angle2[index] * r > jet_angle2_max) {
+			jet_angle2_max = jet_angle2[index] * r;
+			index_max2 = index;
+		}
+	}
+
+	//Assume opening angle is constant after maximum in cylindrical radius
+	for (index = index_max1; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		jet_angle1[index] = jet_angle1[index0];
+	}
+	for (index = index_max2; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		jet_angle2[index] = jet_angle2[index0];
+	}
+}
+
+void calc_opening_coccoon(void) {
+	//Calculate jet opening angle if refining on jet
+	int i, j, n, z, task, index, index0;
+	double X[NDIM], r, th, phi;
+	struct of_geom geom;
+
+	//Initialize jet angle to 0
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		coccoon_angle1[index] = 0.;
+		coccoon_angle2[index] = 0.;
+	}
+
+	//Loop over cells in block and add result to float coccoon_angle1 and coccoon_angle2 (upper and lower jets)
+	for (n = 0; n < n_active_total; n++) {
+		if (block[n_ord_total[n]][AMR_NODE] == rank) {
+			ZSLOOP3D(N1_GPU_offset[n_ord_total[n]], BS_1 + N1_GPU_offset[n_ord_total[n]] - 1, N2_GPU_offset[n_ord_total[n]], N2_GPU_offset[n_ord_total[n]] + BS_2 - 1, N3_GPU_offset[n_ord_total[n]], N3_GPU_offset[n_ord_total[n]] + BS_3 - 1) {
+				//Convert indices to appropriate format
+				index = i / pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]);
+
+				//Check if index constraints are satisfied; e.g. block can be not relevant for refinement
+				if (index * pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]) == i) {
+					//Check if refinement criterion is satisfied
+					coord(n_ord_total[n], i, j, z, CENT, X);
+					bl_coord(X, &r, &th, &phi);
+
+					if (p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][UU] / pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], GAMMA) > LOW_CUTOFF && p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][UU] * r * r > 1.0e-5) {
+						get_geometry(n_ord_total[n], i, j, z, CENT, &geom);
+						if (TILT_ANGLE < 60) {
+							if (th < M_PI / 2.0) coccoon_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else coccoon_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+						else {
+							if (phi > 0.5 * M_PI && phi < 1.5 * M_PI) coccoon_angle1[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+							else coccoon_angle2[index] += sqrt(geom.gcov[2][2]) * sqrt(geom.gcov[3][3]) * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3] / (r * r);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Calculate half opening angle
+	//A=pi*(r*theta)^2
+	//theta=sqrt(A/(pi*r^2))
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		MPI_Allreduce(MPI_IN_PLACE, &(coccoon_angle1[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		coccoon_angle1[index] = sqrt(coccoon_angle1[index] / M_PI + 1.e-30);
+
+		MPI_Allreduce(MPI_IN_PLACE, &(coccoon_angle2[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+		coccoon_angle2[index] = sqrt(coccoon_angle2[index] / M_PI + 1.e-30);
+	}
+
+	//Find jet head location
+	float coccoon_angle1_max = 0.0, coccoon_angle2_max = 0.0;
+	float  dx = (log(Rout) - startx[1]) / (NB_1 * BS_1);
+	int index_max1, index_max2;
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		//Calculate radius from internal coordinates assume x1=log(r)
+		r = exp(startx[1] + index * dx);
+
+		//Find maximum cylindrical radius
+		if (coccoon_angle1[index] * r > coccoon_angle1_max) {
+			coccoon_angle1_max = coccoon_angle1[index] * r;
+			index_max1 = index;
+		}
+		if (coccoon_angle2[index] * r > coccoon_angle2_max) {
+			coccoon_angle2_max = coccoon_angle2[index] * r;
+			index_max2 = index;
+		}
+	}
+
+	//Assume opening angle is constant after maximum in cylindrical radius
+	for (index = index_max1; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		coccoon_angle1[index] = coccoon_angle1[index0];
+	}
+	for (index = index_max2; index < NB_1 * BS_1; index++) {
+		index0 = MY_MAX(index - 1, 0);
+		coccoon_angle2[index] = coccoon_angle2[index0];
 	}
 }
 

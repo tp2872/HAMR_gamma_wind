@@ -14,6 +14,13 @@ int gpuFree(void *devPtr, int trash1, int trash2);
 #define gpuAlloc(val1,val2, val3) cudaMallocHost(val1,val2,0)
 #endif
 
+//Wrapper for calculation of GPU memory
+#if(GPU_DIRECT)
+#define gpuMem(val1,val2, val3) (double)(val2*(val3==1))
+#else
+#define gpuMem(val1,val2, val3) (double)(val2)
+#endif
+
 void GPU_init(void)
 {
 	int i,j,ranks_per_node;
@@ -78,7 +85,7 @@ void set_arrays_GPU(int n, int device){
 
 	if (mem_spot_gpu[nl[n]] == device){
 		block[n][AMR_GPU] = device;	
-		alloc_bounds_GPU(n);
+		//alloc_bounds_GPU(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] != device && mem_spot_gpu[nl[n]] != -1){
@@ -1710,21 +1717,22 @@ void GPU_reconstruct_internal(int flag, int n)
 	#endif
 
 	if ((block[n][AMR_POLE] != 0) || (block[n][AMR_NBR1] < 0) || (block[n][AMR_NBR3] < 0)) {
-		//int nr_workgroups_local[1];
-		//int POLE_1 = block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3);
-		//int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
+		int nr_workgroups_local[1];
+		int POLE_1 = block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3);
+		int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
+		
 		/*Calculate reconstructed left state*/
 		if (flag == 1) {
-			//nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
-			//interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], 3, POLE_1, POLE_2);
-			//nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
-			//reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
+			interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], 3, POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
 		}
 		else {
-			//nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
-			//interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], 3, POLE_1, POLE_2);
-			//nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
-			//reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
+			interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], 3, POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
@@ -1890,6 +1898,35 @@ void GPU_consttransport_bound(void){
 		#endif
 	}
 	#else
+	#if(AVG_EMF)
+	int nstep_temp;
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		nstep_temp = nstep;
+		nstep = -100;
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+		#if(D3>0)
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		nstep = nstep_temp;
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		nstep_temp = nstep;
+		nstep = -100;
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		#if(D3>0)
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+		nstep = nstep_temp;
+	}
+	#endif
 	#if(GPU_OPENMP)
 	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
