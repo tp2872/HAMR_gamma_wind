@@ -1373,26 +1373,15 @@ void init_postmerger() {
 	int res;
 	double *icdata;
 
-	#if (READBINARY)
-	char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
-	char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";	
-	int mult = 4;
-	// for reading in binary
-	double *temp_array_grid, *temp_array_prims;
-	int file_size_grid, file_size_prims, num_var, index_grid_final;
-	size_t double_size = sizeof(double);
-	size_t len_grid, len_prims;
-
-	#else
 	char fname1[] = "PointsToInterpolateHAMR.dat";
 	char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
 
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
-	int stride1 = 2;
-	int stride2 = 2; 
-	int stride3 = 2;
-	#endif
+	int stride1 = 1;
+	int stride2 = 1; 
+	int stride3 = 1;
+
 	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
 	size_t memsize, nitems, nread;
 	double prim[NPR];
@@ -1419,10 +1408,6 @@ void init_postmerger() {
 
 	/* output choices */
 	tf = 200000000.0 ;
-	// DTd = 25.0;  /* dumping frequency, in units of M */
-	// DTl = 50.0;  /* logfile frequency, in units of M */
-	// DTi = 100.0;   /* image file frequ., in units of M */
-	// DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
 
 	/* start diagnostic counters */
 	dump_cnt = 0 ;
@@ -1434,119 +1419,6 @@ void init_postmerger() {
 	//for this, loop over all MPI processes
 	//and let them read the IC data from file, one by one
 
-	#if (READBINARY)
-	for (ind=0; ind<numtasks; ind++) {
-	if (ind == rank) {
-	fp1 = fopen(fname1, "rb");
-	if (NULL == fp1 && 0 == rank) {
-	fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
-	exit(1234);
-	}
-	fp2 = fopen(fname2, "rb");
-	if (NULL == fp2 && 0 == rank) {
-	fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
-	fclose(fp1);
-	exit(1234);
-	}
-
-	// reading the first file:
-	// a) allocation of memory for the array
-	// b) reading the array into the memory
-	fseek(fp1, 0L, SEEK_END);
-	file_size_grid = ftell(fp1);
-	num_var = 6;
-	len_grid = file_size_grid/double_size;
-	index_grid_final = len_grid/num_var;
-
-	// reading the second file:
-	fseek(fp2, 0L, SEEK_END);
-	file_size_prims = ftell(fp2);
-	len_prims = file_size_prims/double_size;
-
-	memsize = file_size_grid+file_size_prims;
-	icdata = (double *) malloc(memsize);
-	if(NULL == icdata) {
-	fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-	fclose(fp1);
-	fclose(fp2);
-	exit(1235);
-	}
-
-	fseek(fp1, 0L, SEEK_SET);
-	fread(&icdata[0], double_size, len_grid, fp1);
-
-	fseek(fp2, 0L, SEEK_SET);
-	fread(&icdata[len_grid], double_size, len_prims, fp2);
-
-	ext.nx = (int)icdata[1*index_grid_final-1];
-	ext.ny = (int)icdata[2*index_grid_final-1];
-	ext.nz = (int)icdata[3*index_grid_final-1];
-	ext.xmin = icdata[3*index_grid_final];
-	ext.xmax = icdata[4*index_grid_final-1];
-	ext.ymin = icdata[4*index_grid_final];
-	ext.ymax = icdata[5*index_grid_final-1];
-	ext.zmin = icdata[5*index_grid_final];
-	ext.zmax = icdata[6*index_grid_final-1];
-
-	ext.nx = ext.nx/mult + 1;
-	ext.ny = ext.ny/mult + 1;
-	ext.nz = ext.nz/mult + 1;
-
-	ext.xmin/=r_unit;
-	ext.xmax/=r_unit;
-
-	int ix;
-	for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
-	icdata[ix] /= r_unit;
-	}
-
-	if (0 == rank) {
-	fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
-			rank,
-			ext.nvars, ext.nx, ext.ny, ext.nz,
-			ext.xmin, ext.xmax,
-			ext.ymin, ext.ymax,
-			ext.zmin, ext.zmax,
-			fname1, fname2);
-	fflush(stderr);
-	}
-
-
-	nx = ext.nx;
-	ny = ext.ny;
-	nz = ext.nz;
-	nvars = ext.nvars;
-	nitems = (size_t)nvars*nx*ny*nz;
-
-	/*
-	memsize = double_size*nitems;
-
-	if (memsize == file_size_grid+file_size_prims) {
-	fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
-	}
-	else {
-	fprintf(stderr, "memory allocation size DOES NOT match the size of the input files ... Exiting ... \n");
-	exit(1234);
-	}
-	*/
-
-	if(ferror(fp1) || ferror(fp2) ||
-		(!feof(fp1)) ||
-		(!feof(fp2)) ) {
-	fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
-	}
-	fclose(fp1); fp1 = NULL;
-	fclose(fp2); fp2 = NULL;
-
-	if (0 == rank) {
-	fprintf(stderr, " done\n");
-	fflush(stderr);
-	}
-	//now icdata contains the IC information
-	}
-	}
-
-	#else
 	for (ind = 0; ind < numtasks; ind++) {
 		if (ind == rank) {
 			fp1 = fopen(fname1, "rb");
@@ -1656,7 +1528,6 @@ void init_postmerger() {
 		//now icdata contains the IC information
 		}
 	}
-	#endif
 
 	#if (MPI_enable)
 	MPI_Barrier(mpi_cartcomm);
@@ -1700,26 +1571,22 @@ void init_postmerger() {
 
 			res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
 
-			/* regions outside stream */
-			/*
-			if ((0. == prim[U1] && 0. == prim[U2] && 0. == prim[U3])) {
-				rho = 1.e-30/(r*r);
-				u = 1.e-31/(r*r*r*r);
+			if (res) {
+				prim[RHO] = 1e-7 * RHOMIN;
+				prim[UU] = 1e-7 * UUMIN;
+				prim[U1] = 0.0;
+				prim[U2] = 0.0;
+				prim[U3] = 0.0;
+				#if (DO_YE)
+				prim[YE] = 1.0;
+				#endif
+				udphi = dd(i, j, z, VARUDPHI) / r_unit;
+			}
+			else {
+				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
+				utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
+			}
 
-				ur = 0. ;
-				uh = 0. ;
-				up = 0. ;
-
-				prim[RHO] = rho;
-				prim[UU] = u;
-				prim[U1] = ur;
-				prim[U2] = uh;
-				prim[U3] = up;
-			} */
-			/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-			//vconbl_to_utcon(prim, n_ord[n], i, j, z);
-			utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
-			//if (prim[RHO] < 0.01) prim[RHO] = 0.0;
 			prim[B1] = 0.;
 			prim[B2] = 0.;
 			prim[B3] = 0.;
@@ -1766,15 +1633,7 @@ void init_postmerger() {
 	if (rank == 0){
 		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
-	//ZSLOOP(0,N1-1,0,N2-1) {
-	//for (n = 0; n < n_active; n++){
-	//  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-	//    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-	//    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-	//  }
-	//}
-	// umax /= rhomax ;
-	// rhomax = 1. ;
+
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p,1);
 
@@ -1794,6 +1653,7 @@ void init_postmerger() {
 		}
 	}
 
+	// Apply the floors
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 
 	#if (DOHELM_TEMPERATURE)
@@ -2220,14 +2080,18 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	nx = ext.nx;
 	ny = ext.ny;
 	nz = ext.nz;
+
+	// Find the index in R such that r > R
 	for (i0 = j0 = k0 = 0; i0 < nx; i0++) {
 		if (dd(i0, j0, k0, VARR) > r) break;
 	}
 	i0--;
 	if (i0 < 0 || i0 >= nx - 1) return(1);
+
 	di = log2(r / dd(i0, j0, k0, VARR)) / log2(dd(i0 + 1, j0, k0, VARR) / dd(i0, j0, k0, VARR));
 	i = i0 + di;
 
+	// Find the index in TH such that th > TH 
 	for (j0 = 0; j0 < ny; j0++) {
 		th1 = dd(i0, j0, k0, VARTHETA) * (1 - di) + dd(i0 + 1, j0, k0, VARTHETA) * di;
 		if (th1 > th) break;
@@ -2247,8 +2111,9 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	}
 	j = j0 + dj;
 
+	// Index in phi
 	dz = (ext.zmax - ext.zmin) / (nz - 1);
-	k = (ph - ext.zmin) / dz - 0.5;
+	k = (ph - ext.zmin) / dz;// -0.5;
 
 	i1 = (int)ceil(i);
 	j1 = (int)ceil(j);
@@ -2260,6 +2125,17 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	dk = k - floor(k);
 	if (k0 == -1) k0 = nz - 1;
 	if (k1 == nz) k1 = 0;
+
+	c =	d(i0, j0, k0) * (1. - di) * (1. - dj) * (1. - dk) +
+		d(i0, j0, k1) * (1. - di) * (1. - dj) * (dk) +
+		d(i0, j1, k0) * (1. - di) * (dj) * (1. - dk) +
+		d(i0, j1, k1) * (1. - di) * (dj) * (dk) +
+		d(i1, j0, k0) * (di) * (1. - dj) * (1. - dk) +
+		d(i1, j0, k1) * (di) * (1. - dj) * (dk) +
+		d(i1, j1, k0) * (di) * (dj) * (1. - dk) +
+		d(i1, j1, k1) * (di) * (dj) * (dk);
+
+	/*
 	c00 = d(i0, j0, k0) * (1 - di) + d(i1, j0, k0) * di;
 	c01 = d(i0, j0, k1) * (1 - di) + d(i1, j0, k1) * di;
 	c10 = d(i0, j1, k0) * (1 - di) + d(i1, j1, k0) * di;
@@ -2267,6 +2143,7 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	c0 = c00 * (1 - dj) + c10 * dj;
 	c1 = c01 * (1 - dj) + c11 * dj;
 	c = c0 * (1 - dk) + c1 * dk;
+	*/
 	if (isnan(c))  return(1);
 	*val = c;
 	return(0);
