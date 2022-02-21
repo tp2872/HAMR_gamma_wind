@@ -33,7 +33,7 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (1)
+#define REFINE_GRB (0)
 
 #define TASK_BASED (0)
 
@@ -42,7 +42,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
-#define BH_SPIN (0.25)
+#define BH_SPIN (0.8)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
 #define BETA (1e2)
@@ -67,7 +67,7 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
 #define NU_DEBUG (1)
@@ -79,7 +79,7 @@ Physical Parameters section
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
@@ -175,7 +175,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (40.0)
+#define GPU_MEM (10.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -193,17 +193,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 2
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 150
-#define BS_2 150
-#define BS_3 1
+#define BS_1 48
+#define BS_2 48
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 5
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -281,7 +281,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.9)
+#define COUR (0.5)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability

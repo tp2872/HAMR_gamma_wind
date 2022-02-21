@@ -244,11 +244,11 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 25.;
+	DTl = 100.;
 #if (WHICHPROBLEM == RAD_PULSE)
 	DTd = 10.;
 #else 
-	DTd = 25.;// 0.1;
+	DTd = 50.;// 0.1;
 #endif
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
@@ -642,7 +642,7 @@ void check_input() {
 	//Don't use block sizes this small in any case
 	if ((BS_3 < 8 && NB_3 * BS_3 > 1) || BS_2 < 8 || BS_1 < 8) {
 		fprintf(stderr, "Init error 4");
-		exit(0);
+		//exit(0);
 	}
 
 	if (((BS_3 % 2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {

@@ -882,7 +882,7 @@ void init_torus()
 	eccentricity = 0.0;
 	double Tnu;
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es, Tnu) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X,&r,&th, &phi) ;
@@ -1378,9 +1378,9 @@ void init_postmerger() {
 
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
-	int stride1 = 1;
-	int stride2 = 1; 
-	int stride3 = 1;
+	int stride1 = 4;
+	int stride2 = 4; 
+	int stride3 = 4;
 
 	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
 	size_t memsize, nitems, nread;
@@ -1390,7 +1390,7 @@ void init_postmerger() {
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	a = BH_SPIN ;
-	beta = 10.;
+	beta = 100.;
 
 	coord(0, 5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -1548,8 +1548,8 @@ void init_postmerger() {
 	eccentricity = 0.0;
 	double Tnu;
 	for (n = 0; n < n_active; n++){
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, Tnu) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			pos_new[1] = r;
@@ -1595,9 +1595,9 @@ void init_postmerger() {
 			#if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
 				prim[index_nu(UU_NU, sp)] = 1e-30;
-				prim[index_nu(U1_NU, sp)] = ur;
-				prim[index_nu(U2_NU, sp)] = uh;
-				prim[index_nu(U3_NU, sp)] = up;
+				prim[index_nu(U1_NU, sp)] = prim[U1];
+				prim[index_nu(U2_NU, sp)] = prim[U2];
+				prim[index_nu(U3_NU, sp)] = prim[U3];
 
 				Tnu = pow(prim[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 				prim[index_nu(NUMBER_NU, sp)] = prim[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
@@ -1609,6 +1609,7 @@ void init_postmerger() {
 			PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
 
 			if(prim[RHO] > rhomax) {
+				#pragma omp critical
 				rhomax = prim[RHO];
 			}
 		}
@@ -1621,12 +1622,7 @@ void init_postmerger() {
 
 	#if (MPI_enable)
 	/*Share rhomax among MPI processes*/
-	MPI_Barrier(mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	/*Share umax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	/* Normalize the densities so that max(rho) = 1 */
@@ -1637,7 +1633,9 @@ void init_postmerger() {
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p,1);
 
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 	set_mag(rhomax, beta);
+#endif
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
@@ -1647,6 +1645,7 @@ void init_postmerger() {
 	#if DOHELM
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
 			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
@@ -1659,6 +1658,7 @@ void init_postmerger() {
 	#if (DOHELM_TEMPERATURE)
 	// Set temperatures given u:
 	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
 		}

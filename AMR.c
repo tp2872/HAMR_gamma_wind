@@ -1292,7 +1292,7 @@ void set_AMR(void){
 	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
 
-	if (max_blocks * numtasks < n_active_total) {
+	if (max_blocks * numtasks < n_active_total) {	
 		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
 		exit(0);
 	}
@@ -2609,7 +2609,7 @@ void check_refcrit(void){
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	if (max_levels == 0) max_levels = N_LEVELS_3D - 3;
+	if (max_levels == 0) max_levels = N_LEVELS_3D;
 	int tag, count=0, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	

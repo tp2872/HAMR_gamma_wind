@@ -336,7 +336,7 @@ void set_gridparam(void) {
 	int iter;
   
 	Rin = 0.67 * (1. + sqrt(1. - a * a));  //.98
-	Rout = 1e4;
+	Rout = 1e5;
 	x1br = log( rbr - R0 );
   
 	if( Rout < rbr ) {
