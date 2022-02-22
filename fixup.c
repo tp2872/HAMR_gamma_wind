@@ -103,6 +103,8 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#else 
 	u = pv[UU];
 	#endif
+	#else
+	u = pv[UU];
 	#endif
 
 	//tie floors to the local values of magnetic field and internal energy density

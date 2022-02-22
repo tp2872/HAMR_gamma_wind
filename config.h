@@ -41,7 +41,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.8)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
@@ -67,7 +67,7 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
 #define NU_DEBUG (1)
@@ -79,11 +79,19 @@ Physical Parameters section
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
 #else 
-#define DO_YE (0)
+#define DO_YE (1)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
+#if (DOHELM)
+#if (NEUTRINOS_M1)
 #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+#else
+#define DOHELM_TEMPERATURE (1) 
+#endif
+#else
+#define DOHELM_TEMPERATURE (0) 
+#endif
 
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define EOS_GAMMALAW (0)
@@ -104,8 +112,8 @@ Physical Parameters section
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
 #if (DOHELM)
 // Danat: otherwise EOS fails, since the densities are too low outside the torus
-    #define RHOMIN      (1.e-14)     
-    #define UUMIN       (1.e-16)      
+    #define RHOMIN      (1.e-7)//(1.e-14)     
+    #define UUMIN       (1.e-9)//(1.e-16)      
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20) 
 #else
@@ -507,7 +515,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS))
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS)) * (6.63555e-7)
 #else
 #define MASS_DENSITY_SCALE (1e10)
 #endif

@@ -7731,6 +7731,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#else
 	u = pf[UU];
 	#endif
+	#else
+	u = pf[UU];
 	#endif
 	
 	
