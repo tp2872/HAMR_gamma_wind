@@ -2597,6 +2597,8 @@ int check_nesting(int n){
 
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
+#elif (WHICHPROBLEM==POSTMERGER_PROBLEM)
+#define REFINEMENT_CUTOFF 0.2 //in this case density in code units, used for H/R=0.03 disk
 #else
 #define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
@@ -3323,6 +3325,65 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			enth=1.0+p[nl[n]][index_3D(n, i, j, z)][UU]*gam/p[nl[n]][index_3D(n, i, j, z)][RHO];
 			if (p[nl[n]][index_3D(n, i, j, z)][RHO]*fabs(enth) > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO]*enth;
+		}
+	}
+	#elif(WHICHPROBLEM==POSTMERGER_PROBLEM)
+	int index;
+	float block_angle;
+	if (block[n][AMR_NODE] == rank) {
+	ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+		coord(n, i, j, z, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+		if (block[n][AMR_LEVEL1] >= BASE_LEVELS) {
+			if (r > 3.1) {
+				//Calc misc quantities
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+
+				//Matthew's new refinement criterion
+				//Convert indices to appropriate format
+				//index = i / pow(1 + REF_1, block[n][AMR_LEVEL1]);
+
+				//Calculate opening angle of a single block
+				//block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+
+				//Check if cell is part of the jet; If so set the cell up for refinement
+				double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+				if (rho > REFINEMENT_CUTOFF) {
+					ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				}
+				else if (rho > 0.51 * REFINEMENT_CUTOFF) {
+					ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				}
+				//Do not derefine base grid
+				if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			else {
+				ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+		}
+		else {
+			if (r > 3.1) {
+				ref_val = 1.01 * REFINEMENT_CUTOFF;
+			}
+		}
+
+		//No refinement near black hole; even in case of derefine_pole
+		/*if(ref_val>=REFINEMENT_CUTOFF){
+			#if(DEREFINE_POLE==0 || BS_1<32)
+			if ((block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 2) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 4 + 2) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 12 + 2)
+				|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 28 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 60 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 124 + 2)
+				|| (block[n][AMR_LEVEL1] == 6 && block[n][AMR_COORD1] < 252 + 2) || (block[n][AMR_LEVEL1] == 7 && block[n][AMR_COORD1] < 508 + 2) || (block[n][AMR_LEVEL1] == 8 && block[n][AMR_COORD1] < 1020 + 2)){
+				ref_val = 0.51 * REFINEMENT_CUTOFF;
+			}
+			#else //Required to prevent jumps in AMR near pole due to 1D refinement; Another possibility is to prohibit the code from refining blocks neighboring the block touching the pole
+			if ( (block[n][AMR_LEVEL1] == 0 && block[n][AMR_COORD1] < 4) || (block[n][AMR_LEVEL1] == 1 && block[n][AMR_COORD1] < 10) || (block[n][AMR_LEVEL1] == 2 && block[n][AMR_COORD1] < 26)
+				|| (block[n][AMR_LEVEL1] == 3 && block[n][AMR_COORD1] < 42 + 2) || (block[n][AMR_LEVEL1] == 4 && block[n][AMR_COORD1] < 96 + 2) || (block[n][AMR_LEVEL1] == 5 && block[n][AMR_COORD1] < 196 + 2)){
+				ref_val = 0.51 * REFINEMENT_CUTOFF;
+			}
+			#endif
+		}*/
 		}
 	}
 	#else

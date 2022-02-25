@@ -82,7 +82,7 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 
   //choose the type of coordinates depending on the problem at hand
   #if( WHICHPROBLEM == POSTMERGER_PROBLEM)
-    vofx_function_pointer = vofx_sjetcoords;
+	vofx_function_pointer = vofx_matthewcoords; // vofx_sjetcoords;
   #else
     vofx_function_pointer = vofx_matthewcoords;
   #endif
@@ -336,7 +336,7 @@ void set_gridparam(void) {
 	int iter;
   
 	Rin = 0.67 * (1. + sqrt(1. - a * a));  //.98
-	Rout = 1e5;
+	Rout = 0.5e4;
 	x1br = log( rbr - R0 );
   
 	if( Rout < rbr ) {
