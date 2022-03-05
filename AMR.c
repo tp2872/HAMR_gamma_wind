@@ -3139,7 +3139,7 @@ double calc_refcrit(int n){
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			if(block[n][AMR_LEVEL1] >= BASE_LEVELS){
-				if (r > 6.5) {
+				if (r > 3.1) {
 					//Calc misc quantities
 					get_geometry(n, i, j, z, CENT, &geom);
 					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
@@ -3153,7 +3153,13 @@ double calc_refcrit(int n){
 					block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 
 					//Check if cell is part of the jet; If so set the cell up for refinement
+#if (DOHELM && DOHELM_TEMPERATURE)
+					double pres, u;
+					eos_mode_rhotemp_pres_u(p[nl[n]][index_3D(n, i, j, z)][RHO], p[nl[n]][index_3D(n, i, j, z)][UU], p[nl[n]][index_3D(n, i, j, z)][YE], &pres, &u);
+					if (u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > HIGH_CUTOFF && t>t_ff)
+#else
 					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > HIGH_CUTOFF && t>t_ff)
+#endif
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3177,7 +3183,11 @@ double calc_refcrit(int n){
 						}		
 					}
 
+#if (DOHELM && DOHELM_TEMPERATURE)
+					if ((u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < HIGH_CUTOFF && u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*HIGH_CUTOFF) && t>t_ff) {
+#else
 					if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < HIGH_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*HIGH_CUTOFF) && t>t_ff) {
+#endif
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
 								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
@@ -3197,7 +3207,11 @@ double calc_refcrit(int n){
 					}
 				
 					//Check if cell is part of the coccoon; If so set the cell up for refinement
+#if (DOHELM && DOHELM_TEMPERATURE)
+					if (u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > LOW_CUTOFF && t>t_ff)
+#else 
 					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > LOW_CUTOFF && t>t_ff)
+#endif
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3220,7 +3234,11 @@ double calc_refcrit(int n){
 							}
 						}
 					}
+#if (DOHELM && DOHELM_TEMPERATURE)
+					if ((u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < LOW_CUTOFF && u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*LOW_CUTOFF) && t>t_ff) {
+#else
 					if ((p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) < LOW_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > 0.5*LOW_CUTOFF) && t>t_ff) {
+#endif
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
 								if ((coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
@@ -3255,7 +3273,7 @@ double calc_refcrit(int n){
 				}
 			}
 			else {
-				if (r > 6.5) {
+				if (r > 3.1) {
 					ref_val = 1.01 * REFINEMENT_CUTOFF;
 				}
 			}
