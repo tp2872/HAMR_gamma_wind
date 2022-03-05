@@ -76,7 +76,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if (NEUTRINOS_M1)
-	, const  double* __restrict__ gpu_nulib_table
+	, const  double* __restrict__ gpu_nulib_table, int* pflag_nu
 	#endif
 );
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2
@@ -118,6 +118,9 @@ __global__ void Utoprim0(void);
 
 __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn);
 __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage);
+#if (NEUTRINOS_M1)
+__global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
+#endif
 __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);
 __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);

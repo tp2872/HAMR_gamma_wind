@@ -1083,6 +1083,9 @@ void GPU_fixup(int flag, int n, double Dt);
 void GPU_fixup_post(int n, double Dt);
 void GPU_cleanup_post(int n);
 void GPU_fixuputoprim(int flag, int n);
+#if (NEUTRINOS_M1)
+void GPU_fixuputoprim_nu(int flag, int n);
+#endif
 void GPU_Utoprim_M1_0(int n, double Dt);
 void GPU_Utoprim_M1_1(int n, double Dt);
 void GPU_Utoprim_M1_2(int n, double Dt);

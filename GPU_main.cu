@@ -2214,7 +2214,7 @@ void GPU_fixup(int flag, int n, double Dt)
 			, GPU_eos_table[0]
 			#endif
 			#if (NEUTRINOS_M1) 
-			, GPU_nulib_table[0]
+			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
 			#endif
 			);
 	}
@@ -2225,7 +2225,7 @@ void GPU_fixup(int flag, int n, double Dt)
 			, GPU_eos_table[0]
 			#endif
 			#if (NEUTRINOS_M1) 
-			, GPU_nulib_table[0]
+			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
 			#endif
 			);
 	}
@@ -2252,6 +2252,27 @@ void GPU_fixuputoprim(int flag, int n)
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
 }
+
+#if (NEUTRINOS_M1)
+void GPU_fixuputoprim_nu(int flag, int n)
+{
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
+	#if(N_GPU>1)
+	cudaSetDevice(block[n][AMR_GPU]);
+	#endif
+
+	if (flag == 1) {
+		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	else {
+		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
+}
+#endif
 
 void GPU_cleanup_post(int n)
 {

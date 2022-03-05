@@ -515,7 +515,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS)) * (6.63555e-7)
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7))
 #else
 #define MASS_DENSITY_SCALE (1e10)
 #endif

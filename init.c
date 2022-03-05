@@ -830,12 +830,12 @@ void init_torus()
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
-	a = 0.9375;
+	a = BH_SPIN;
 	rin = 6.;
 	rmax = 12.;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
-	beta = 10. ;
+	beta = BETA ;
 	#if(RAD_M1)
 	gam_local = 4. / 3.;
 	#else
