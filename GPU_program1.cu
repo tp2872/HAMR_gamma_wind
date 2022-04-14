@@ -15278,6 +15278,24 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 			
 			returnval = 1;
 		}
+		else if (lim == TYPE3) {
+			// If energy density is negative, reset it to floor value
+			if (Qdotn > 0.0) {
+				prim[0] = 1.e-30;
+				prim[1] = 0.;
+				prim[2] = 0.;
+				prim[3] = 0.;
+				Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+			}
+			// Causality violation: rescale!
+			else if (y > y_max) {
+				pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+				prim[0] = pressure * 3.; // Erad = 3*p_rad
+				for (i = 1; i < 4; i++) prim[i] = Qtcon[i] / (4. * pressure * GAMMAMAX_NU);
+				prim[4] = U[4] / GAMMAMAX_NU;
+			}
+		}
 		else {
 			if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
 			//if (Qdotn > 0.0 || y < 0.0) {
@@ -15306,14 +15324,16 @@ __device__ int Rtoprim_nu_calc(double* U, double gcov[10], double gcon[10], doub
 		if (!isfinite(prim[3]))prim[3] = 0.0;
 
 		//Floor on photon number+
-		//Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-		//prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-		prim[4] = U[4];
+		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		if (lim != TYPE3) prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+		//prim[4] = U[4];
+		returnval = 1;
 	}
 
 	if (prim[4] < 0.0) {
 		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+		returnval = 1;
 	}
 
 	return(returnval);

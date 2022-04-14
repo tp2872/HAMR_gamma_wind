@@ -69,12 +69,12 @@ Physical Parameters section
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
-#define NU_SUBCYCLING (0)
+#define NU_SUBCYCLING (1)
 #define NU_DEBUG (1)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
-#define DANAT_GDET_INTERP (0)
-#define NU_INNER_STOP (1)
+#define DANAT_GDET_INTERP (1)
+#define NU_INNER_STOP (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -501,6 +501,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MU_G (4.0/(6*X_AB+Y_AB+2.0))
 #define BASIC (0)
 #define TYPE2 (1)
+#define TYPE3 (2)
 #define IONS (0)
 #define ELECTRONS (1)
 
