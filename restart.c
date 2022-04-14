@@ -319,7 +319,7 @@ void rdump_block_read(FILE *fp, int n)
 				double Tnu;
 				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
 					for (sp = 0; sp < NU_SPECIES; sp++) {
-						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] = 1e-25;
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] = 1e-30;
 						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U1];
 						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U2];
 						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U3];
@@ -332,11 +332,11 @@ void rdump_block_read(FILE *fp, int n)
 			else {
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
 				for (sp = 0; sp < NU_SPECIES; sp++) {
-					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU,sp)] += read[uu_nu] * reduce_factor;
-					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU,sp)] += read[u1_nu] * reduce_factor;
-					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU,sp)] += read[u2_nu] * reduce_factor;
-					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU,sp)] += read[u3_nu] * reduce_factor;
-					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU,sp)] += read[number_nu] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU,sp)] += read[index_nu(uu_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU,sp)] += read[index_nu(u1_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU,sp)] += read[index_nu(u2_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU,sp)] += read[index_nu(u3_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU,sp)] += read[index_nu(number_nu,sp)] * reduce_factor;
 				}
 			}
 			#endif

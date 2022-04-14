@@ -587,6 +587,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
     *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
 
+    *etaele += 0.511 * mev2k / btemp;
+
     return;
 }
 
@@ -1099,8 +1101,8 @@ void eos_mode_rhopres_u (double* prim) {
     }
     #endif
     
-    if (error_p > EOS_TOL) {
-        printf("5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
+    if (error_p > EOS_TOL || error > EOS_TEMP_TOL) {
+        fprintf(stderr, "5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
     }
 
     prim[UU] = xener * den;
@@ -1281,6 +1283,10 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
         }
     }
     *temp = temp_old;
+
+    if (error_e > EOS_TOL || error > EOS_TEMP_TOL) {
+        fprintf(stderr, "6 %g, %g --> %g (%g %g %g)\n", error_e, temp_ini_guess, temp_old, dens, u_goal, ye);
+    }
 
     #if (EOS_BISECTION)
     // Bisection method as backup rootfinder

@@ -94,7 +94,6 @@ Physical Parameters section
 #endif
 
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
-#define EOS_GAMMALAW (0)
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (0)
@@ -183,7 +182,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (10.0)
+#define GPU_MEM (40.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -401,15 +400,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NU_SPECIES (3)       /* number of species evolved */
 
 /* number of Nulib table entries for each variable */
-#define NULIB_RHO   (345) // (50)
-#define NULIB_TEMP  (136) // (40)
-#define NULIB_YE    (50) // (30)
+#define NULIB_RHO   (70) // (50)
+#define NULIB_TEMP  (50) // (40)
+#define NULIB_YE    (40) // (30)
 
 /* Nulib table variable bounds  */
 #define nulib_dhi (14.0) // (15.5)
 #define nulib_dlo (5.0) // (6.0)
-#define nulib_thi (12.464298190399795) // (12.240715727974438)
-#define nulib_tlo (8.064624468918757) // (9.763594473254775)
+#define nulib_thi (13.0) // (12.240715727974438)
+#define nulib_tlo (9.763594) // (9.763594473254775)
 #define nulib_yhi (0.55)
 #define nulib_ylo (0.035)
 
@@ -515,9 +514,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7))
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #else
-#define MASS_DENSITY_SCALE (1e10)
+#define MASS_DENSITY_SCALE (5e11)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)

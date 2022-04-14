@@ -2598,7 +2598,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #elif (WHICHPROBLEM==POSTMERGER_PROBLEM)
-#define REFINEMENT_CUTOFF 0.2 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.02 //in this case density in code units, used for H/R=0.03 disk
 #else
 #define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
@@ -3345,7 +3345,7 @@ double calc_refcrit(int n){
 			if (p[nl[n]][index_3D(n, i, j, z)][RHO]*fabs(enth) > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO]*enth;
 		}
 	}
-	#elif(WHICHPROBLEM==POSTMERGER_PROBLEM)
+	#elif(WHICHPROBLEM==POSTMERGER_PROBLEM || WHICHPROBLEM==TORUS_PROBLEM)
 	int index;
 	float block_angle;
 	if (block[n][AMR_NODE] == rank) {
@@ -3353,7 +3353,7 @@ double calc_refcrit(int n){
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		if (block[n][AMR_LEVEL1] >= BASE_LEVELS) {
-			if (r > 3.1) {
+			if (r > 5.4) {
 				//Calc misc quantities
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
@@ -3382,7 +3382,7 @@ double calc_refcrit(int n){
 			}
 		}
 		else {
-			if (r > 3.1) {
+			if (r > 5.4) {
 				ref_val = 1.01 * REFINEMENT_CUTOFF;
 			}
 		}

@@ -565,17 +565,7 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     double prim[UU + 1];
     prim[RHO] = rho;
     prim[UU] = w - rho;
-	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_w_pres_dpdrho_dpde_d(rho, temp_prev, 
-		#if (DO_YE)
-		ye, 
-		#else
-		1.0,
-		#endif
-		w - rho, &p_tmp, &dpdrho, &dpde_d);
-	#else
     eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d);
-	#endif
 	#if (inversion_w_edits)
 	// Danat: edit (DIMARK)
 	double dudp = rho / dpde_d;
@@ -812,15 +802,6 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     // Helmholtz EOS
     xdens = prim[RHO];
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K
-	#if (DOHELM_TEMPERATURE)
-	eos_mode_rhotemp_pres(xdens, eos_temp_low, 
-		#if (DO_YE)
-		ye, 
-		#else 
-		1.0, 
-		#endif
-		&xpres);
-	#else 
     eos_mode_rhotemp_pres_min (xdens, 
 		#if (DO_YE)
 		ye,
@@ -828,7 +809,6 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		1.0, 
 		#endif
 		&xpres);
-	#endif
     p_array[0] = xpres;
     #else
     // Ideal gas EOS
@@ -868,17 +848,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         // Helmholtz EOS
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
-		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU],
-			#if(DO_YE)
-			ye,
-			#else
-			1.0,
-			#endif
-			w - rho0, &xpres, &u);
-		#else
         eos_mode_rhow_pres_u (p_temp, &xpres, &u); // DI_helmT
-		#endif
         #else
         // Ideal gas EOS
 			#if(TWO_T)
@@ -944,17 +914,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         // Helmholtz EOS
         p_temp[RHO] = rho0;
         p_temp[UU] = w - rho0;
-		#if(DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u(rho0, &prim[UU],
-			#if(DO_YE)
-			ye, 
-			#else
-			1.0, 
-			#endif
-			w - rho0, &p_new, &u);
-		#else
         eos_mode_rhow_pres_u (p_temp, &p_new, &u);
-		#endif
         #else
 		#if(TWO_T)
 		gamma_eos = set_S_w(S2, rho0, w, fel);
