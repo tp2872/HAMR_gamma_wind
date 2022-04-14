@@ -283,7 +283,11 @@ void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_
 
 	// Call EOS to get gas temperature and electron chemical potential
 	double mu_ele;
-	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_ele);
+	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_ele
+		#if (DONUCLEAR)
+		, ph[XALPHA], ph[XATM]
+		#endif
+	);
 
 	double mu_n, mu_p, mu_nu;
 	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
@@ -353,11 +357,19 @@ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, 
 	// Danat: didn't include Coulomb corrections for mu_p for now
 }
 
-void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele) {
+void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
+	#if (DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+) {
 	double free, df_d, df_t, df_dd, df_tt, df_dt, etaele, dpepdd;
 	temp *= conv_T_CODE2CGS;
 	dens *= conv_dens_CODE2CGS;
-	interp_eostable(dens, temp, dens * ye, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+	interp_eostable(dens, temp, dens * ye, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele 
+		#if (DONUCLEAR)
+		, x_alpha, x_atm
+		#endif
+		);
 	*mu_ele = etaele;
 }
 #endif

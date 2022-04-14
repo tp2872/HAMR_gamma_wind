@@ -17,7 +17,7 @@ Physical Parameters section
 #define POSTMERGER_PROBLEM 13
 #define RAD_PULSE 14
 
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
@@ -45,7 +45,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e2)
+#define BETA (50.0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
@@ -78,9 +78,12 @@ Physical Parameters section
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
+#define DONUCLEAR (0)
 #else 
 #define DO_YE (1)
+#define DONUCLEAR (0)
 #endif
+
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
@@ -200,14 +203,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
-#define NB_3 2
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 48
+#define BS_1 128
+#define BS_2 128
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -550,12 +553,13 @@ MNEMONICS SECTION
 #define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
 #define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 #define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
-
-#define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1)
-#define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
-#define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+2)
-#define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+3)
-#define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+4)
+#define XALPHA  (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+0)
+#define XATM    (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
+#define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2)
+#define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+1)
+#define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+2)
+#define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+3)
+#define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+4)
 #define NPR_NU (5)
 #define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2    
 
@@ -837,6 +841,13 @@ Variable Inversion Section
 #define NEWT_DIM_2 2
 #define NEWT_DIM_1 1
 
+// Section with DONUCLEAR constants
+#define x_atm_cutoff (0.5)
+#define tgas_cutoff (1e10)
+#define Qalpha (28.3 * 1.60217733e-6)
+#define amu (1.6605402e-24)
+#define m_alpha (4.0 * amu)
+
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
@@ -879,7 +890,6 @@ Section with EOS constants
 #define kev (8.617385e-5)
 #define k2mev (8.617385e-11)
 #define mev2k (1.160445e10)
-#define amu (1.6605402e-24)
 #define avoinv (1.0e0 / avo)
 #define kergavo (kerg * avo)
 #define c_light (2.99792458e10)
@@ -927,10 +937,6 @@ Section with EOS constants
 #define eos_c2 (0.288675e0)
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
-
-//For the nuclear physics: alpha particles
-#define Qalpha (4.5334641147464686e-5)
-#define Qa (28.3 * 1.60217733e-6)
 
 // ***********Beginning of statement function declarations **********
 // quintic hermite polynomial statement functions
@@ -988,7 +994,7 @@ Section with derived quantities
 //#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE*1+DONUCLEAR*2+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -996,7 +1002,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+(5+1)*NEUTRINOS_M1*NU_SPECIES)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+2*DONUCLEAR+(5+1)*NEUTRINOS_M1*NU_SPECIES)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

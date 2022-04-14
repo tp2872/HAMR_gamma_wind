@@ -89,6 +89,7 @@ void set_uniform_Bphi(void);
 double lfish_calc(double r);
 void init_rad_pres(double pi[NPR]);
 void init_neutrinos(double ph[NPR]);
+void init_nuclear(double ph[NPR]);
 void init_sndwave();
 void init_entwave();
 void init_radpulse();
@@ -949,7 +950,10 @@ void init_torus()
 				#if (DO_YE)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
 				#endif
-			
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				#endif			
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -1014,6 +1018,10 @@ void init_torus()
 
 				#if (DO_YE)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.15;
+				#endif
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
 				#endif
 			}
 
@@ -1150,7 +1158,11 @@ void init_torus()
 	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);
 		}
 	}
 	#endif
@@ -1161,6 +1173,7 @@ void init_torus()
 	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 		}
 	}
@@ -1221,7 +1234,11 @@ void init_torus()
 void init_neutrinos(double ph[NPR]) {
 #if (NEUTRINOS_M1)
 	double F2, F3, mu_nu, mu_p, mu_n, mu_e;
-	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_e);
+	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_e
+		#if (DONUCLEAR)
+		, ph[XALPHA], ph[XATM]
+		#endif
+	);
 	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
 	mu_nu = mu_p + mu_e - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
 
@@ -1258,6 +1275,43 @@ void init_neutrinos(double ph[NPR]) {
 		ph[index_nu(U3_NU, sp)] = ph[U3];
 	}
 
+#endif
+}
+
+void init_nuclear(double ph[NPR]) {
+#if (DONUCLEAR)
+	#if (DOHELM_TEMPERATURE != 1)
+	fprintf(stderr, "Won't work without Tgas as a primitive variable! Exiting...");
+	exit(1);
+	#endif
+
+	double x_n, x_p;
+	// Compute abundances 
+	if (ph[XATM] < x_atm_cutoff && ph[UU] > tgas_cutoff) {
+		ph[XATM] = 0.0;
+		nse_abundances(ph[RHO] * MASS_DENSITY_SCALE, ph[UU], ph[YE], &x_n, &x_p, &ph[XALPHA]);
+	}
+	else {
+		x_n = get_xn(ph[YE], ph[XALPHA]);
+		x_p = get_xp(ph[YE], ph[XALPHA]);
+		// normalize
+		double x_sum = x_n + x_p + ph[XALPHA] + ph[XATM];
+		if (x_sum > 1.0) {
+			ph[XALPHA] = ph[XALPHA] / x_sum;
+			ph[XATM] = ph[XATM] / x_sum;
+		}
+	}
+
+	fprintf(stderr, "\t\n xn, xp, xa, xatm, ye = %e %e %e %e %e", x_n, x_p, ph[XALPHA], ph[XATM], ph[YE]);
+
+	// Check if the abundances are out of bounds
+	ph[XALPHA] = MY_MIN(1.0, ph[XALPHA]);
+	ph[XATM] = MY_MIN(1.0, ph[XATM]);
+
+	ph[XALPHA] = MY_MAX(1e-10, ph[XALPHA]);
+	ph[XATM] = MY_MAX(1e-10, ph[XATM]);
+
+	return;
 #endif
 }
 
@@ -1372,9 +1426,9 @@ void init_postmerger() {
 
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
-	int stride1 = 4;
-	int stride2 = 4; 
-	int stride3 = 4;
+	int stride1 = 1;
+	int stride2 = 1; 
+	int stride3 = 1;
 
 	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
 	size_t memsize, nitems, nread;
@@ -1575,11 +1629,18 @@ void init_postmerger() {
 				#if (DO_YE)
 				prim[YE] = 1.0;
 				#endif
-				//udphi = dd(i, j, z, VARUDPHI) / r_unit;
+				#if (DONUCLEAR)
+				prim[XALPHA] = 0.0;
+				prim[XATM] = 1.0;
+				#endif
 			}
 			else {
 				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
 				utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
+				#if (DONUCLEAR)
+				prim[XALPHA] = 0.0;
+				prim[XATM] = 0.0;
+				#endif
 			}
 
 			prim[B1] = 0.;
@@ -1664,12 +1725,16 @@ void init_postmerger() {
 		//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], 
-#if (DO_YE)
+				#if (DO_YE)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], 
-#else 
+				#else 
 				1.0,
-#endif
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+				#endif
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);
 		}
 	}
 	#endif

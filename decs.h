@@ -1390,7 +1390,11 @@ void eos_init(void);
 void eos_init_GPU(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
-void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
+void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele
+	#if (DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
 void eos_mode_rhou_entr(double* prim, double* entr);
 void eos_mode_rhou_pres (double* prim, double *pres);
 void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2);
@@ -1402,18 +1406,58 @@ void eos_mode_rhou_temp (double* prim, double* temp);
 
 // DITEMP: eos wrapper functions 
 #if (DOHELM_TEMPERATURE)
-void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal);
-void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_goal);
-void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, double* u);
-void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pres, double* u, double* cs2);
-void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres);
-void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr);
+void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_goal
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, double* u
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pres, double* u, double* cs2
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
 // Rootfinding functions based on w and s (3x)
-void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d);
-void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, double* pres, double* u);
-void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho);
+void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, double* pres, double* u
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
 // Floor
-void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double u, double* pres);
+void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double u, double* pres
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
 #endif
 
 /*Neutrino function*/
@@ -1424,7 +1468,11 @@ void nulib_init_GPU(void);
 
 void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
 void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
-void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele);
+void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 double calc_fermiint2(double x);
 double calc_fermiint3(double x);
@@ -1436,4 +1484,11 @@ extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 
 extern double* nulib_table[1];
 extern double* GPU_nulib_table[1];
+#endif
+
+#if (DONUCLEAR)
+double get_xp(double ye, double x_alpha);
+double get_xn(double ye, double x_alpha);
+void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
+void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
 #endif

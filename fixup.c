@@ -171,6 +171,14 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	pv[YE] = MY_MAX(nulib_ylo, pv[YE]);
 	pv[YE] = MY_MIN(1.0, pv[YE]);
 	#endif
+	
+	#if (DONUCLEAR)
+	pv[XALPHA] = MY_MAX(1e-10, pv[XALPHA]);
+	pv[XALPHA] = MY_MIN(1.0, pv[XALPHA]);
+	
+	pv[XATM] = MY_MAX(1e-10, pv[XATM]);
+	pv[XATM] = MY_MIN(1.0, pv[XATM]);
+	#endif
 
 	//Floor on radiation internal energy
 	#if(RAD_M1)

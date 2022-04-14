@@ -10,7 +10,7 @@
 #include "decs.h"
 #include "nuclear.h"
 
-#if(DONUCLEAR)
+#if(DONUCLEAR == 2)
 double D4rodrigo(double eta, double Xn, double Xp);
 double D5rodrigo(double eta, double Xn, double Xp);
 double F4m(double x);
