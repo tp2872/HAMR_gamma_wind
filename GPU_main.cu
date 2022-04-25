@@ -34,12 +34,14 @@ void GPU_init(void)
 	//Enable peer access
 	ranks_per_node = numdevices / N_GPU;
 	gpu_offset = (rank % (ranks_per_node))*N_GPU;
+	#if(N_GPU>1)
 	for (i = gpu_offset; i < gpu_offset + N_GPU; i++){
 		cudaSetDevice(i);
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
 			if (i!=j) cudaDeviceEnablePeerAccess(j, 0);
 		}
 	}
+	#endif
 	status = cudaGetLastError();
 	if (cudaSuccess != status){
 		fprintf(stderr, "Error in setting peeraccess: %d \n", status);
