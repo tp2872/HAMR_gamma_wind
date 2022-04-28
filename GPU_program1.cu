@@ -16066,6 +16066,10 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 	double Acon_0, Acon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 
+	double vmax_tmp, vmin_tmp; //edit 4
+	*vmax = 1.0;
+	*vmin = 0.0;
+
 	if (dir == 1) {
 		Acon_0 = geom->gcon[1];
 		Acon_js = geom->gcon[4];
