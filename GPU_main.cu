@@ -228,6 +228,12 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	#if(NEUTRINOS_M1)
 	cudaMalloc(&Bufferpflag_NU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
+	#if (NEUTRINOS_DEBUG)
+	cudaMallocHost(&allflags_NU_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double));
+
+	cudaMalloc(&Bufferallflags_NU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double));
+
+	#endif
 	#endif
 	cudaMalloc(&Bufferfailimage[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
 	//cudaMalloc(&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
@@ -2215,6 +2221,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
+			#if (NEUTRINOS_DEBUG)
+			, Bufferallflags_NU[nl[n]]
+			#endif
 			#endif
 			);
 	}
@@ -2226,6 +2235,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
+			#if (NEUTRINOS_DEBUG)
+			, Bufferallflags_NU[nl[n]]
+			#endif
 			#endif
 			);
 	}
@@ -2627,6 +2639,9 @@ void GPU_read(int n)
 	#endif
 	#endif
 	cudaMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	cudaMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#endif
 	cudaDeviceSynchronize();
 
 	if (n == n_ord[0]) {
@@ -2652,6 +2667,12 @@ void GPU_read(int n)
 					}
 				}
 			}
+			#if (NEUTRINOS_DEBUG)
+			for (k = 0; k < NU_SPECIES; k++) {
+				allflags_NU[nl[n]][index_3D(n, i, j, z)][k] = allflags_NU_GPU[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+			}
+			#endif
+
 			#if(STAGGERED)
 			for (k = 1; k < NDIM; k++){
 				ps[nl[n]][index_3D(n, i, j, z)][k] = ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
@@ -2704,6 +2725,9 @@ void GPU_finish(int n, int force_delete)
 	cudaFreeHost(ph_1[nl[n]]);
 	//cudaFreeHost(pflag_GPU[nl[n]]);
 	cudaFreeHost(failimage_GPU[nl[n]]);
+	#if(NEUTRINOS_DEBUG)
+	cudaFreeHost(allflags_NU_GPU[nl[n]]);
+	#endif
 	cudaFreeHost(dq_1[nl[n]]);
 	cudaFreeHost(gcov_GPU[nl[n]]);
 	cudaFreeHost(gcon_GPU[nl[n]]);
@@ -2751,6 +2775,9 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	#if(NEUTRINOS_M1)
 	status += cudaFree(Bufferpflag_NU[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	status += cudaFree(Bufferallflags_NU[nl[n]]);
+	#endif
 	#endif
 	status += cudaFree(Bufferfailimage[nl[n]]);
 	//status += cudaFree(BufferdU[nl[n]]);

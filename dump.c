@@ -445,9 +445,15 @@ void dump_blockdiag(MPI_File *fp, int n)
 	int i, j, z;
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+		#if(NEUTRINOS_DEBUG)
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 0] = (float)allflags_NU[nl[n]][index_3D(n, i, j, z)][0];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 1] = (float)allflags_NU[nl[n]][index_3D(n, i, j, z)][1];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 2] = (float)allflags_NU[nl[n]][index_3D(n, i, j, z)][2];
+		#else
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 0] = (float)divb_calc(n, i, j, z);
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 1] = (float)failimage[nl[n]][index_3D(n, i, j, z)][0];
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 2] = (float)failimage[nl[n]][index_3D(n, i, j, z)][1];
+		#endif
 	}
 	#if(PARALLEL_IO)
 	MPI_File_iwrite_all(fp[0], array_diag[nl[n]], NDIAG * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);

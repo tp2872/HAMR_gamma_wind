@@ -69,8 +69,10 @@ Physical Parameters section
 #define DOHELM (1)
 #define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
-#define NU_SUBCYCLING (1)
-#define NU_DEBUG (1)
+#define NU_SUBCYCLING (0)
+#define NU_DEBUG (1) // (1)
+#define NEUTRINOS_DEBUG (1) //(1)
+#define NEUTRINOS_DEBUG_NFLAGS (1)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (1)
@@ -520,7 +522,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #else
-#define MASS_DENSITY_SCALE (5e11)
+#define MASS_DENSITY_SCALE (1e13)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)

@@ -651,7 +651,7 @@ void param_read(FILE *fp) {
 	}
 	if (startx_read[1] != startx[1] || startx_read[2] != startx[2] || startx_read[3] != startx[3]) {
 		if (rank == 0) {
-			fprintf(stderr, "Error reading in input parameters. startx not set properly! \n");
+			fprintf(stderr, "Error reading in input parameters. startx not set properly! %e == %e\n", startx_read[3], startx[3]);
 		}
 		//exit_r = 1;
 	}

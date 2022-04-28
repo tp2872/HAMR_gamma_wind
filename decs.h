@@ -338,6 +338,11 @@ extern double * Bufferdtij3[NB_LOCAL];
 extern int * Bufferpflag[NB_LOCAL];
 extern int * Bufferpflag_RAD[NB_LOCAL];
 extern int * Bufferpflag_NU[NB_LOCAL];
+#if (NEUTRINOS_DEBUG)
+extern double* Bufferallflags_NU[NB_LOCAL];
+extern double(*restrict allflags_NU[NB_LOCAL])[NU_SPECIES];
+extern double * allflags_NU_GPU[NB_LOCAL];
+#endif
 extern int * Bufferfailimage[NB_LOCAL];
 extern double * BufferKatm[NB_LOCAL];
 extern double * Buffersend1[NB_LOCAL];

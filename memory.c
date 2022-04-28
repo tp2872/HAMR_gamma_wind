@@ -92,6 +92,9 @@ void set_arrays(int n)
 	E_corn[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
 	failimage[nl[n]] = (int(*)[NFAIL])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int[NFAIL]));
+	#if (NEUTRINOS_DEBUG)
+	allflags_NU[nl[n]] = (double(*)[NU_SPECIES])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NU_SPECIES]));
+	#endif
 	#if(!NSY)
 	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NDIM][NDIM][NDIM]));
 	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
@@ -702,6 +705,9 @@ void free_arrays(int n){
 	free(E_corn[nl[n]]);
 	#endif
 	free(failimage[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	free(allflags_NU[nl[n]]);
+	#endif
 	free(conn[nl[n]]);
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
