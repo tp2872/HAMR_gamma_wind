@@ -77,6 +77,7 @@ Physical Parameters section
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (1)
 #define NU_INNER_STOP (0)
+#define NU_PREDICTOR (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)

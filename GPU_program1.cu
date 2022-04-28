@@ -732,6 +732,9 @@ __device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, dou
 __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, double *U_i, double *U_f, double Dt, double y_max, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table);
 __device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, double *source_ye, int species);
 
+// Predictor step
+__device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double U_ye_0, double Dt);
+
 // Functions
 __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table
 	#if (NU_INNER_STOP)
@@ -907,15 +910,11 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 
 	// Use a predictor step
 	#if (NU_PREDICTOR)
-	double kappa_abs, eta, kappa_es, lambda;
-	// compute average neutrino energy 
-	double ener_nu_avg = -((mhd_nu[0][0] * ucon[0] + mhd_nu[0][1] * ucon[1] + mhd_nu[0][2] * ucon[2] + mhd_nu[0][3] * ucon[3])) / (ph[index_nu(NUMBER_NU, species)] * q_nu.ucon[0]);
-	//if (isnan(ener_nu_avg));
-	// compute neutrino energy density in the fluid frame
-
-	kappa_abs = calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, ph, ener_nu_avg, species);
-	kappa_es = calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, ph, ener_nu_avg, species);
-	eta = calc_nu_kappa_emiss(gpu_nulib_table, ph, species);
+	double ucon[NDIM], ucov[NDIM];
+	ucon_calc(pb, geom, ucon);
+	lower(ucon, geom->gcov, ucov);
+	double pb_ye = pb[YE];
+	get_ye_predictor(gpu_eos_table, gpu_nulib_table, pb, geom, ucon, ucov, U_i[YE], Dt);
 	#endif
 
 	// Update conserved variables given the NU source term
@@ -1174,7 +1173,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	// In case MHD inversion fails, terminate with this error message
 	if (*pflag) {
 		#if(NU_DEBUG)
-		printf("\n\t Post-failed MHD inversion! Semi-implicit step, [flag=%d] rho=%e (old:%e), tgas=%e (old: %e), ye=%e (old: %e), uu_nu=%e, %e \err:%e, iter:%d\ (err_type:%d) Yeold: %e Yenew: %e \n", *pflag, pb_old[RHO], pb[RHO], pb_old[UU], pb[UU], pb_old[YE], pb[YE], pb[UU_NU], pb[UU_NU+5], error, iter, err_type, U_old[YE], U_new[YE]);
+		printf("\n\t Post-failed MHD inversion! Semi-implicit step, [flag=%d] rho=%e (old:%e), tgas=%e (old: %e), ye=%e (old: %e), uu_nu=%e, %e \err:%e, iter:%d\ (err_type:%d) Yeold: %e Yenew: %e , %e %e\n", *pflag, pb_old[RHO], pb[RHO], pb_old[UU], pb[UU], pb_old[YE], pb[YE], pb[UU_NU], pb[UU_NU+5], error, iter, err_type, U_old[YE], U_new[YE], pb[YE], pb_ye);
 		#endif
 		return (1);
 	}
@@ -1448,12 +1447,12 @@ __device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_
 	ph[index_nu(NUMBER_NU, species)] = (*Ncon0_f) / (geom->g * q_nu.ucon[0]);
 }
 
-__device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double U_ye_0, double* Ncon0_f, double Dt, int species) {
+__device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double U_ye_0, double Dt) {
 	struct of_state_nu q_nu;
 	double mhd_nu[NDIM][NDIM];
 	double R_dot_ucon[NDIM];
-	double ener_nu_avg, eta_N, kappa_N, eta, kappa_abs, delJ[NU_SPECIES-1];
-	double U_updated = U_ye_0;
+	double ener_nu_avg, eta_N, kappa_N, eta, kappa_abs, delJ[NU_SPECIES-1], J;
+	double U_updated;
 	for (int species = 0; species < NU_SPECIES-1; species++) {
 		get_state_nu(ph, geom, &q_nu, species);
 		mhd_calc_nu(ph, 0, &q_nu, mhd_nu[0], species);
@@ -1479,13 +1478,10 @@ __device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const
 		delJ[species] = (eta / (kappa_abs + 1e-30) - J) * (1. - exp(-kappa_abs * Dt)) / ener_nu_avg;
 	}
 
-	U_updated = geom->g * (-delJ[0] + delJ[1]) * ();
-	//*Ncon0_f = (geom->g * eta_N * Dt + Ncon0_i) / (1. - (kappa_N * Dt * J) / (R_dot_ucon[0]));
-
-	*Ncon0_f = Ncon0_i + geom->g * Dt * (eta_N - (kappa_N * J) / (ener_nu_avg));
-
-	// Compute the number density primitive variable
-	ph[index_nu(NUMBER_NU, species)] = (*Ncon0_f) / (geom->g * q_nu.ucon[0]);
+	U_updated = U_ye_0 + geom->g * (-delJ[0] + delJ[1]) * (MP_CGS);
+	
+	// get Ye prim. quantity
+	ph[YE] = U_updated / (geom->g * ph[RHO] * ucon[0]);
 }
 
 
