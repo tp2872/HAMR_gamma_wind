@@ -78,6 +78,8 @@ Physical Parameters section
 #define DANAT_GDET_INTERP (1)
 #define NU_INNER_STOP (0)
 #define NU_PREDICTOR (1)
+#define NU_KEEP_COEFF_CONST (1)
+#define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -412,9 +414,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* Nulib table variable bounds  */
 #define nulib_dhi (14.0) // (15.5)
-#define nulib_dlo (5.0) // (6.0)
-#define nulib_thi (13.0) // (12.240715727974438)
-#define nulib_tlo (9.763594) // (9.763594473254775)
+#define nulib_dlo (8.0) // (6.0)
+#define nulib_thi (12.464298190399795) // (12.240715727974438)
+#define nulib_tlo (8.064624468918757) // (9.763594473254775)
 #define nulib_yhi (0.55)
 #define nulib_ylo (0.035)
 
