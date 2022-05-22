@@ -41,6 +41,7 @@ int Rtoprim_nu_calc(double U[NPR_NU], double gcov[NDIM][NDIM], double gcon[NDIM]
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
+	double Tnu;
 	int i, returnval = 0;
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
@@ -58,92 +59,107 @@ int Rtoprim_nu_calc(double U[NPR_NU], double gcov[NDIM][NDIM], double gcon[NDIM]
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
-	//Check for bad values of -Erad and U_tilde^2; If values are nan floor them
-	if (!isfinite(Qdotn)) Qdotn = -(1.e-30);
-	if (!isfinite(Qtsq)) Qtsq = 0.0;
+	if (Qtsq < 0.0) {
+		Qtsq = 0.0;
+		Qtcon[1] = 0.;
+		Qtcon[2] = 0.;
+		Qtcon[3] = 0.;
+	}
 
-	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
-	if (y < 0. || isnan(y)) y = 0.;
+	y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
 
-	// Get Ebar and p_nu as usual
+	// Get Ebar and p_rad as usual
 	pressure = -Qdotn / (4. * gammasq - 1.);
-	prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_nu
+	prim[0] = pressure * 3.; // Erad = 3*p_rad
 
-	// utilde ^i _nu = gam_nu * Utilde^i / (4 * p * gam_nu^2)
+	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
 	prim[4] = U[4] / sqrt(gammasq);
 
-	if (Qdotn > 0.) { //Negative internal energy
-		if (lim == TYPE2) {
-			Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-			for (i = 1; i < 4; i++) {
-				if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-				prim[i] = Qtcon[i] / Uabs;
-			}
-			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3]
-				+ 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-			if (qsq < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
+	if (y > y_max || y < 0. || isnan(Qdotn) || Qdotn > 0.0 || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
+		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
+		for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_NU * Qtcon[i] / Uabs;
 
-			f = 0.;// sqrt((GAMMAMAX_NU * GAMMAMAX_NU - 1.) / (gammasq - 1.));
-			if (f < 10000000.0) {
-				prim[1] *= f;
-				prim[2] *= f;
-				prim[3] *= f;
+		qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3]
+			+ 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
+		if (qsq < 0. || fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+		gammasq = 1. + qsq;
+
+		f = sqrt((GAMMAMAX_NU * GAMMAMAX_NU - 1.) / (gammasq - 1.));
+		prim[1] *= f;
+		prim[2] *= f;
+		prim[3] *= f;
+
+		if (lim == TYPE2) {
+			if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+				Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
 			}
-			Qdotn = -(1.e-150 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
-			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_nu
+			prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
 
 			returnval = 1;
 		}
+		else if (lim == TYPE3) {
+			// If energy density is negative, reset it to floor value
+			if (Qdotn > 0.0) {
+				prim[0] = 1.e-30;
+				prim[1] = 0.;
+				prim[2] = 0.;
+				prim[3] = 0.;
+				Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+			}
+			// Causality violation: rescale!
+			else if (y > y_max) {
+				pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+				prim[0] = pressure * 3.; // Erad = 3*p_rad
+				for (i = 1; i < 4; i++) prim[i] = Qtcon[i] / (4. * pressure * GAMMAMAX_NU);
+				prim[4] = U[4] / GAMMAMAX_NU;
+			}
+		}
 		else {
+			if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+				//if (Qdotn > 0.0 || y < 0.0) {
+				prim[0] = 1.e-30;
+				prim[1] = 0.;
+				prim[2] = 0.;
+				prim[3] = 0.;
+				Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+			}
+			else {
+				//else if (y > y_max) {
+				pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+				prim[0] = pressure * 3.; // Erad = 3*p_rad
+				//for (i = 1; i < 4; i++) prim[i] = Qtcon[i] / (4. * pressure * GAMMAMAX_NU);
+				//prim[4] = U[4] / GAMMAMAX_NU;
+			}
 			prim[0] = 1.e-30;
 			prim[1] = 0.;
 			prim[2] = 0.;
 			prim[3] = 0.;
-			gammasq = 1.0;
 		}
+		if (!isfinite(prim[0]))prim[0] = 1.e-30;
+		if (!isfinite(prim[1]))prim[1] = 0.0;
+		if (!isfinite(prim[2]))prim[2] = 0.0;
+		if (!isfinite(prim[3]))prim[3] = 0.0;
 
-		prim[4] = U[4] / sqrt(gammasq);
+		//Floor on photon number+
+		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		if (lim != TYPE3) prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+		//prim[4] = U[4];
+		returnval = 1;
 	}
-	else if (y > y_max) {
-		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++) {
-			if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
-			prim[i] = Qtcon[i] / Uabs;
-		}
-		qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3]
-			+ 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-		if (qsq < 1.E-10 || !isfinite(qsq)) qsq = 1.E-10; // set floor
-		gammasq = 1. + qsq;
 
-		f = sqrt((GAMMAMAX_NU * GAMMAMAX_NU - 1.) / (gammasq - 1.));
-		//if (f < 10000000.0 && y<1.0-0.000000001){
-		prim[1] *= f;
-		prim[2] *= f;
-		prim[3] *= f;
-		//}
-		//else {
-		//	prim[1] = 0;
-		//	prim[2] = 0;
-		//	prim[3] = 0;
-	//	}
-		if (lim == TYPE2) {
-			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
-			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_nu
-			returnval = 1;
-		}
-		else if (!isfinite(prim[0])) {
-			prim[0] = 1.e-30;
-		}
-
-		prim[4] = U[4] / sqrt(GAMMAMAX_NU * GAMMAMAX_NU);
+	if (prim[4] < 0.0) {
+		Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+		returnval = 1;
 	}
-	return returnval;
+
+	return(returnval);
 }
 
 void calc_ymax(void) {
