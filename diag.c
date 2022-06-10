@@ -47,7 +47,7 @@ void diag(int call_code)
 		}
 		if (divbmax > 0.00001) {
 			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
-			exit(0);
+			//exit(0);
 		}
 	}
 
@@ -189,6 +189,32 @@ double divb_calc(int n, int i, int j, int z){
 		) / dx[nl[n]][3]
 		#endif
 	);
+	#endif
+
+		//calculate the normalization and use it to normalize divb;
+	#if(NORMALIZE_DIVB)
+	double divb_magnitude = SMALL_DIVB;
+	//calculate the magnitude of divb to use for normalization;
+	//divb_magnitude = SMALL_DIVB;
+
+		#if(STAGGERED)
+		#if(N1>1)
+		for (u = 0; u < zsize; u++) {
+			divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i + di, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i + di, j, z - zoffset + u)][FACE1]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE1])) / ((double)(zsize)*dx[nl[n]][1]);
+		}
+		#endif
+		#if(N2>1)
+		for (u = 0; u < zsize; u++) {
+			divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i, j + dj, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z - zoffset + u)][FACE2]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE2])) / ((double)(zsize)*dx[nl[n]][2]);
+		}
+		#endif
+		#if(N3>1)
+		divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3])) / ((double)(zsize)*dx[nl[n]][3]);
+		#endif
+		#endif
+	divb /= divb_magnitude;
+	//now we have gotten the normalized value of divb!
+
 	#endif
 	return divb;
 }

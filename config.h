@@ -9,6 +9,9 @@ Physical Parameters section
 #define DISRUPTION_PROBLEM 5
 #define BONDI_PROBLEM_1D 6
 #define BONDI_PROBLEM_2D 7
+    #define R_BONDI (1e2)
+    #define R_CIRC (3e1)
+    #define BETA (1e2)
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
 #define SOUND_WAVE 10
@@ -18,7 +21,7 @@ Physical Parameters section
 #define COLLAPSAR 14
 #define NSM 15
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM BONDI_PROBLEM_2D
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -30,14 +33,14 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (0)
+#define REFINE_GRB (1)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.94)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -140,17 +143,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
+#define NB_1 8
+#define NB_2 3
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 256
+#define BS_1 56
+#define BS_2 32
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 4
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -174,6 +177,12 @@ Numerical Parameters section
 
 /*If you want to call multiple blocks from multiple threads. Will not *allways* improve performance and SLOWS down performance of workstation, so not recommended for non-cluster use!*/
 #define GPU_OPENMP 0
+
+/*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
+#define NORMALIZE_DIVB 1
+
+/*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
+#define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
 #define DEREFINE_POLE (0)
