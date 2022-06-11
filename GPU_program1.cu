@@ -5455,35 +5455,10 @@ __device__ void res_3du_der_entropy(double D, double sigma, double etares, doubl
 	Jac[2][2] = 1.0 + decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
 }
 
-
-//4D Matrix Inversion
-__device__ int invert_matrix_4D(double Am[][NDIM], double Aminv[][NDIM]){
-	int i, j;
-	int permute[NDIM];
-	double dxm[NDIM], Amtmp[NDIM][NDIM];
-
-	for (i = 0; i < NDIM*NDIM; i++) Amtmp[0][i] = Am[0][i];
-
-	//Get the LU matrix:
-	if (LU_decompose(Amtmp, permute) != 0) return(1);
-
-	for (i = 0; i < NDIM; i++) {
-		for (j = 0; j < NDIM; j++) { dxm[j] = 0.; }
-		dxm[i] = 1.;
-
-		//Solve the linear system for the i^th column of the inverse matrix
-		LU_substitution(Amtmp, dxm, permute);
-
-		for (j = 0; j < NDIM; j++) Aminv[j][i] = dxm[j];
-	}
-
-	return(0);
-}
-
 //3D Matrix inversion
 __device__ int invert_matrix_3D(double Am[][3], double Aminv[][3])
 {
-
+	#if(!GAUSS_JORDAN)
 	int i, j;
 	int n = 3;
 	int permute[3];
@@ -5506,14 +5481,143 @@ __device__ int invert_matrix_3D(double Am[][3], double Aminv[][3])
 		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
 
 	}
+	#else
+	// Augmenting Identity Matrix of Order n 
+	int i, j, k;
+	int n = 3;
+	double ratio, Amtmp[3][3];
 
+	for (i = 0; i < n * n; i++) { Amtmp[0][i] = Am[0][i]; }
+	for (i = 0; i < n; i++)
+	{
+		for (j = 0; j < n; j++)
+		{
+			if (i == j)
+			{
+				Amtmp[i][j + n] = 1;
+			}
+			else
+			{
+				Amtmp[i][j + n] = 0;
+			}
+		}
+	}
+
+	// Applying Gauss Jordan Elimination
+	for (i = 0; i < n; i++)
+	{
+		if (Amtmp[i][i] == 0.0)
+		{
+			return 1;
+		}
+		for (j = 0; j < n; j++)
+		{
+			if (i != j)
+			{
+				ratio = Amtmp[j][i] / Amtmp[i][i];
+				for (k = 0; k < 2 * n; k++)
+				{
+					Amtmp[j][k] = Amtmp[j][k] - ratio * Amtmp[i][k];
+				}
+			}
+		}
+	}
+
+	// Row Operation to Make Principal Diagonal to 1
+	for (i = 0; i < n; i++)
+	{
+		for (j = n; j < 2 * n; j++)
+		{
+			Amtmp[i][j] = Amtmp[i][j] / Amtmp[i][i];
+		}
+	}
+
+	for (i = 0; i < n * n; i++) { Aminv[0][i] = Amtmp[0][i]; }
+	#endif
+	return(0);
+}
+
+//4D Matrix Inversion
+__device__ int invert_matrix_4D(double Am[][NDIM], double Aminv[][NDIM]){
+	#if(!GAUSS_JORDAN)
+	int i, j;
+	int permute[NDIM];
+	double dxm[NDIM], Amtmp[NDIM][NDIM];
+
+	for (i = 0; i < NDIM*NDIM; i++) Amtmp[0][i] = Am[0][i];
+
+	//Get the LU matrix:
+	if (LU_decompose(Amtmp, permute) != 0) return(1);
+
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) { dxm[j] = 0.; }
+		dxm[i] = 1.;
+
+		//Solve the linear system for the i^th column of the inverse matrix
+		LU_substitution(Amtmp, dxm, permute);
+
+		for (j = 0; j < NDIM; j++) Aminv[j][i] = dxm[j];
+	}
+	#else
+	// Augmenting Identity Matrix of Order n 
+	int i, j, k;
+	int n = 4;
+	double ratio, Amtmp[4][4];
+
+	for (i = 0; i < n * n; i++) { Amtmp[0][i] = Am[0][i]; }
+	for (i = 0; i < n; i++)
+	{
+		for (j = 0; j < n; j++)
+		{
+			if (i == j)
+			{
+				Amtmp[i][j + n] = 1;
+			}
+			else
+			{
+				Amtmp[i][j + n] = 0;
+			}
+		}
+	}
+
+	// Applying Gauss Jordan Elimination
+	for (i = 0; i < n; i++)
+	{
+		if (Amtmp[i][i] == 0.0)
+		{
+			return 1;
+		}
+		for (j = 0; j < n; j++)
+		{
+			if (i != j)
+			{
+				ratio = Amtmp[j][i] / Amtmp[i][i];
+				for (k = 0; k < 2 * n; k++)
+				{
+					Amtmp[j][k] = Amtmp[j][k] - ratio * Amtmp[i][k];
+				}
+			}
+		}
+	}
+
+	// Row Operation to Make Principal Diagonal to 1
+	for (i = 0; i < n; i++)
+	{
+		for (j = n; j < 2 * n; j++)
+		{
+			Amtmp[i][j] = Amtmp[i][j] / Amtmp[i][i];
+		}
+	}
+
+	for (i = 0; i < n * n; i++) { Aminv[0][i] = Amtmp[0][i]; }
+	#endif
 	return(0);
 }
 
 //5D Matrix inversion
 __device__ int invert_matrix_5D(double Am[][5], double Aminv[][5])
 {
-
+	#if(!GAUSS_JORDAN)
 	int i, j;
 	int n = 5;
 	int permute[5];
@@ -5530,20 +5634,278 @@ __device__ int invert_matrix_5D(double Am[][5], double Aminv[][5])
 		for (j = 0; j < n; j++) { dxm[j] = 0.; }
 		dxm[i] = 1.;
 
-		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		// Solve the linear system for the i^th column of the inverse matrix: :  
 		LU_substitution_5D(Amtmp, dxm, permute);
 
 		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
 
 	}
+	#else
+	int n = 5, i, j;
+	double  Amtmp[5][5];
+	double A11 = Am[0][0]; double A12 = Am[0][1]; double A13 = Am[0][2]; double A14 = Am[0][3]; double A15 = Am[0][4];
+	double A21 = Am[1][0]; double A22 = Am[1][1]; double A23 = Am[1][2]; double A24 = Am[1][3]; double A25 = Am[1][4];
+	double A31 = Am[2][0]; double A32 = Am[2][1]; double A33 = Am[2][2]; double A34 = Am[2][3]; double A35 = Am[2][4];
+	double A41 = Am[3][0]; double A42 = Am[3][1]; double A43 = Am[3][2]; double A44 = Am[3][3]; double A45 = Am[3][4];
+	double A51 = Am[4][0]; double A52 = Am[4][1]; double A53 = Am[4][2]; double A54 = Am[4][3]; double A55 = Am[4][4];
 
+	double DET = A15 * A24 * A33 * A42 * A51 - A14 * A25 * A33 * A42 * A51 - A15 * A23 * A34 * A42 * A51 +
+		A13 * A25 * A34 * A42 * A51 + A14 * A23 * A35 * A42 * A51 - A13 * A24 * A35 * A42 * A51 -
+		A15 * A24 * A32 * A43 * A51 + A14 * A25 * A32 * A43 * A51 + A15 * A22 * A34 * A43 * A51 -
+		A12 * A25 * A34 * A43 * A51 - A14 * A22 * A35 * A43 * A51 + A12 * A24 * A35 * A43 * A51 +
+		A15 * A23 * A32 * A44 * A51 - A13 * A25 * A32 * A44 * A51 - A15 * A22 * A33 * A44 * A51 +
+		A12 * A25 * A33 * A44 * A51 + A13 * A22 * A35 * A44 * A51 - A12 * A23 * A35 * A44 * A51 -
+		A14 * A23 * A32 * A45 * A51 + A13 * A24 * A32 * A45 * A51 + A14 * A22 * A33 * A45 * A51 -
+		A12 * A24 * A33 * A45 * A51 - A13 * A22 * A34 * A45 * A51 + A12 * A23 * A34 * A45 * A51 -
+		A15 * A24 * A33 * A41 * A52 + A14 * A25 * A33 * A41 * A52 + A15 * A23 * A34 * A41 * A52 -
+		A13 * A25 * A34 * A41 * A52 - A14 * A23 * A35 * A41 * A52 + A13 * A24 * A35 * A41 * A52 +
+		A15 * A24 * A31 * A43 * A52 - A14 * A25 * A31 * A43 * A52 - A15 * A21 * A34 * A43 * A52 +
+		A11 * A25 * A34 * A43 * A52 + A14 * A21 * A35 * A43 * A52 - A11 * A24 * A35 * A43 * A52 -
+		A15 * A23 * A31 * A44 * A52 + A13 * A25 * A31 * A44 * A52 + A15 * A21 * A33 * A44 * A52 -
+		A11 * A25 * A33 * A44 * A52 - A13 * A21 * A35 * A44 * A52 + A11 * A23 * A35 * A44 * A52 +
+		A14 * A23 * A31 * A45 * A52 - A13 * A24 * A31 * A45 * A52 - A14 * A21 * A33 * A45 * A52 +
+		A11 * A24 * A33 * A45 * A52 + A13 * A21 * A34 * A45 * A52 - A11 * A23 * A34 * A45 * A52 +
+		A15 * A24 * A32 * A41 * A53 - A14 * A25 * A32 * A41 * A53 - A15 * A22 * A34 * A41 * A53 +
+		A12 * A25 * A34 * A41 * A53 + A14 * A22 * A35 * A41 * A53 - A12 * A24 * A35 * A41 * A53 -
+		A15 * A24 * A31 * A42 * A53 + A14 * A25 * A31 * A42 * A53 + A15 * A21 * A34 * A42 * A53 -
+		A11 * A25 * A34 * A42 * A53 - A14 * A21 * A35 * A42 * A53 + A11 * A24 * A35 * A42 * A53 +
+		A15 * A22 * A31 * A44 * A53 - A12 * A25 * A31 * A44 * A53 - A15 * A21 * A32 * A44 * A53 +
+		A11 * A25 * A32 * A44 * A53 + A12 * A21 * A35 * A44 * A53 - A11 * A22 * A35 * A44 * A53 -
+		A14 * A22 * A31 * A45 * A53 + A12 * A24 * A31 * A45 * A53 + A14 * A21 * A32 * A45 * A53 -
+		A11 * A24 * A32 * A45 * A53 - A12 * A21 * A34 * A45 * A53 + A11 * A22 * A34 * A45 * A53 -
+		A15 * A23 * A32 * A41 * A54 + A13 * A25 * A32 * A41 * A54 + A15 * A22 * A33 * A41 * A54 -
+		A12 * A25 * A33 * A41 * A54 - A13 * A22 * A35 * A41 * A54 + A12 * A23 * A35 * A41 * A54 +
+		A15 * A23 * A31 * A42 * A54 - A13 * A25 * A31 * A42 * A54 - A15 * A21 * A33 * A42 * A54 +
+		A11 * A25 * A33 * A42 * A54 + A13 * A21 * A35 * A42 * A54 - A11 * A23 * A35 * A42 * A54 -
+		A15 * A22 * A31 * A43 * A54 + A12 * A25 * A31 * A43 * A54 + A15 * A21 * A32 * A43 * A54 -
+		A11 * A25 * A32 * A43 * A54 - A12 * A21 * A35 * A43 * A54 + A11 * A22 * A35 * A43 * A54 +
+		A13 * A22 * A31 * A45 * A54 - A12 * A23 * A31 * A45 * A54 - A13 * A21 * A32 * A45 * A54 +
+		A11 * A23 * A32 * A45 * A54 + A12 * A21 * A33 * A45 * A54 - A11 * A22 * A33 * A45 * A54 +
+		A14 * A23 * A32 * A41 * A55 - A13 * A24 * A32 * A41 * A55 - A14 * A22 * A33 * A41 * A55 +
+		A12 * A24 * A33 * A41 * A55 + A13 * A22 * A34 * A41 * A55 - A12 * A23 * A34 * A41 * A55 -
+		A14 * A23 * A31 * A42 * A55 + A13 * A24 * A31 * A42 * A55 + A14 * A21 * A33 * A42 * A55 -
+		A11 * A24 * A33 * A42 * A55 - A13 * A21 * A34 * A42 * A55 + A11 * A23 * A34 * A42 * A55 +
+		A14 * A22 * A31 * A43 * A55 - A12 * A24 * A31 * A43 * A55 - A14 * A21 * A32 * A43 * A55 +
+		A11 * A24 * A32 * A43 * A55 + A12 * A21 * A34 * A43 * A55 - A11 * A22 * A34 * A43 * A55 -
+		A13 * A22 * A31 * A44 * A55 + A12 * A23 * A31 * A44 * A55 + A13 * A21 * A32 * A44 * A55 -
+		A11 * A23 * A32 * A44 * A55 - A12 * A21 * A33 * A44 * A55 + A11 * A22 * A33 * A44 * A55;
+
+		if (fabs(DET) < SMALL) return 1;
+
+		Amtmp[0][0] = A25 * A34 * A43 * A52 - A24 * A35 * A43 * A52 - A25 * A33 * A44 * A52 +
+			A23 * A35 * A44 * A52 + A24 * A33 * A45 * A52 - A23 * A34 * A45 * A52 - A25 * A34 * A42 * A53 +
+			A24 * A35 * A42 * A53 + A25 * A32 * A44 * A53 - A22 * A35 * A44 * A53 - A24 * A32 * A45 * A53 +
+			A22 * A34 * A45 * A53 + A25 * A33 * A42 * A54 - A23 * A35 * A42 * A54 - A25 * A32 * A43 * A54 +
+			A22 * A35 * A43 * A54 + A23 * A32 * A45 * A54 - A22 * A33 * A45 * A54 - A24 * A33 * A42 * A55 +
+			A23 * A34 * A42 * A55 + A24 * A32 * A43 * A55 - A22 * A34 * A43 * A55 - A23 * A32 * A44 * A55 +
+			A22 * A33 * A44 * A55;
+
+		Amtmp[1][0] = -A15 * A34 * A43 * A52 + A14 * A35 * A43 * A52 + A15 * A33 * A44 * A52 -
+			A13 * A35 * A44 * A52 - A14 * A33 * A45 * A52 + A13 * A34 * A45 * A52 + A15 * A34 * A42 * A53 -
+			A14 * A35 * A42 * A53 - A15 * A32 * A44 * A53 + A12 * A35 * A44 * A53 + A14 * A32 * A45 * A53 -
+			A12 * A34 * A45 * A53 - A15 * A33 * A42 * A54 + A13 * A35 * A42 * A54 + A15 * A32 * A43 * A54 -
+			A12 * A35 * A43 * A54 - A13 * A32 * A45 * A54 + A12 * A33 * A45 * A54 + A14 * A33 * A42 * A55 -
+			A13 * A34 * A42 * A55 - A14 * A32 * A43 * A55 + A12 * A34 * A43 * A55 + A13 * A32 * A44 * A55 -
+			A12 * A33 * A44 * A55;
+
+		Amtmp[2][0] = A15 * A24 * A43 * A52 - A14 * A25 * A43 * A52 - A15 * A23 * A44 * A52 +
+			A13 * A25 * A44 * A52 + A14 * A23 * A45 * A52 - A13 * A24 * A45 * A52 - A15 * A24 * A42 * A53 +
+			A14 * A25 * A42 * A53 + A15 * A22 * A44 * A53 - A12 * A25 * A44 * A53 - A14 * A22 * A45 * A53 +
+			A12 * A24 * A45 * A53 + A15 * A23 * A42 * A54 - A13 * A25 * A42 * A54 - A15 * A22 * A43 * A54 +
+			A12 * A25 * A43 * A54 + A13 * A22 * A45 * A54 - A12 * A23 * A45 * A54 - A14 * A23 * A42 * A55 +
+			A13 * A24 * A42 * A55 + A14 * A22 * A43 * A55 - A12 * A24 * A43 * A55 - A13 * A22 * A44 * A55 +
+			A12 * A23 * A44 * A55;
+
+		Amtmp[3][0] = -A15 * A24 * A33 * A52 + A14 * A25 * A33 * A52 + A15 * A23 * A34 * A52 -
+			A13 * A25 * A34 * A52 - A14 * A23 * A35 * A52 + A13 * A24 * A35 * A52 + A15 * A24 * A32 * A53 -
+			A14 * A25 * A32 * A53 - A15 * A22 * A34 * A53 + A12 * A25 * A34 * A53 + A14 * A22 * A35 * A53 -
+			A12 * A24 * A35 * A53 - A15 * A23 * A32 * A54 + A13 * A25 * A32 * A54 + A15 * A22 * A33 * A54 -
+			A12 * A25 * A33 * A54 - A13 * A22 * A35 * A54 + A12 * A23 * A35 * A54 + A14 * A23 * A32 * A55 -
+			A13 * A24 * A32 * A55 - A14 * A22 * A33 * A55 + A12 * A24 * A33 * A55 + A13 * A22 * A34 * A55 -
+			A12 * A23 * A34 * A55;
+
+		Amtmp[4][0] = A15 * A24 * A33 * A42 - A14 * A25 * A33 * A42 - A15 * A23 * A34 * A42 +
+			A13 * A25 * A34 * A42 + A14 * A23 * A35 * A42 - A13 * A24 * A35 * A42 - A15 * A24 * A32 * A43 +
+			A14 * A25 * A32 * A43 + A15 * A22 * A34 * A43 - A12 * A25 * A34 * A43 - A14 * A22 * A35 * A43 +
+			A12 * A24 * A35 * A43 + A15 * A23 * A32 * A44 - A13 * A25 * A32 * A44 - A15 * A22 * A33 * A44 +
+			A12 * A25 * A33 * A44 + A13 * A22 * A35 * A44 - A12 * A23 * A35 * A44 - A14 * A23 * A32 * A45 +
+			A13 * A24 * A32 * A45 + A14 * A22 * A33 * A45 - A12 * A24 * A33 * A45 - A13 * A22 * A34 * A45 +
+			A12 * A23 * A34 * A45;
+
+		Amtmp[0][1] = -A25 * A34 * A43 * A51 + A24 * A35 * A43 * A51 + A25 * A33 * A44 * A51 -
+			A23 * A35 * A44 * A51 - A24 * A33 * A45 * A51 + A23 * A34 * A45 * A51 + A25 * A34 * A41 * A53 -
+			A24 * A35 * A41 * A53 - A25 * A31 * A44 * A53 + A21 * A35 * A44 * A53 + A24 * A31 * A45 * A53 -
+			A21 * A34 * A45 * A53 - A25 * A33 * A41 * A54 + A23 * A35 * A41 * A54 + A25 * A31 * A43 * A54 -
+			A21 * A35 * A43 * A54 - A23 * A31 * A45 * A54 + A21 * A33 * A45 * A54 + A24 * A33 * A41 * A55 -
+			A23 * A34 * A41 * A55 - A24 * A31 * A43 * A55 + A21 * A34 * A43 * A55 + A23 * A31 * A44 * A55 -
+			A21 * A33 * A44 * A55;
+
+		Amtmp[1][1] = A15 * A34 * A43 * A51 - A14 * A35 * A43 * A51 - A15 * A33 * A44 * A51 +
+			A13 * A35 * A44 * A51 + A14 * A33 * A45 * A51 - A13 * A34 * A45 * A51 - A15 * A34 * A41 * A53 +
+			A14 * A35 * A41 * A53 + A15 * A31 * A44 * A53 - A11 * A35 * A44 * A53 - A14 * A31 * A45 * A53 +
+			A11 * A34 * A45 * A53 + A15 * A33 * A41 * A54 - A13 * A35 * A41 * A54 - A15 * A31 * A43 * A54 +
+			A11 * A35 * A43 * A54 + A13 * A31 * A45 * A54 - A11 * A33 * A45 * A54 - A14 * A33 * A41 * A55 +
+			A13 * A34 * A41 * A55 + A14 * A31 * A43 * A55 - A11 * A34 * A43 * A55 - A13 * A31 * A44 * A55 +
+			A11 * A33 * A44 * A55;
+
+		Amtmp[2][1] = -A15 * A24 * A43 * A51 + A14 * A25 * A43 * A51 + A15 * A23 * A44 * A51 -
+			A13 * A25 * A44 * A51 - A14 * A23 * A45 * A51 + A13 * A24 * A45 * A51 + A15 * A24 * A41 * A53 -
+			A14 * A25 * A41 * A53 - A15 * A21 * A44 * A53 + A11 * A25 * A44 * A53 + A14 * A21 * A45 * A53 -
+			A11 * A24 * A45 * A53 - A15 * A23 * A41 * A54 + A13 * A25 * A41 * A54 + A15 * A21 * A43 * A54 -
+			A11 * A25 * A43 * A54 - A13 * A21 * A45 * A54 + A11 * A23 * A45 * A54 + A14 * A23 * A41 * A55 -
+			A13 * A24 * A41 * A55 - A14 * A21 * A43 * A55 + A11 * A24 * A43 * A55 + A13 * A21 * A44 * A55 -
+			A11 * A23 * A44 * A55;
+
+		Amtmp[3][1] = A15 * A24 * A33 * A51 - A14 * A25 * A33 * A51 - A15 * A23 * A34 * A51 +
+			A13 * A25 * A34 * A51 + A14 * A23 * A35 * A51 - A13 * A24 * A35 * A51 - A15 * A24 * A31 * A53 +
+			A14 * A25 * A31 * A53 + A15 * A21 * A34 * A53 - A11 * A25 * A34 * A53 - A14 * A21 * A35 * A53 +
+			A11 * A24 * A35 * A53 + A15 * A23 * A31 * A54 - A13 * A25 * A31 * A54 - A15 * A21 * A33 * A54 +
+			A11 * A25 * A33 * A54 + A13 * A21 * A35 * A54 - A11 * A23 * A35 * A54 - A14 * A23 * A31 * A55 +
+			A13 * A24 * A31 * A55 + A14 * A21 * A33 * A55 - A11 * A24 * A33 * A55 - A13 * A21 * A34 * A55 +
+			A11 * A23 * A34 * A55;
+
+		Amtmp[4][1] = -A15 * A24 * A33 * A41 + A14 * A25 * A33 * A41 + A15 * A23 * A34 * A41 -
+			A13 * A25 * A34 * A41 - A14 * A23 * A35 * A41 + A13 * A24 * A35 * A41 + A15 * A24 * A31 * A43 -
+			A14 * A25 * A31 * A43 - A15 * A21 * A34 * A43 + A11 * A25 * A34 * A43 + A14 * A21 * A35 * A43 -
+			A11 * A24 * A35 * A43 - A15 * A23 * A31 * A44 + A13 * A25 * A31 * A44 + A15 * A21 * A33 * A44 -
+			A11 * A25 * A33 * A44 - A13 * A21 * A35 * A44 + A11 * A23 * A35 * A44 + A14 * A23 * A31 * A45 -
+			A13 * A24 * A31 * A45 - A14 * A21 * A33 * A45 + A11 * A24 * A33 * A45 + A13 * A21 * A34 * A45 -
+			A11 * A23 * A34 * A45;
+
+		Amtmp[0][2] = A25 * A34 * A42 * A51 - A24 * A35 * A42 * A51 - A25 * A32 * A44 * A51 +
+			A22 * A35 * A44 * A51 + A24 * A32 * A45 * A51 - A22 * A34 * A45 * A51 - A25 * A34 * A41 * A52 +
+			A24 * A35 * A41 * A52 + A25 * A31 * A44 * A52 - A21 * A35 * A44 * A52 - A24 * A31 * A45 * A52 +
+			A21 * A34 * A45 * A52 + A25 * A32 * A41 * A54 - A22 * A35 * A41 * A54 - A25 * A31 * A42 * A54 +
+			A21 * A35 * A42 * A54 + A22 * A31 * A45 * A54 - A21 * A32 * A45 * A54 - A24 * A32 * A41 * A55 +
+			A22 * A34 * A41 * A55 + A24 * A31 * A42 * A55 - A21 * A34 * A42 * A55 - A22 * A31 * A44 * A55 +
+			A21 * A32 * A44 * A55;
+
+		Amtmp[1][2] = -A15 * A34 * A42 * A51 + A14 * A35 * A42 * A51 + A15 * A32 * A44 * A51 -
+			A12 * A35 * A44 * A51 - A14 * A32 * A45 * A51 + A12 * A34 * A45 * A51 + A15 * A34 * A41 * A52 -
+			A14 * A35 * A41 * A52 - A15 * A31 * A44 * A52 + A11 * A35 * A44 * A52 + A14 * A31 * A45 * A52 -
+			A11 * A34 * A45 * A52 - A15 * A32 * A41 * A54 + A12 * A35 * A41 * A54 + A15 * A31 * A42 * A54 -
+			A11 * A35 * A42 * A54 - A12 * A31 * A45 * A54 + A11 * A32 * A45 * A54 + A14 * A32 * A41 * A55 -
+			A12 * A34 * A41 * A55 - A14 * A31 * A42 * A55 + A11 * A34 * A42 * A55 + A12 * A31 * A44 * A55 -
+			A11 * A32 * A44 * A55;
+
+		Amtmp[2][2] = A15 * A24 * A42 * A51 - A14 * A25 * A42 * A51 - A15 * A22 * A44 * A51 +
+			A12 * A25 * A44 * A51 + A14 * A22 * A45 * A51 - A12 * A24 * A45 * A51 - A15 * A24 * A41 * A52 +
+			A14 * A25 * A41 * A52 + A15 * A21 * A44 * A52 - A11 * A25 * A44 * A52 - A14 * A21 * A45 * A52 +
+			A11 * A24 * A45 * A52 + A15 * A22 * A41 * A54 - A12 * A25 * A41 * A54 - A15 * A21 * A42 * A54 +
+			A11 * A25 * A42 * A54 + A12 * A21 * A45 * A54 - A11 * A22 * A45 * A54 - A14 * A22 * A41 * A55 +
+			A12 * A24 * A41 * A55 + A14 * A21 * A42 * A55 - A11 * A24 * A42 * A55 - A12 * A21 * A44 * A55 +
+			A11 * A22 * A44 * A55;
+
+		Amtmp[3][2] = -A15 * A24 * A32 * A51 + A14 * A25 * A32 * A51 + A15 * A22 * A34 * A51 -
+			A12 * A25 * A34 * A51 - A14 * A22 * A35 * A51 + A12 * A24 * A35 * A51 + A15 * A24 * A31 * A52 -
+			A14 * A25 * A31 * A52 - A15 * A21 * A34 * A52 + A11 * A25 * A34 * A52 + A14 * A21 * A35 * A52 -
+			A11 * A24 * A35 * A52 - A15 * A22 * A31 * A54 + A12 * A25 * A31 * A54 + A15 * A21 * A32 * A54 -
+			A11 * A25 * A32 * A54 - A12 * A21 * A35 * A54 + A11 * A22 * A35 * A54 + A14 * A22 * A31 * A55 -
+			A12 * A24 * A31 * A55 - A14 * A21 * A32 * A55 + A11 * A24 * A32 * A55 + A12 * A21 * A34 * A55 -
+			A11 * A22 * A34 * A55;
+
+		Amtmp[4][2] = A15 * A24 * A32 * A41 - A14 * A25 * A32 * A41 - A15 * A22 * A34 * A41 +
+			A12 * A25 * A34 * A41 + A14 * A22 * A35 * A41 - A12 * A24 * A35 * A41 - A15 * A24 * A31 * A42 +
+			A14 * A25 * A31 * A42 + A15 * A21 * A34 * A42 - A11 * A25 * A34 * A42 - A14 * A21 * A35 * A42 +
+			A11 * A24 * A35 * A42 + A15 * A22 * A31 * A44 - A12 * A25 * A31 * A44 - A15 * A21 * A32 * A44 +
+			A11 * A25 * A32 * A44 + A12 * A21 * A35 * A44 - A11 * A22 * A35 * A44 - A14 * A22 * A31 * A45 +
+			A12 * A24 * A31 * A45 + A14 * A21 * A32 * A45 - A11 * A24 * A32 * A45 - A12 * A21 * A34 * A45 +
+			A11 * A22 * A34 * A45;
+
+		Amtmp[0][3] = -A25 * A33 * A42 * A51 + A23 * A35 * A42 * A51 + A25 * A32 * A43 * A51 -
+			A22 * A35 * A43 * A51 - A23 * A32 * A45 * A51 + A22 * A33 * A45 * A51 + A25 * A33 * A41 * A52 -
+			A23 * A35 * A41 * A52 - A25 * A31 * A43 * A52 + A21 * A35 * A43 * A52 + A23 * A31 * A45 * A52 -
+			A21 * A33 * A45 * A52 - A25 * A32 * A41 * A53 + A22 * A35 * A41 * A53 + A25 * A31 * A42 * A53 -
+			A21 * A35 * A42 * A53 - A22 * A31 * A45 * A53 + A21 * A32 * A45 * A53 + A23 * A32 * A41 * A55 -
+			A22 * A33 * A41 * A55 - A23 * A31 * A42 * A55 + A21 * A33 * A42 * A55 + A22 * A31 * A43 * A55 -
+			A21 * A32 * A43 * A55;
+
+		Amtmp[1][3] = A15 * A33 * A42 * A51 - A13 * A35 * A42 * A51 - A15 * A32 * A43 * A51 +
+			A12 * A35 * A43 * A51 + A13 * A32 * A45 * A51 - A12 * A33 * A45 * A51 - A15 * A33 * A41 * A52 +
+			A13 * A35 * A41 * A52 + A15 * A31 * A43 * A52 - A11 * A35 * A43 * A52 - A13 * A31 * A45 * A52 +
+			A11 * A33 * A45 * A52 + A15 * A32 * A41 * A53 - A12 * A35 * A41 * A53 - A15 * A31 * A42 * A53 +
+			A11 * A35 * A42 * A53 + A12 * A31 * A45 * A53 - A11 * A32 * A45 * A53 - A13 * A32 * A41 * A55 +
+			A12 * A33 * A41 * A55 + A13 * A31 * A42 * A55 - A11 * A33 * A42 * A55 - A12 * A31 * A43 * A55 +
+			A11 * A32 * A43 * A55;
+
+		Amtmp[2][3] = -A15 * A23 * A42 * A51 + A13 * A25 * A42 * A51 + A15 * A22 * A43 * A51 -
+			A12 * A25 * A43 * A51 - A13 * A22 * A45 * A51 + A12 * A23 * A45 * A51 + A15 * A23 * A41 * A52 -
+			A13 * A25 * A41 * A52 - A15 * A21 * A43 * A52 + A11 * A25 * A43 * A52 + A13 * A21 * A45 * A52 -
+			A11 * A23 * A45 * A52 - A15 * A22 * A41 * A53 + A12 * A25 * A41 * A53 + A15 * A21 * A42 * A53 -
+			A11 * A25 * A42 * A53 - A12 * A21 * A45 * A53 + A11 * A22 * A45 * A53 + A13 * A22 * A41 * A55 -
+			A12 * A23 * A41 * A55 - A13 * A21 * A42 * A55 + A11 * A23 * A42 * A55 + A12 * A21 * A43 * A55 -
+			A11 * A22 * A43 * A55;
+
+		Amtmp[3][3] = A15 * A23 * A32 * A51 - A13 * A25 * A32 * A51 - A15 * A22 * A33 * A51 +
+			A12 * A25 * A33 * A51 + A13 * A22 * A35 * A51 - A12 * A23 * A35 * A51 - A15 * A23 * A31 * A52 +
+			A13 * A25 * A31 * A52 + A15 * A21 * A33 * A52 - A11 * A25 * A33 * A52 - A13 * A21 * A35 * A52 +
+			A11 * A23 * A35 * A52 + A15 * A22 * A31 * A53 - A12 * A25 * A31 * A53 - A15 * A21 * A32 * A53 +
+			A11 * A25 * A32 * A53 + A12 * A21 * A35 * A53 - A11 * A22 * A35 * A53 - A13 * A22 * A31 * A55 +
+			A12 * A23 * A31 * A55 + A13 * A21 * A32 * A55 - A11 * A23 * A32 * A55 - A12 * A21 * A33 * A55 +
+			A11 * A22 * A33 * A55;
+
+		Amtmp[4][3] = -A15 * A23 * A32 * A41 + A13 * A25 * A32 * A41 + A15 * A22 * A33 * A41 -
+			A12 * A25 * A33 * A41 - A13 * A22 * A35 * A41 + A12 * A23 * A35 * A41 + A15 * A23 * A31 * A42 -
+			A13 * A25 * A31 * A42 - A15 * A21 * A33 * A42 + A11 * A25 * A33 * A42 + A13 * A21 * A35 * A42 -
+			A11 * A23 * A35 * A42 - A15 * A22 * A31 * A43 + A12 * A25 * A31 * A43 + A15 * A21 * A32 * A43 -
+			A11 * A25 * A32 * A43 - A12 * A21 * A35 * A43 + A11 * A22 * A35 * A43 + A13 * A22 * A31 * A45 -
+			A12 * A23 * A31 * A45 - A13 * A21 * A32 * A45 + A11 * A23 * A32 * A45 + A12 * A21 * A33 * A45 -
+			A11 * A22 * A33 * A45;
+
+		Amtmp[0][4] = A24 * A33 * A42 * A51 - A23 * A34 * A42 * A51 - A24 * A32 * A43 * A51 +
+			A22 * A34 * A43 * A51 + A23 * A32 * A44 * A51 - A22 * A33 * A44 * A51 - A24 * A33 * A41 * A52 +
+			A23 * A34 * A41 * A52 + A24 * A31 * A43 * A52 - A21 * A34 * A43 * A52 - A23 * A31 * A44 * A52 +
+			A21 * A33 * A44 * A52 + A24 * A32 * A41 * A53 - A22 * A34 * A41 * A53 - A24 * A31 * A42 * A53 +
+			A21 * A34 * A42 * A53 + A22 * A31 * A44 * A53 - A21 * A32 * A44 * A53 - A23 * A32 * A41 * A54 +
+			A22 * A33 * A41 * A54 + A23 * A31 * A42 * A54 - A21 * A33 * A42 * A54 - A22 * A31 * A43 * A54 +
+			A21 * A32 * A43 * A54;
+
+		Amtmp[1][4] = -A14 * A33 * A42 * A51 + A13 * A34 * A42 * A51 + A14 * A32 * A43 * A51 -
+			A12 * A34 * A43 * A51 - A13 * A32 * A44 * A51 + A12 * A33 * A44 * A51 + A14 * A33 * A41 * A52 -
+			A13 * A34 * A41 * A52 - A14 * A31 * A43 * A52 + A11 * A34 * A43 * A52 + A13 * A31 * A44 * A52 -
+			A11 * A33 * A44 * A52 - A14 * A32 * A41 * A53 + A12 * A34 * A41 * A53 + A14 * A31 * A42 * A53 -
+			A11 * A34 * A42 * A53 - A12 * A31 * A44 * A53 + A11 * A32 * A44 * A53 + A13 * A32 * A41 * A54 -
+			A12 * A33 * A41 * A54 - A13 * A31 * A42 * A54 + A11 * A33 * A42 * A54 + A12 * A31 * A43 * A54 -
+			A11 * A32 * A43 * A54;
+
+		Amtmp[2][4] = A14 * A23 * A42 * A51 - A13 * A24 * A42 * A51 - A14 * A22 * A43 * A51 +
+			A12 * A24 * A43 * A51 + A13 * A22 * A44 * A51 - A12 * A23 * A44 * A51 - A14 * A23 * A41 * A52 +
+			A13 * A24 * A41 * A52 + A14 * A21 * A43 * A52 - A11 * A24 * A43 * A52 - A13 * A21 * A44 * A52 +
+			A11 * A23 * A44 * A52 + A14 * A22 * A41 * A53 - A12 * A24 * A41 * A53 - A14 * A21 * A42 * A53 +
+			A11 * A24 * A42 * A53 + A12 * A21 * A44 * A53 - A11 * A22 * A44 * A53 - A13 * A22 * A41 * A54 +
+			A12 * A23 * A41 * A54 + A13 * A21 * A42 * A54 - A11 * A23 * A42 * A54 - A12 * A21 * A43 * A54 +
+			A11 * A22 * A43 * A54;
+
+		Amtmp[3][4] = -A14 * A23 * A32 * A51 + A13 * A24 * A32 * A51 + A14 * A22 * A33 * A51 -
+			A12 * A24 * A33 * A51 - A13 * A22 * A34 * A51 + A12 * A23 * A34 * A51 + A14 * A23 * A31 * A52 -
+			A13 * A24 * A31 * A52 - A14 * A21 * A33 * A52 + A11 * A24 * A33 * A52 + A13 * A21 * A34 * A52 -
+			A11 * A23 * A34 * A52 - A14 * A22 * A31 * A53 + A12 * A24 * A31 * A53 + A14 * A21 * A32 * A53 -
+			A11 * A24 * A32 * A53 - A12 * A21 * A34 * A53 + A11 * A22 * A34 * A53 + A13 * A22 * A31 * A54 -
+			A12 * A23 * A31 * A54 - A13 * A21 * A32 * A54 + A11 * A23 * A32 * A54 + A12 * A21 * A33 * A54 -
+			A11 * A22 * A33 * A54;
+
+		Amtmp[4][4] = A14 * A23 * A32 * A41 - A13 * A24 * A32 * A41 - A14 * A22 * A33 * A41 +
+			A12 * A24 * A33 * A41 + A13 * A22 * A34 * A41 - A12 * A23 * A34 * A41 - A14 * A23 * A31 * A42 +
+			A13 * A24 * A31 * A42 + A14 * A21 * A33 * A42 - A11 * A24 * A33 * A42 - A13 * A21 * A34 * A42 +
+			A11 * A23 * A34 * A42 + A14 * A22 * A31 * A43 - A12 * A24 * A31 * A43 - A14 * A21 * A32 * A43 +
+			A11 * A24 * A32 * A43 + A12 * A21 * A34 * A43 - A11 * A22 * A34 * A43 - A13 * A22 * A31 * A44 +
+			A12 * A23 * A31 * A44 + A13 * A21 * A32 * A44 - A11 * A23 * A32 * A44 - A12 * A21 * A33 * A44 +
+			A11 * A22 * A33 * A44;
+
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < n; j++) {
+				if (!isfinite((Amtmp[i][j]))) return(1);
+				Aminv[i][j] = Amtmp[j][i] / DET;
+			}
+		}
+	#endif
 	return(0);
 }
 
 //6D Matrix inversion
 __device__ int invert_matrix_6D(double Am[][6], double Aminv[][6])
 {
-
+#if(!GAUSS_JORDAN)
 	int i, j;
 	int n = 6;
 	int permute[6];
@@ -5566,8 +5928,101 @@ __device__ int invert_matrix_6D(double Am[][6], double Aminv[][6])
 		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
 
 	}
+	#else
+	// Augmenting Identity Matrix of Order n 
+	int i, j, k;
+	int n = 6;
+	double ratio, Amtmp[6][6];
 
+	for (i = 0; i < n * n; i++) { Amtmp[0][i] = Am[0][i]; }
+	for (i = 0; i < n; i++)
+	{
+		for (j = 0; j < n; j++)
+		{
+			if (i == j)
+			{
+				Amtmp[i][j + n] = 1;
+			}
+			else
+			{
+				Amtmp[i][j + n] = 0;
+			}
+		}
+	}
+
+	// Applying Gauss Jordan Elimination
+	for (i = 0; i < n; i++)
+	{
+		if (Amtmp[i][i] == 0.0)
+		{
+			return 1;
+		}
+		for (j = 0; j < n; j++)
+		{
+			if (i != j)
+			{
+				ratio = Amtmp[j][i] / Amtmp[i][i];
+				for (k = 0; k < 2 * n; k++)
+				{
+					Amtmp[j][k] = Amtmp[j][k] - ratio * Amtmp[i][k];
+				}
+			}
+		}
+	}
+
+	// Row Operation to Make Principal Diagonal to 1
+	for (i = 0; i < n; i++)
+	{
+		for (j = n; j < 2 * n; j++)
+		{
+			Amtmp[i][j] = Amtmp[i][j] / Amtmp[i][i];
+		}
+	}
+
+	for (i = 0; i < n * n; i++) { Aminv[0][i] = Amtmp[0][i]; }
+	#endif
 	return(0);
+}
+
+
+__global__ void nodiag_normalize(double* A, double* I, int n, int i) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x < n && y < n)
+		if (x == i && x != y) {
+			I[x * n + y] /= A[i * n + i];
+			A[x * n + y] /= A[i * n + i];
+		}
+
+}
+
+__global__ void diag_normalize(double* A, double* I, int n, int i) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x < n && y < n)
+		if (x == y && x == i) {
+			I[x * n + y] /= A[i * n + i];
+			A[x * n + y] /= A[i * n + i];
+		}
+
+}
+
+__global__ void gaussjordan(double* A, double* I, int n, int i)
+{
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x < n && y < n) {
+		if (x != i) {
+			I[x * n + y] -= I[i * n + y] * A[x * n + i];
+			if (y != i) {
+				A[x * n + y] -= A[i * n + y] * A[x * n + i];
+			}
+		}
+	}
+
 }
 
 //4D LU-decomposition
@@ -12494,7 +12949,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	}
 
 	// outer r BC: outflow
-	#if(CONSTANT_BC)
+	#if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
