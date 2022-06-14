@@ -1560,6 +1560,7 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
+	if (status == 700) exit(1);
 }
 
 void GPU_fluxcalc2D(int dir, int flag, int n)

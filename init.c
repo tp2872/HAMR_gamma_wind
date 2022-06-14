@@ -120,6 +120,7 @@ void init()
 	void init_monopole(double Rout_val);
 	void init_thindisk();
 	void init_postmerger();
+	void init_collapsar();
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -155,6 +156,9 @@ void init()
 		case RAD_PULSE:
 		init_radpulse();
 		break;
+		case COLLAPSAR:
+			init_collapsar();
+			break;
 	}
 
 	int n;
@@ -937,9 +941,9 @@ void init_torus()
 				rho = 1.e-7*RHOMIN ;
 				u = 1.e-7*UUMIN ;
 
-				ur = 0. ;
-				uh = 0. ;
-				up = 0. ;
+				ur = 0.;
+				uh = 0.;
+				up = 0.;
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
@@ -1231,6 +1235,273 @@ void init_torus()
 
 }
 
+void init_collapsar(void)
+{
+	int i, j, z, n;
+	double r, th, phi, sth, cth;
+	double ur, uh, up, u, rho;
+	double bl_gcov[NDIM][NDIM];
+	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+	double rhor, M_STAR, Rs, alphap, betap, rho0, R_STARcm, Omega0, Omega0_limit, r_rc, t_rc, m_rc, r_hole;
+	struct of_geom geom;
+
+	/* for disk interior */
+	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
+	double l, rin, lnh, expm2chi, up1;
+	double tilt, eccentricity;
+	double kappa, hm1;
+
+	/*For MPI*/
+	double inmsg;
+
+	// for magnetic field
+	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
+	double rhofactor = 1e3;
+	// star parameters
+	M_STAR = 14; // Stellar mass
+	R_STARcm = 4e10; // Star radius
+	r_rc = 0.3 * M_STAR * 1.5e5;
+	m_rc = 0.3 * M_STAR * 2e33;
+	Rs = R_STARcm / r_rc; // stellar radius in code units
+	alphap = 1.5; // inner density profile power-law
+	betap = 3; // outer density profile power-law
+	rho0 = 0.3; // density normalization for alphap = 1
+	Omega0 = 5;
+	Omega0_limit = 1e-3;
+	r_hole = 10;
+
+	double temp = a;
+	a = 0.8;
+	rin = 6.0;
+	rmax = 1e4;
+	l = lfish_calc(rmax);
+	kappa = 1.e-3;
+	beta = 100.;
+
+	coord(0, 5, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	if (rank == 0) {
+		fprintf(stderr, "r[5]: %g\n", r);
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
+			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+		}
+		else {
+			fprintf(stderr, "\n");
+		}
+	}
+
+	// output choices
+	tf = 200000000.0;
+
+	// start diagnostic counters
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+
+	rhomax = 0.;
+	umax = 0.;
+	#if(!NSY)
+	tilt = (TILT_ANGLE) / 180. * M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180. * M_PI;
+	#endif
+	eccentricity = 0;
+
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa,hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
+			#if (TILTED)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
+			#endif
+
+			#if(ELLIPTICAL)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			elliptical_coord(X_cart, pos_new, &r, eccentricity);
+			#endif
+
+			sth = sin(th);
+			cth = cos(th);
+
+			ur = 0.;
+			uh = 0.;
+			up = 0.;
+			if (r > Rs) {
+				rho = 1e-20; // ISM density
+				u = rho / 1e4;//u = 1e-3*pow(rho,gam)/(gam - 1.) ;
+
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+			}
+			else if (r < 2) {
+				rho = rho0 * pow(r_hole, -alphap) * r / r_hole;
+				u = 1e-2 * rho / r;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+			}
+			else {
+				if (r < r_hole) {
+					rho = rho0 * pow(r_hole, -alphap) * r / r_hole;
+					u = 1e-2 * rho / r;
+					/* p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;*/
+				}
+				else {
+					rho = rho0 * pow(r, -alphap) * pow((Rs - r) / Rs, betap);
+					u = 1e-2 * rho / r;
+				}
+				//u = 1e-3*pow(rho,gam)/(gam - 1.) ;
+				//u = 1/(gam-1)*3.14*G*pow(rho0,2)/pow(Rs,3) * (1/(12*pow(r*Rs,3)) * (3*pow(r,7)-28*pow(r,6)*Rs+126*pow(r,5)*Rs*Rs-420*pow(r,4)*pow(Rs,3)+252*r*r*pow(Rs,5)-42*r*pow(Rs,6)+4*pow(Rs,7)) - 35*Rs*log(r)); // Newtonian hydrostatic eq.
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				if (rho > rhomax) {
+					#pragma omp critical
+					rhomax = rho;
+				}
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
+				if (u > umax && r > rin) {
+					#pragma omp critical
+					umax = u;
+				}
+				//up = Omega0/(1+pow(r/A_rot,2))/3e10; // angular velocity
+				//if (Omega0/pow(r*sin(th),2) > Omega0_limit) {
+				if (Omega0 / pow(r, 2) > Omega0_limit) {
+					up = Omega0_limit;
+				}
+				else {
+					//up = Omega0/pow(r*sin(th),2);
+					up = Omega0 / pow(r, 2);
+				}
+				#if (TILTED)
+				V[1] = ur;
+				V[2] = uh;
+				V[3] = up;
+				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#elif(ELLIPTICAL)
+				V_old[1] = ur;
+				V_old[2] = uh;
+				V_old[3] = up;
+				elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V_new[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V_new[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V_new[3];
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#endif
+			}
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			#if (DO_YE)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
+			#endif
+		}
+	}
+	a = temp;
+	#if (MPI_enable)
+	// Share rhomax among MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
+	// Share umax among MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+
+	// Normalize the densities so that max(rho) = 1
+	if (rank == 0) {
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
+	//ZSLOOP(0,N1-1,0,N2-1) {
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhofactor * rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhofactor * rhomax;
+		}
+	}
+	umax /= rhomax;
+	rhomax = 1.;
+	/*        for (n = 0; n < n_active; n++) ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[ \
+		n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+		}
+	*/
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+
+	bound_prim(p, 1);
+
+	set_mag();
+
+	#if (DOHELM)
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+			//eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	#if (DOHELM_TEMPERATURE)
+	// Set temperatures given u:
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e3;
+			/*eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);*/
+		}
+	}
+	#endif
+	#endif
+
+	sourceflag = 0.;
+	#if(ELLIPTICAL2)
+	calc_source();
+	#endif
+
+	bound_prim(p, 1);
+
+}
+
 void init_neutrinos(double ph[NPR]) {
 #if (NEUTRINOS_M1)
 	double F2, F3, mu_nu, mu_p, mu_n, mu_e;
@@ -1241,7 +1512,7 @@ void init_neutrinos(double ph[NPR]) {
 	);
 	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
 	mu_nu = mu_p + mu_e - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
-
+	double T_nu;
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
 		if (sp == 0) {
 			F2 = calc_fermiint2(mu_nu);
@@ -1266,8 +1537,9 @@ void init_neutrinos(double ph[NPR]) {
 		// 	ph[index_nu(NUMBER_NU, sp)] = MY_MAX(ph[index_nu(NUMBER_NU, sp)], 1e-30);
 		// }
 		// else {
-			ph[index_nu(UU_NU, sp)] = 1e-30;
-			ph[index_nu(NUMBER_NU, sp)] = 1e-30;
+		ph[index_nu(UU_NU, sp)] = 1e-30;
+		T_nu = pow(ph[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		ph[index_nu(NUMBER_NU, sp)] = ph[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_nu); //1e-30;
 		// }
 
 		ph[index_nu(U1_NU, sp)] = ph[U1];
@@ -2241,6 +2513,18 @@ void set_mag(void){
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif	
+	#if(WHICHPROBLEM==COLLAPSAR)
+	double Bfactor = 300; //1e13 G for alpha = 1
+	double M_STAR = 14;
+	double R_STARcm = 4e10;
+	double r_rc = 0.3 * M_STAR * 1.5e5;
+	double Rs = R_STARcm / r_rc;
+	double Fe_core = 1e8 / r_rc;
+	double r_hole = 10;
+	double fr;
+	beta = 100.0 / (3.6 * Bfactor * Bfactor);
+	if (numtasks > 100) exit(0);
+	#endif
 	#if(WHICHPROBLEM==TRUNC_PROBLEM)
 	tilt = 0.;
 	#endif
@@ -2284,6 +2568,24 @@ void set_mag(void){
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
+			#elif(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+			if (r < 1.5 * r_hole) {
+				q = r * r * 1e-20 * pow(sin(th), 2);//1 - pow((r-Fe_core)/(Rs-Fe_core),2);
+				//q = pow(sin(th),2)*(pow(r_hole,2)/pow(Fe_core,3)-1/Rs)*pow(r/r_hole,2);
+			}
+			else {
+				if (r < Rs) {
+					fr = 1 - pow((r - Fe_core) / (Rs - Fe_core), 2);
+					// q = pow(sin(th),2)*(pow(sqrt(pow(r,2)-pow(r_hole,2)),2)/(pow(sqrt(pow(r,2)-pow(r_hole,2)),3)+pow(Fe_core,3))-pow(Rs,2)/(pow(Rs,3)+pow(Fe_core,3)));
+					q = pow(sin(th), 2) * (pow(r, 2) / (pow(r, 2) + pow(Fe_core, 2)) - pow(r / Rs, 3)); //Fe core profile   
+
+				}
+				else {
+					fr = 0;
+					q = 0;
+				}
+				// q = fr*pow(sin(th),2)/r; //Komissarov's profile
+			}
 			#else
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison

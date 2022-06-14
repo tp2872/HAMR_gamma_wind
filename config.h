@@ -16,8 +16,9 @@ Physical Parameters section
 #define TRUNC_PROBLEM 12
 #define POSTMERGER_PROBLEM 13
 #define RAD_PULSE 14
+#define COLLAPSAR 15
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM COLLAPSAR
 
 #define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
@@ -45,7 +46,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (50.0)
+#define BETA (100.0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
@@ -67,17 +68,17 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
-#define NU_DEBUG (1) // (1)
-#define NEUTRINOS_DEBUG (1) //(1)
-#define NEUTRINOS_DEBUG_NFLAGS (1)
+#define NU_DEBUG (0) // (1)
+#define NEUTRINOS_DEBUG (0) //(1)
+#define NEUTRINOS_DEBUG_NFLAGS (0)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (1)
 #define NU_INNER_STOP (0)
-#define NU_PREDICTOR (1)
+#define NU_PREDICTOR (0)
 #define NU_KEEP_COEFF_CONST (1)
 #define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
 // Whether electron fraction is evolved
@@ -85,7 +86,7 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #define DONUCLEAR (0)
 #endif
 
@@ -266,10 +267,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (120)
@@ -525,7 +526,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #else
-#define MASS_DENSITY_SCALE (1e13)
+#if (WHICHPROBLEM == COLLAPSAR)
+#define MASS_DENSITY_SCALE (1.710832e11)
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)

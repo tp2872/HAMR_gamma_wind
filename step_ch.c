@@ -796,7 +796,7 @@ void GPU_step_ch()
 	int i, j, z, k, n, uu;
 
 	if (rank == 0){
-		fprintf(stderr, "h");
+		//fprintf(stderr, "h");
 	}
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
@@ -824,7 +824,7 @@ void GPU_step_ch()
 
 	/* Repeat and rinse for the full time (aka corrector) step:  */
 	if (rank == 0){
-		fprintf(stderr, "f");
+		//fprintf(stderr, "f");
 	}
 
 	#if (DUMP_EACH_STEP)
