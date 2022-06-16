@@ -16446,48 +16446,40 @@ __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_t
 	}
 
 	// Electron fraction bounds:
+	#if (NULIB_YE_CORRECTION)
+	double correctionEtaNue = 1.0;
+	double correctionEtaNua = 1.0;
+
+	if (ye < nulib_yelo_threshold) {
+		correctionEtaNue = (ye < nulib_ylo ? 0. : (ye - nulib_ylo) / (nulib_yelo_threshold - nulib_ylo));
+	}
+	if (ye > nulib_yehi_threshold) {
+		correctionEtaNua = (ye > nulib_yhi ? 0. : (nulib_yhi - ye) / (nulib_yhi - nulib_yehi_threshold));
+	}
+	
+	if (species == 0) {
+		if (quantity == NU_EMISSIVITY) {
+			factor *= correctionEtaNue * correctionEtaNua;
+		}
+		else if (quantity == NU_ABSORPTION) {
+			factor *= correctionEtaNua;
+		}
+	}
+	if (species == 1) {
+		if (quantity == NU_EMISSIVITY) {
+			factor *= correctionEtaNue * correctionEtaNua;
+		}
+		else if (quantity == NU_ABSORPTION) {
+			factor *= correctionEtaNue;
+		}
+	}
+	//#else
+	#endif
 	if (ye < nulib_ylo || ye > nulib_yhi) {
-	//if (ph[YE] > nulib_yhi) {
 		factor = 0.0; // DINU: reset for now; 
 		ye = nulib_ylo;
-		//return;
 	}
-	//if (ph[YE] < nulib_ylo) {
-	//	ye = nulib_ylo;
-	//	// Goal is to keep Ye above the lower bound
-	//	if (species == 0) {
-	//		// electron neutrinos: turn off the emission, keep absorption
-	//		if (quantity == NU_EMISSIVITY || quantity == NU_EMISSIVITY_N) factor *= 0.0;
-	//		else if (quantity == NU_ABSORPTION) factor *= 1.0;
-	//		else factor *= 0.0;
-	//	}
-	//	else if (species == 1) {
-	//		// electron antineutrinos: keep the emission, turn off absorption 
-	//		if (quantity == NU_EMISSIVITY || quantity == NU_EMISSIVITY_N) factor *= 1.0;
-	//		else if (quantity == NU_ABSORPTION) factor *= 0.0;
-	//		else factor *= 0.0;
-	//	}
-	//	// heavy lepton neutrinos: turn off
-	//	else factor *= 0.0;
-	//}
-	//if (ph[YE] > nulib_yhi) {
-	//	ye = nulib_yhi;
-	//	// Goal is to keep Ye below the upper bound
-	//	if (species == 0) {
-	//		// electron neutrinos: keep the emission, turn off absorption
-	//		if (quantity == NU_EMISSIVITY || quantity == NU_EMISSIVITY_N) factor *= 1.0;
-	//		else if (quantity == NU_ABSORPTION) factor *= 0.0;
-	//		else factor *= 0.0;
-	//	}
-	//	else if (species == 1) {
-	//		// electron antineutrinos: turn off the emission, keep absorption 
-	//		if (quantity == NU_EMISSIVITY || quantity == NU_EMISSIVITY_N) factor *= 0.0;
-	//		else if (quantity == NU_ABSORPTION) factor *= 1.0;
-	//		else factor *= 0.0;
-	//	}
-	//	// heavy lepton neutrinos: turn off
-	//	else factor *= 0.0;
-	//}
+	//#endif
 
 	// Temperature bounds:
 	double nulib_temp_low = pow(10., 9.77); // corresponds to 0.511 MeV

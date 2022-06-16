@@ -81,6 +81,7 @@ Physical Parameters section
 #define NU_PREDICTOR (0)
 #define NU_KEEP_COEFF_CONST (1)
 #define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
+#define NULIB_YE_CORRECTION (0)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -421,6 +422,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define nulib_yhi (0.55)
 #define nulib_ylo (0.035)
 
+#define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
+#define nulib_yehi_threshold (nulib_yhi - (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
 
 /* Nulib table coefficients mnemonics */
 #define NULIB_VARS (4)
