@@ -147,7 +147,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		}
 	}
 
-	#if(CONSTANT_BC)
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR2] == -1){
 		// outer r BC: outflow 		
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
