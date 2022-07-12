@@ -2559,10 +2559,18 @@ void GPU_boundprim1(int flag, int n)
 	#endif
 	if (block[n][AMR_NBR2] == -1 || block[n][AMR_NBR4] == -1){
 		if (flag == 0){
-			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
+			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]] 
+				 #if(DANAT_GDET_INTERP)	
+				 , Bufferradius[nl[n]]
+				 #endif
+				 );
 		}
 		else{
-			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
+			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]] 
+				 #if(DANAT_GDET_INTERP)	
+				 , Bufferradius[nl[n]]
+				 #endif
+				 );
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();

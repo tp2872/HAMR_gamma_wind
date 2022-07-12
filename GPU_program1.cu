@@ -12710,7 +12710,11 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 	}
 }
 
-__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps)
+__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps
+	#if(DANAT_GDET_INTERP)	
+	, const double* __restrict__ radius
+	#endif
+)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
@@ -12721,7 +12725,9 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR], prim0[NPR];
 	struct of_geom geom1, geom2, geom3, geom5;
-
+	#if(DANAT_GDET_INTERP)	
+	double dr_over_r = (radius[N1G] - radius[N1G - 1]) / radius[N1G];
+	#endif
 	// inner r boundary condition: u, gdet extrapolation
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
 		get_geometry(0, jcurr, zcurr, CENT, &geom1, gcov, gcon, gdet);
@@ -12758,10 +12764,10 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		//#endif
 
 		// Extrapolate in the ghost cells as in Gammie et al. (gdet extrapolation)
-		extrapolate_gdet_innerBC(prim5, prim1, geom5.g, geom1.g, 0.0545);
-		extrapolate_gdet_innerBC(prim5, prim2, geom5.g, geom2.g, 0.0545);
+		extrapolate_gdet_innerBC(prim5, prim1, geom5.g, geom1.g, dr_over_r);
+		extrapolate_gdet_innerBC(prim5, prim2, geom5.g, geom2.g, dr_over_r);
 		#if(N1G==3)
-		extrapolate_gdet_innerBC(prim5, prim3, geom5.g, geom3.g, 0.0545);
+		extrapolate_gdet_innerBC(prim5, prim3, geom5.g, geom3.g, dr_over_r);
 		#endif
 
 		/*Write primitives back to global memory*/
@@ -12802,7 +12808,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	}
 
 	// outer r BC: outflow
-	#if(CONSTANT_BC)
+	//#if(CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -12847,7 +12853,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		#endif
 		#endif
 	}
-	#endif
+	//#endif
 }
 
 __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)

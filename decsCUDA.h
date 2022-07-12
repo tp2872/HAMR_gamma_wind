@@ -124,7 +124,11 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage);
 #if (NEUTRINOS_M1)
 __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
 #endif
-__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);
+__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps
+	#if(DANAT_GDET_INTERP)	
+	, const double* __restrict__ radius
+	#endif
+);
 __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 
