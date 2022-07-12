@@ -57,7 +57,7 @@
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
-void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz);
 void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -1659,7 +1659,7 @@ void init_rad_pres(double pi[NPR]) {
 #define NVARS 14
 
 void init_postmerger() {
-	int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p, double* udphi);
+	int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p, double* udphi, double* mudt);
 	char* read_first_line(char *s, size_t size, FILE *fp);
 	char* read_last_line(char *s, size_t size, FILE *fp);
 	int i,j,z,n ;
@@ -1684,7 +1684,8 @@ void init_postmerger() {
 	double lfish_calc(double rmax) ;
 
 	/* for ICs */
-	double r_unit = 8.07; //conversion factor = (Mbh/Msun)
+	double r_unit = M_SGRA_SOLAR; //conversion factor = (Mbh/Msun)
+
 	FILE *fp1, *fp2;
 	int ind;
 	int nitems_read, nitems_expected;
@@ -1693,8 +1694,12 @@ void init_postmerger() {
 	int res;
 	double *icdata;
 
+	#if (BHNSQ2)
+	char fname1[] = "InterpolatedDataBHNSQ2.dat";
+	#else
 	char fname1[] = "PointsToInterpolateHAMR.dat";
 	char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
+	#endif
 
 	// In case you want to read the whole ICs table -- set all of them to 1.
 	// Initial resolution is 512 x 256 x 128
@@ -1706,11 +1711,11 @@ void init_postmerger() {
 	size_t memsize, nitems, nread;
 	double prim[NPR];
 	int k, ii, jj, kk;
-	double udphi;
+	double udphi, mudt;
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	a = BH_SPIN ;
-	beta = 100.;
+	beta = BETA;
 
 	coord(0, 5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -1746,13 +1751,50 @@ void init_postmerger() {
 				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
 				exit(1234);
 			}
+			#if (BHNSQ2)
+			ext.nx = 384;
+			ext.ny = 96;
+			ext.nz = 96;
+
+			read_last_line(last_line, MAXLEN, fp1);
+			sscanf(last_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmax, &ext.ymax, &ext.zmax);
+			rewind(fp1);
+
+			read_first_line(first_line, MAXLEN, fp1);
+			sscanf(first_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmin, &ext.ymin, &ext.zmin);
+
+			ext.xmin /= r_unit;
+			ext.xmax /= r_unit;
+
+			if (0 == rank) {
+				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1);
+				fflush(stderr);
+			}
+
+			nx = 384;
+			ny = 96;
+			nz = 96;
+			nvars = ext.nvars;
+			nitems = (size_t)nvars * nx * ny * nz;
+			memsize = sizeof(double) * nitems;
+			icdata = malloc(memsize);
+
+			if (NULL == icdata) {
+				fprintf(stderr, "[%5d] could not allocate memory of size %ld\n", rank, memsize);
+				fclose(fp1);
+				#if (!BHNSQ2)
+				fclose(fp2);
+				#endif
+				exit(1235);
+			}
+			//read in the data block from file
+			#else
 			fp2 = fopen(fname2, "rb");
 			if (NULL == fp2 && 0 == rank) {
 				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
 				fclose(fp1);
 				exit(1234);
 			}
-			
 			read_last_line(last_line, MAXLEN, fp1);
 			sscanf(last_line, "%d %d %d %lf %lf %lf ", &ext.nx, &ext.ny, &ext.nz, &ext.xmax, &ext.ymax, &ext.zmax);
 
@@ -1772,7 +1814,7 @@ void init_postmerger() {
 			ext.nx += 1;
 			ext.ny += 1;
 			ext.nz += 1;
-
+			
 			ext.xmin/=r_unit;
 			ext.xmax/=r_unit;
 
@@ -1780,7 +1822,6 @@ void init_postmerger() {
 				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1, fname2);
 				fflush(stderr);
 			}
-
 			ext.nx = ext.nx / stride1;
 			ext.ny = ext.ny / stride2;
 			ext.nz = ext.nz / stride3;
@@ -1796,11 +1837,39 @@ void init_postmerger() {
 			if(NULL == icdata) {
 				fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
 				fclose(fp1);
+				#if (!BHNSQ2)
 				fclose(fp2);
+				#endif
 				exit(1235);
 			}
 			//read in the data block from file
+			#endif
 
+			#if (BHNSQ2)
+			for (ii = 0; ii < nx; ii++) for (jj = 0; jj < ny; jj++) for (kk = 0; kk < nz; kk++) {
+				//fprintf(stderr, "[%d] blah %d %d %d\n", rank, ii, jj, kk);
+
+				//first file, containing grid and data information
+				ptr1 = fgets(buf1, MAXLEN, fp1);
+				if (NULL == ptr1) break;
+
+				dd(ii, jj, kk, VARI) = (double)ii;
+				dd(ii, jj, kk, VARJ) = (double)jj;
+				dd(ii, jj, kk, VARK) = (double)kk;
+
+				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI), &dd(ii, jj, kk, VARRHO), &dd(ii, jj, kk, VARP), &dd(ii, jj, kk, VARYE), &dd(ii, jj, kk, VARMUDT), &dd(ii, jj, kk, VARUDPHI), &dd(ii, jj, kk, VARVUR), &dd(ii, jj, kk, VARVUTHETA), &dd(ii, jj, kk, VARVUPHI));
+				dd(ii, jj, kk, VARR) /= r_unit;
+				dd(ii, jj, kk, VARUDPHI) /= r_unit;
+
+				nitems_expected = 11;
+				if (nitems_expected != nitems_read) break;
+			} 
+
+			if (nitems_expected != nitems_read || ferror(fp1) || (NULL == ptr1 && !feof(fp1))) {
+				fprintf(stderr, "[%5d] Error reading from file(s)\n", rank);
+			}
+			fclose(fp1); fp1 = NULL;
+			#else 
 			do {
 				//first file, containing grid information
 				ptr1 = fgets(buf1, MAXLEN, fp1);
@@ -1841,6 +1910,7 @@ void init_postmerger() {
 			}
 			fclose(fp1); fp1 = NULL;
 			fclose(fp2); fp2 = NULL;
+			#endif
 
 			if (0 == rank) {
 				fprintf(stderr, " done\n");
@@ -1868,8 +1938,9 @@ void init_postmerger() {
 
 	eccentricity = 0.0;
 	double Tnu;
+	double ucon[NDIM], utcon[NDIM];
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, prim)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, mudt, prim)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
@@ -1879,8 +1950,7 @@ void init_postmerger() {
 
 			sth = sin(th) ;
 			cth = cos(th) ;
-
-			
+						
 			/*prim[RHO] = dd(i, j, z, VARRHO);
 			prim[UU] = dd(i, j, z, VARP) / (gam - 1);
 			prim[U1] = dd(i, j, z, VARVUR);
@@ -1891,13 +1961,14 @@ void init_postmerger() {
 			#endif
 			udphi = dd(i, j, z, VARUDPHI) / r_unit;
 			*/
-			res = interpolate_spec_prims(r, th, phi, ext, icdata, prim, &udphi);
-			if (res) {
+			res = interpolate_spec_prims(r, th, phi, ext, icdata, prim, &udphi, &mudt);
+			if (res || prim[RHO] < 1e-13) {
 				prim[RHO] = 1e-7 * RHOMIN;
 				prim[UU] = 1e-7 * UUMIN;
 				prim[U1] = 0.0;
 				prim[U2] = 0.0;
 				prim[U3] = 0.0;
+
 				#if (DO_YE)
 				prim[YE] = 1.0;
 				#endif
@@ -1908,7 +1979,7 @@ void init_postmerger() {
 			}
 			else {
 				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-				utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
+				utilde_to_ucon(prim, udphi, mudt, n_ord[n], i, j, z);
 				#if (DONUCLEAR)
 				prim[XALPHA] = 0.0;
 				prim[XATM] = 0.0;
@@ -1971,7 +2042,7 @@ void init_postmerger() {
 	
 	bound_prim(p, 1);
 
-	set_mag();
+	//set_mag();
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
@@ -2283,7 +2354,7 @@ void init_disruption()
 	#endif
 }
 
-int interpolate_spec_prims(double r, double th, double ph, extent ext, double* data, double* p, double* udphi)
+int interpolate_spec_prims(double r, double th, double ph, extent ext, double* data, double* p, double* udphi, double* mudt)
 {
 	int interpolate_spec_var(double r, double th, double ph, extent ext, double* data, int ivar, double* val);
 	double vx, vy, vz, poten, x, y, z, R;
@@ -2299,6 +2370,7 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 	res += interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
 	#endif
 	res += interpolate_spec_var(r, th, ph, ext, data, VARUDPHI, udphi);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARMUDT, mudt);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUR, &p[U1]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUTHETA, &p[U2]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUPHI, &p[U3]);
@@ -3052,9 +3124,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 /* This function takes Utilde 3-velocity and
  * transforms it into 4-velocity in modified Kerr-Schild coordinates
  */
-void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
+void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz)
 {
-  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM];
+  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM], ucon[NDIM], ucov[NDIM];
   double AA, BB, CC, discr, udphi_new, err, err_tol;
   double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
@@ -3087,22 +3159,6 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   //old[2] = ucon[2];
   //old[3] = ucon[3];
 
-#if(USEKS)
-  //already in KS coordinates; no transformation needed
-#else
-  /* transform to Kerr-Schild */
-  /* make transform matrix */
-  DLOOP trans[j][k] = 0.;
-  DLOOPA trans[j][j] = 1.;
-  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
-  trans[3][1] = a / (r*r - 2.*r + a*a);
-  /* transform ucon */
-  DLOOPA tmp[j] = 0.;
-  DLOOP tmp[j] += trans[j][k] * ucon[k];
-  DLOOPA ucon[j] = tmp[j];
-  /* now we've got ucon in KS coords */
-#endif
-
   /* Jacobian transformation from spherical to cartesian coords */
   dxdr_sph_to_cart(r, th, phi, dxdr);
   invert_matrix(dxdr, drdx);
@@ -3121,6 +3177,51 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     }
   }
 
+#if(USEKS)
+  //already in KS coordinates; no transformation needed
+#else
+  /* transform to Kerr-Schild */
+  /* make transform matrix */
+  DLOOP trans[j][k] = 0.;
+  DLOOPA trans[j][j] = 1.;
+  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
+  trans[1][0] = trans[0][1];
+  trans[3][1] = a / (r*r - 2.*r + a*a);
+  trans[1][3] = trans[3][1];
+  DLOOPA tmp[j] = utcon[j];
+  utcon[0] = 0.0;
+	for (i = 1; i < NDIM; i++) {
+		utcon[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			utcon[i] += trans[i][j] * tmp[j];
+		}
+	}
+
+#endif
+
+	#if (0)
+	// 1. Find u^t from SpEC velocities
+	double vconp[NDIM], ucon[NDIM], ucov[NDIM];
+	pr[U1] = utcon[1];
+	pr[U2] = utcon[2];
+	pr[U3] = utcon[3];
+	ucon_calc(pr, &geom, ucon);
+
+	// 2. Find ucon1 and ucon3 given mudt and udphi from SpEC
+	double b1 = udphi - geom.gcov[3][0] * ucon[0];
+	double b2 = -mudt - geom.gcov[0][0] * ucon[0];
+	double detA = geom.gcov[3][1] * geom.gcov[0][3] - geom.gcov[0][1] * geom.gcov[3][3];
+	ucon[1] = (geom.gcov[0][3] * b1 - geom.gcov[3][3] * b2) / detA;
+	ucon[3] = (-geom.gcov[0][1] * b1 + geom.gcov[3][1] * b2) / detA;
+
+	// 3. Compute ucon2 from ucon0, ucon1 and ucon3 from u^2 = -1
+	ucon[2] = (- 1.0 - geom.gcov[0][0] * ucon[0] * ucon[0] - geom.gcov[1][1] * ucon[1] * ucon[1] - geom.gcov[3][3] * ucon[3] * ucon[3] - 2.0 * geom.gcov[0][1] * ucon[0] * ucon[1] - 2.0 * geom.gcov[0][3] * ucon[0] * ucon[3] - 2.0 * geom.gcov[1][3] * ucon[1] * ucon[3]) /(geom.gcov[2][2]);
+	ucon[2] = sqrt(ucon[2]);
+	//ucon[2] = 0.0;
+	// 4. Convert ucon to u^tilde
+	ucon_to_utcon(ucon, &geom, utcon);
+	#endif
+
   // converts Utilde^{r,th,phi} from the previous loop into Utilde^{x1,x2,x3}
   utconp[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -3130,15 +3231,21 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     }
   }
 
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  get_geometry(n,ii, jj,zz, CENT, &geom);
+  ucon_calc(pr, &geom, ucon);
+  double ucont_IC = ucon[0];
+
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
 
   // This calculates Utilde^{phi} given u_{phi}. Iterations are required because the relation between them is not linear.
 
-  get_geometry(n,ii, jj,zz, CENT, &geom);
 
 // Commented out this part of the code that modifies utconp by matching udphi's
-
+  #if (0)
   max_iter = 50;
   err_tol = 1.0E-4;
   for (i = 0; i < max_iter; i++) {
@@ -3148,14 +3255,309 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     if (err <= err_tol) break;
     udphi = udphi_new;
   }
-
-  //ucon_to_utcon(uconp, &geom, utconp);
-
+  #elif(0)
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
   gamma_calc(pr, &geom, &gamma);
-  //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
+  double ucon[NDIM], ucov[NDIM];
+  ucon_calc(pr, &geom, ucon);
+  
+  pr[U3] = (udphi - geom.gcov[3][0] * ucon[0] - geom.gcov[3][1] * ucon[1] - geom.gcov[3][2] * ucon[2]) / geom.gcov[3][3];
+  gamma_calc(pr, &geom, &gamma);
+  ucon_calc(pr, &geom, ucon);
+  ucon_to_utcon(ucon, &geom, utconp);
+  #elif(0)
+  double vconp[NDIM], ucon[NDIM], ucov[NDIM];
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+
+  alpha = 1. / sqrt(-geom.gcon[0][0]);
+  SLOOPA beta[j] = geom.gcon[0][j] * alpha * alpha;
+  ucon_calc(pr, &geom, ucon);
+  gamma = alpha * ucon[0];
+
+  vconp[0] = 0.0;
+  SLOOPA vconp[j] = utconp[j] / gamma - geom.gcon[0][j] * alpha;
+
+  //double gamma_new = udphi / (geom.gcov[3][0] / alpha + geom.gcov[3][1] * vconp[1] + geom.gcov[3][2] * vconp[2] + geom.gcov[3][3] * vconp[3]);
+  //if (udphi == 0.0) gamma_new = 1.0;
+  double gamma_new = udphi / (geom.gcov[0][0] / alpha + geom.gcov[0][1] * vconp[1] + geom.gcov[0][2] * vconp[2] + geom.gcov[0][3] * vconp[3]); 
+
+  SLOOPA utconp[j] *= gamma_new / gamma;
+  #elif(0)
+  // 1. Find u^t from SpEC velocities
+  double vconp[NDIM], ucon[NDIM], ucov[NDIM];
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  ucon_calc(pr, &geom, ucon);
+
+  // 2. Find ucon1 and ucon3 given mudt and udphi from SpEC
+  double b1 = udphi - geom.gcov[3][0] * ucon[0];
+  double b2 = -mudt - geom.gcov[0][0] * ucon[0];
+  double detA = geom.gcov[3][1] * geom.gcov[0][3] - geom.gcov[0][1] * geom.gcov[3][3];
+  ucon[1] = (geom.gcov[0][3] * b1 - geom.gcov[3][3] * b2) / detA;
+  ucon[3] = (-geom.gcov[0][1] * b1 + geom.gcov[3][1] * b2) / detA;
+
+  // 3. Compute ucon2 from ucon0, ucon1 and ucon3 from u^2 = -1
+  ucon[2] = (
+	  - 1.0 - geom.gcov[0][0] * ucon[0] * ucon[0] - geom.gcov[1][1] * ucon[1] * ucon[1] - geom.gcov[3][3] * ucon[3] * ucon[3]
+	  - 2.0 * geom.gcov[0][1] * ucon[0] * ucon[1] - 2.0 * geom.gcov[0][3] * ucon[0] * ucon[3] - 2.0 * geom.gcov[1][3] * ucon[1] * ucon[3])
+	   (geom.gcov[2][2]);
+  ucon[2] = 0.0;
+
+  //ucon_calc(pr, &geom, ucon);
+  lower(ucon, &geom, ucov);
+  fprintf(stderr, "(%d, %d, %d) gamma: %e, u_dot_u: %e\n", ii, jj, zz, ucon[0], ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3]);
+
+  /*if (isnan(ucon[0]) || isnan(ucon[1]) || (ucon[2] < 0.0) || isnan(ucon[3])) {
+	  fprintf(stderr, "\t %e %e %e %e {%e %e}\n", ucon[0], ucon[1], ucon[2], ucon[3], mudt, udphi);
+  }*/
+  // 4. Convert ucon to u^tilde
+  ucon_to_utcon(ucon, &geom, utconp);
+  #elif(0) 
+  double ucon[NDIM], ucov[NDIM], usq;
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  ucon_calc(pr, &geom, ucon);
+  lower(ucon, &geom, ucov);
+  usq = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
+  fprintf(stderr, "(%d, %d, %d) gamma: %e, u_dot_u 0: %e\n", ii, jj, zz, ucon[0], usq);
+
+  double ucon_tmp[NDIM], ucov_tmp[NDIM];
+  ucon_tmp[0] = ucon[0];
+  double detA = geom.gcov[3][1] * geom.gcov[0][3] - geom.gcov[0][1] * geom.gcov[3][3];
+  double b1, b2;
+  for (i = 0; i < 50; i++) {
+	  b1 = udphi - geom.gcov[3][0] * ucon_tmp[0];
+	  b2 = -mudt - geom.gcov[0][0] * ucon_tmp[0];
+	  ucon_tmp[1] = (geom.gcov[0][3] * b1 - geom.gcov[3][3] * b2) / detA;
+	  ucon_tmp[3] = (-geom.gcov[0][1] * b1 + geom.gcov[3][1] * b2) / detA;
+
+	  //ucon_tmp[0] = (-1.0 - ucon_tmp[3] * udphi - geom.gcov[1][1] * ucon_tmp[1] * ucon_tmp[1] - geom.gcov[1][3] * ucon_tmp[1] * ucon_tmp[3]) / (geom.gcov[1][0] * ucon_tmp[1] - mudt);
+	  ucov_tmp[1] = geom.gcov[1][0] * ucon_tmp[0] + geom.gcov[1][1] * ucon_tmp[1] + geom.gcov[1][3] * ucon_tmp[3];
+	  ucon_tmp[0] = -(-1.0 - ucon_tmp[3] * udphi - ucon_tmp[1] * ucov_tmp[1]) / mudt;
+
+	  lower(ucon_tmp, &geom, ucov_tmp);
+	  usq = ucon_tmp[0] * ucov_tmp[0] + ucon_tmp[1] * ucov_tmp[1] + ucon_tmp[2] * ucov_tmp[2] + ucon_tmp[3] * ucov_tmp[3];
+	  fprintf(stderr, "iter:%d (%d, %d, %d) gamma: %e, u_dot_u: %e\n", i, ii, jj, zz, ucon_tmp[0], usq);
+
+	  if (fabs(usq + 1.0) < 1e-5) {
+		  break;
+	  }
+  }
+
+  #elif (0)
+
+  /// This is a 3d Newton-Raphson rootfinding for u^t, u^1 and u^3
+  ///
+  /// 
+  int retval;
+  double ucon[NDIM], ucov[NDIM], usq;
+  double err_ucon, norm_ucon;
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  ucon_calc(pr, &geom, ucon);
+  double ucon_ini[NDIM-1], ucon_sol[NDIM-1], del_ucon[NDIM-1];
+  double u2_o_u3 = ucon[2] / (ucon[3] + 1e-16);
+  u2_o_u3 = 0.0;
+  double matrixA[NDIM - 1][NDIM - 1], matrixA_inv[NDIM - 1][NDIM - 1], vecF[NDIM - 1];
+  ucon_ini[0] = ucon[0];
+  ucon_ini[1] = ucon[1];
+  ucon_ini[2] = ucon[3];
+  int iter;
+  for (j = 0; j < NDIM - 1; j++) ucon_sol[j] = ucon_ini[j];
+  for (iter = 0; iter < 30; iter++) {
+	  vecF[0] = geom.gcov[3][0] * ucon_sol[0] + geom.gcov[3][1] * ucon_sol[1] + geom.gcov[3][3] * ucon_sol[2] - udphi;
+	  vecF[1] = geom.gcov[0][0] * ucon_sol[0] + geom.gcov[0][1] * ucon_sol[1] + geom.gcov[0][3] * ucon_sol[2] + mudt;
+	  vecF[2] = -mudt * ucon_sol[0] + geom.gcov[1][0] * ucon_sol[0] * ucon_sol[1] + geom.gcov[1][1] * ucon_sol[1] * ucon_sol[1] + geom.gcov[1][3] * ucon_sol[1] * ucon_sol[2] + geom.gcov[2][2] * ucon_sol[2] * ucon_sol[2] * u2_o_u3 * u2_o_u3 + ucon_sol[2] * udphi + 1.0;
+	  
+	  matrixA[0][0] = geom.gcov[3][0];
+	  matrixA[0][1] = geom.gcov[3][1];
+	  matrixA[0][2] = geom.gcov[3][3];
+
+	  matrixA[1][0] = geom.gcov[0][0];
+	  matrixA[1][1] = geom.gcov[0][1];
+	  matrixA[1][2] = geom.gcov[0][3];
+
+	  matrixA[2][0] = -mudt + geom.gcov[1][0] * ucon_sol[1];
+	  matrixA[2][1] = geom.gcov[1][0] * ucon_sol[0] + 2.0 * geom.gcov[1][1] * ucon_sol[1] + geom.gcov[1][3] * ucon_sol[2];
+	  matrixA[2][2] = geom.gcov[1][3] * ucon_sol[1] + 2.0 * geom.gcov[2][2] * ucon_sol[2] * u2_o_u3 * u2_o_u3 + udphi;
+
+	  retval = invert_matrix_3D(matrixA, matrixA_inv);
+	  if (retval) {
+		  fprintf(stderr, "(%d, %d, %d) iter:%d, %e %e %e (%e %e %e) %e %e [%e %e %e, %e %e %e, %e %e %e, = , %e %e %e]\n", ii, jj, zz, iter, ucon_sol[0], ucon_sol[1], ucon_sol[2], ucon_ini[0], ucon_ini[1], ucon_ini[2], mudt, udphi,
+			  matrixA[0][0], matrixA[0][1], matrixA[0][2], matrixA[1][0], matrixA[1][1], matrixA[1][2], matrixA[2][0], matrixA[2][1], matrixA[2][2],
+			  vecF[0],
+			  vecF[1],
+			  vecF[2]);
+	  }
+
+	  for (j = 0; j < NDIM - 1; j++) {
+		  del_ucon[j] = -matrixA_inv[j][0] * vecF[0] - matrixA_inv[j][1] * vecF[1] - matrixA_inv[j][2] * vecF[2];
+		  ucon_sol[j] += del_ucon[j];
+	  }
+
+	  err_ucon = 0.0;
+	  norm_ucon = 0.0;
+	  for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
+		  err_ucon += fabs(del_ucon[i] * del_ucon[j]);
+		  norm_ucon += fabs(ucon_sol[i] * ucon_sol[j]);
+	  }
+
+	  if ((err_ucon < 1e-5) || (err_ucon / (norm_ucon + 1.e-16) <= 1e-5)) {
+		  retval = 0;
+		  break; //solution found!!
+	  }
+	  if (iter > 10) {
+		  fprintf(stderr, "(%d, %d, %d) ucon_sol: %e %e %e (err_ucon, norm_ucon, iter: %e %e %d, ini: %e %e %e, u2/u3: %e)\n", ii, jj, zz, ucon_sol[0], ucon_sol[1], ucon_sol[2], err_ucon, norm_ucon, iter, ucon_ini[0], ucon_ini[1], ucon_ini[2], u2_o_u3);
+
+	  }
+  }
+  ucon[0] = ucon_sol[0];
+  ucon[1] = ucon_sol[1];
+  ucon[2] = ucon_sol[2] * u2_o_u3;
+  ucon[3] = ucon_sol[2];
+  ucon_to_utcon(ucon, &geom, utconp);
+  /// end
+  #else
+double usq;
+pr[U1] = utconp[1];
+pr[U2] = utconp[2];
+pr[U3] = utconp[3];
+ucon_calc(pr, &geom, ucon);
+double u2_o_u3 = ucon[2] / (ucon[3] + 1e-16);
+double u2_o_u1 = ucon[2] / (ucon[1] + 1e-16);
+
+double detA = geom.gcov[3][1] * geom.gcov[0][3] - geom.gcov[3][3] * geom.gcov[0][1];
+double a11 = geom.gcov[0][3] / detA;
+double a12 = -geom.gcov[3][3] / detA;
+double a21 = -geom.gcov[0][1] / detA;
+double a22 = geom.gcov[3][1] / detA;
+
+double A = -(a11 * geom.gcov[3][0] + a12 * geom.gcov[0][0]);
+double B = a11 * udphi - a12 * mudt;
+double C = -(a21 * geom.gcov[3][0] + a22 * geom.gcov[0][0]);
+double D = a21 * udphi - a22 * mudt;
+
+#define FIX_U2U3 (1)
+#if (FIX_U2U3)
+//u2_o_u3 = 0.0;
+// keep u2/u3 fixed
+AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * C * C + geom.gcov[1][3] * A * C;
+BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * 2 * C * D + geom.gcov[1][3] * (A * D + B * C);
+CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * D * D + geom.gcov[1][3] * B * D;
+#else
+// keep u2/u1 fixed
+AA = geom.gcov[1][3] * A * C + geom.gcov[1][0] * A + (geom.gcov[1][1] + u2_o_u1 * u2_o_u1 * geom.gcov[2][2]) * A * A;
+BB = geom.gcov[1][3] * (A * D + B * C) + geom.gcov[1][0] * B + 2 * (geom.gcov[1][1] + u2_o_u1 * u2_o_u1 * geom.gcov[2][2]) * A * B - mudt + A * udphi;
+CC = 1.0 + B * udphi + (geom.gcov[1][1] + u2_o_u1 * u2_o_u1 * geom.gcov[2][2]) * B * B + geom.gcov[1][3] * B * D;
+#endif
+
+double discr_sq = BB * BB - 4.0 * AA * CC;
+double discr_sq0 = discr_sq;
+double alpha1, alpha2, beta1, beta2, gamma1, gamma2;
+if (discr_sq < 0.0) {
+	//fprintf(stderr, "(%d, %d, %d) discr is negative! b: %e, 2a: %e, discr^2: %e u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e\n", ii, jj, zz, BB, 2.0 * AA, discr_sq, u2_o_u3, u2_o_u1, udphi, mudt);
+	//BB = 4 * AA * CC;
+	#if (FIX_U2U3)
+	alpha1 = geom.gcov[2][2] * C * C;
+	alpha2 = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A + geom.gcov[1][3] * A * C;
+	beta1 = geom.gcov[2][2] * 2 * C * D;
+	beta2 = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[1][3] * (A * D + B * C);
+	gamma1 = geom.gcov[2][2] * D * D;
+	gamma2 = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[1][3] * B * D;
+	
+	double a_u2ou3 = beta1 * beta1 - 4 * alpha1 * gamma1;
+	double b_u2ou3 = 2 * beta1 * beta2 - 4 * (alpha1 * gamma2 + alpha2 * gamma1);
+	double c_u2ou3 = beta2 * beta2 - 4 * alpha2 * gamma2;
+	double discr_u2ou3 = b_u2ou3 * b_u2ou3 - 4 * a_u2ou3 * c_u2ou3;
+
+	double u2_o_u3_sq_plus = (-b_u2ou3 + sqrt(discr_u2ou3)) / (2 * a_u2ou3);
+	double u2_o_u3_sq_minus = (-b_u2ou3 - sqrt(discr_u2ou3)) / (2 * a_u2ou3);
+
+	AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A  + geom.gcov[1][3] * A * C;
+	BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[1][3] * (A * D + B * C);
+	CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[1][3] * B * D;
+	#else
+	// keep u2/u1 fixed
+	AA = geom.gcov[1][3] * A * C + geom.gcov[1][0] * A + (geom.gcov[1][1]) * A * A;
+	BB = geom.gcov[1][3] * (A * D + B * C) + geom.gcov[1][0] * B + 2 * (geom.gcov[1][1]) * A * B - mudt + A * udphi;
+	CC = 1.0 + B * udphi + (geom.gcov[1][1]) * B * B + geom.gcov[1][3] * B * D;
+	#endif
+	discr_sq = BB * BB - 4.0 * AA * CC;
+	if (discr_sq < 0.0) {
+		fprintf(stderr, "(%d, %d, %d) discr is STILL negative! b: %e, 4ac: %e, discr^2: %e (from %e), discr_u2ou3: %e (%e), u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e, ut_IC: %e\n", ii, jj, zz, BB, 4 * AA * CC, discr_sq, discr_sq0, discr_u2ou3, -c_u2ou3/b_u2ou3, u2_o_u3, u2_o_u1, udphi, mudt, ucont_IC);
+		discr_sq = 0.0;
+		BB = -sqrt(fabs(4 * AA * CC));
+	}
+
+}
+
+double ucont_plus = 0.5 / AA * (-BB + sqrt(discr_sq));
+double ucont_minus = 0.5 / AA * (-BB - sqrt(discr_sq));
+
+/// fix u^i u^j = epsilon
+//double eps = 0.0;
+//for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++) eps += geom.gcov[i][j] * ucon[i] * ucon[j];
+//eps /= ucon[0] * ucon[0];
+//
+//// Find u^t
+//AA = geom.gcov[0][0] + 2 * (geom.gcov[0][1] * A + geom.gcov[0][3] * C) + eps;
+//BB = 2 * (geom.gcov[0][1] * B + geom.gcov[0][3] * C);
+//CC = 1.0;
+//discr_sq = BB * BB - 4.0 * AA * CC;
+//if (discr_sq < 0.0) {
+//	fprintf(stderr, "(%d, %d, %d) discr is negative! b: %e, 4ac: %e, b^2/4ac: %e, eps: %e, discr^2: %e, u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e, ut_IC: %e\n", ii, jj, zz, BB, 4 * AA * CC, BB*BB/(4*AA*CC), eps, discr_sq, u2_o_u3, u2_o_u1, udphi, mudt, ucont_IC);
+//}
+
+if (ucont_plus * ucont_minus > 0.0) {
+	// compute relative difference from ucont from ICs
+	if (fabs(ucont_IC - ucont_plus) < fabs(ucont_IC - ucont_minus)) {
+		ucon[0] = ucont_plus;
+	}
+	else {
+		ucon[0] = ucont_minus;
+	}
+}
+else if (ucont_plus > 0.0) ucon[0] = ucont_plus;
+else if (ucont_minus > 0.0) ucon[0] = ucont_minus;
+else {
+	ucon[0] = ucont_IC;
+	fprintf(stderr, "(%d, %d, %d) both roots are negative! %e, %e, b: %e, 2a: %e, discr: %e \n", ii, jj, zz, ucont_plus, ucont_minus, BB, 2.0 * AA, sqrt(discr_sq)); 
+}
+ucon[1] = A * ucon[0] + B;
+ucon[3] = C * ucon[0] + D;
+ucon[2] = u2_o_u3 * ucon[3];
+
+ucon_to_utcon(ucon, &geom, utconp);
+
+lower(ucon, &geom, ucov);
+usq = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
+
+//fprintf(stderr, "(%d, %d, %d) u_dot_u: %e, ut: %e, u: %e %e %e, ut+: %e, ut-:%e, (u2/u3: %e)\n", ii, jj, zz, usq, ucon[0], ucon[1], ucon[2], ucon[3], ucont_plus, ucont_minus, u2_o_u3);
+#endif
+
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  
+  //gamma_calc(pr, &geom, &gamma);
+  //double ucon[NDIM], ucov[NDIM
+  //ucon_calc(pr, &geom, ucon);
+  //DLOOPA ucon[j] = ucon_sol[j];
+  //lower(ucon, &geom, ucov);
+
+  //if (iter >= 29) fprintf(stderr, "(%d, %d, %d) gamma: %e, u_dot_u: %e (err_ucon, norm_ucon, iter: %e %e %d, ini: %e %e %e, u2/u3: %e)\n", ii, jj, zz, ucon[0], ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3], err_ucon, norm_ucon, iter, ucon_ini[0], ucon_ini[1], ucon_ini[2], u2_o_u3);
+  //alpha = 1. / sqrt(-geom.gcon[0][0]);
+  //double udphi_code = geom.gcov[3][0] * gamma / alpha;
+  //SLOOPA udphi_code += geom.gcov[3][j] * (utconp[j] - gamma * geom.gcon[0][j] * alpha);
+  //if (udphi > 0.) fprintf(stderr, "(%d, %d, %d) udphi / udphi(IC): %e, gamma: %e, u_dot_u: %e\n", ii, jj, zz, udphi_code / udphi, gamma);
+
   /* done! */
 }
 

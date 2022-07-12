@@ -66,6 +66,9 @@ Physical Parameters section
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
+// Postmerger problem, ICs from SpEC
+#define BHNSQ2 (1)
+
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define NEUTRINOS_M1 (0)
@@ -411,16 +414,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* number of Nulib table entries for each variable */
 #define NULIB_RHO   (70) // (50)
-#define NULIB_TEMP  (50) // (40)
-#define NULIB_YE    (40) // (30)
+#define NULIB_TEMP  (60) // (40)
+#define NULIB_YE    (50) // (30)
 
 /* Nulib table variable bounds  */
 #define nulib_dhi (14.0) // (15.5)
 #define nulib_dlo (8.0) // (6.0)
-#define nulib_thi (12.464298190399795) // (12.240715727974438)
-#define nulib_tlo (8.064624468918757) // (9.763594473254775)
+#define nulib_thi (13.0)
+#define nulib_tlo (9.763594473254775)
 #define nulib_yhi (0.55)
-#define nulib_ylo (0.035)
+#define nulib_ylo (0.01)
 
 #define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
 #define nulib_yehi_threshold (nulib_yhi - (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
@@ -500,7 +503,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define M_SGRA_SOLAR (0.1) /* Solar masses */
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#define M_SGRA_SOLAR (3.795) /* Solar masses */
+#else
 #define M_SGRA_SOLAR (8.07) /* Solar masses */
+#endif
 #else
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #endif
@@ -527,7 +534,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (1.87456e-5) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#else
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#endif
 #else
 #if (WHICHPROBLEM == COLLAPSAR)
 #define MASS_DENSITY_SCALE (1.710832e11)
@@ -915,7 +926,7 @@ Section with EOS constants
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
 
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define Mbh_cgs (8.07 * 1.99e33)
+#define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)
 #else
 #define Mbh_cgs (3 * 1.99e33)
 #endif 

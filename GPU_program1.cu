@@ -1350,7 +1350,7 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
 	// Calculate the pressure tensor P^i_j / E, P^i_j u_i / E, P^i_j u_i u^j / E
 	double P_dot_ucov[NDIM];
 	for (i = 1; i < NDIM; i++)
-		P_dot_ucov[i] = (geom->g * (mhd_nu[1][i] * ucov[1] + mhd_nu[2][i] * ucov[2] + mhd_nu[3][i] * ucov[3]) - (ncon[1] * ucov[1] + ncon[2] * ucov[2] + ncon[3] * ucov[3]) * U_i[i]) / (fabs(ncov0) * U_i[0]);
+		P_dot_ucov[i] = (geom->g * (mhd_nu[1][i] * ucov[1] + mhd_nu[2][i] * ucov[2] + mhd_nu[3][i] * ucov[3]) - (ncon[1] * ucov[1] + ncon[2] * ucov[2] + ncon[3] * ucov[3]) * U_i[i] * fabs(ncov0)) / (fabs(ncov0) * U_i[0]);
 
 	double Puu = P_dot_ucov[1] * ucon[1] + P_dot_ucov[2] * ucon[2] + P_dot_ucov[3] * ucon[3];
 
