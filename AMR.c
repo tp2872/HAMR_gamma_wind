@@ -3357,7 +3357,7 @@ double calc_refcrit(int n){
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		if (block[n][AMR_LEVEL1] >= BASE_LEVELS) {
-			if (r > 5.4) {
+			if (r > 4.5) {
 				//Calc misc quantities
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);

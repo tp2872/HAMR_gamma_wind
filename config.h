@@ -18,7 +18,7 @@ Physical Parameters section
 #define RAD_PULSE 14
 #define COLLAPSAR 15
 
-#define WHICHPROBLEM COLLAPSAR
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
@@ -67,14 +67,14 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 // Postmerger problem, ICs from SpEC
-#define BHNSQ2 (1)
+#define BHNSQ2 (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
-#define NU_DEBUG (0) // (1)
+#define NU_DEBUG (1) // (1)
 #define NEUTRINOS_DEBUG (0) //(1)
 #define NEUTRINOS_DEBUG_NFLAGS (0)
 #define DUMP_EACH_STEP (0)
@@ -84,7 +84,7 @@ Physical Parameters section
 #define NU_PREDICTOR (0)
 #define NU_KEEP_COEFF_CONST (1)
 #define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
-#define NULIB_YE_CORRECTION (0)
+#define NULIB_YE_CORRECTION (1)
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
@@ -124,8 +124,8 @@ Physical Parameters section
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
 #if (DOHELM)
 // Danat: otherwise EOS fails, since the densities are too low outside the torus
-    #define RHOMIN      (1.e-7)//(1.e-14)     
-    #define UUMIN       (1.e-9)//(1.e-16)      
+    #define RHOMIN      (1.e-14)    
+    #define UUMIN       (1.e-16)     
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20) 
 #else
@@ -213,17 +213,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 6
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
+#define BS_1 48
+#define BS_2 48
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

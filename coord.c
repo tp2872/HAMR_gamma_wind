@@ -296,8 +296,8 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = 0.7 * (1. + sqrt(1. - a * a));
-	Rout = 1e3;
+	//Rin = 1.44; Rout = 1e6;
+	Rin = 0.6 * (1. + sqrt(1. - a * a)); Rout = 1e4;
 	lim = MC;
 	failed = 0;
 	cour = COUR;
@@ -326,7 +326,8 @@ void set_gridparam(void) {
 		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
 		fractheta = 1.e-2;
 	}
-	#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+	//#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+	#if (0)
 	const double RELACC = 1e-14;
 	const int ITERMAX = 50;
 	rbr = 1e+4;
@@ -335,8 +336,8 @@ void set_gridparam(void) {
 	double x1max0, dxmax;
 	int iter;
   
-	Rin = 0.67 * (1. + sqrt(1. - a * a));  //.98
-	Rout = 1e3;
+	Rin = 0.98 * (1. + sqrt(1. - a * a));  //.98
+	Rout = 1e6;
 	x1br = log( rbr - R0 );
   
 	if( Rout < rbr ) {

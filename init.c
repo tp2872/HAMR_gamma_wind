@@ -1970,7 +1970,7 @@ void init_postmerger() {
 				prim[U3] = 0.0;
 
 				#if (DO_YE)
-				prim[YE] = 1.0;
+				prim[YE] = 0.5;
 				#endif
 				#if (DONUCLEAR)
 				prim[XALPHA] = 0.0;
@@ -2042,7 +2042,7 @@ void init_postmerger() {
 	
 	bound_prim(p, 1);
 
-	//set_mag();
+	set_mag();
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
@@ -2659,7 +2659,7 @@ void set_mag(void){
 				// q = fr*pow(sin(th),2)/r; //Komissarov's profile
 			}
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.02; //SANE
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){	
@@ -2667,8 +2667,9 @@ void set_mag(void){
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q * pow(r, 2.0); //MAD
 				#endif
 			}
 			else{
