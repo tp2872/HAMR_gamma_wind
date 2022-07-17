@@ -140,13 +140,13 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
+#define NB_1 2
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 256
+#define BS_1 128
+#define BS_2 128
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -330,26 +330,29 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
-#define HIGH_MDOT (1)
+#define HIGH_MDOT (0)
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (0)
+#define COMPTON (1)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
 
+/*Set AGN opacity scaling for OP_EXTRA*/
+#define AGN (1)
+
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.0001)
@@ -359,13 +362,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (1)
+#define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (0)
+#define VARGAMMA (1)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -419,7 +422,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
-#define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#define M_SGRA_SOLAR (5.0e9) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
@@ -435,7 +438,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (0.00031)
+//#define MASS_DENSITY_SCALE (3.1)
+//#define MASS_DENSITY_SCALE (0.1*0.02*5e-9*3.1)
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1) //M87
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)

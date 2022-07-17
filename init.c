@@ -1054,8 +1054,8 @@ void init_torus()
 			
 			//Calculate delta (fraction of heating going to electrons
 			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
-			deltaf = MY_MIN(deltaf, 0.99);
-			deltaf = MY_MAX(deltaf, 0.01);
+			//deltaf = deltaf, 0.99);
+			//deltaf = 0.2;// MY_MAX(deltaf, 0.01);
 
 			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
 				#if(FULL_ENTROPY)
@@ -1538,7 +1538,7 @@ void init_rad_pres(double pi[NPR]) {
 	pi[UU] = pgas / (GAMMA - 1.);
 	pi[UU_RAD] = arad * pow(T_new, 4.);
 	#else
-	pi[UU_RAD] = 0.0;
+	pi[UU_RAD] = pi[UU]*0.001;
 	#endif
 
 	//Set photon number based on Boltzman distribution

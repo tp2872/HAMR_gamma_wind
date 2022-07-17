@@ -507,7 +507,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 	else {
 		//Determine relative updae to radiation variables
-		delta_Ur = (U_n[UU_RAD] - U_i[UU_RAD] + 1.e-150) / (fabs(U_i[UU_RAD]) + fabs(U_n[UU_RAD]));
+		//delta_Ur = (U_n[UU_RAD] - U_i[UU_RAD] + 1.e-150) / (fabs(U_i[UU_RAD]) + fabs(U_n[UU_RAD]));
 
 		//Check if fluid is in extreme radiation subdominant regime
 		//if (((U_n[UU_RAD] / U_n[UU]) < 1.e-5) || ((pb[UU_RAD] / pb[UU]) < 1.e-5) || (fabs(delta_Ur) < 1.e-5)) {
@@ -541,6 +541,8 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//	, r
 			//	#endif
 			//);
+
+			#if (HIGH_MDOT)
 			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -549,8 +551,17 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, r
 				#endif
 			);
-			
-			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);
+			#else
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -559,6 +570,15 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				#endif
 			);
 
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);
+			#endif
 			if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -4243,7 +4263,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 	}
 
 	beta_i = ((Ti) * ph[RHO]) / (0.5 * bsq);
-	if (!isfinite(beta) || beta_i >10000.0 || beta_i <0.000001) beta_i = 10000.0;
+	if (!isfinite(beta_i) || beta_i >10000.0) beta_i = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta_i, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta_i, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta_i);
 
 	//Calculate delta
@@ -7918,7 +7938,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		//Calculate total dissipation
 		dis = pf[UU] - (ue + ui);
 		ue += 0.5 * dis;
-
+		ue = 0.5 * pf[UU];
 		//Check limits
 		if (ue > (1.0 - FLOOR_ENTROPY) * pf[UU]) {
 			ue = (1.0 - FLOOR_ENTROPY) * pf[UU];
@@ -8659,6 +8679,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
 	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701);
+	//Tr = pow(Ehat / ARAD, 0.25);
 	exp_xi[0] = MY_MIN(1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat)), 1.0);
 	#else
 	Tr = pow(Ehat / ARAD, 0.25);
@@ -9130,12 +9151,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#endif
 
 	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
+	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 
 	#if(OP_EXTRA)
-	Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 	Theta_gamma = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
 	zeta = Tr / Te;
-	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 
 	//Calc free-free absorption opacity
 	if (kappa_abs != NULL || kappa_emmit != NULL) {
@@ -9162,13 +9183,13 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 	//Calculate synchrotron opacities
 	#if(P_NUM)
-		#if(0)
+		#if(AGN)
 		//AGN
 		if (kappa_abs != NULL){
 			a = -0.0295 * pow(exp_xi, 2.29) - 0.143 * pow(one_exp_xi, 0.251) + 0.236;
 			b = 0.00977 * pow(exp_xi, 730.0) + 0.0291 * pow(one_exp_xi, 0.48) + 2.58;
 			c = 1.29 * pow(exp_xi, 1.59) + 3.46 * pow(one_exp_xi, 0.234) + 2.15;
-			d = -78.1 * pow(exp_xi, 66.0) - 40.3 * pow(one_exp_xii, 0.899) + 87.4;
+			d = -78.1 * pow(exp_xi, 66.0) - 40.3 * pow(one_exp_xi, 0.899) + 87.4;
 			e = 0.415 * pow(exp_xi, 0.399) + 1.04 * pow(one_exp_xi, 0.252) + 2.68;
 
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
@@ -9190,18 +9211,18 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			d = -17.7 * pow(exp_xi, 49.4) - 3.33 * pow(one_exp_xi, 2.76) + 18.3;
 			e = 0.427 * pow(exp_xi, 0.654) + 1.23 * pow(one_exp_xi, 0.214) + 2.49;
 
-			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit != NULL) {
-			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		#endif
 	#else
-		#if(0)
+		#if(AGN)
 		//AGN
 		//a = 0.206;
 		//b = 2.59;
@@ -9227,12 +9248,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		//d = 0.616;
 		//e = 2.91;
 		if (kappa_abs != NULL) {
-			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		if (kappa_emmit != NULL) {
-			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
@@ -9287,7 +9308,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	kappa_fe = 0.3 * (Z_AB / 0.02) * exp(-6.0 * pow(-12.0 + log(Te), 2.0)); //No scaling factor
 
 	//Calculate bound-free opacity
-	kappa_bf = 1.2e24 * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5);
+	kappa_bf = 1.2e24 * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6 );
 
 	//Calculate COPAL terms conform Mckinney+2017
 	kappa_COPAL = 3.0e-13 * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
@@ -9325,17 +9346,17 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		//Calculate synchrotron opacities
 		if (kappa_abs_ph != NULL) {
-			#if(0)
+			#if(AGN)
 			//AGN
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
 			a = 10.8 * pow(exp_xi, 172.0) - 20.4 * pow(one_exp_xi, 0.699) + 29.2;
 			b = -0.18 * pow(exp_xi, 31.9) + 0.425 * pow(one_exp_xi, 0.179) + 2.76;
 			c = 0.0207 * pow(exp_xi, 9.69) + 0.0506 * pow(one_exp_xi, 0.804) + 0.0314;
-			d = 1.51e-6 * pow(exp_xi, 2830.0) - 1.4e-5 * pow(one_exp_xii, 3.06e-12) + 1.4e-5;
+			d = 1.51e6 * pow(exp_xi, 2830.0) - 1.4e5 * pow(one_exp_xi, 3.06e-12) + 1.4e5;
 			e = 0.1 * pow(exp_xi, 1.95) + 1.57 * pow(one_exp_xi, 0.124);
 			#else
 			//XRB
-			phi = BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
 			a = -0.000359 * pow(exp_xi, 1.31) - 0.000552 * pow(one_exp_xi, 0.135) + 0.00209;
 			b = 0.035 * pow(exp_xi, 5.43) + 0.0433 * pow(one_exp_xi, 0.159) + 0.948;
 			c = -0.122 * pow(exp_xi, 37.1) - 0.0685 * pow(one_exp_xi, 2.8) + 1.04;
@@ -9346,14 +9367,14 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit_ph != NULL) {
-			#if(0)
+			#if(AGN)
 			//AGN
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
 			#else
 			//XRB
-			phi = BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu);
+			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
 			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
 			#endif
@@ -9403,33 +9424,64 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#else
 	kappa_m = 30.0 * 0.1 * Z_AB;
 	if (kappa_abs != NULL) {
-		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);	
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);	
+		//zeta = MY_MIN(zeta, 1.e5);
 		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
 		kappa_chianti = 30.0e33 * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
 		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 		kappa_ff_abs = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4e-10 * Te);
-		kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE); /// (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));;
+		//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));;
+		#if(AGN)
+		phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
+		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_abs *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
+		#else
+		phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
+		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
+		#endif
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
+
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
 		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
 
 		#if(P_NUM)
 		if (kappa_abs_ph != NULL) {
 			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
-			kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
-			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
+			//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta/ (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));	
+			#if(AGN)
+			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
+			#else
+			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));;
+			#endif
+					
+			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));	
 			if (!isfinite(kappa_abs_ph[0])) kappa_abs_ph[0] = 0.0;
-
 		}
 		#endif
 	}
 	if (kappa_emmit != NULL) {
-		zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);
+		//zeta = MY_MIN(zeta, 1.e5);
 		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
 		kappa_chianti = 30.0e33 * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
 		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 		kappa_ff_emmit = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4e-10 * Te);
-		kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE);// / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));
+		//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE); /// (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));
+		#if(AGN)
+		phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
+		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
+		#else
+		phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
+		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
+		#endif
+
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
 		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
@@ -9437,7 +9489,19 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		#if(P_NUM)
 		if (kappa_emmit_ph != NULL) {
 			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
-			kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta;// / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
+			//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE); //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
+			//double test = ARAD * Te * Te * Te / (BOLTZ_CGS * 2.701178);
+			//kappa_sy_emmit = 1.44e5 * ne * sqrt(4. * M_PI * bsq * ENERGY_DENSITY_SCALE) / test / (ph[RHO] * MASS_DENSITY_SCALE)/C_CGS; //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
+			#if(AGN)
+			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
+			#else
+			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
+			#endif
+
 			kappa_emmit_ph[0] += (kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
 			if (!isfinite(kappa_emmit_ph[0])) kappa_emmit_ph[0] = 0.0;
 		}
