@@ -422,7 +422,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
-#define M_SGRA_SOLAR (5.0e9) /* Solar masses */
+#define M_SGRA_SOLAR (5.0e6) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
@@ -440,7 +440,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
 //#define MASS_DENSITY_SCALE (3.1)
 //#define MASS_DENSITY_SCALE (0.1*0.02*5e-9*3.1)
-#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1) //M87
+//#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1) //M87
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
