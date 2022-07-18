@@ -1053,19 +1053,49 @@ void init_torus()
 			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
 			
 			//Calculate delta (fraction of heating going to electrons
-			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+			deltaf = 0.5;//calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
 			//deltaf = deltaf, 0.99);
 			//deltaf = 0.2;// MY_MAX(deltaf, 0.01);
 
 			#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17
 				#if(FULL_ENTROPY)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
+				#endif
+
+				deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
 				#else
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* deltaf* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - deltaf)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
 				#endif
 			#elif(VARGAMMA)   // variable gamma: Sadowski+17, Chael+19
+			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+				#if(FULL_ENTROPY_VARGAMMA)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif	
+
+			u_i = (1. - deltaf) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
+			Theta = (gam - 1.0) * u_i / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+				#if(FULL_ENTROPY_VARGAMMA)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				#endif
+
+			deltaf = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
 			u_e = deltaf * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			C = u_e / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
 			gam = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 35.0 * C - 6.0) / C;
@@ -1543,7 +1573,8 @@ void init_rad_pres(double pi[NPR]) {
 
 	//Set photon number based on Boltzman distribution
 	#if(P_NUM)
-	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+	//T_new *= (MU_G * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+	T_new = pow(pi[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
 
