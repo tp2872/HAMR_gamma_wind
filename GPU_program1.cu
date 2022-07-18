@@ -4347,7 +4347,11 @@ __device__ double source_Coulomb(double* p) {
 	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
 
 	coulog = 35.4 + log(T_e / (1.0e7) * sqrt(1.0e-3 / ne_cgs));// Coulomb logarithm ( ln Lambda )
+	#if(HIGH_MDOT)
 	coeff = 1.5 * ME_CGS / MH_CGS * coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
+	#else
+	coeff = 1.5 * ME_CGS / MH_CGS *(X_AB+Y_AB*0.25)* coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
+	#endif
 	coeff *= ne_cgs * n_cgs * (T_i - T_e);
 
 	th_sum = Theta_e + Theta_i;
