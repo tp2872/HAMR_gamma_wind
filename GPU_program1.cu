@@ -7943,6 +7943,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		dis = pf[UU] - (ue + ui);
 		ue += 0.5 * dis;
 		ue = 0.5 * pf[UU];
+
 		//Check limits
 		if (ue > (1.0 - FLOOR_ENTROPY) * pf[UU]) {
 			ue = (1.0 - FLOOR_ENTROPY) * pf[UU];

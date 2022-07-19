@@ -199,6 +199,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//Calculate total dissipation
 		dis = pv[UU] - (ue + ui);
 		ue += 0.5 * dis;
+		ue = 0.5 * pv[UU];
 
 		//Check limits
 		if (ue > (1.0 - FLOOR_ENTROPY) * pv[UU]) {

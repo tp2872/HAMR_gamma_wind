@@ -995,7 +995,6 @@ void init_torus()
 	#endif
 
 	bound_prim(p, 1);
-
 }
 
 void init_collapsar(void)
@@ -1240,11 +1239,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 	int keep_iterating = 1, i, n_iter = 0;
 
 	//Set desired (total) gas pressure
-	#if(RAD_M1 && HIGH_MDOT)
-	p_tot = (4. / 3. - 1.0) * pi[UU];
-	#else
 	p_tot = (GAMMA - 1.0) * pi[UU];
-	#endif
 
 	//Set initial guess for electron pressure
 	pe_new = p_tot * delta_f;
