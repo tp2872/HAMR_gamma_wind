@@ -1240,7 +1240,11 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 	int keep_iterating = 1, i, n_iter = 0;
 
 	//Set desired (total) gas pressure
+	#if(RAD_M1 && HIGH_MDOT)
+	p_tot = (4. / 3. - 1.0) * pi[UU];
+	#else
 	p_tot = (GAMMA - 1.0) * pi[UU];
+	#endif
 
 	//Set initial guess for electron pressure
 	pe_new = p_tot * delta_f;
@@ -1338,7 +1342,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 
 		//Apply correction to electron pressure based on error and error gradient
 		pe_old = pe_new / (1.0 + offset);
-		pe_new = pe_old - error_0 / derror_dpe;
+		pe_new = fabs(pe_old - error_0 / derror_dpe);
 
 		//Calculate relative error, and if smaller than NEWT_TOL stop iterating
 		errx = fabs(pe_new - pe_old) / pe_old;
