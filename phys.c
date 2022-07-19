@@ -1082,7 +1082,7 @@ double calc_delta(double* restrict ph, double bsq) {
 	beta_i = MY_MIN((Ti * ph[RHO]) / (0.5 * bsq), beta_max);
 
 	//Calculate delta
-	delta = 0.5 * exp((beta_i / beta_max - 1.0)) / (0.8 + sqrt(sigma_w));
+	delta = 0.5 * exp((beta_i / beta_max - 1.0) / (0.8 + sqrt(sigma_w)));
 	#else
 	//Set delta to constant value
 	delta = 0.5;
