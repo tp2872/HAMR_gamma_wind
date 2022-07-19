@@ -140,14 +140,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 3
-#define NB_3 2
+#define NB_1 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 54
-#define BS_3 80
+#define BS_1 128
+#define BS_2 128
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -179,7 +179,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -198,7 +198,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (20)
+#define DUMPFACTOR (120)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

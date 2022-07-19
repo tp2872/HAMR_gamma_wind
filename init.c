@@ -1364,8 +1364,8 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		pi[ENTRE] = 1.0 / (GAMMAE - 1.) * log(pe_new * pow(pi[RHO], -GAMMAE));
 		pi[ENTRI] = 1.0 / (GAMMA - 1.) * log(pi_new * pow(pi[RHO], -GAMMA));
 		#else
-		pi[ENTRE] = pe_new * pow(pe_new, -GAMMAE);
-		pi[ENTRI] = pi_new * pow(pi_new, -GAMMA);
+		pi[ENTRE] = pe_new * pow(pi[RHO], -GAMMAE);
+		pi[ENTRI] = pi_new * pow(pi[RHO], -GAMMA);
 		#endif
 	#elif(VARGAMMA)   // variable gamma: Sadowski+17, Chael+19
 	Theta_e = pe_new / pi[RHO] * MU_E * MASS_RATIO;
@@ -2617,8 +2617,11 @@ void set_mag(void){
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
 
 			#if(TWO_T)
-			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			#else
+				#if(RAD_M1 && HIGH_MDOT)
+				gamma_g = 4.0/3.0';
+				#else
+				gamma_g = GAMMA;
+				#endif			#else
 			gamma_g = GAMMA;
 			#endif
 
@@ -2705,7 +2708,11 @@ void set_mag(void){
 			}
 
 			#if(TWO_T)
-			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+				#if(RAD_M1 && HIGH_MDOT)
+				gamma_g = 4.0/3.0';
+				#else
+				gamma_g = GAMMA;
+				#endif
 			#else
 			gamma_g = GAMMA;
 			#endif
