@@ -1462,7 +1462,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		
 		//Make sure that electron entropy stays positive
 		#if(TWO_T)
-		if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+		//if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
 		#endif
 		
 		//Make sure that photon number stays positive
@@ -1505,24 +1505,22 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			//Check limits
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
 			}
 			ui = pb_new[UU] - ue;
 		
 			//Set electron entropy
-			if (flag_floor_kappa == 1) {
-				C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
-				Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
-					#if(FULL_ENTROPY_VARGAMMA)
-					pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
-					#else
-					pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
-					#endif
-			}
+			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				#if(FULL_ENTROPY_VARGAMMA)
+				pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+				#else
+				pb_new[ENTRE] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO];
+				#endif
 
 			//Set ion entropy
 			C = ui / pb_new[RHO] * MU_I;
@@ -3782,6 +3780,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					get_state_rad(pb_new, geom, &q_rad);
 					mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 					for (k = UU_RAD; k <= U3_RAD; k++) U_new[k] *= geom->g;
+					#if(P_NUM)
+					pb_new[PHOTON] = (1.0 / geom->g) * U_new[PHOTON] / q_rad.ucon[0];
+					#endif
 
 					U_new[RHO] = U_i[RHO];
 					U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
@@ -3837,9 +3838,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						#endif
 
 						//Recompute photon number
-						#if(P_NUM)
-						U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-						#endif
+						//#if(P_NUM)
+						//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+						//#endif
 
 						//Calculate source function and jacobian
 						source_rad(pb_new, geom, &q, &q_rad, dU_new
@@ -4028,7 +4029,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 			for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
-			//Obtatin photon number primitive quantity
+			//Obtain photon number primitive quantity
 			#if(P_NUM)
 			pb_new[PHOTON] = (1.0 / geom->g) * U_new[PHOTON] / q_rad.ucon[0];
 			#endif
@@ -4090,9 +4091,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				#endif
 
 				//Recompute photon number
-				#if(P_NUM)
-				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
-				#endif
+				//#if(P_NUM)
+				//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, &q, &q_rad, dU_new
