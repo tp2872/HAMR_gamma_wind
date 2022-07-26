@@ -3349,7 +3349,7 @@ double calc_refcrit(int n){
 			if (p[nl[n]][index_3D(n, i, j, z)][RHO]*fabs(enth) > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO]*enth;
 		}
 	}
-	#elif(WHICHPROBLEM==POSTMERGER_PROBLEM || WHICHPROBLEM==TORUS_PROBLEM)
+	#elif(WHICHPROBLEM==POSTMERGER_PROBLEM || WHICHPROBLEM==TORUS_PROBLEM || WHICHPROBLEM==COLLAPSAR)
 	int index;
 	float block_angle;
 	if (block[n][AMR_NODE] == rank) {
@@ -3357,7 +3357,8 @@ double calc_refcrit(int n){
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		if (block[n][AMR_LEVEL1] >= BASE_LEVELS) {
-			if (r > 4.5) {
+			if (r > 17) {
+			//if (r > 4.5) {
 				//Calc misc quantities
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
@@ -3386,7 +3387,8 @@ double calc_refcrit(int n){
 			}
 		}
 		else {
-			if (r > 5.4) {
+			if (r > 17) {
+			//if (r > 5.4) {
 				ref_val = 1.01 * REFINEMENT_CUTOFF;
 			}
 		}

@@ -952,7 +952,7 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
 				#endif
 				#if (DONUCLEAR)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
@@ -1482,7 +1482,7 @@ void init_collapsar(void)
 	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e3;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e-6;
 			/*eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 				#if (DONUCLEAR)
 				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
@@ -1491,6 +1491,16 @@ void init_collapsar(void)
 		}
 	}
 	#endif
+	#endif
+
+	#if(NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
 	#endif
 
 	sourceflag = 0.;
@@ -2667,9 +2677,9 @@ void set_mag(void){
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q * pow(r, 2.0); //MAD
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q * pow(r, 2.0); //MAD
 				#endif
 			}
 			else{

@@ -406,12 +406,32 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 
     //Look up the desired quantities in the eos table
     double free, df_d, df_t, df_dd, df_tt, df_dt;
+    #if (DOHELM_LOWTEMP)
+    if (btemp < eos_temp_low) {
+        // the desired electron-positron thermodynamic quantities
+        interp_eostable(den, eos_temp_low, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+        dpepdd = 1e-30;
+        //free = df_d = df_t = df_dd = df_tt = df_dt = 0.0;
+        pele = din * din * df_d + din * din * df_dt * (btemp - eos_temp_low);
+        sele = -df_t * ye + (-df_tt * ye) * (btemp - eos_temp_low);
+        eele = ye * free + eos_temp_low * sele + eos_temp_low * (-df_tt * ye) * (btemp - eos_temp_low);
+    }
+    else {
+        interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+
+        // the desired electron-positron thermodynamic quantities
+        pele = din * din * df_d;
+        sele = -df_t * ye;
+        eele = ye * free + btemp * sele;
+    }
+    #else
     interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
 
     // the desired electron-positron thermodynamic quantities
     pele = din * din * df_d;
     sele = -df_t * ye;
     eele = ye * free + btemp * sele;
+    #endif
 
     double xni = avo * ytot1 * den;
     pion = xni * kt;
@@ -489,8 +509,16 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         dpiondt = xni * kerg;
         #endif
 
+        #if (DOHELM_LOWTEMP)
+        if (btemp < eos_temp_low) {
+            dpepdt = 0.0;
+        }
+        else {
+            dpepdt = din * din * df_dt;
+        }
+        #else
         dpepdt = din * din * df_dt;
-
+        #endif
 #if (EOS_COULOMB_CORR)
         plasg_inv = 1.0 / plasg;
         if (plasg >= 1.0) {
@@ -539,10 +567,25 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         deraddd = -erad*deni;
         deraddt = 4.0 * erad * tempi;
 
+        #if (DOHELM_LOWTEMP)
+        if (btemp < eos_temp_low) {
+            dsepdt = 0.0;
+            dsepdd = 0.0;
+            deepdt = 0.0;
+            deepdd = 0.0;
+        }
+        else {
+            dsepdt = -df_tt * ye;
+            dsepdd = -df_dt * ye * ye;
+            deepdt = btemp * dsepdt;
+            deepdd = ye * ye * df_d + btemp * dsepdd;
+        }
+        #else
         dsepdt = -df_tt * ye;
         dsepdd = -df_dt * ye * ye;
         deepdt = btemp * dsepdt;
         deepdd = ye*ye*df_d + btemp*dsepdd;
+        #endif
 
 #if (EOS_COULOMB_CORR)
         *denerdd = deraddd + deiondd + deepdd + decouldd * eos_coulombMult;  // energy derivative vs density
@@ -609,7 +652,11 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 void validate_T(double* temp);
 
 void validate_T(double* temp) {
+    #if (DOHELM_LOWTEMP)
+    if (*temp < 1e-10) *temp = 1e-10;
+    #else
     if (*temp < eos_temp_low) *temp = eos_temp_low;
+    #endif
     if (*temp > eos_temp_up) *temp = eos_temp_up;
     return;
 }

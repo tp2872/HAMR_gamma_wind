@@ -771,6 +771,7 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 		#endif
 	);
 	#if(DO_FONT_FIX)
+	int pflag_1 = *pflag;
 	if (*pflag) {
 		*pflag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_i, NEWT_TOL, BASIC, 1
 			#if (DOHELM)
@@ -781,12 +782,14 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
 	#endif
 
 	if (*pflag) {
-		#if(NU_DEBUG)
-		printf("\nFailed inversion BEFORE a neutrino step (impl.): [flag=%d] r,t,y=[%e %e %e]\n",
-			*pflag,
+		//#if(NU_DEBUG)
+		#if(0)
+		printf("\nFailed inversion BEFORE a neutrino step (impl.): [flag=%d, %d] r,t,y=[%e %e %e]\n",
+			pflag_1, *pflag,
 			pb[RHO], pb[UU], pb[YE]);// , Tnu_over_Tgas);
 		#endif
 		PLOOP pb_i[k] = pb_old[k];
+		return(1);
 	}
 
 	//Recompute T_t^mu for consistency
@@ -1164,7 +1167,8 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	int iter = 0, err_type;
 	for (sp = 0; sp < NU_SPECIES; sp++) {
 		// One full dt timestep
-		source_linearized_nu(pb_old, geom, &ncon[0], ncov0, U_old, U_1, 1.0 * Dt, gpu_eos_table, gpu_nulib_table, sp
+		//source_linearized_nu(pb_old, geom, &ncon[0], ncov0, U_old, U_1, 1.0 * Dt, gpu_eos_table, gpu_nulib_table, sp
+		source_linearized_nu(pb_old, geom, &ncon[0], ncov0, U_old, U_new, 1.0 * Dt, gpu_eos_table, gpu_nulib_table, sp
 			#if (NU_KEEP_COEFF_CONST)
 			, eta_0[sp], kappa_abs0[sp], kappa_s0[sp], eta_N0[sp], kappa_N0[sp]
 			#endif
@@ -1224,7 +1228,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 		else
 			U_new[YE] += 0.0;
 	}
-	//U_new[YE] = MY_MAX(1e-30, U_new[YE]);
+	U_new[YE] = MY_MAX(1e-30, U_new[YE]);
 
 	#endif // end of #if (NU_SUBCYCLING)
 
@@ -8099,8 +8103,11 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	double xP;
 	#if (DOHELM_TEMPERATURE)
 	// Floor on temperature
+	#if (DOHELM_LOWTEMP)
+	if (pf[UU] < 1e-10) pf[UU] = 1e-10;
+	#else
 	if (pf[UU] < eos_temp_low) pf[UU] = eos_temp_low;
-
+	#endif
 	// Get the value of internal energy for other floors
 	eos_mode_rhotemp_pres_u(gpu_eos_table, pf[RHO], pf[UU],
 		#if (DO_YE)
@@ -14374,16 +14381,42 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
 
     //Look up the desired quantities in the eos table
 	double free, df_d, df_t, df_tt, df_dt;
-	#if (EOS_LINEAR)
-	interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+	#if (DOHELM_LOWTEMP)
+	// the desired electron-positron thermodynamic quantities
+	if (btemp < eos_temp_low) {
+		#if (EOS_LINEAR)
+		interp_eostable_linear(gpu_eos_table, den, eos_temp_low, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#else
+		interp_eostable(gpu_eos_table, den, eos_temp_low, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#endif
+		dpepdd = 1e-30;
+		//free = df_d = df_t = df_tt = df_dt = 0.0;
+		pele = din * din * df_d + din * din * df_dt * (btemp - eos_temp_low);
+		sele = -df_t * ye + (-df_tt * ye) * (btemp - eos_temp_low);
+		eele = ye * free + eos_temp_low * sele + eos_temp_low * (-df_tt * ye) * (btemp - eos_temp_low);
+	}
+	else {
+		#if (EOS_LINEAR)
+		interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#else
+		interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#endif
+		// the desired electron-positron thermodynamic quantities
+		pele = din * din * df_d;
+		sele = -df_t * ye;
+		eele = ye * free + btemp * sele;
+	}
 	#else
-	interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#if (EOS_LINEAR)
+		interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#else
+		interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+		#endif
+		// the desired electron-positron thermodynamic quantities
+		pele = din * din * df_d;
+		sele = -df_t * ye;
+		eele = ye * free + btemp * sele;
 	#endif
-
-    // the desired electron-positron thermodynamic quantities
-    pele = din * din * df_d;
-    sele = -df_t * ye;
-    eele = ye * free + btemp * sele;
 
 	// ion portion of the gas:
 	double xni = avo * ytot1 * den;
@@ -14423,7 +14456,16 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
         dpiondt = xni * kerg;
 #endif
 
+		#if (DOHELM_LOWTEMP)
+		if (btemp < eos_temp_low) {
+			dpepdt = 0.0;
+		}
+		else {
+			dpepdt = din * din * df_dt;
+		}
+		#else
         dpepdt = din * din * df_dt;
+		#endif
 
 		*dpresdd = dpraddd + dpiondd + dpepdd; // pressure derivative vs density
 		*dpresdt = dpraddt + dpiondt + dpepdt; // pressure derivative vs temperature
@@ -14440,10 +14482,25 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
 		deraddd = -erad*deni;
         deraddt = 4.0 * erad * tempi;
         
+		#if (DOHELM_LOWTEMP)
+		if (btemp < eos_temp_low) {
+			dsepdt = 0.0;
+			dsepdd = 0.0;
+			deepdt = 0.0;
+			deepdd = 0.0;
+		}
+		else {
+			dsepdt = -df_tt * ye;
+			dsepdd = -df_dt * ye * ye;
+			deepdt = btemp * dsepdt;
+			deepdd = ye * ye * df_d + btemp * dsepdd;
+		}
+		#else
 		dsepdt = -df_tt * ye;
         dsepdd = -df_dt * ye * ye;
         deepdt = btemp * dsepdt;
         deepdd = ye*ye*df_d + btemp*dsepdd;
+		#endif
 
 		*denerdd = deraddd + deiondd + deepdd;  // energy derivative vs density
 		*denerdt = deraddt + deiondt + deepdt; // energy derivative vs temperature
@@ -14578,8 +14635,11 @@ __device__ void validate_T(double* temp);
 __device__ void eos_NR_temp_guess(double rho, double u, double* temp);
 
 __device__ void validate_T(double* temp) {
-	//if (*temp < 0.0) *temp = 1e-30;
+	#if (DOHELM_LOWTEMP)
+	if (*temp < 1e-10) *temp = 1e-10;
+	#else
 	if (*temp < eos_temp_low) *temp = eos_temp_low;
+	#endif
 	if (*temp > eos_temp_up) *temp = eos_temp_up;
 	return;
 }
