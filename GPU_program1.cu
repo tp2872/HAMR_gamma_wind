@@ -4277,7 +4277,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 	#if(CONSTANTGAMMA)
 	sigma_w = bsq / (ph[RHO] + GAMMA * ph[UU]);
 	#elif(FIXEDGAMMA)
-	double Ti = calc_Ti(ph);
+	double Te = calc_Te(ph);
 	sigma_w = bsq / (ph[RHO] + GAMMAE / (GAMMAE - 1.0) * Te * ph[RHO] + GAMMA / (GAMMA - 1.0) * Ti * ph[RHO]);
 	#else
 	double Te = calc_Te(ph);
