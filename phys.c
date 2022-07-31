@@ -182,7 +182,7 @@ double calc_Te(double* ph) {
 			#if(FULL_ENTROPY_VARGAMMA)
 			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRE]), 2. / 3.)) - 1.0)/ (MU_E*MASS_RATIO);
 			#else
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRE], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * ph[ENTRE]) - 1.0) / (MU_E * MASS_RATIO);
 			#endif
 		#endif
 	#else
@@ -206,7 +206,7 @@ double calc_Ti(double* ph) {
 			#if(FULL_ENTROPY_VARGAMMA)
 			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * exp(ph[ENTRI]), 2. / 3.)) - 1.0) / MU_I;
 			#else
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * ph[ENTRI], 2. / 3.)) - 1.0) / MU_I;
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * ph[ENTRI]) - 1.0) / MU_I;
 			#endif
 		#endif
 	#else
@@ -418,9 +418,9 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 			dK_dS_i = (1.0 / Theta_i) * (MU_I);
 			#else
 			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRE]), 2. / 3.)) - 1.0);
-			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+			dK_dS = (2. / 3.) * (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRI]), 2. / 3.)) - 1.0);
-			dK_dS_i = (ph[ENTRI] / Theta_i) * (MU_I);
+			dK_dS_i = (2. / 3.) * (ph[ENTRI] / Theta_i) * (MU_I);
 			#endif
 		#endif
 		if (!isfinite(dK_dS))dK_dS = 0.0;
@@ -1131,8 +1131,8 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0));
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[0]) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[1]) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1168,8 +1168,8 @@ double calc_gamma_gas_prim(double* pr) {
 		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO], 2. / 3.) * pr[ENTRE]) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pr[RHO], 2. / 3.) * pr[ENTRI]) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -1219,8 +1219,8 @@ double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0)) / MU_I;
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0)) / MU_I;
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[0]) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[1]) - 1.0)) / MU_I;
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
@@ -1326,8 +1326,8 @@ double set_S_w(double* S, double rho, double w, double delta) {
 		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
+		Te = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[0]) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * S[1]) - 1.0) / (MU_I));
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
@@ -1689,8 +1689,8 @@ double source_Coulomb(double *p){
 		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * p[ENTRE], 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO] * p[ENTRI], 2. / 3.)) - 1.0));
+		Theta_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO], 2. / 3.) * p[ENTRE]) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(p[RHO], 2. / 3.) * p[ENTRI]) - 1.0));
 		#endif
 	#endif
 

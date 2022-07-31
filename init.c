@@ -1279,8 +1279,8 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 			pi[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO]);
 			pi[ENTRI] = log(pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO]);
 			#else
-			pi[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO];
-			pi[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO];
+			pi[ENTRE] = Theta_e * (Theta_e + 0.4) / pow(pi[RHO], 2. / 3.);
+			pi[ENTRI] = Theta_i * (Theta_i + 0.4) / pow(pi[RHO], 2. / 3.);
 			#endif	
 		#endif	
 	
@@ -1322,8 +1322,8 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 			pi[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO]);
 			pi[ENTRI] = log(pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO]);
 			#else
-			pi[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO];
-			pi[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO];
+			pi[ENTRE] = Theta_e * (Theta_e + 0.4) / pow(pi[RHO], 2. / 3.);
+			pi[ENTRI] = Theta_i * (Theta_i + 0.4) / pow(pi[RHO], 2. / 3.);
 			#endif	
 		#endif	
 	
@@ -1374,8 +1374,8 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		pi[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO]);
 		pi[ENTRI] = log(pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO]);
 		#else
-		pi[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / pi[RHO];
-		pi[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / pi[RHO];
+		pi[ENTRE] = Theta_e * (Theta_e + 0.4) / pow(pi[RHO], 2. / 3.);
+		pi[ENTRI] = Theta_i * (Theta_i + 0.4) / pow(pi[RHO], 2. / 3.);
 		#endif	
 	#endif	
 	
@@ -1432,7 +1432,7 @@ void init_rad_pres(double pi[NPR]) {
 	} 
 
 	pgas = pi[RHO] * T_new;
-	pi[UU] = pgas / (GAMMA - 1.);
+	pi[UU] = pgas / (GAMMA - 1.); //note that based on EOS energy should be divided between electrons and ions
 	pi[UU_RAD] = arad * pow(T_new, 4.);
 	#else
 	pi[UU_RAD] = pi[UU]*0.001;
@@ -2618,10 +2618,11 @@ void set_mag(void){
 
 			#if(TWO_T)
 				#if(RAD_M1 && HIGH_MDOT)
-				gamma_g = 4.0/3.0';
+				gamma_g = 4.0/3.0;
 				#else
 				gamma_g = GAMMA;
-				#endif			#else
+				#endif			
+			#else
 			gamma_g = GAMMA;
 			#endif
 
@@ -2709,7 +2710,7 @@ void set_mag(void){
 
 			#if(TWO_T)
 				#if(RAD_M1 && HIGH_MDOT)
-				gamma_g = 4.0/3.0';
+				gamma_g = 4.0/3.0;
 				#else
 				gamma_g = GAMMA;
 				#endif

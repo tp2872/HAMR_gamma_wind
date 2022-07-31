@@ -616,8 +616,8 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u
             T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
             T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * exp(S[1])), 2. / 3.)) - 1.0) / MU_I);
             #else
-            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho[0] * S[1]), 2. / 3.)) - 1.0) / MU_I);
+            T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0], 2. / 3.) * fabs(S[0])) - 1.0) / (MU_E * MASS_RATIO));
+            T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho[0], 2. / 3.) * fabs(S[1])) - 1.0) / MU_I);
             #endif
         #endif
 
@@ -694,8 +694,8 @@ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
         T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[0])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
         T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * exp(S[1])), 2. / 3.)) - 1.0) / MU_I);
         #else
-        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
-        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(rho * S[1]), 2. / 3.)) - 1.0) / MU_I);
+        T_e = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * fabs(S[0])) - 1.0) / (MU_E * MASS_RATIO));
+        T_i = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(rho, 2. / 3.) * fabs(S[1])) - 1.0) / MU_I);
         #endif
     #endif
 
@@ -738,7 +738,7 @@ void set_S_kappa(double rho, double K_atm, double* S, double fel) {
         S[1] = log(pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho);
         #else
         S[0] = pow(T_e * (MU_E * MASS_RATIO), 1.5) * pow(T_e * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
-        S[1] = pow(T_i * MU_I, 1.5) * pow(T_i * MU_I + 0.4, 1.5) / rho;
+        S[1] = (T_i * MU_I) * (T_i * MU_I + 0.4) / pow(rho, 2. / 3.);
         #endif
     #endif
 }
