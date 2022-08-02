@@ -8404,10 +8404,10 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * exp(ph[ENTRI])), 2. / 3.)) - 1.0);
 			dK_dS_i = (1.0 / Theta_i) * (MU_I);
 			#else
-			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRE]), 2. / 3.)) - 1.0);
-			dK_dS = (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
-			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(ph[RHO] * ph[ENTRI]), 2. / 3.)) - 1.0);
-			dK_dS_i = (ph[ENTRI] / Theta_i) * (MU_I);
+			Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRE])) - 1.0);
+			dK_dS = (2. / 3.) * (ph[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+			Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRI])) - 1.0);
+			dK_dS_i = (2. / 3.) * (ph[ENTRI] / Theta_i) * (MU_I);
 			#endif
 		#endif
 		if (!isfinite(dK_dS))dK_dS = 0.0;
