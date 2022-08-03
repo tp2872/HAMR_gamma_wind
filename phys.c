@@ -489,7 +489,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
 	//Calculate emmission rate
@@ -544,7 +544,7 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
 	zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Te * Te);
@@ -578,7 +578,7 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
 	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
@@ -607,7 +607,7 @@ double calc_kappa_es(double * restrict ph
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Te / (4.5 * pow(10., 8.)), 0.86));

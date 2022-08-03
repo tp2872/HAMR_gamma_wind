@@ -8460,7 +8460,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
 	//Calculate opacities
