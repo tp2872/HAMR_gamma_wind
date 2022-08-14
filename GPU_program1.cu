@@ -12859,7 +12859,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 			for (k = 0; k < NPR; k++) F_HLL[0][k] = (F_l[k] - F_r[k] + cmax_roe*U_r[k] - cmin_roe*U_l[k]) / (cmax_roe - cmin_roe + SMALL);
 			for (k = 0; k < NPR; k++) F_HLL[1][k] = ((cmax_roe * F_l[k] - cmin_roe * F_r[k] + cmax_roe * cmin_roe * (U_r[k] - U_l[k])) / (cmax_roe - cmin_roe + SMALL));
 
-			int do_hydro = (fabs(F_HLL[0][dir + B1 -1] * F_HLL[0][dir + B1 - 1] * l_ucon[0] * r_ucon[0]) < pow(10., -14.)*fabs(F_HLL[0][UU]));
+			int do_hydro = (fabs(F_HLL[0][dir + B1 -1] * F_HLL[0][dir + B1 - 1] * l_ucon[0] * r_ucon[0]) < pow(10., -10.)*fabs(F_HLL[0][UU]));
 
 			if (do_hydro) {
 				calc_HLLC_hydro(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
@@ -13192,7 +13192,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 		error_2 = error_1;
 		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
-		if ((fabs(ptot-ptot_old) <= pow(10., -8.) * fabs(ptot)) || n_iter > 10) {
+		if ((fabs(ptot-ptot_old) <= pow(10., -8.) * fabs(ptot+ptot_old)) || n_iter > 10) {
 			keep_iterating = 0;
 		}
 
@@ -13200,7 +13200,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 	}
 
 	//If Newton-Raphson solver did not converge, reset ptot to ptot_HLLC and tag fail_HLLD
-	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -8.) * fabs(ptot)))) {
+	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -8.) * fabs(ptot+ptot_old)))) {
 		ptot = ptot_HLLC;
 		fail_HLLD[0] = 1;
 	}
