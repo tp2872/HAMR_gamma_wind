@@ -231,8 +231,8 @@ void init_blastwave()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * 1.0e4;
 			}
 			else {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.0;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * 1.0e4* exp(-4.0*fabs(dist-radius));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * 1.0e4 * exp(-4.0 * fabs(dist - radius));
 			}
 
 

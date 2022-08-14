@@ -461,8 +461,8 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (i1 < 0 && ref_1 == 1) ii = (NG - 1) + (i + 1) / (1 + ref_1);
 			else if (ref_1 == 1) ii = (i - BS_1) / (1 + ref_1);
 			else ii = i - i1;
-			ij = (j - j1 - (j - j1) % (1 + ref_2)) / (1 + ref_2) + ref_2;
-			iz = (z - z1 - (z - z1) % (1 + ref_3)) / (1 + ref_3) + ref_3;
+			ij = (j + (1 + ref_2) * N2G) / (1 + ref_2);
+			iz = (z + (1 + ref_3) * N3G) / (1 + ref_3);
 
 			if (i < 0){
 				if (i == -3) is = 1;
@@ -476,8 +476,8 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				else if (i == BS_1 + 2) is = -1;
 				else fprintf(stderr, "Error receivecoursse1! \n");
 			}
-			js = (((j - j1) % (1 + ref_2) == 0) ? (-1) : (1));
-			zs = (((z - z1) % (1 + ref_3) == 0) ? (-1) : (1));
+			js = (((j + (1 + ref_2) * N2G) % (1 + ref_2) == 0) ? (-1) : (1));
+			zs = (((z + (1 + ref_3) * N3G) % (1 + ref_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
 				dq1[k] = 0.0;
 				if (ref_1){
@@ -584,10 +584,10 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (j1 < 0 && ref_2 == 1) ij = (NG - 1) + (j + 1) / (1 + ref_2);
 			else if (ref_2 == 1) ij = (j - BS_2) / (1 + ref_2);
 			else ij = j - j1;
-			ii = (i - i1 - (i - i1) % (1 + ref_1)) / (1 + ref_1) + ref_1;
-			iz = (z - z1 - (z - z1) % (1 + ref_3)) / (1 + ref_3) + ref_3;
+			ii = (i + (1 + ref_1) * N1G) / (1 + ref_1);
+			iz = (z + (1 + ref_3) * N3G) / (1 + ref_3);
 
-			is = (((i - i1) % (1 + ref_1) == 0) ? (-1) : (1));
+			is = (((i + (1 + ref_1) * N1G) % (1 + ref_1) == 0) ? (-1) : (1));
 			if (j < 0){
 				if (j == -3) js = 1;
 				else if (j == -2) js = -1;
@@ -600,7 +600,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				else if (j == BS_2 + 2) js = -1;
 				else fprintf(stderr, "Error receivecoursse2! \n");
 			}			
-			zs = (((z - z1) % (1 + ref_3) == 0) ? (-1) : (1));
+			zs = (((z + (1 + ref_3) * N3G) % (1 + ref_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
 				dq2[k]=0.0;
 				if (ref_2){
@@ -706,11 +706,11 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (z1 < 0 && ref_3 == 1) iz = (NG - 1) + (z + 1) / (1 + ref_3);
 			else if (ref_3 == 1) iz = (z - BS_3) / (1 + ref_3);
 			else iz = z - z1;
-			ij = (j - j1 - (j - j1) % (1 + ref_2)) / (1 + ref_2) + ref_2;
-			ii = (i - i1 - (i - i1) % (1 + ref_1)) / (1 + ref_1) + ref_1;
+			ij = (j + (1 + ref_2) * N2G) / (1 + ref_2);
+			ii = (i + (1 + ref_1) * N1G) / (1 + ref_1);
 
-			is = (((i - i1) % (1 + ref_1) == 0) ? (-1) : (1));
-			js = (((j - j1) % (1 + ref_2) == 0) ? (-1) : (1));
+			is = (((i + (1 + ref_1) * N1G) % (1 + ref_1) == 0) ? (-1) : (1));
+			js = (((j + (1 + ref_2) * N2G) % (1 + ref_2) == 0) ? (-1) : (1));
 			if (z < 0){
 				if (z == -3) zs = 1;
 				else if (z == -2) zs = -1;

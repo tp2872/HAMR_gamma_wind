@@ -11874,24 +11874,50 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#if(RESISTIVE)
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
 			#else
-				#if(NEWMAN)
-					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-					#if (DOHELM)
-					, gpu_eos_table
-					#endif
-					#if(TWO_T)
-					, fel
-					#endif
-				);
-				#else
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-					#if (DOHELM)
-					, gpu_eos_table
-					#endif
-					#if(TWO_T)
-					, fel
+				#if(JET_ENTROPY)
+				double bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+				if(bsq/pf[RHO]<1.){ //Criterion for entropy evolution
+					#if(NEWMAN)
+						pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
+					);
+					#else
+					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
+					);
 				#endif
-				);
+				}
+				else pflag[global_id]=1;
+				#else
+					#if(NEWMAN)
+						pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+						#endif
+					);
+					#else
+					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, fel
+					#endif
+					);
+					#endif
 				#endif
 				if (pflag[global_id]) {
 					failimage[global_id]++;

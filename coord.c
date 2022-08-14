@@ -291,7 +291,7 @@ void set_points(int n)
 void set_gridparam(void) {
 	a = BH_SPIN;
 	Rin = 0.9*(1. + sqrt(1. - a * a));
-	Rout = 50;
+	Rout = 25;
 	lim = MC;
 	failed = 0;
 	cour = COUR;
@@ -308,7 +308,7 @@ void set_gridparam(void) {
 	if (N2 != 1) {
 		//2D problem, use full pi-wedge in theta
 		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND == 1);
-		//fractheta = 1.0;
+		//fractheta = 1.0 - 1.0e-13;
 	}
 	else {
 		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
