@@ -90,6 +90,8 @@ double lfish_calc(double r);
 void init_sndwave();
 void init_entwave();
 void init_postmerger();
+void init_blastwave();
+void init_shocktube();
 
 double global_kappa, aphipow;
 
@@ -160,6 +162,12 @@ void init()
 		case NSM:
 			init_NSM();
 			break;
+		case BLAST_WAVE:
+			init_blastwave();
+			break;
+		case SHOCK_TUBE:
+			init_shocktube();
+			break;
 		break;
 	}
 
@@ -169,6 +177,87 @@ void init()
 	GPU_boundprim(1);
 	#endif
 }
+
+void init_blastwave()
+{
+	int n, i, j, z, k;
+	double xx, yy, zz, r, th, phi, dist, X[NDIM];
+	double x0, y0, z0, radius;
+	double do_mag;
+	struct of_geom geom;
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+	t = 0.;
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+	defcon = 1.;
+
+	// Override tf and the dump and log intervals
+	tf = 200000.0;
+
+	//Set central coordinates of exploding ball and radius
+	x0 = 5.0;
+	y0 = 0.0;
+	z0 = 10.0;
+	radius = 2.0;
+
+	//Decide if magnetic field is enabled
+	do_mag = 0;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+
+			//Calculate coordinates of point (i,j,k)
+			xx = r * sin(th) * cos(phi);
+			yy = r * sin(th) * sin(phi);
+			zz = r * cos(th);
+
+			//Calculate distance to center of explosion
+			dist = sqrt(pow(xx - x0, 2.0) + pow(yy - y0, 2.0) + pow(zz - z0, 2.0));
+
+			if (dist < radius) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * 1.0e4;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * 1.0e4;
+			}
+			else {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.0;
+			}
+
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+
+			#if(STAGGERED)
+			coord(n_ord[n], i, j, z, FACE1, X);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+			#endif
+		}
+	}
+
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	/* enforce boundary conditions */
+	bound_prim(p, 1);
+}
+
 
 void init_entwave()
 {

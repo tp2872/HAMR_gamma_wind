@@ -105,6 +105,21 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
 
+	#if (SPHERICAL)
+	gcov[0][0] = -1.;
+	gcov[0][1] = 0.0;
+	gcov[0][3] = 0.0;
+
+	gcov[1][0] = gcov[0][1];
+	gcov[1][1] = 1.0;
+	gcov[1][3] = 0.0;
+
+	gcov[2][2] = r * r;
+
+	gcov[3][0] = gcov[0][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2 * r * r;
+	#else
 	gcov[0][0] = (-1. + 2.*r / rho2);
 	gcov[0][1] = (2.*r / rho2);
 	gcov[0][3] = (-2.*a*r*s2 / rho2);
@@ -118,6 +133,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	gcov[3][0] = gcov[0][3];
 	gcov[3][1] = gcov[1][3];
 	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
+	#endif
 #endif
 
 #if(NSY)
