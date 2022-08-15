@@ -20,13 +20,13 @@ Physical Parameters section
 #define BLAST_WAVE 16
 #define SHOCK_TUBE 17
 
-#define WHICHPROBLEM BLAST_WAVE
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
 
 /*Use no-gr spherical grid*/
-#define SPHERICAL (1)
+#define SPHERICAL (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -145,14 +145,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
+#define NB_1 3
 #define NB_2 6
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 96
-#define BS_2 44
-#define BS_3 32
+#define BS_1 68
+#define BS_2 32
+#define BS_3 84
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -184,7 +184,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -239,7 +239,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY_VARGAMMA (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma for electrons in case of 2T fluid
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (1)
+#define PPM (0)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
