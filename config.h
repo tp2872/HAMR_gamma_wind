@@ -239,7 +239,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY_VARGAMMA (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma for electrons in case of 2T fluid
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
