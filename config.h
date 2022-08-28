@@ -30,9 +30,9 @@ Physical Parameters section
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (1)
-#define T_INIT (400) //Time in rg/c before which to set mass density scale to standard value
+#define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
-#define T_DOUBLE (1000.0) //Time during which Mdot doubles
+#define T_DOUBLE (10000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Enable special refinement criterion for large scale jet simulations*/
@@ -152,17 +152,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
-#define NB_3 1
+#define NB_1 10
+#define NB_2 6
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 92
-#define BS_2 92
-#define BS_3 1
+#define BS_1 42
+#define BS_2 32
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 3
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -188,10 +188,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -380,13 +380,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (1)
+#define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (0)
+#define VARGAMMA (1)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -440,7 +440,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
-#define M_SGRA_SOLAR (4.2e6) /* Solar masses */
+#define M_SGRA_SOLAR (6.4e9) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
@@ -458,9 +458,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
 //#define MASS_DENSITY_SCALE (3.1)
 //#define MASS_DENSITY_SCALE (0.1*0.02*5e-9*3.1)
-//#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1) //M87
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
-#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
+//#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
