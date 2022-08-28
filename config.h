@@ -210,7 +210,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 16
 
 /*Use entropy evolution in jet*/
-#define JET_ENTROPY (1)
+#define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (240)
