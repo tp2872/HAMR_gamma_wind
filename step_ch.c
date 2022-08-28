@@ -14,9 +14,7 @@ void step_ch()
 	double ndt, inmsg;
 	int i, j, k, n, u;
 
-	if (rank == 0){
-		fprintf(stderr, "h");
-	}
+	if (rank == 0) fprintf(stderr, "h");
 
 	for (u = 0; u < 2*AMR_MAXTIMELEVEL; u++){
 		set_prestep();
@@ -67,10 +65,14 @@ void step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
     dt = ndt;
-
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel(0);
-
 	if ((t + dt * (double)AMR_SWITCHTIMELEVEL) > tf) dt = (tf - t) / ((double)AMR_SWITCHTIMELEVEL);  /* but don't step beyond end of run */
+
+	//Set mass density scale if necessary
+	#if(CALC_MDOT)
+	set_mass_density_scale(&mass_density_scale_cpu);
+	#endif
+
 	/* done! */
 }
 
@@ -811,9 +813,8 @@ void GPU_step_ch()
 	double ndt, inmsg;
 	int i, j, z, k, n, uu;
 
-	if (rank == 0){
-		fprintf(stderr, "h");
-	}
+	if (rank == 0)fprintf(stderr, "h");
+
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 	}
@@ -860,11 +861,13 @@ void GPU_step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
-		set_timelevel(0);
-	}
-
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel(0);
 	if ((t + dt * (double)AMR_SWITCHTIMELEVEL) > tf) dt = (tf - t) / ((double)AMR_SWITCHTIMELEVEL);  /* but don't step beyond end of run */
+
+	//Set mass density scale if necessary
+	#if(CALC_MDOT)
+	set_mass_density_scale(&mass_density_scale_cpu);
+	#endif
 }
 
 double advance_GPU(void)

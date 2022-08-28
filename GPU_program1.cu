@@ -136,6 +136,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int* pflag_rad
 	#if(TWO_T)
@@ -144,6 +147,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 
 /*Declarations of functions related to (M1) radiation inversion scheme*/
@@ -151,25 +157,40 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
 	#if(COOL_STOP)
 	, double r
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 );
 __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
 	#if(COOL_STOP)
 	, double r
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 );
 
@@ -179,6 +200,9 @@ __device__ void source_rad(double* ph, struct of_geom* geom, struct of_state* q,
 	#endif
 	#if(COOL_STOP)
 	, double r
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 );
 __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
@@ -191,10 +215,16 @@ __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], doub
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov[NDIM]
 	#if(P_NUM)
 	, double *exp_xi
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 );
 __device__ double calc_Te(double* ph);
@@ -202,6 +232,9 @@ __device__ double calc_Ti(double* ph);
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx
 	#if(TWO_T)
 	, double gamma_g
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 );
 __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
@@ -263,6 +296,9 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	, double* kappa_emmit_ph
 	, double exp_xi
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 );
 #endif
 
@@ -309,8 +345,16 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 );
 
 /*Declerations of functions related to (M1) radiation scheme*/
-__device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim);
-__device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim);
+__device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+);
+__device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+);
 __device__ void mhd_calc_rad(double* pr, int dir, struct of_state_rad* q_rad, double* mhd_rad);
 __device__ void ucon_calc_rad(double* pr, struct of_geom* geom, double* ucon_rad);
 __device__ void get_state_rad(double* pr, struct of_geom* geom, struct of_state_rad* q_rad);
@@ -410,7 +454,11 @@ __device__ double lvc3u(int i, int j, int k);
 //Declare 2T related functions
 __device__ double calc_delta(double* ph, double bsq);
 __device__ void heating(double* ph, struct of_state* q);
-__device__ double source_Coulomb(double* p);
+__device__ double source_Coulomb(double* p
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+);
 __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
 __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
@@ -467,10 +515,18 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	double error_t[2]; 
 	int k;
 	double delta_Ur, U_ft[NPR], pb_i[NPR], U_n_temp[NPR], U_i_temp[NPR], U_prev[NPR];
+	#if(!CALC_MDOT)
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
 	PLOOP{
 		U_n_temp[k] = U_n[k];
@@ -495,6 +551,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		#if(COOL_STOP)
 		, r
 		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
+		#endif
 	);
 
 	//If we've reached the tolerance level, exit immediately and update variables
@@ -506,194 +565,88 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		}
 	}
 	else {
-		//Determine relative updae to radiation variables
-		//delta_Ur = (U_n[UU_RAD] - U_i[UU_RAD] + 1.e-150) / (fabs(U_i[UU_RAD]) + fabs(U_n[UU_RAD]));
-
-		//Check if fluid is in extreme radiation subdominant regime
-		//if (((U_n[UU_RAD] / U_n[UU]) < 1.e-5) || ((pb[UU_RAD] / pb[UU]) < 1.e-5) || (fabs(delta_Ur) < 1.e-5)) {
-		if (0) {
-		
-		}
-		else {
-			//If error is below set margin, accept solution, otherwise try PMHD
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0);
-
-		//	if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0 
-		//		#if(DOHELM)
-		//		, gpu_eos_table
-		//		#endif
-		//	);
-
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
-
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
-
-			#if (HIGH_MDOT)
-			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-
-			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-			#else
-			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-
-			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
+		#if (HIGH_MDOT)
+		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
 			#endif
-			if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-			if (pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-			/*if (pflag_rad[0])implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);
-			if (pflag_rad[0])implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-				#if(COOL_STOP)
-				, r
-				#endif
-			);*/
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
 
-			//if (error_t[1] > 1.e-9)implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
+		if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
+		#else
+		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
 
-			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	#if(COOL_STOP)
-			//	, r
-			//	#endif
-			//);
-
-			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//);
-			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0);
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0);
-
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0);
-
-			//If error is still below set margin, accept solution, otherwise try UMHD
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0);
-
-			//If error is still below set margin, accept solution, otherwise try EMHD
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0);
-
-			//If error is below set margin, accept solution, otherwise try PRAD with entropy
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft,pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 1, 0);
-
-			/*/
-			//If error is still below set margin, accept solution, otherwise try URAD with entropy
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft,pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 1, 0);
-
-			//If error is still below set margin, accept solution, otherwise try URAD with entropy
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft,pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 1, 0);
-			*/
-
-			//If error is still below set margin, accept solution, otherwise try UMHD with entropy
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 1, 0);
-
-			//If error is still below set margin, accept solution, otherwise try EMHD with entropy
-			//if (error_t[1] > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 1, 0);
-		}
-
-		//As final resort attempt subcycling
-		if (error_t[1] > 1.e-7) {
-			//subcycle_rad_solve(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, cell_size);
-		}
-
+		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
+		#endif
+		if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
+		if (pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
+	
 		//If used TYPE2 limiter for inversion radiative quantities, redo with BASIC limiter
 		if(pflag_rad[0]){
 			struct of_state_rad q_rad;
 
 			//Invert using basic limiter
-			Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_i, y_max, BASIC);
+			Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_i, y_max, BASIC
+				#if(CALC_MDOT)
+				, mass_density_scale
+				#endif
+			);
 
 			//Recompute R_t^mu for consistency
 			get_state_rad(pb_i, geom, &q_rad);
@@ -703,7 +656,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//Recompute photon number
 			#if(P_NUM)
 			double Tr;
-			Tr = pow(pb_i[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+			Tr = pow(pb_i[UU_RAD] * energy_density_scale / ARAD, 0.25);
 			pb_i[PHOTON] = pb_i[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 			U_ft[PHOTON] = geom->g * pb_i[PHOTON] * q_rad.ucon[0];
 			#endif
@@ -732,6 +685,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 	#if(COOL_STOP)
 	, double r
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 ) {
 	double kappa_abs, kappa_es, tau, norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
@@ -795,7 +751,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif	 
 
 	//Even if MHD inversion fails, use updated value of radiation variable as gues
-	pflag_rad[0] = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);	
+	pflag_rad[0] = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2
+		#if(CALC_MDOT)
+		, mass_density_scale
+		#endif
+	);	
 	if (pflag_rad[0]) {
 		for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_i[k];
 		#if(P_NUM)
@@ -913,81 +873,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
 	U_f[PHOTON] = U_i[PHOTON];
 	#endif
-	//U_i[UU_RAD] = U_f[UU_RAD];
-	//U_i[U1_RAD] = U_f[U1_RAD];
-	//U_i[U2_RAD] = U_f[U2_RAD];
-	//U_i[U3_RAD] = U_f[U3_RAD];
 
-	//Calculate opacities
-	/*get_state(pb, geom, &q);
-	get_state_rad(pb, geom, &q_rad);
-	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
-	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q.ucov
-	#if(P_NUM)
-	, &exp_xi
-	#endif
-	);
-	Te = calc_Te(pb);
-	calc_kappa_new(pb, bsq, Tr, Te, &kappa_abs, NULL, &kappa_es
-		#if(TWO_T)
-		, gamma_g
-		#endif
-		#if(COOL_STOP)
-		, r
-		#endif
-		#if(P_NUM)
-		, NULL
-		, NULL
-		, NULL
-		#endif
-	);
-	tau = (kappa_abs + kappa_es) * cell_size;
-
-	//Reset guess for p
-	if (tau>0.66) {
-		PLOOP if (k != B1 && k != B2 && k != B3) pb[k] = pb_old[k];
-	
-
-		//Recompute T_t^mu for consistency
-		U_f[RHO] = U_i[RHO];
-		get_state(pb, geom, &q);
-		#if(TWO_T)
-		gamma_g = calc_gamma_gas_prim(pb);
-		#endif
-		mhd_calc(pb, 0, &q, &U_f[UU]
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(TWO_T)
-			, gamma_g
-			#endif
-		);
-		for (k = UU; k <= U3; k++)U_f[k] *= geom->g;
-		U_f[UU] += U_f[RHO];
-
-		//Recompute entropy for consistency
-		#if(DOKTOT)
-		U_f[KTOT] = U_f[RHO] * calc_entropy(pb
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(TWO_T)
-			, gamma_g
-			#endif
-		);
-		if (pflag == 0) U_i[KTOT] = U_f[KTOT];
-		#endif
-
-		//Recompute R_t^mu for consistency
-		get_state_rad(pb, geom, &q_rad);
-		mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
-		for (k = UU_RAD; k <= U3_RAD; k++) U_f[k] *= geom->g;
-
-		//Recommpute photon number after inversion
-		#if(P_NUM)
-		U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
-		#endif
-	}*/
 	//Calculate source term for U_i
 	source_rad(pb, geom, &q, &q_rad, dU
 		#if(DOHELM)
@@ -998,6 +884,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif
 		#if(COOL_STOP)
 		, r
+		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
 		#endif
 	);
 
@@ -1100,6 +989,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 #endif
 #if(COOL_STOP)
 , double r
+#endif
+#if(CALC_MDOT)
+, double mass_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb,  dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
@@ -1283,7 +1175,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 				//Invert radiation variables
-				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+					#if(CALC_MDOT)
+					, mass_density_scale
+					#endif
+				);
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1305,6 +1201,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					#endif
 					#if(COOL_STOP)
 					, r
+					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale
 					#endif
 				);
 
@@ -1565,7 +1464,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 		//Get new radiation primitives using TYPE2 limiter
-		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
 		if (flag_rad) PLOOP U_old_prev[k] = U_new[k];		
 		
 		//Recompute R_t^mu for consistency
@@ -1588,6 +1491,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 			#if(COOL_STOP)
 			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
 			#endif
 		);
 
@@ -1755,6 +1661,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 #if(COOL_STOP)
 , double r
+#endif
+#if(CALC_MDOT)
+, double mass_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
@@ -1925,7 +1834,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 					//Invert radiation conserved variables to primitives
-					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+						#if(CALC_MDOT)
+						, mass_density_scale
+						#endif
+					);
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -1947,6 +1860,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						#endif
 						#if(COOL_STOP)
 						, r
+						#endif
+						#if(CALC_MDOT)
+						, mass_density_scale
 						#endif
 					);
 
@@ -2182,7 +2098,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 				//Get new radiation primitives using TYPE2 limiter
-				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+					#if(CALC_MDOT)
+					, mass_density_scale
+					#endif
+				);
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -2204,6 +2124,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 					#if(COOL_STOP)
 					, r
+					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale
 					#endif
 				);
 
@@ -2351,6 +2274,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 #if(COOL_STOP)
 , double r
+#endif
+#if(CALC_MDOT)
+, double mass_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR],  pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
@@ -2510,7 +2436,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
 					U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
-					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+						#if(CALC_MDOT)
+						, mass_density_scale
+						#endif
+					);
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -2532,6 +2462,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						#endif
 						#if(COOL_STOP)
 						, r
+						#endif
+						#if(CALC_MDOT)
+						, mass_density_scale
 						#endif
 					);
 
@@ -2777,7 +2710,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 				//Get new radiation primitives using TYPE2 limiter
-				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+					#if(CALC_MDOT)
+					, mass_density_scale
+					#endif
+				);
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -2799,6 +2736,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					#endif
 					#if(COOL_STOP)
 					, r
+					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale
 					#endif
 				);
 
@@ -2943,6 +2883,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 #if(COOL_STOP)
 , double r
 #endif
+#if(CALC_MDOT)
+, double mass_density_scale
+#endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], U_prev_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol, dK_dS;
@@ -3062,7 +3005,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 				if (flag == 0) {
 					//Invert radiation conserved quantities
-					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+						#if(CALC_MDOT)
+						, mass_density_scale
+						#endif
+					);
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -3119,6 +3066,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 						#endif
 						#if(COOL_STOP)
 						, r
+						#endif
+						#if(CALC_MDOT)
+						, mass_density_scale
 						#endif
 					);
 
@@ -3300,7 +3250,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 			if (flag == 0) {
 				//Get new radiation primitives using TYPE2 limiter
-				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+					#if(CALC_MDOT)
+					, mass_density_scale
+					#endif
+				);
 				PLOOP U_prev_old[k] = U_new[k];
 
 				//Recompute R_t^mu for consistency
@@ -3363,6 +3317,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					#endif
 					#if(COOL_STOP)
 					, r
+					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale
 					#endif
 				);
 			
@@ -3517,6 +3474,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 #endif
 #if(COOL_STOP)
 , double r
+#endif
+#if(CALC_MDOT)
+, double mass_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
@@ -3698,6 +3658,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 							#endif
 							#if(COOL_STOP)
 							, r
+							#endif
+							#if(CALC_MDOT)
+							, mass_density_scale
 							#endif
 						);
 
@@ -3952,6 +3915,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#if(COOL_STOP)
 					, r
 					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale
+					#endif
 				);
 
 				//Calculate iterated error
@@ -4153,12 +4119,22 @@ __device__ void heating(double* ph, struct of_state* q)
 	
 }
 
-__device__ double source_Coulomb(double* p) {
+__device__ double source_Coulomb(double* p
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+) {
 	double th_mean, th_sum, Theta_e, Theta_i, coeff, n_cgs, ne_cgs, T_e, T_i;
 	double K2e, K2i, K0, K1;
 	double theta_min = 1.e-2;
 	double coulog; 
 	double res;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
 	#if(CONSTANTGAMMA)
 		#if(FULL_ENTROPY)
@@ -4187,8 +4163,8 @@ __device__ double source_Coulomb(double* p) {
 	#endif
 
 	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
-	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
-	n_cgs = p[RHO] * MASS_DENSITY_SCALE / (MH_CGS);    // calculation in cgs unit
+	ne_cgs = p[RHO] * mass_density_scale / (MU_E * MH_CGS);    // calculation in cgs unit
+	n_cgs = p[RHO] * mass_density_scale / (MH_CGS);    // calculation in cgs unit
 
 	T_e = Theta_e / BOLTZ_CGS * (ME_CGS * C_CGS * C_CGS);
 	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
@@ -4234,7 +4210,7 @@ __device__ double source_Coulomb(double* p) {
 
 	if (!isfinite(res)) res = 0.;
 
-	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
+	res = res / energy_density_scale * R_GOC_CGS;     // unit conversion from cgs to grid unit
 	return (res);
 }
 
@@ -5792,7 +5768,11 @@ __device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
 
 //3D
 //Inversion from radiation conserved to primitive quantities
-__device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
+__device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+){
 	double U_tmp[NPR_R + P_NUM], prim_tmp[NPR_R+P_NUM];
 	int i, ret;
 	double alpha;
@@ -5813,7 +5793,11 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	#endif
 
 	//Do inversion
-	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim);
+	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim
+		#if(CALC_MDOT)
+		, mass_density_scale
+		#endif
+	);
 
 	//Transform new primitive variables back if there was no problem
 	for (i = 0; i < NPR_R; i++) {
@@ -5826,14 +5810,23 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	return(ret);
 }
 
-__device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim) {
+__device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+) {
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
+	int i, returnval = 0;
 	#if(P_NUM)
 	double Tr;
 	#endif
-	int i, returnval = 0;
+	#if(!CALC_MDOT)
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
 	raise(Qcov, gcon, Qcon);
@@ -5878,7 +5871,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//Floor on photon number+
 		#if(P_NUM)
-		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		Tr = pow(prim[0] * energy_density_scale / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
 
@@ -5935,7 +5928,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//Floor on photon number+
 		#if(P_NUM)
-		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		Tr = pow(prim[0] * energy_density_scale / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
 	}
@@ -5949,7 +5942,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 	#if(P_NUM)
 	if (prim[4] < 0.0) {
-		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		Tr = pow(prim[0] * energy_density_scale / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		returnval = 1;
 	}
@@ -8307,6 +8300,9 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 )
 {
 	#if(RAD_M1)
@@ -8314,6 +8310,9 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	int k;
 	#if(TWO_T)
 	double src_coulomb, dK_dS_i;
+	#endif
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	PLOOP dU[k] = 0.;
@@ -8339,6 +8338,9 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		#endif
 		#if(COOL_STOP)
 		, r
+		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
 		#endif
 	);
 	lower(Gcon, geom->gcov, Gcov);
@@ -8413,7 +8415,11 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		if (!isfinite(dK_dS))dK_dS = 0.0;
 		if (!isfinite(dK_dS_i))dK_dS_i = 0.0;
 		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
-		src_coulomb = source_Coulomb(ph);
+		src_coulomb = source_Coulomb(ph
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
 		dU[ENTRE] += dK_dS * src_coulomb;
 		dU[ENTRI] -= dK_dS_i * src_coulomb;
 	#endif
@@ -8437,6 +8443,9 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if(COOL_STOP)
 	, double r
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	#if(RAD_M1)
 	int i;
@@ -8448,11 +8457,20 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if(COMPTON)
 	double G0, Theta_e, Theta_r;
 	#endif
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE*C_CGS*C_CGS;
+	#else
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
 	//Calculate radiation temperature in rest frame of fluid
 	Tr = calc_Tr(ph, ucon, ucon_rad, ucov
 		#if(P_NUM)
 		, &exp_xi
+		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
 		#endif
 	);
 	#if (DOHELM)
@@ -8476,10 +8494,13 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		, &kappa_emmit_ph
 		, exp_xi
 		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
+		#endif
 	);
 
 	//Calculate emmission rate
-	lambda = kappa_emmit * (ARAD / ENERGY_DENSITY_SCALE) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
+	lambda = kappa_emmit * (ARAD / energy_density_scale) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
@@ -8499,7 +8520,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		Nhat = -ph[PHOTON] * u_dot_urad;
 		
 		//Source term for photons
-		source_photon[0] = -kappa_abs_ph * Nhat + (kappa_emmit_ph / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
+		source_photon[0] = -kappa_abs_ph * Nhat + (kappa_emmit_ph / mass_density_scale * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 		#endif
 
 		//Compton scattering term is added
@@ -8517,17 +8538,26 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	#if(P_NUM)
 	, double *exp_xi
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	double Tr, u_dot_urad, u_dot_u, Ehat;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
 	u_dot_urad = ucov[0] * ucon_rad[0] + ucov[1] * ucon_rad[1] + ucov[2] * ucon_rad[2] + ucov[3] * ucon_rad[3];
 	u_dot_u = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
+	Ehat = energy_density_scale * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
 	double  Nhat;
-	Nhat = fabs(-ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad);
+	Nhat = fabs(-ph[PHOTON] * mass_density_scale * u_dot_urad);
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
 	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701178);
@@ -8821,6 +8851,9 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	#if(TWO_T)
 	, double gamma_g
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	#if(RAD_M1)
 	double discr, vp, vm, tau, kappa_abs, kappa_es, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd, bsq, Tr, Te;
@@ -8828,6 +8861,9 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	#if(P_NUM)
 	double exp_xi, kappa_abs_ph;
+	#endif
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	if (dir == 1) {
@@ -8884,6 +8920,9 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		#if(P_NUM)
 		,  &exp_xi
 		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
+		#endif
 	);
 	Te = calc_Te(pr) * MU_E * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS;
 
@@ -8899,6 +8938,9 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		, &kappa_abs_ph
 		, NULL
 		, exp_xi
+		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale
 		#endif
 	);
 	#if(P_NUM)
@@ -8994,6 +9036,9 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	, double *kappa_emmit_ph
 	, double exp_xi
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	double kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff_abs, kappa_ff_emmit, kappa_HOPAL, kappa_COPAL, kappa_fe, kappa_ff_unity, kappa_sy_abs, kappa_sy_emmit, kappa_dc,  ne, p_theta, scaling_factor;
 	double Ree, Rei, Theta_e, Theta_gamma, zeta, nu_mu, phi;
@@ -9001,10 +9046,18 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	double one_exp_xi, a, b, c, d, e;
 	one_exp_xi = 1.0 - exp_xi;
 	#endif
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double magnetic_density_scale = sqrt(MASS_DENSITY_SCALE) * C_CGS;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
+	#else
+	double magnetic_density_scale = sqrt(mass_density_scale) * C_CGS;
+	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	#endif
 
-	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	ne = ph[RHO] * mass_density_scale / (MU_E * MH_CGS);
 	Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 
 	#if(OP_EXTRA)
 	Theta_gamma = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
@@ -9024,11 +9077,11 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		a = 0.188 * pow(exp_xi, 13.9) - 0.2 * pow(one_exp_xi, 0.565) + 0.356;
 		b = 0.0722 * pow(exp_xi, 1.36) + 0.255 * pow(one_exp_xi, 0.313) + 3.06;
 		c = -1.41 * pow(exp_xi, 3.08) - 1.44 * pow(one_exp_xi, 0.128) + 5.99;
-		kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * a * pow(zeta, -b) * log(1.0 + c * zeta);
-		kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * log(1.0 + 4.52);
+		kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * a * pow(zeta, -b) * log(1.0 + c * zeta);
+		kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * log(1.0 + 4.52);
 		#else
-		kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1.0 - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * pow(zeta, -3.14) * log(1.0 + 4.52 * zeta);
-		kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1.0 - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * log(1.0 + 4.52);
+		kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1.0 - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * pow(zeta, -3.14) * log(1.0 + 4.52 * zeta);
+		kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1.0 - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * 0.532 * log(1.0 + 4.52);
 		#endif
 		scaling_factor = kappa_ff_abs / kappa_ff_emmit;
 	}
@@ -9045,13 +9098,13 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			e = 0.415 * pow(exp_xi, 0.399) + 1.04 * pow(one_exp_xi, 0.252) + 2.68;
 
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 
 		if (kappa_emmit != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		#else
@@ -9064,12 +9117,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			e = 0.427 * pow(exp_xi, 0.654) + 1.23 * pow(one_exp_xi, 0.214) + 2.49;
 
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		#endif
@@ -9084,12 +9137,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 
 		if (kappa_abs != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		}
 		#else
@@ -9101,12 +9154,12 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		//e = 2.91;
 		if (kappa_abs != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		if (kappa_emmit != NULL) {
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		}
 		#endif
@@ -9122,7 +9175,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		c = -0.18 * pow(exp_xi, 33.0) + 0.201 * pow(one_exp_xi, 0.258) + 3.8;
 		d = 0.0169 * pow(exp_xi, 35.4) - 0.0626 * pow(one_exp_xi, 0.35) + 0.118;
 		p_theta = pow(1.0 + Theta_e, -3.0);
-		kappa_dc_abs = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_abs = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * mass_density_scale);
 		kappa_dc_abs *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 	
 		//Emmission opacity
@@ -9131,17 +9184,17 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		c = -0.16 * pow(exp_xi, 15.4) + 0.184 * pow(one_exp_xi, 0.366) + 3.78;
 		d = 0.015 * pow(exp_xi, 26.3) - 0.0256 * pow(one_exp_xi, 0.398) + 0.119;
 		p_theta = pow(1.0 + Theta_gamma, -3.0);
-		kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * mass_density_scale);
 		kappa_dc_emmit *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 		#else
 		//Absorption opacity
 		p_theta = pow(1.0 + Theta_e, -3.0);
-		kappa_dc_abs = 7.36e-46 * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_abs = 7.36e-46 * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * mass_density_scale);
 		kappa_dc_abs *= 1.0 / ((1.0 / 6.83 + 1.0 / (0.0374 * pow(Theta_gamma, -3.63))) + 1.0 / (0.134 * pow(Theta_gamma, -3.63 / 3.0)));
 
 		//Emmission opacity
 		p_theta = pow(1.0 + Theta_gamma, -3.0);
-		kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * 1.0 * p_theta / (ph[RHO] * mass_density_scale);
 		kappa_dc_emmit *= 1.0 / ((1.0 / 6.83 + 1.0 / (0.0374 * pow(Theta_gamma, -3.63))) + 1.0 / (0.134 * pow(Theta_gamma, -3.63 / 3.0)));
 		#endif
 	#endif
@@ -9151,19 +9204,19 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	kappa_m = 3.0 * Z_AB; //No scaling factor
 
 	//Calculate H- opacity
-	kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
+	kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
 
 	//Calculate Chianti opacity
-	kappa_chianti = 3.0e34 * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1 + X_AB) * pow(Te, -4.7);
+	kappa_chianti = 3.0e34 * ph[RHO] * mass_density_scale * (0.1 + Z_AB / 0.02) * X_AB * (1 + X_AB) * pow(Te, -4.7);
 
 	//Calculate iron opacity
 	kappa_fe = 0.3 * (Z_AB / 0.02) * exp(-6.0 * pow(-12.0 + log(Te), 2.0)); //No scaling factor
 
 	//Calculate bound-free opacity
-	kappa_bf = 1.2e24 * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6 );
+	kappa_bf = 1.2e24 * 750.0 * Z_AB * (1.0 + X_AB + 0.75 * Y_AB) * ph[RHO] * mass_density_scale * pow(Te, -3.5) * log(1. + 1.6 );
 
 	//Calculate COPAL terms conform Mckinney+2017
-	kappa_COPAL = 3.0e-13 * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * MASS_DENSITY_SCALE, -0.4);
+	kappa_COPAL = 3.0e-13 * kappa_chianti * pow(Te, 1.6) * pow(ph[RHO] * mass_density_scale, -0.4);
 
 	//Calculate HOPAL terms conform Mckinney+2017
 	kappa_HOPAL = 1.0e4 * pow(Te, -1.2) * kappa_h;
@@ -9174,14 +9227,14 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
 
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
-		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+		else kappa_abs[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 	}
 	if (kappa_emmit != NULL) {
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_HOPAL) + 1.0 / kappa_COPAL + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
-		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+		else kappa_emmit[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 	}
 
 		//Calculate number absorption and emmission opacities
@@ -9191,8 +9244,8 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			a = 21.0 * pow(exp_xi, 5.0) - 2.06 * one_exp_xi + 4.0;
 			b = -0.412 * pow(exp_xi, 59.1) + 0.000894 * pow(one_exp_xi, 10.2) + 3.15;
 			c = 5.27 * pow(exp_xi, 69.2) + 2.39 * pow(one_exp_xi, 0.552);
-			kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * a * pow(zeta, -b) * log(1 + c * zeta);
-			kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, -3.5) * (Rei + Ree) * 25.0 * log(1.0 + 5.27); //Watch out with coefficients
+			kappa_ff_abs = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * a * pow(zeta, -b) * log(1 + c * zeta);
+			kappa_ff_emmit = 1.2e24 * (1. + X_AB) * (1. - Z_AB) * (ph[RHO] * mass_density_scale) * pow(Te, -3.5) * (Rei + Ree) * 25.0 * log(1.0 + 5.27); //Watch out with coefficients
 			scaling_factor = kappa_ff_abs / kappa_ff_emmit;
 		}
 
@@ -9215,19 +9268,19 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			d = -8.59 * pow(exp_xi, 155.0) - 6.47 * pow(one_exp_xi, 0.436) + 8.71;
 			e = -0.447 * pow(exp_xi, 394.0) + 0.506 * pow(one_exp_xi, 0.155) + 2.45;
 			#endif
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (a * pow(phi, -b) * log(1.0 + c * phi)) + 1.0 / (d * pow(phi, -e)));
 		}
 		if (kappa_emmit_ph != NULL) {
 			#if(AGN)
 			//AGN
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
 			#else
 			//XRB
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
 			#endif
 		}
@@ -9241,7 +9294,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			b = 0.196 * pow(exp_xi, 18.1) - 1.12 * pow(one_exp_xi, 0.134) + 1.16;
 			c = -0.8 * pow(exp_xi, 21.6) + 0.0427 * pow(one_exp_xi, 182.0) + 3.93;
 			d = 1.87 * pow(exp_xi, 309.0) - 2.72 * pow(one_exp_xi, 0.106) + 2.86;
-			kappa_dc = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_dc = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * mass_density_scale);
 			kappa_dc *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 		}
 
@@ -9252,7 +9305,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			b = 1.31 * pow(exp_xi, 1.12) + 1.05 * pow(one_exp_xi, 0.249) + 4.8e-11;
 			c = -0.418 * pow(exp_xi, 14.8) + 0.442 * pow(one_exp_xi, 0.361) + 3.44;
 			d = 1.37 * pow(exp_xi, 31.3) - 1.38 * pow(one_exp_xi, 0.316) + 3.38;
-			kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_dc_emmit = 7.36e-46 * ne * Tr * Tr * exp_xi * p_theta / (ph[RHO] * mass_density_scale);
 			kappa_dc_emmit *= 1.0 / ((1.0 / a + 1.0 / (b * pow(Theta_gamma, -c))) + 1.0 / (d * pow(Theta_gamma, -c / 3.0)));
 		}
 		#endif
@@ -9263,98 +9316,98 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 			kappa_abs_ph[0] = 1. / (1. / (kappa_m + kappa_HOPAL * scaling_factor) + 1.0 / (kappa_COPAL * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
 			kappa_abs_ph[0] = 1. / (1. / (kappa_m + kappa_h * scaling_factor) + 1. / (kappa_chianti * scaling_factor + kappa_bf * scaling_factor + kappa_ff_abs)) + kappa_sy_abs;
 			if (!isfinite(kappa_abs_ph[0])) kappa_abs_ph[0] = 0.0;
-			else kappa_abs_ph[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+			else kappa_abs_ph[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 		}
 		if (kappa_emmit_ph != NULL) {
 			kappa_emmit_ph[0] = 1. / (1. / (kappa_m + kappa_HOPAL) + 1.0 / kappa_COPAL + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 			kappa_emmit_ph[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 
 			if (!isfinite(kappa_emmit_ph[0])) kappa_emmit_ph[0] = 0.0;
-			else kappa_emmit_ph[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+			else kappa_emmit_ph[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 		}
 		#endif
 	#else
 	kappa_m = 30.0 * 0.1 * Z_AB;
 	if (kappa_abs != NULL) {
-		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);	
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * magnetic_density_scale * Te * Te);	
 		//zeta = MY_MIN(zeta, 1.e5);
-		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-		kappa_chianti = 30.0e33 * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
-		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
-		kappa_ff_abs = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4e-10 * Te);
-		//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));;
+		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
+		kappa_chianti = 30.0e33 * ph[RHO] * mass_density_scale * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
+		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * mass_density_scale * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
+		kappa_ff_abs = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * mass_density_scale * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4e-10 * Te);
+		//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * energy_density_scale * Te * pow(Tr, -3.) / (ph[RHO] * mass_density_scale) / (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));;
 		#if(AGN)
 		phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 		kappa_sy_abs *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		#else
 		phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 		kappa_sy_abs *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		#endif
 		kappa_abs[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_abs)) + kappa_sy_abs;
 
 		if (!isfinite(kappa_abs[0])) kappa_abs[0] = 0.0;
-		else kappa_abs[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+		else kappa_abs[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 
 		#if(P_NUM)
 		if (kappa_abs_ph != NULL) {
-			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
-			//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * Te * pow(Tr, -3.) / (ph[RHO] * MASS_DENSITY_SCALE) * 0.868 * zeta/ (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));	
+			kappa_abs_ph[0] = kappa_abs[0] - kappa_sy_abs * ((ph[RHO] * mass_density_scale) * R_G_CGS);
+			//kappa_sy_abs = 1.59e-30 * ne * 4. * M_PI * bsq * energy_density_scale * Te * pow(Tr, -3.) / (ph[RHO] * mass_density_scale) * 0.868 * zeta/ (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));	
 			#if(AGN)
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
 			#else
 			phi = MY_MAX(BOLTZ_CGS * Tr / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_abs = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Tr) / (ph[RHO] * mass_density_scale);
 			kappa_sy_abs *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));;
 			#endif
 					
-			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));	
+			kappa_abs_ph[0] += (kappa_sy_abs * ((ph[RHO] * mass_density_scale) * R_G_CGS));
 			if (!isfinite(kappa_abs_ph[0])) kappa_abs_ph[0] = 0.0;
 		}
 		#endif
 	}
 	if (kappa_emmit != NULL) {
-		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * MAGNETIC_DENSITY_SCALE * Te * Te);
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale * Te * Te);
 		//zeta = MY_MIN(zeta, 1.e5);
-		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-		kappa_chianti = 30.0e33 * ph[RHO] * MASS_DENSITY_SCALE * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
-		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
-		kappa_ff_emmit = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4e-10 * Te);
-		//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE); /// (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));
+		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
+		kappa_chianti = 30.0e33 * ph[RHO] * mass_density_scale * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
+		kappa_bf = 30.0 * 3.0e25 * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * mass_density_scale * pow(Te, -3.5) * log(1. + 1.6);
+		kappa_ff_emmit = 30.0 * 4.0e22 * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * mass_density_scale * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4e-10 * Te);
+		//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * energy_density_scale * pow(Te, -2.) / (ph[RHO] * mass_density_scale); /// (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -1.3333333));
 		#if(AGN)
 		phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 		kappa_sy_emmit *= 1.0 / (1.0 / (0.206 * pow(phi, -2.59) * log(1.0 + 3.44 * phi)) + 1.0 / (9.33 * pow(phi, -3.09)));
 		#else
 		phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+		kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 		kappa_sy_emmit *= 1.0 / (1.0 / (1.27 * pow(phi, -1.03) * log(1.0 + 0.000763 * phi)) + 1.0 / (0.616 * pow(phi, -2.91)));
 		#endif
 
 		kappa_emmit[0] = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff_emmit)) + kappa_sy_emmit;
 		if (!isfinite(kappa_emmit[0])) kappa_emmit[0] = 0.0;
-		else kappa_emmit[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+		else kappa_emmit[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 
 		#if(P_NUM)
 		if (kappa_emmit_ph != NULL) {
-			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
-			//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) / (ph[RHO] * MASS_DENSITY_SCALE); //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
+			kappa_emmit_ph[0] = kappa_emmit[0] - kappa_sy_emmit * ((ph[RHO] * mass_density_scale) * R_G_CGS);
+			//kappa_sy_emmit = 1.59e-30 * ne * 4. * M_PI * bsq * energy_density_scale * pow(Te, -2.) / (ph[RHO] * mass_density_scale); //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
 			//double test = ARAD * Te * Te * Te / (BOLTZ_CGS * 2.701178);
-			//kappa_sy_emmit = 1.44e5 * ne * sqrt(4. * M_PI * bsq * ENERGY_DENSITY_SCALE) / test / (ph[RHO] * MASS_DENSITY_SCALE)/C_CGS; //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
+			//kappa_sy_emmit = 1.44e5 * ne * sqrt(4. * M_PI * bsq * energy_density_scale) / test / (ph[RHO] * mass_density_scale)/C_CGS; //* 0.868 * zeta / (1.0 + 0.589 * pow(zeta, -1.0 / 3.0) + 0.087 * pow(zeta, -2.0 / 3.0));
 			#if(AGN)
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (40.0 * pow(phi, -2.58) * log(1.0 + 0.0522 * phi)) + 1.0 / (1.65e6 * pow(phi, -0.1)));
 			#else
 			phi = MY_MAX(BOLTZ_CGS * Te / (PLANCK_CGS * nu_mu), 1.0e-5);
-			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * MASS_DENSITY_SCALE);
+			kappa_sy_emmit = 5.85374e-14 * ne * phi / (Theta_e * Theta_e * Theta_e * Te) / (ph[RHO] * mass_density_scale);
 			kappa_sy_emmit *= 1.0 / (1.0 / (0.00173 * pow(phi, -0.983) * log(1.0 + 0.921 * phi)) + 1.0 / (0.123 * pow(phi, -2.0)));
 			#endif
 
-			kappa_emmit_ph[0] += (kappa_sy_emmit * ((ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS));
+			kappa_emmit_ph[0] += (kappa_sy_emmit * ((ph[RHO] * mass_density_scale) * R_G_CGS));
 			if (!isfinite(kappa_emmit_ph[0])) kappa_emmit_ph[0] = 0.0;
 		}
 		#endif	
@@ -9387,7 +9440,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		kappa_es[0] = 0.2 * (1 + X_AB) / (1. + pow(fabs(Te) / (4.5 * pow(10., 8.)), 0.86));
 		//kappa_es[0] = 0.2 * (1 + X_AB);
 		if (!isfinite(kappa_es[0])) kappa_es[0] = 0.0;
-		else kappa_es[0] *= (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS;
+		else kappa_es[0] *= (ph[RHO] * mass_density_scale) * R_G_CGS;
 	}
 }
 
@@ -10168,6 +10221,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 ) {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -10292,6 +10348,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#if(TWO_T)
 			, gamma_g
 			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
 		);
 		#endif
 
@@ -10366,6 +10425,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#endif
 			#if(TWO_T)
 			, gamma_g
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale
 			#endif
 		);
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
@@ -11279,6 +11341,9 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
 )
 {
 	#if(RAD_M1)
@@ -11339,6 +11404,9 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 			#if(COOL_STOP)
 			, radius[icurr]
 			#endif
+			#if(CALC_MDOT)
+			,  mass_density_scale
+			#endif
 		);
 
 		#pragma unroll 9	
@@ -11356,6 +11424,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 )
 {
@@ -11478,6 +11549,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			#if(COOL_STOP)
 			, radius[icurr]
 			#endif
+			#if(CALC_MDOT)
+			,  mass_density_scale
+			#endif
 		);
 
 		//Apply floors in ZAMO frame or drift frame
@@ -11505,6 +11579,9 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 )
 {
@@ -11661,7 +11738,11 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 			}
 		}
 		#endif
-		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC);
+		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC
+			#if(CALC_MDOT)
+			, mass_density_scale
+			#endif
+		);
 
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(ph, radius[icurr], &geom
@@ -11690,6 +11771,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 	#if(RAD_M1)
 	, int *pflag_rad
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
 	#endif
 )
 {
@@ -11868,6 +11952,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 			#if(COOL_STOP)
 			, radius[icurr]
+			#endif
+			#if(CALC_MDOT)
+			,  mass_density_scale
 			#endif
 		);
 		#else

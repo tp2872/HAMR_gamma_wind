@@ -742,6 +742,7 @@ int nthreads;
 int gpu, gpu_offset;
 int status;
 double y_max;
+double mass_density_scale_cpu, mdot_cpu, t_mdot;
 
 /* output parameters */
 double DTd;

@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 2500.0;
-	DTd = 1.0;
+	DTd = 100.0;
 	DTd_reduced = 5.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -207,6 +207,9 @@ int main(int argc, char *argv[])
 			if (rank == 0){
 				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
+				#if(CALC_MDOT)
+				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
+				#endif
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;
@@ -367,9 +370,10 @@ void set_grid(int n)
 
 			/* zone-centered */
 			coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
+			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
 			gdet[nl[n]][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
-			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2])-1 && TRANS_BOUND == 1)gdet[nl[n]][index_2D(n, i, j, z)][CENT] *= 1.0;
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT], gcon[nl[n]][index_2D(n, i, j, z)][CENT]);
 			get_geometry(n, i, j, z, CENT, &geom);
 			conn_func(X, &geom, conn[nl[n]][index_2D(n, i, j, z)]);
@@ -379,12 +383,16 @@ void set_grid(int n)
 
 			/* r-face-centered */
 			coord(n, i, j, z - zoffset + zsize / 2, FACE1, X);
+			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1], gcon[nl[n]][index_2D(n, i, j, z)][FACE1]);
 
 			/* phi-face-centered */
 			coord(n, i, j, z - zoffset, FACE3, X);
+			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3], gcon[nl[n]][index_2D(n, i, j, z)][FACE3]);
@@ -393,11 +401,11 @@ void set_grid(int n)
 			if (j == 0 && TRANS_BOUND==1){
 				//coord(n, i, 1, z, FACE2, X);
 				a = 0. ;
-				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 			}
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==1){
 				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 				a = 0.;
 			}
 			else coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);

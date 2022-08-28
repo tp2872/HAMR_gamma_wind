@@ -182,8 +182,8 @@ void init_blastwave()
 {
 	int n, i, j, z, k;
 	double xx, yy, zz, r, th, phi, dist, X[NDIM];
-	double x0, y0, z0, radius;
-	double do_mag;
+	double x0, y0, z0, radius, scale_factor;
+	int do_mag=1;
 	struct of_geom geom;
 
 	/* some physics parameters */
@@ -213,6 +213,9 @@ void init_blastwave()
 	//Decide if magnetic field is enabled
 	do_mag = 0;
 
+	//Set scale factor to not conflict with density floors
+	scale_factor = 1.0e4;
+
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
 			coord(n_ord[n], i, j, z, CENT, X);
@@ -225,16 +228,32 @@ void init_blastwave()
 
 			//Calculate distance to center of explosion
 			dist = sqrt(pow(xx - x0, 2.0) + pow(yy - y0, 2.0) + pow(zz - z0, 2.0));
+			double dist2 = sqrt(pow(r * sin(th) - sqrt(x0 * x0 + y0 * y0), 2.0) + pow(zz - z0, 2.0));
+
+			//Set ug_norm to insert toroidal magnetic field
+			double ug_norm = 3.0e-5 / (GAMMA - 1.0) * scale_factor;
 
 			if (dist < radius) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * 1.0e4;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * 1.0e4;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * scale_factor;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ug_norm;
 			}
 			else {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * 1.0e4* exp(-4.0*fabs(dist-radius));
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * 1.0e4 * exp(-4.0 * fabs(dist - radius));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * scale_factor * exp(-4.0*fabs(dist-radius));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 3.0e-5 / (GAMMA - 1.0) * scale_factor * exp(-4.0 * fabs(dist - radius));
 			}
 
+			if (dist < 0.8*radius) {
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = scale_factor*1.0e-2;
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = scale_factor * 1.0e-1 / (GAMMA - 1.0);
+			}
+			else if (dist < radius) {
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = scale_factor * 1.0e-2*exp(-log(1e2) / (0.2 * radius)*fabs(dist - 0.8 * radius));
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = scale_factor * 1.0e-1 / (GAMMA - 1.0) * exp(log(3e-5) / (0.2 * radius) * fabs(dist - 0.8 * radius));
+			}
+			else {
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = scale_factor * 1.0e-4;
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = scale_factor * 3.0e-6 / (GAMMA - 1.0) * exp(-4.0 * fabs(dist - radius));
+			}
 
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
@@ -243,12 +262,25 @@ void init_blastwave()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
 
-			#if(STAGGERED)
-			coord(n_ord[n], i, j, z, FACE1, X);
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
-			#endif
+			if (do_mag == 1 && dist2<radius) {
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 1.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 1.0;
+				double bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
+				double beta = (GAMMA - 1.0) * ug_norm / (0.5 * bsq_ij);
+				double beta_target = 10.0;
+				double norm = beta_target / beta;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= beta_target;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= beta_target;
+			}
+			else {
+				#if(STAGGERED)
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+				#endif
+			}
 		}
 	}
 
@@ -258,6 +290,358 @@ void init_blastwave()
 	bound_prim(p, 1);
 }
 
+void init_shocktube()
+{
+	int n, i, j, z, k;
+	double xx, yy, zz, r, th, phi, dist, X[NDIM];
+	double x0, y0, z0, radius, scale_factor;
+	int mode;
+	struct of_geom geom;
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+	t = 0.;
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+	defcon = 1.;
+
+	/*Set mode
+	fast shock (1), slow shock (2), Switch off fast (3), Switch on slow (4), Alfven wave (5)
+	Compound wave (6), Shock tube 1 (7), Shock tube 2 (8), Collision (9)
+	*/
+	mode = 1; 
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+
+			if (mode==1) {//Fast shock
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 25.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 20.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 25.02;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 20.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 25.02;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 25.48;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 367.5 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 1.091;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.3923;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 20.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 49.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 20.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 49.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+			if (mode==2) {//Slow shock
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 1.53;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 18.28;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 8.28;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 3.323;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 55.36 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.9571;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = -0.6822;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 14.49;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 14.49;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==3) {//Switch off fast
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.1;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -2.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 2.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 2.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.562;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 10.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -0.212;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = -0.590;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 2.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 4.71;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 2.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 4.71;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==4) {//Switch on slow
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.0178;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.1 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -0.765;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = -1.386;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 1.022;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 1.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 1.022;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.01;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 1.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==5) {//Alfven wave
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 3.7;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 5.76;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = -6.857;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = -6.857;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==6) {//Compound wave
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 3.7;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 5.76;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = -6.857;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = -6.857;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==7) {//Shock tube 1
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1000.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 1.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 1.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+
+			if (mode==8) {//Shock tube 2
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 30.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 20.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 20.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+			if (mode==9) {//Collision
+				if (X[1] < 0.0) {//left state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 5.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+				else {//right state
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -5.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = -10.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+					#if(STAGGERED)
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = -10.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+					#endif
+				}
+			}
+		}
+	}
+
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	//Set constant boundary conditions
+	#if(CONSTANT_BC)
+	int i1, k;
+	for (n = 0; n < n_active; n++) {
+		if (block[n_ord[n]][AMR_NBR2] == -1) {
+			for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++)for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z++) {
+				for (i1 = 0; i1 < N1G; i1++) {
+					PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][k] = p[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][k];
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][2] = ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][2];
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 + i1, j, z)][3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] + BS_1 - 1, j, z)][3];
+				}
+			}
+		}
+	}
+	#endif
+
+	/* enforce boundary conditions */
+	bound_prim(p, 1);
+}
 
 void init_entwave()
 {
@@ -1477,12 +1861,17 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 void init_rad_pres(double pi[NPR]) {
 	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
 	int keep_iterating=1, i, n_iter=0;
+	#if(!CALC_MDOT)
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
+	#else
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
 
 	//Calculate old pressure
 	#if(TWO_T)
-	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MU_E * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	arad = (ARAD / energy_density_scale) * pow(MU_E * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	#else
-	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MU_G * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	arad = (ARAD / energy_density_scale) * pow(MU_G * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	#endif
 
 	#if(HIGH_MDOT)
@@ -1529,7 +1918,7 @@ void init_rad_pres(double pi[NPR]) {
 
 	//Set photon number based on Boltzman distribution
 	#if(P_NUM)
-	T_new = pow(pi[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+	T_new = pow(pi[UU_RAD] * energy_density_scale / ARAD, 0.25);
 	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
 

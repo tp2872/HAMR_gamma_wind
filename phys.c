@@ -222,15 +222,22 @@ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov
 	#endif
 ) {
 	double Tr, u_dot_urad, u_dot_u, Ehat;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
 
 	u_dot_urad = ucov[0] * ucon_rad[0] + ucov[1] * ucon_rad[1] + ucov[2] * ucon_rad[2] + ucov[3] * ucon_rad[3];
 	u_dot_u = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
+	Ehat = energy_density_scale * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * u_dot_u);
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
 	double  Nhat;
-	Nhat = fabs(-ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad);
+	Nhat = fabs(-ph[PHOTON] * mass_density_scale * u_dot_urad);
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	//Tr = Ehat / (BOLTZ_CGS * Nhat * (0.33333 + 0.060725 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat))));
 	Tr = Ehat / (BOLTZ_CGS * Nhat * 2.701178);
@@ -454,6 +461,13 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	#if(COMPTON)
 	double Theta_e, Theta_r, G0;
 	#endif
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
 
 	//Calculate radiation temperature in rest frame of fluid
 	Tr = calc_Tr(ph, ucon, ucon_rad, ucov
@@ -493,7 +507,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	#endif
 
 	//Calculate emmission rate
-	lambda = kappa_emmit * (ARAD / ENERGY_DENSITY_SCALE) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
+	lambda = kappa_emmit * (ARAD / energy_density_scale) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
@@ -515,7 +529,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 		Nhat = -ph[PHOTON]  * u_dot_urad;
 
 		//Source term for photons
-		source_photon[0] = -kappa_abs * Nhat + (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
+		source_photon[0] = -kappa_abs * Nhat + (kappa_emmit / mass_density_scale_cpu * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 		#endif
 
 		//Compton scattering term is added
@@ -539,6 +553,14 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne, zeta;
 	double Ye = (1. + X_AB) / 2.;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
+
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
@@ -546,20 +568,20 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
-	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	ne = ph[RHO] * mass_density_scale / (MU_E * MH_CGS);
 	zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Te * Te);
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * mass_density_scale * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * mass_density_scale_cpu * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * mass_density_scale_cpu * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * energy_density_scale * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -573,6 +595,14 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 ) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne;
 	double Ye = (1. + X_AB) / 2.;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
+
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
@@ -581,19 +611,19 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
-	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	ne = ph[RHO] * mass_density_scale / (MU_E * MH_CGS);
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.);
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * mass_density_scale * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * mass_density_scale_cpu * pow(Te, -3.5) * log(1. + 1.6);
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * mass_density_scale_cpu * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * energy_density_scale * pow(Te, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph
@@ -602,6 +632,12 @@ double calc_kappa_es(double * restrict ph
 	#endif
 	) {
 	double kappa_es, Te;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	#endif
+
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
@@ -614,7 +650,7 @@ double calc_kappa_es(double * restrict ph
 	kappa_es = 0.2 * (1 + X_AB);
 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;
-	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_es * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
@@ -1667,6 +1703,13 @@ double source_Coulomb(double *p){
 	double theta_min = 1.e-2;
 	double coulog;
 	double res;
+	#if(!CALC_MDOT)
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+	#else
+	double mass_density_scale = mass_density_scale_cpu;
+	double energy_density_scale = mass_density_scale_cpu * C_CGS * C_CGS;
+	#endif
 
 	#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		#if(FULL_ENTROPY)
@@ -1695,8 +1738,8 @@ double source_Coulomb(double *p){
 	#endif
 
 	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
-	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
-	n_cgs = p[RHO] * MASS_DENSITY_SCALE / (MH_CGS);    // calculation in cgs unit
+	ne_cgs = p[RHO] * mass_density_scale / (MU_E * MH_CGS);    // calculation in cgs unit
+	n_cgs = p[RHO] * mass_density_scale / (MH_CGS);    // calculation in cgs unit
 
 	T_e = Theta_e / BOLTZ_CGS * (ME_CGS * C_CGS * C_CGS);
 	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
@@ -1738,7 +1781,7 @@ double source_Coulomb(double *p){
 
 	if (!isfinite(res)) res = 0.;
 
-	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
+	res = res / energy_density_scale * R_GOC_CGS;     // unit conversion from cgs to grid unit
 	return (res);
 }
 

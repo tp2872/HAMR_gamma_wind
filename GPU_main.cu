@@ -1559,6 +1559,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
+				#endif
 				);
 			#endif
 		}
@@ -1578,6 +1581,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
+				#endif
 				);
 			#endif
 		}
@@ -1596,6 +1602,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 				#if (DOHELM) 
 				, GPU_eos_table[0]
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
 				#endif
 				);
 			#endif
@@ -1618,6 +1627,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
+				#endif
 				);
 			#endif
 		}
@@ -1637,6 +1649,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				#if (DOHELM) 
 				, GPU_eos_table[0]
 				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
+				#endif
 				);
 			#endif
 		}
@@ -1655,6 +1670,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 				  dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 				#if (DOHELM) 
 				, GPU_eos_table[0]
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale_cpu
 				#endif
 				);
 			#endif
@@ -2107,6 +2125,9 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 		#if (DOHELM) 
 		, GPU_eos_table[0]
 		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale_cpu
+		#endif
 		);
 
 	//cudaDeviceSynchronize();
@@ -2127,6 +2148,9 @@ void GPU_Utoprim_M1_1(int n, double Dt)
 		#if (DOHELM) 
 		, GPU_eos_table[0]
 		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale_cpu
+		#endif
 		);
 
 	//cudaDeviceSynchronize();
@@ -2145,6 +2169,9 @@ void GPU_Utoprim_M1_2(int n, double Dt)
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
+		#endif
+		#if(CALC_MDOT)
+		, mass_density_scale_cpu
 		#endif
 		);
 
@@ -2172,6 +2199,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#if(RAD_M1)
 			, Bufferpflag_RAD[nl[n]]
 			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
+			#endif
 			);
 	}
 	else{
@@ -2182,6 +2212,9 @@ void GPU_fixup(int flag, int n, double Dt)
 			#endif
 			#if(RAD_M1)
 			, Bufferpflag_RAD[nl[n]]
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
 			#endif
 			);
 	}

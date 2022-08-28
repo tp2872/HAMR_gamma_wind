@@ -25,8 +25,15 @@ Physical Parameters section
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
 
-/*Use no-gr spherical grid*/
+/*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
+
+/*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
+#define CALC_MDOT (1)
+#define T_INIT (400) //Time in rg/c before which to set mass density scale to standard value
+#define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
+#define T_DOUBLE (1000.0) //Time during which Mdot doubles
+#define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -41,7 +48,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -145,14 +152,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
-#define NB_2 6
-#define NB_3 2
+#define NB_1 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 68
-#define BS_2 32
-#define BS_3 84
+#define BS_1 92
+#define BS_2 92
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -181,10 +188,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (1)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -197,16 +204,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (1)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (240)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -271,6 +278,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
+
+/*Use smaller than usual cutout of 10^-13*/
+#define TRANS_BOUND_SMALL (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -338,7 +348,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (0)
@@ -357,10 +367,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AGN (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.0001)

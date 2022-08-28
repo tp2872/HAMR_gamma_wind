@@ -502,6 +502,10 @@ int restart_read_param(void)
 		}
 	}
 
+	#if(CALC_MDOT)
+	set_mass_density_scale(&mass_density_scale_cpu);
+	#endif
+
 	if (restart_number == -1) {
 		if(rank==0) fprintf(stderr, "No restart dump available! \n");
 		return 0;
@@ -552,7 +556,7 @@ void param_read(FILE *fp) {
 	int dk = DOKTOT;
 	double Rin_read;
 	double Rout_read;
-	double R0_read;
+	double mdot_read;
 	double gam_read;
 	double a_read;
 	double cour_read;
@@ -578,7 +582,7 @@ void param_read(FILE *fp) {
 	fread(&cour_read, double_size, 1, fp);
 	fread(&Rin_read, double_size, 1, fp);
 	fread(&Rout_read, double_size, 1, fp);
-	fread(&R0_read, double_size, 1, fp);
+	fread(&mdot_read, double_size, 1, fp);
 	fread(&dummy, double_size, 1, fp);
 	fread(&lim, int_size, 1, fp);
 	fread(&stag, int_size, 1, fp);
@@ -657,9 +661,15 @@ void param_read(FILE *fp) {
 		}
 		exit_r = 1;
 	}
-	if (R0_read != R0) {
+	//if (R0_read != R0) {
+	//	if (rank == 0) {
+	//		fprintf(stderr, "Error reading in input parameters. R0 not set properly! \n");
+	//	}
+	//	exit_r = 1;
+	//}
+	if (mdot_read < 1e-6) {
 		if (rank == 0) {
-			fprintf(stderr, "Error reading in input parameters. R0 not set properly! \n");
+			fprintf(stderr, "Error reading in input parameters. Mdot suspiciously low! \n");
 		}
 		exit_r = 1;
 	}
@@ -698,6 +708,105 @@ void param_read(FILE *fp) {
 		//exit(0);
 	}
 
+	//Set mass density scale
+	#if(CALC_MDOT)
+	mdot_cpu = mdot_read;
+	#endif
+
 	//Set nstep to 0 for convenience
 	nstep = 0;
 }
+
+//Calculate Mdot
+double calc_Mdot() {
+	int n, i, j, z, k, icalc;
+	double rcalc = 5.0; //Radius at which to calculate mdot
+	double mdot = 0.;
+	struct of_geom geom;
+	struct of_state q;
+
+	//Calculate Mdot at r=rcalc
+	for (n = 0; n < n_active; n++) {
+		//Set index at which to calculate mdot
+		icalc = (int)((log(rcalc) - log(Rin)) / (log(Rout) - log(Rin)) / dx[nl[n_ord[n]]][1]);
+		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
+
+		//Loop over cells in theta-phi plane
+		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+			#if(GPU_ENABLED)
+			cudaMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+			cudaDeviceSynchronize();
+
+			#pragma omp parallel private(i, j, z, k)
+			{
+				#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
+				ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+					for (k = 0; k < 5; k++) {
+						p[nl[n]][index_3D(n, i, j, z)][k] = p_1[nl[n]][k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+					}
+				}
+			}
+			#endif
+
+			ZSLOOP3D(icalc, icalc, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+				get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+
+				mdot += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * q.ucon[1] * geom.g * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
+			}
+		}
+	}
+	//Sum over MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &mdot, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+
+	//Return absolute value of mdot
+	return fabs(mdot);
+}
+
+//Calculate mass density scaling
+void set_mass_density_scale(double* mass_density_scale_cpu) {
+	double mdot_target, mdot_cgs, mdot_cgs_edd, scaling_factor;
+	double L_dot_edd, M_dot_edd, efficiency;
+	double n_steps;
+
+	//Initialize mdot_cpu and t_mdot at start of run
+	if (!isfinite(mdot_cpu)) mdot_cpu = 0.;
+	if (!isfinite(t_mdot)) t_mdot = t-1.0e-5;
+
+	//Check input
+	if (0.1 * T_DOUBLE / T_MDOT < 10) {
+		if (rank == 0)fprintf(stderr, "Error in set_mass_density_scale! \n");
+		exit(0);
+	}
+
+	//Calculate updated mdot
+	if (t >= t_mdot) {
+		t_mdot += T_MDOT;
+
+		n_steps = 0.1 * T_DOUBLE / T_MDOT;
+		mdot_cpu = (1.0 - 1.0 / n_steps) * mdot_cpu + (1.0 / n_steps) * calc_Mdot();
+
+		//Convert mdot_cpu to Eddington units
+		mdot_cgs = mdot_cpu * MASS_DENSITY_SCALE * (R_G_CGS * R_G_CGS * R_G_CGS) / R_GOC_CGS;
+		L_dot_edd = 1.3 * pow(10.0, 46.0) * M_SGRA_SOLAR / pow(10.0, 8.0);
+		efficiency = 0.178; //For a=0.9375 BH
+		M_dot_edd = (1.0 / efficiency) * L_dot_edd / (C_CGS * C_CGS);
+		mdot_cgs_edd = mdot_cgs / M_dot_edd;
+
+		//Set equal to mass density scale before T_INIT
+		if (t < T_INIT) {
+			mass_density_scale_cpu[0] = MASS_DENSITY_SCALE;
+		}
+		else {
+			//Flip sign for super-Eddington flow
+			#if(HIGH_MDOT)
+			mdot_target = MDOT_START * pow(2.0, -(t - T_INIT) / T_DOUBLE);
+			#else
+			mdot_target = MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE);
+			#endif
+			scaling_factor = mdot_target / mdot_cgs_edd;
+			mass_density_scale_cpu[0] = scaling_factor * MASS_DENSITY_SCALE;
+		}
+	}
+}
+

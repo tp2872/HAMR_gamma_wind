@@ -231,7 +231,11 @@ void dump_params(FILE *fp, int dump_reduced)
 	int NB2_print = NB_2;
 	int NB3_print = NB_3;
 	int stag = STAGGERED;
+	#if(CALC_MDOT)
+	double density = mass_density_scale_cpu;
+	#else
 	double density = MASS_DENSITY_SCALE;
+	#endif
 	//double gamma_e = GAMMAE;
 	//int fixedgamma = FIXEDGAMMA;
 	int B = BRAVO;
@@ -282,7 +286,11 @@ void dump_params(FILE *fp, int dump_reduced)
 	fwrite(&cour, double_size, 1, fp);
 	fwrite(&Rin, double_size, 1, fp);
 	fwrite(&Rout, double_size, 1, fp);
+	#if(CALC_MDOT)
+	fwrite(&mdot_cpu, double_size, 1, fp);
+	#else
 	fwrite(&R0, double_size, 1, fp);
+	#endif
 	fwrite(&density, double_size, 1, fp);
 	fwrite(&lim, int_size, 1, fp);
 	fwrite(&stag, int_size, 1, fp);
