@@ -183,7 +183,7 @@ void init_blastwave()
 	int n, i, j, z, k;
 	double xx, yy, zz, r, th, phi, dist, X[NDIM];
 	double x0, y0, z0, radius, scale_factor;
-	int do_mag=1;
+	int do_mag;
 	struct of_geom geom;
 
 	/* some physics parameters */
@@ -211,10 +211,28 @@ void init_blastwave()
 	radius = 2.0;
 
 	//Decide if magnetic field is enabled
-	do_mag = 0;
+	do_mag = 1;
 
 	//Set scale factor to not conflict with density floors
 	scale_factor = 1.0e4;
+
+	//Initialize magnetic arrays
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + D3) {
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+		}
+	}
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
@@ -232,6 +250,7 @@ void init_blastwave()
 
 			//Set ug_norm to insert toroidal magnetic field
 			double ug_norm = 3.0e-5 / (GAMMA - 1.0) * scale_factor;
+			scale_factor = 1.0e4;
 
 			if (dist < radius) {
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0e-4 * scale_factor;
@@ -251,6 +270,7 @@ void init_blastwave()
 				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = scale_factor * 1.0e-1 / (GAMMA - 1.0) * exp(log(3e-5) / (0.2 * radius) * fabs(dist - 0.8 * radius));
 			}
 			else {
+				//scale_factor = 1.0e-2;
 				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = scale_factor * 1.0e-4;
 				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = scale_factor * 3.0e-6 / (GAMMA - 1.0) * exp(-4.0 * fabs(dist - radius));
 			}
@@ -262,17 +282,23 @@ void init_blastwave()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
 
-			if (do_mag == 1 && dist2<radius) {
-				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+			if (do_mag == 1 && dist<radius) {
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = fabs(radius-dist);
+
+				/*ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
 				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
 				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 1.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 1.0;
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 				double bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
 				double beta = (GAMMA - 1.0) * ug_norm / (0.5 * bsq_ij);
-				double beta_target = 10.0;
+				double beta_target = 100.0;
 				double norm = beta_target / beta;
-				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= beta_target;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= beta_target;
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] /= norm;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] /= norm;
+				*/
 			}
 			else {
 				#if(STAGGERED)
@@ -281,6 +307,143 @@ void init_blastwave()
 				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 				#endif
 			}
+		}
+	}
+
+		//Transform from cell centered vector potential to edge centered vector potential
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z - D3)][1]);
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z - D3)][2]);
+			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j - D2, z)][3]);
+		}
+	}
+
+	/* now differentiate to find cell-centered B,
+	and begin normalization */
+	#if(STAGGERED)
+	gpu = 0;
+	nstep = 2*AMR_SWITCHTIMELEVEL - 1;
+	set_prestep();
+	const_transport_bound();
+	nstep = 0;
+	#endif
+	for (n = 0; n < n_active; n++){
+		#if(STAGGERED)
+		//Reset toroidal component of vector potential so that no monopoles occur in initial conditions at the pole
+		if (block[n_ord[n]][AMR_NBR1] == -1 || block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][3] = 0.;
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
+			}
+		}
+
+		if (block[n_ord[n]][AMR_NBR3] == -1 || block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][3] = 0.;
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][1] = 0.;
+			}
+		}
+
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
+			get_geometry(n_ord[n], i, j, z, FACE1, &geom);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][3]) / (dx[nl[n_ord[n]]][2] * geom.g)
+				#if(N3G>0)
+				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][2]) / (dx[nl[n_ord[n]]][3] * geom.g)
+				#endif
+				;
+			get_geometry(n_ord[n], i, j, z, FACE2, &geom);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][3]) / (dx[nl[n_ord[n]]][1] * geom.g)
+				#if(N3G>0)
+				- (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][1]) / (dx[nl[n_ord[n]]][3] * geom.g)
+				#endif
+				;
+			get_geometry(n_ord[n], i, j, z, FACE3, &geom);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][2]) / (dx[nl[n_ord[n]]][1] * geom.g)
+				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][1]) / (dx[nl[n_ord[n]]][2] * geom.g);
+		}
+			#endif
+	}
+
+	double bsq_ij, beta_ij, gamma_g, beta_act, norm;
+	double bsq_max = 0.;
+	double ug_sum = 0.;
+	double bsq_sum = 0.;
+	double pmax = 0.;
+	double beta = 10.;
+	for (n = 0; n < n_active; n++){
+		ZLOOP3D_MPI{
+			/* flux-ct */
+			#if(!STAGGERED)
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B1] =
+				-(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][3]
+				+ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j + 1, z)][3]) / (2.*dx[nl[n_ord[n]]][2] * geom.g)
+				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][2]
+				+ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z + 1)][2]) / (2.*dx[nl[n_ord[n]]][3] * geom.g);
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B2] =
+				(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][3]
+				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j + 1, z)][3]) / (2.*dx[nl[n_ord[n]]][1] * geom.g)
+				- (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][1]
+				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + 1)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z + 1)][1]) / (2.*dx[nl[n_ord[n]]][3] * geom.g);
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] =
+				-(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][2]
+				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z + 1)][2]) / (2.*dx[nl[n_ord[n]]][1] * geom.g)
+				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][1]
+				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z + 1)][1]) / (2.*dx[nl[n_ord[n]]][2] * geom.g);
+			#else
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i + D1, j, z)][FACE1]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + D2, z)][FACE2]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
+			#if(N3G>0)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + D3)][FACE3]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
+			#else
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+			#endif
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#endif
+			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
+			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+			//if (bsq_ij > 0.0)fprintf(stderr, "Test: %f \n", log10(bsq_ij));
+			#if(TWO_T)
+				#if(RAD_M1 && HIGH_MDOT)
+				gamma_g = 4.0/3.0;
+				#else
+				gamma_g = GAMMA;
+				#endif			
+			#else
+			gamma_g = GAMMA;
+			#endif
+
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+
+			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				bsq_max = bsq_ij;
+			}
+
+		}
+	}
+
+	/*Share bsq_max among MPI processes*/
+	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
+	/* finally, normalize to set field strength */
+	beta_act = pmax / (0.5*bsq_max);
+	if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
+	norm = sqrt(beta_act / beta);
+	if (do_mag == 0) norm = 1.0;
+
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){		
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= norm;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] *= norm;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= norm;
+			#if(STAGGERED)
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] *= norm;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= norm;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= norm;
+			#endif
 		}
 	}
 
@@ -305,6 +468,7 @@ void init_shocktube()
 	failed = 0;	/* start slow */
 	dt = 1.e-5;
 	t = 0.;
+	tf = 2.0;
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
@@ -355,11 +519,12 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 2.5;
 			}
 			if (mode==2) {//Slow shock
 				if (X[1] < 0.0) {//left state
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 10.0 / (GAMMA - 1.0);
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 1.53;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
@@ -368,7 +533,7 @@ void init_shocktube()
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
 					#if(STAGGERED)
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 10.0;
-					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 8.28;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 18.28;
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
@@ -387,6 +552,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 2.0;
 			}
 
 			if (mode==3) {//Switch off fast
@@ -420,11 +586,12 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 1.0;
 			}
 
 			if (mode==4) {//Switch on slow
 				if (X[1] < 0.0) {//left state
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.0178;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.00178;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.1 / (GAMMA - 1.0);
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -0.765;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = -1.386;
@@ -453,6 +620,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 2.0;
 			}
 
 			if (mode==5) {//Alfven wave
@@ -463,11 +631,11 @@ void init_shocktube()
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 3.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
 					#if(STAGGERED)
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
-					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 3.0;
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
@@ -486,6 +654,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 2.0;
 			}
 
 			if (mode==6) {//Compound wave
@@ -496,11 +665,11 @@ void init_shocktube()
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 3.0;
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 3.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
 					#if(STAGGERED)
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 3.0;
-					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 3.0;
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
@@ -519,6 +688,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 1.5;
 			}
 
 			if (mode==7) {//Shock tube 1
@@ -538,7 +708,7 @@ void init_shocktube()
 					#endif
 				}
 				else {//right state
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.1;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
@@ -552,6 +722,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 1.0;
 			}
 
 			if (mode==8) {//Shock tube 2
@@ -571,7 +742,7 @@ void init_shocktube()
 					#endif
 				}
 				else {//right state
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.0;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 0.1;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1.0 / (GAMMA - 1.0);
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
 					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
@@ -585,6 +756,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 1.0;
 			}
 			if (mode==9) {//Collision
 				if (X[1] < 0.0) {//left state
@@ -617,6 +789,7 @@ void init_shocktube()
 					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 					#endif
 				}
+				tf = 1.22;
 			}
 		}
 	}
@@ -625,7 +798,7 @@ void init_shocktube()
 
 	//Set constant boundary conditions
 	#if(CONSTANT_BC)
-	int i1, k;
+	int i1;
 	for (n = 0; n < n_active; n++) {
 		if (block[n_ord[n]][AMR_NBR2] == -1) {
 			for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++)for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z++) {
