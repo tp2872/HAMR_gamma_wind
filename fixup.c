@@ -110,6 +110,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	for (k = 0; k < NPR_U; k++) pv_prefloor[k] = pv[k];
+	#if(TWO_T)
+	pv_prefloor[ENTRE] = pf[ENTRE];
+	pv_prefloor[ENTRI] = pf[ENTRI];
+	#endif
+
 	if (pv[RHO] < rhoflr) {
 		pv[RHO] = rhoflr;
 		dofloor = 1;
