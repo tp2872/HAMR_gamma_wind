@@ -1370,8 +1370,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;  
-	rin = 6;
-	rmax = 12.;
+	rin = 20.;
+	rmax = 41.;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
@@ -1571,6 +1571,38 @@ void init_torus()
 			#if(RAD_M1)
 			//Set radiation pressure
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#endif
+
+			#if(TWO_T)
+			double ue, ui, Theta, C;
+			ue = 0.5 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			//Check limits
+			if (ue > (1.0 - FLOOR_ENTROPY) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]) {
+				ue = (1.0 - FLOOR_ENTROPY) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			if (ue < FLOOR_ENTROPY * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]) {
+				ue = FLOOR_ENTROPY * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			ui = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] - ue;
+
+			//Calculate electron entropy
+			C = ue / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_E * MASS_RATIO;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				#if(FULL_ENTROPY_VARGAMMA)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = Theta * (Theta + 0.4) / pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], 2. / 3.);
+				#endif
+
+			//Calculate ion entropy
+			C = ui / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MU_I;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				#if(FULL_ENTROPY_VARGAMMA)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = Theta * (Theta + 0.4) / pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], 2. / 3.);
+				#endif
 			#endif
 		}
 	}
@@ -3136,7 +3168,7 @@ void set_mag(void){
 			}
 			#else
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
 				#if(WHICHPROBLEM==THIN_PROBLEM)
