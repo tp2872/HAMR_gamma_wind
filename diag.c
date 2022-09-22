@@ -223,7 +223,7 @@ double divb_calc(int n, int i, int j, int z){
 	#endif
 
 	#endif
-	divb /= divb_magnitude;
+	divb /= (divb_magnitude + SMALL);
 	//now we have gotten the normalized value of divb!
 
 	#endif
