@@ -120,6 +120,8 @@ void init()
 	void init_monopole(double Rout_val);
 	void init_thindisk();
 	void init_truncdisk();
+	void init_collapsar();
+	void init_NSM();
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -1703,7 +1705,7 @@ void init_collapsar(void)
 	r_rc = 0.3 * M_STAR * 1.5e5;
 	m_rc = 0.3 * M_STAR * 2e33;
 	Rs = R_STARcm / r_rc; // stellar radius in code units
-	alphap = 1; // inner density profile power-law
+	alphap = 1.5; // inner density profile power-law
 	betap = 3; // outer density profile power-law
 	rho0 = 0.3; // density normalization for alphap = 1
 	Omega0 = 5;
@@ -3099,15 +3101,15 @@ void set_mag(void){
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif	
 	#if(WHICHPROBLEM==COLLAPSAR)
-	double Bfactor = 700; //1e13 G for alpha = 1
+	double Bfactor = 300; //1e13 G for alpha = 1
 	double M_STAR = 14;
 	double R_STARcm = 4e10;
 	double r_rc = 0.3 * M_STAR * 1.5e5;
-	double Rs = R_STARcm/r_rc;
-	double Fe_core = 5e7 / r_rc;
+	double Rs = R_STARcm / r_rc;
+	double Fe_core = 1e8 / r_rc;
 	double r_hole = 10;
 	double fr;
-	beta = 100.0 / (Bfactor * Bfactor);
+	beta = 100.0 / (3.6 * Bfactor * Bfactor);
 	#endif
 
 	do{
@@ -3158,7 +3160,8 @@ void set_mag(void){
 				if (r < Rs) {
 					fr = 1 - pow((r - Fe_core) / (Rs - Fe_core), 2);
 					// q = pow(sin(th),2)*(pow(sqrt(pow(r,2)-pow(r_hole,2)),2)/(pow(sqrt(pow(r,2)-pow(r_hole,2)),3)+pow(Fe_core,3))-pow(Rs,2)/(pow(Rs,3)+pow(Fe_core,3)));
-					q = pow(sin(th), 2) * (pow(r, 2) / (pow(r, 3) + pow(Fe_core, 3)) - pow(Rs, 2) / (pow(Rs, 3) + pow(Fe_core, 3))); //Fe core profile
+					q = pow(sin(th), 2) * (pow(r, 2) / (pow(r, 2) + pow(Fe_core, 2)) - pow(r / Rs, 3)); //Fe core profile   
+
 				}
 				else {
 					fr = 0;
@@ -3309,6 +3312,23 @@ void set_mag(void){
 			gamma_g = GAMMA;
 			#endif
 
+			#if(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+			coord(n_ord[n], i - 2, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r < Rs) {
+				coord(n_ord[n], i + 2, j, z, CENT, X);
+				bl_coord(X, &r, &th, &phi);
+				//if (r > Rs) bsq_ij = 0.;
+			}
+			coord(n_ord[n], i - 2, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r < r_hole) {
+				coord(n_ord[n], i + 2, j, z, CENT, X);
+				bl_coord(X, &r, &th, &phi);
+				//if (r > r_hole) bsq_ij = 0.;
+			}
+			#endif
+
 			#if(RAD_M1)
 			if (((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
@@ -3387,6 +3407,25 @@ void set_mag(void){
 		ZLOOP3D_MPI{
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
+
+			#if(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+			coord(n_ord[n], i - 2, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r < Rs) {
+				coord(n_ord[n], i + 2, j, z, CENT, X);
+				bl_coord(X, &r, &th, &phi);
+				if (r > Rs) bsq_ij = 0.;
+			}
+			coord(n_ord[n], i - 2, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r < r_hole) {
+				coord(n_ord[n], i + 2, j, z, CENT, X);
+				bl_coord(X, &r, &th, &phi);
+				if (r > r_hole) bsq_ij = 0.;
+			}
+
+			#endif
+
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}

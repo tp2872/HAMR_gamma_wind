@@ -109,9 +109,9 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 250.0;
-	DTd = 10.0;
-	DTd_reduced = 5.0;
+	DTl = 1000.0;
+	DTd = 500.0;
+	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
 	tlog = t + DTl;
@@ -311,6 +311,9 @@ void MPI_initialize(int argc, char *argv[])
 		#endif
 
 	}
+
+	//Killswitch
+	if (numtasks > 100) exit(0);
 }
 
 int index_3D(int n, int i, int j, int z)

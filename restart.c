@@ -667,12 +667,14 @@ void param_read(FILE *fp) {
 	//	}
 	//	exit_r = 1;
 	//}
+	#if(CALC_MDOT)
 	if (mdot_read < 1e-6) {
 		if (rank == 0) {
 			fprintf(stderr, "Error reading in input parameters. Mdot suspiciously low! \n");
 		}
 		exit_r = 1;
 	}
+	#endif
 	if (a_read != a) {
 		if (rank == 0) {
 			fprintf(stderr, "Error reading in input parameters. a not set properly! \n");

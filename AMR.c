@@ -2027,7 +2027,19 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 				prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
 				prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + i % (1 + ref_1)) * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + j % (1 + ref_2)) * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + z % (1 + ref_3)) * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 			}
-		
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO]);
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU]);
+
+			#if(TWO_T)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE]);
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI]);
+			#endif
+			#if(RAD_M1)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_RAD] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_RAD]);
+			#endif
+			#if(P_NUM)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON]);
+			#endif
 			//Enforce strict conservation of conservative quantitites during refinement
 			/*if (i % (1 + ref_1) == ref_1 && j % (1 + ref_2) == ref_2 && z % (1 + ref_3) == ref_3){
 				i1 = (i - i % (1 + ref_1)) / (1 + ref_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * ref_1;
@@ -3113,7 +3125,7 @@ double calc_refcrit(int n){
 					block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 
 					//Check if cell is part of the jet; If so set the cell up for refinement
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5)
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1.0e-5)
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3156,7 +3168,7 @@ double calc_refcrit(int n){
 					}
 				
 					//Check if cell is part of the coccoon; If so set the cell up for refinement
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1e-5)
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1.0e-5)
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3204,11 +3216,11 @@ double calc_refcrit(int n){
 					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 1) && (r < R1)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 2) && (r < R2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 3) && (r < R3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4
-
-					//Do not derefine base grid
-					if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+					//if ((ref_val > REFINEMENT_CUTOFF) && ((block[n][AMR_LEVEL1] - BASE_LEVELS) == 4) && (r < R4)) ref_val = 0.51 * REFINEMENT_CUTOFF; //Disable fifth refinement level below r=R4		
 				}
+
+				//Do not derefine base grid
+				if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 			}
 			else {
 				ref_val = 1.01 * REFINEMENT_CUTOFF;
