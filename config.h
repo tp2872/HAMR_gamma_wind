@@ -125,8 +125,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (0)
-#define SCUDA (1)
+#define SHIP (1)
+#define SCUDA (0)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
