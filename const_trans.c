@@ -405,12 +405,12 @@ void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G]
 	nz = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]);
 
 	#if (N_GPU>1)
-	cudaSetDevice(block[n][AMR_GPU]);
+	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		pack_send2_E(n, n, i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][399]));
 		if (gpu == 1){
-			cudaStreamSynchronize(commandQueueGPU[nl[n]]);
+			gpuStreamSynchronize(commandQueueGPU[nl[n]]);
 		}
 		for (i = i1; i < i2; i++){
 			E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] = 0.;
@@ -424,7 +424,7 @@ void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G]
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		pack_send2_E(n, n, i1, i2, BS_2, BS_2 + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][398]));
 		if (gpu == 1){
-			cudaStreamSynchronize(commandQueueGPU[nl[n]]);
+			gpuStreamSynchronize(commandQueueGPU[nl[n]]);
 		}
 		for (i = i1; i < i2; i++){
 			E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] = 0.;
@@ -449,7 +449,7 @@ void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G
 	nz = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]);
 
 	#if (N_GPU>1)
-	cudaSetDevice(block[n][AMR_GPU]);
+	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){

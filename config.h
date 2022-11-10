@@ -29,7 +29,7 @@ Physical Parameters section
 #define SPHERICAL (0)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
-#define CALC_MDOT (1)
+#define CALC_MDOT (0)
 #define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
 #define T_DOUBLE (10000.0) //Time during which Mdot doubles
@@ -124,6 +124,10 @@ Numerical Parameters section
 #define CPU_OPENMP 0
 #define TIMER 1
 
+/*Set CUDA or HIP*/
+#define SHIP (0)
+#define SCUDA (1)
+
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
 
@@ -152,17 +156,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
-#define NB_2 6
-#define NB_3 2
+#define NB_1 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 42
-#define BS_2 32
-#define BS_3 48
+#define BS_1 256
+#define BS_2 256
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -188,10 +192,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -348,7 +352,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (0)
@@ -358,7 +362,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (1)
+#define COMPTON (0)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -367,10 +371,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AGN (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.0001)
@@ -380,13 +384,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (0)
+#define CONSTANTGAMMA (1)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (1)
+#define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -1084,4 +1088,29 @@ Section with derived quantities
 #else
 #define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
 #define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
+#endif
+
+/*HIP related stuff*/
+#if(SHIP)
+#define gpuError_t hipError_t
+#define gpuSuccess hipSuccess
+#define gpuFuncCachePreferL1 hipFuncCachePreferL1
+#define gpuMemcpyHostToDevice hipMemcpyHostToDevice
+#define gpuMemcpyKind hipMemcpyKind
+#define gpuStream_t hipStream_t
+#define gpuMemcpyDeviceToHost hipMemcpyDeviceToHost
+#define gpuMemcpyDeviceToDevice hipMemcpyDeviceToDevice
+#define gpuEvent_t hipEvent_t
+#define gpuSharedMemBankSizeEightByte hipSharedMemBankSizeEightByte
+#elif(SCUDA)
+#define gpuError_t cudaError_t
+#define gpuSuccess cudaSuccess
+#define gpuFuncCachePreferL1 cudaFuncCachePreferL1
+#define gpuMemcpyHostToDevice cudaMemcpyHostToDevice
+#define gpuMemcpyKind cudaMemcpyKind
+#define gpuStream_t cudaStream_t
+#define gpuMemcpyDeviceToHost cudaMemcpyDeviceToHost
+#define gpuMemcpyDeviceToDevice cudaMemcpyDeviceToDevice
+#define gpuEvent_t cudaEvent_t
+#define gpuSharedMemBankSizeEightByte cudaSharedMemBankSizeEightByte
 #endif

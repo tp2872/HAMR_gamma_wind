@@ -317,7 +317,7 @@ void prestep_bound(void){
 	#endif
 	for (n = 0; n < n_active; n++) {
 		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif	
 		if (prestep_full[nl[n_ord[n]]] == 1) {
 			bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
@@ -343,7 +343,7 @@ void prestep_bound(void){
 		#endif
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 			#endif	
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
@@ -361,7 +361,7 @@ void prestep_bound(void){
 			#endif		
 			for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 			#endif	
 			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
@@ -378,7 +378,7 @@ void prestep_bound(void){
 	#endif
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif	
 		#if(N3G>0)	
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
@@ -401,7 +401,7 @@ void prestep_bound(void){
 	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
 		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif	
 		flux_rec1(F1, BufferF1_1, n_ord[n], 6);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 6);
@@ -1484,9 +1484,9 @@ void mpi_synch(int tag) {
 		#if(GPU_ENABLED)
 		for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
 			#if(N_GPU>1)
-			cudaSetDevice(n);
+			gpuSetDevice(n);
 			#endif
-			cudaDeviceSynchronize();
+			gpuDeviceSynchronize();
 		}
 		#endif
 	}

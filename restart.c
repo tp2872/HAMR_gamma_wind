@@ -736,8 +736,8 @@ double calc_Mdot() {
 		//Loop over cells in theta-phi plane
 		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
 			#if(GPU_ENABLED)
-			cudaMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
-			cudaDeviceSynchronize();
+			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+			gpuDeviceSynchronize();
 
 			#pragma omp parallel private(i, j, z, k)
 			{

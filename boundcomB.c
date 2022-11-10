@@ -1,6 +1,6 @@
 #include "decs_MPI.h"
 
-void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -16,7 +16,7 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 	}
 }
 
-void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -32,7 +32,7 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -48,7 +48,7 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -68,7 +68,7 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -88,7 +88,7 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -109,7 +109,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 }
 
 
-void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -128,7 +128,7 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg){
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent, int neg){
 	if (gpu == 1){
 
 	}
@@ -149,7 +149,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent){
 	if (gpu == 1){
 
 	}

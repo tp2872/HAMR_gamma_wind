@@ -1,25 +1,3 @@
-
-/*************************************************************************************/
-/*************************************************************************************/
-/*************************************************************************************
-
-utoprim_2d.c:
----------------
-
-Uses the 2D method:
--- solves for two independent variables (W,v^2) via a 2D
-Newton-Raphson method
--- can be used (in principle) with a general equation of state.
-
--- Currently returns with an error state (>0) if a negative rest-mass
-density or internal energy density is calculated.  You may want
-to change this aspect of the code so that it still calculates the
-velocity and so that you can floor the densities.  If you want to
-change this aspect of the code please comment out the "return(retval)"
-statement after "retval = 5;" statement in Utoprim_new_body();
-
-******************************************************************************/
-
 #include "u2p_util.h"
 #include "decs.h"
 int invert_3DU(double D, double sigma, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);

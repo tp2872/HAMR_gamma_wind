@@ -212,13 +212,13 @@ double *tempreceive_E3_corn1[NB_LOCAL], *tempreceive_E3_corn2[NB_LOCAL], *tempre
 double *tempreceive_E2_corn5[NB_LOCAL], *tempreceive_E2_corn6[NB_LOCAL], *tempreceive_E2_corn7[NB_LOCAL], *tempreceive_E2_corn8[NB_LOCAL];
 double *tempreceive_E1_corn9[NB_LOCAL], *tempreceive_E1_corn10[NB_LOCAL], *tempreceive_E1_corn11[NB_LOCAL], *tempreceive_E1_corn12[NB_LOCAL];
 
-/*CUDA arrays decleration*/
+/*gpu arrays decleration*/
 double *NULL_POINTER[NB_LOCAL];
-cudaStream_t commandQueue[NB_LOCAL];
-cudaStream_t commandQueueGPU[NB_LOCAL];
-cudaEvent_t boundevent[NB_LOCAL][600];
-cudaEvent_t boundevent1[NB_LOCAL][100];
-cudaEvent_t boundevent2[NB_LOCAL][100];
+gpuStream_t commandQueue[NB_LOCAL];
+gpuStream_t commandQueueGPU[NB_LOCAL];
+gpuEvent_t boundevent[NB_LOCAL][600];
+gpuEvent_t boundevent1[NB_LOCAL][100];
+gpuEvent_t boundevent2[NB_LOCAL][100];
 int fix_mem[NB_LOCAL];
 int fix_mem2[NB_LOCAL];
 int nr_workgroups[NB_LOCAL];

@@ -268,13 +268,13 @@ extern double *tempreceive_E3_corn1[NB_LOCAL], *tempreceive_E3_corn2[NB_LOCAL], 
 extern double *tempreceive_E2_corn5[NB_LOCAL], *tempreceive_E2_corn6[NB_LOCAL], *tempreceive_E2_corn7[NB_LOCAL], *tempreceive_E2_corn8[NB_LOCAL];
 extern double *tempreceive_E1_corn9[NB_LOCAL], *tempreceive_E1_corn10[NB_LOCAL], *tempreceive_E1_corn11[NB_LOCAL], *tempreceive_E1_corn12[NB_LOCAL];
 
-/*CUDA arrays decleration*/
+/*gpu arrays decleration*/
 extern double *NULL_POINTER[NB_LOCAL];
-extern cudaStream_t commandQueue[NB_LOCAL];
-extern cudaStream_t commandQueueGPU[NB_LOCAL];
-extern cudaEvent_t boundevent[NB_LOCAL][600];
-extern cudaEvent_t boundevent1[NB_LOCAL][100];
-extern cudaEvent_t boundevent2[NB_LOCAL][100];
+extern gpuStream_t commandQueue[NB_LOCAL];
+extern gpuStream_t commandQueueGPU[NB_LOCAL];
+extern gpuEvent_t boundevent[NB_LOCAL][600];
+extern gpuEvent_t boundevent1[NB_LOCAL][100];
+extern gpuEvent_t boundevent2[NB_LOCAL][100];
 extern int fix_mem[NB_LOCAL];
 extern int fix_mem2[NB_LOCAL];
 extern int nr_workgroups[NB_LOCAL];
@@ -1269,24 +1269,24 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int bound_force, int n);
 void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int n, int prestep);
 void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int bound_force, int n);
-void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
 void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *tempreceive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int mpi);
 void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *tempreceive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int reverse);
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int reverse);
 void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *tempreceive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int mpi);
 void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1receive[NB_LOCAL], double *temp2receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict psim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int mpi);
 void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1receive[NB_LOCAL], double *temp2receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict psim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int mpi);
 void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1receive[NB_LOCAL], double *temp2receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict psim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2, int mpi);
 
 void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n);
 void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr);
@@ -1294,18 +1294,18 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr);
 void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n);
 void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr);
-void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
-void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1, gpuEvent_t *boundevent2);
+void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
 void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent1, int calc_corr);
 void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent1, int calc_corr);
 void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent1, int calc_corr);
 
 void E_send1(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n);
 void E_send2(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n);
@@ -1319,30 +1319,30 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL
 void E1_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n, int calc_corr);
 void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n, int calc_corr);
 void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n, int calc_corr);
-void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
-void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
+void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent1);
 void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL],
-	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
 void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL],
-	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
 void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL],
-	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
-void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_E2_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_E3_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_E2_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_E3_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+	double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_E2_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_E3_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_E2_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_E3_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
 void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr);
 void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr);
 void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB_LOCAL], double *temp1[NB_LOCAL], double *temp2[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM],
-	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, gpuEvent_t *boundevent, int calc_corr);
 
 void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n);
 void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n);
@@ -1356,15 +1356,15 @@ void Bp_send3(double(*restrict F1[NB_LOCAL])[NDIM], int n);
 void Bp_rec1(int n);
 void Bp_rec2(int n);
 void Bp_rec3(int n);
-void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
-void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
-void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
-void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
-void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent);
-void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg);
-void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent);
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent);
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent, int ref_1, int ref_2, int ref_3);
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent);
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent, int neg);
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent);
 
 //Cylindrification related
 double Ftr(double x);
@@ -1421,3 +1421,24 @@ void set_mass_density_scale(double *mass_density_scale_cpu);
 #endif
 double calc_Mdot(void);
 
+//HIP related functions
+gpuError_t gpuMalloc(void** ptr, size_t size);
+gpuError_t gpuMallocHost(void** ptr, size_t size);
+gpuError_t gpuFree(void* ptr);
+gpuError_t gpuFreeHost(void* ptr);
+gpuError_t gpuGetLastError();
+gpuError_t gpuSetDevice(int deviceId);
+gpuError_t gpuDeviceSetCacheConfig(int cache);
+gpuError_t gpuDeviceEnablePeerAccess(int peerDevice, unsigned int flags);
+gpuError_t gpuDeviceSynchronize();
+gpuError_t gpuMemcpyAsync(void* dst, const void* src, size_t count, int kind, gpuStream_t stream);
+gpuError_t gpuMemcpy(void* dst, const void* src, size_t count, int kind);
+gpuError_t gpuStreamDestroy(gpuStream_t stream);
+gpuError_t gpuEventDestroy(gpuEvent_t event);
+gpuError_t gpuStreamSynchronize(gpuStream_t stream);
+gpuError_t gpuStreamCreate(gpuStream_t* stream);
+gpuError_t gpuEventCreate(gpuEvent_t* event);
+gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
+gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
+gpuError_t gpuGetDeviceCount(int* count);
+gpuError_t gpuDeviceSetSharedMemConfig(int kind);

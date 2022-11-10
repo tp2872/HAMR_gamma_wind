@@ -16,7 +16,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec4[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][40]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][20],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][20],0);
 					if (cond1) rc += MPI_Isend(&Buffersend2[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -37,7 +37,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec4_5[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][45]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][21],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][21],0);
 					if (cond1) rc += MPI_Isend(&Buffersend2_1[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], (21 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -58,7 +58,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec4_6[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][46]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][22],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][22],0);
 					if (cond1) rc += MPI_Isend(&Buffersend2_2[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], (22 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -79,7 +79,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec4_7[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][47]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][23],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][23],0);
 					if (cond1) rc += MPI_Isend(&Buffersend2_3[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], (23 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -100,7 +100,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec4_8[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][48]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][24],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][24],0);
 					if (cond1) rc += MPI_Isend(&Buffersend2_4[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], (24 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -135,7 +135,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						if (block[block[n][AMR_NBR2P]][AMR_NBR4_8] == n && ref_2 == 1 && ref_3 == 1){
 							if (cond2) rc += MPI_Irecv(&Bufferrec4_8[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2P]][AMR_NODE], (48 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][48]);
 						}
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][20],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][20],0);
 						if (cond1) rc += MPI_Isend(&Buffersend2[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR2P]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -169,7 +169,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec2[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][20]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][40],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][40],0);
 					if (cond1) rc += MPI_Isend(&Buffersend4[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -190,7 +190,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec2_1[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][21]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][45],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][45],0);
 					if (cond1) rc += MPI_Isend(&Buffersend4_5[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], (45 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -211,7 +211,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec2_2[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][22]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][46],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][46],0);
 					if (cond1) rc += MPI_Isend(&Buffersend4_6[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], (46 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -232,7 +232,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec2_3[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][23]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][47],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][47],0);
 					if (cond1) rc += MPI_Isend(&Buffersend4_7[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], (47 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -253,7 +253,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec2_4[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][24]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][48],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][48],0);
 					if (cond1) rc += MPI_Isend(&Buffersend4_8[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], (48 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -288,7 +288,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						if (block[block[n][AMR_NBR4P]][AMR_NBR2_4] == n && ref_2 == 1 && ref_3 == 1){
 							if (cond2) rc += MPI_Irecv(&Bufferrec2_4[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4P]][AMR_NODE], (24 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][24]);
 						}
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][40],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][40],0);
 						if (cond1) rc += MPI_Isend(&Buffersend4[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR4P]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -334,7 +334,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					else{
 						if (cond2) rc += MPI_Irecv(&Bufferrec1[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_1 + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][10]);
 					}
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][30],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][30],0);
 					if (cond1) rc += MPI_Isend(&Buffersend3[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_1 + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -361,7 +361,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec1_3[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][13]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][31],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][31],0);
 						if (cond1) rc += MPI_Isend(&Buffersend3_1[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], (31 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -382,7 +382,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec1_4[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][14]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][32],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][32],0);
 						if (cond1) rc += MPI_Isend(&Buffersend3_2[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], (32 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -403,7 +403,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec1_7[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][17]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][35],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][35],0);
 						if (cond1) rc += MPI_Isend(&Buffersend3_5[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], (35 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -424,7 +424,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec1_8[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][18]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][36],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][36],0);
 						if (cond1) rc += MPI_Isend(&Buffersend3_6[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], (36 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -459,7 +459,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (block[block[n][AMR_NBR3P]][AMR_NBR1_8] == n && ref_1 == 1 && ref_3 == 1){
 								if (cond2) rc += MPI_Irecv(&Bufferrec1_8[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3P]][AMR_NODE], (18 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][18]);
 							}
-							if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][30],0);
+							if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][30],0);
 							if (cond1) rc += MPI_Isend(&Buffersend3[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR3P]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 						}
 						else{
@@ -499,7 +499,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					else{
 						if (cond2) rc += MPI_Irecv(&Bufferrec3[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_1 + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][30]);
 					}
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][10],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][10],0);
 					if (cond1) rc += MPI_Isend(&Buffersend1[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G)*(BS_1 + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -526,7 +526,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec3_1[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][31]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][13],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][13],0);
 						if (cond1) rc += MPI_Isend(&Buffersend1_3[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], (13 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -547,7 +547,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec3_2[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][32]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][14],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][14],0);
 						if (cond1) rc += MPI_Isend(&Buffersend1_4[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], (14 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -568,7 +568,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec3_5[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][35]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][17],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][17],0);
 						if (cond1) rc += MPI_Isend(&Buffersend1_7[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], (17 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -589,7 +589,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (cond2) rc += MPI_Irecv(&Bufferrec3_6[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][36]);
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][18],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][18],0);
 						if (cond1) rc += MPI_Isend(&Buffersend1_8[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], (18 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -624,7 +624,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (block[block[n][AMR_NBR1P]][AMR_NBR3_6] == n && ref_1 == 1 && ref_3 == 1){
 								if (cond2) rc += MPI_Irecv(&Bufferrec3_6[nl[n]][0], (NPR + 3)*(BS_3 / (1 + ref_3) + 2 * N3G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1P]][AMR_NODE], (36 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][36]);
 							}
-							if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][10],0);
+							if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][10],0);
 							if (cond1) rc += MPI_Isend(&Buffersend1[nl[n]][0], (NPR + 3)*(BS_3 + 2 * N3G) / (1 + ref_3)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR1P]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 						}
 						else{
@@ -666,7 +666,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec6[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][60]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][50],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][50],0);
 					if (cond1) rc += MPI_Isend(&Buffersend5[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -687,7 +687,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec6_2[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][62]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][51],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][51],0);
 					if (cond1) rc += MPI_Isend(&Buffersend5_1[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], (51 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -708,7 +708,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec6_4[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][64]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][53],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][53],0);
 					if (cond1) rc += MPI_Isend(&Buffersend5_3[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], (53 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -729,7 +729,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec6_6[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][66]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][55],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][55],0);
 					if (cond1) rc += MPI_Isend(&Buffersend5_5[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], (55 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -750,7 +750,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec6_8[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][68]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][57],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][57],0);
 					if (cond1) rc += MPI_Isend(&Buffersend5_7[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], (57 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -786,7 +786,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						if (block[block[n][AMR_NBR5P]][AMR_NBR6_8] == n && ref_1 == 1 && ref_2 == 1){
 							if (cond2) rc += MPI_Irecv(&Bufferrec6_8[nl[n]][0], (NPR + 3)*(BS_2 / (1 + ref_2) + 2 * N2G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5P]][AMR_NODE], (68 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][68]);
 						}
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][50],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][50],0);
 						if (cond1) rc += MPI_Isend(&Buffersend5[nl[n]][0], (NPR + 3)*(BS_2 + 2 * N2G) / (1 + ref_2)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR5P]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
@@ -820,7 +820,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec5[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][50]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][60],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][60],0);
 					if (cond1) rc += MPI_Isend(&Buffersend6[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -841,7 +841,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec5_1[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][51]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][62],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][62],0);
 					if (cond1) rc += MPI_Isend(&Buffersend6_2[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], (62 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -862,7 +862,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec5_3[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][53]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][64],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][64],0);
 					if (cond1) rc += MPI_Isend(&Buffersend6_4[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], (64 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -883,7 +883,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec5_5[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][55]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][66],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][66],0);
 					if (cond1) rc += MPI_Isend(&Buffersend6_6[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], (66 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -904,7 +904,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			if (block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 					if (cond2) rc += MPI_Irecv(&Bufferrec5_7[nl[n]][0], (NPR + 3)*(BS_1 + 2 * N1G) / (1 + ref_1)*(BS_2 + 2 * N2G) / (1 + ref_2) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][57]);
-					if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][68],0);
+					if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][68],0);
 					if (cond1) rc += MPI_Isend(&Buffersend6_8[nl[n]][0], (NPR + 3)*(BS_1 / (1 + ref_1) + 2 * N1G)*(BS_2 / (1 + ref_2) + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], (68 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				}
 				else{
@@ -939,7 +939,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						if (block[block[n][AMR_NBR6P]][AMR_NBR5_7] == n && ref_1 == 1 && ref_2 == 1){
 							if (cond2) rc += MPI_Irecv(&Bufferrec5_7[nl[n]][0], (NPR + 3)*(BS_2 / (1 + ref_2) + 2 * N2G)*(BS_1 / (1 + ref_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6P]][AMR_NODE], (57 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6P]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][57]);
 						}
-						if (cond1) cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][60],0);
+						if (cond1) gpuStreamSynchronize(commandQueueGPU[nl[n]]); //gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][60],0);
 						if (cond1) rc += MPI_Isend(&Buffersend6[nl[n]][0], (NPR + 3)*(BS_2 + 2 * N2G) / (1 + ref_2)*(BS_1 + 2 * N1G) / (1 + ref_1) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6P]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{

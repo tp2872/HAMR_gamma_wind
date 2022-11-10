@@ -257,7 +257,7 @@ void average_grid(void){
 	for (n = 0; n < n_active; n++) {
 		#if(N_LEVELS_1D_INT>0 && D3>0)
 		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif
 		#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u)
 		for (i = N1_GPU_offset[n_ord[n]]; i <= N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j <= N2_GPU_offset[n_ord[n]] + BS_2; j++) {
@@ -300,11 +300,11 @@ void average_grid(void){
 				#endif
 			}
 		}
-		cudaMemcpyAsync(Bufferp_1[nl[n_ord[n]]], p_1[nl[n_ord[n]]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
-		cudaMemcpyAsync(Bufferph_1[nl[n_ord[n]]], p_1[nl[n_ord[n]]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+		gpuMemcpyAsync(Bufferp_1[nl[n_ord[n]]], p_1[nl[n_ord[n]]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+		gpuMemcpyAsync(Bufferph_1[nl[n_ord[n]]], p_1[nl[n_ord[n]]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 		#if(STAGGERED)
-		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
-		cudaMemcpyAsync(Bufferpsh_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+		gpuMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+		gpuMemcpyAsync(Bufferpsh_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 		#endif
 		#endif
 	}

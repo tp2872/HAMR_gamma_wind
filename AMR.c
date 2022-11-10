@@ -1654,7 +1654,7 @@ void balance_load(void){
 	#if(GPU_ENABLED)
 	for (n = 0; n < n_active; n++){
 		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		gpuSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif
 		#pragma omp parallel private(i, j, z, k)
 		{
@@ -1667,7 +1667,7 @@ void balance_load(void){
 				#endif
 			}
 		}
-		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]])*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+		gpuMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 	}
 	//GPU_boundprim(1);
 	#endif
