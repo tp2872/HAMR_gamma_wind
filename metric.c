@@ -1,3 +1,4 @@
+#include "include.h"
 #include "decs.h"
 /* insert metric here */
 void gcov_func(double *X, double gcovp[][NDIM])

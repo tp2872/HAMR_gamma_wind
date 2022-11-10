@@ -46,16 +46,16 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = cc 
-CCFLAGS  = -fopenmp -O3 -I /global/common/software/nersc/cos1.3/cuda/11.3.0/include
+CC       = hipcc 
+CCFLAGS  = -I/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/spectrum-mpi-10.4.0.3-20210112-6jbupg3thjwhsabgevk6xmwhd2bbyxdc/include -Xcompiler \-fopenmp -lgomp -O3
 endif
 
-EXTRALIBS = -lm -L /global/common/software/nersc/cos1.3/cuda/11.3.0/lib64  -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L /sw/summit/cuda/11.4.0/lib64 -L /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/spectrum-mpi-10.4.0.3-20210112-6jbupg3thjwhsabgevk6xmwhd2bbyxdc/lib -lmpiprofilesupport -lmpi_ibm -lstdc++ -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_80 -code=sm_80 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
+CUDA_COMPILE  = hipcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = nvcc -arch=compute_80 -code=sm_80 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -dlink
+CUDA_LOAD  = hipcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -74,9 +74,9 @@ utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\
 hllc.o const_trans.o LAS.o step_ch_res.o\
-const_trans_res.o utoprim_3d_res.o
+const_trans_res.o utoprim_3d_res.o wrapper.o
 
-INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h
+INCS = decs.h decs_MPI.h decsCUDA.h defs.h include.h u2p_defs.h  u2p_util.h config.h
 
 
 $(OBJS) : $(INCS) makefile

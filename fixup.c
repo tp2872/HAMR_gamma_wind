@@ -1,3 +1,4 @@
+#include "include.h"
 #include "decs_MPI.h"
 
 void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double *u_floor);

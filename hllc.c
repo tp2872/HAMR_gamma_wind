@@ -1,4 +1,4 @@
-/* restart functions; restart_init and restart_dump */
+#include "include.h"
 #include "decs_MPI.h"
 void primtoflux_FT(double * restrict pr, double ucon[NDIM], double bcon[NDIM], int dir, double restrict flux[NPR]);
 void vchar_FT(double * restrict pr, double ucon[NDIM], double bcon[NDIM], int dir, double  restrict *vmax, double restrict *vmin);

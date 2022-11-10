@@ -1,4 +1,5 @@
 #include "decsCUDA.h"
+#include "include.h"
 extern "C" {
 #include "decs.h"
 }
@@ -2363,7 +2364,7 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) / LOCAL_WORK_SIZE;
 
 	#if(SHIP)
-	hipLaunchKernelGGL(Utoprim_M1_0, <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
+	hipLaunchKernelGGL(Utoprim_M1_0, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
 		#endif

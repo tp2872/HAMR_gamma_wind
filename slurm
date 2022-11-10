@@ -1,18 +1,16 @@
 #!/bin/bash
-#SBATCH -A m2401_g
-#SBATCH -C gpu
-#SBATCH -q regular
-#SBATCH --mail-user=matthewliska92@gmail.com
-#SBATCH -t 01:00:00
-#SBATCH -n 150
-#SBATCH --ntasks-per-node=4
-#SBATCH -c 32
-#SBATCH --gpus-per-task=1
+# Begin LSF Directives
+#BSUB -P PHY129
+#BSUB -W 12:00
+#BSUB -nnodes 1
+#BSUB -alloc_flags "smt1"
+#BSUB -N matthewliska92@gmail.com
+#BSUB -J HIP
+#BSUB -o HIP.%J
+#BSUB -e HIP.%J
 
-module load PrgEnv-gnu
-module load gcc/9.3.0
-module load cuda
-ulimit -s unlimited
+module load xl
+module load cuda/11.0.3
+cd $PROJWORK/phy129/hiptest
 
-export SLURM_CPU_BIND="cores"
-srun -n150 ./harm
+jsrun --smpiargs "-gpu" -n1 -a1 -g1 -c42 -bpacked:42 ./harm

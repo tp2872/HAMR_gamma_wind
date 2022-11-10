@@ -1,3 +1,4 @@
+#include "include.h"
 #include "decs_MPI.h"
 
 /*Send boundaries of Ees between compute nodes through MPI*/

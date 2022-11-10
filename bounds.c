@@ -1,3 +1,4 @@
+#include "include.h"
 #include "decs_MPI.h"
 void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);

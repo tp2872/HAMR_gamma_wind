@@ -1,3 +1,4 @@
+#include "include.h"
 #include "decs_MPI.h"
 
 int AMR_coord_linear_RM(int level, int i, int j, int z);

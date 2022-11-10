@@ -1,4 +1,6 @@
 #include "decsCUDA.h"
+#include "include.h"
+
 extern "C" {
 #include "decs.h"
 }

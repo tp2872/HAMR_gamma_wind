@@ -6,6 +6,7 @@
  * cfg 8-10-01
  *
  */
+#include "include.h"
 #include <float.h>
 #include <complex.h>
 #include "decs_MPI.h"

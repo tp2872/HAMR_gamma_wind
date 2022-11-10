@@ -1,4 +1,5 @@
 /* restart functions; restart_init and restart_dump */
+#include "include.h"
 #include "decs_MPI.h"
 
 //Insert a toroidal field of beta=2 in a thin disk after restart. Works only with axisymmetric AMR for non-tilted disks!
