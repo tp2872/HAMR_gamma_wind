@@ -1,4 +1,4 @@
-#include "decscuda.h"
+#include "decsCUDA.h"
 extern "C" {
 #include "decs.h"
 }
@@ -6,7 +6,12 @@ void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1)*(z2 - z1);
-		 packsend1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#if(SHIP)
+		hipLaunchKernelGGL(packsend1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#elif(SCUDA)
+		packsend1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#endif
+
 		 if(block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -39,7 +44,12 @@ void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(z2 - z1);
-		 packsend2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#if(SHIP)
+		hipLaunchKernelGGL(packsend2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#elif(SCUDA)
+		packsend2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size);
+		#endif
+
 		 if (block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 //gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -73,7 +83,12 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(j2 - j1);
-		packsend3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		#if(SHIP)
+		hipLaunchKernelGGL(packsend3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		#elif(SCUDA)
+		packsend3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		#endif
+
 		 if (block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 //gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -110,7 +125,12 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3);
+		#if(SHIP)
+		hipLaunchKernelGGL(packsendaverage1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		packsendaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 if (block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 //gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -166,7 +186,12 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3);
+		#if(SHIP)
+		hipLaunchKernelGGL(packsendaverage2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		packsendaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 if (block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 //gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -222,7 +247,12 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2);
+		#if(SHIP)
+		hipLaunchKernelGGL(packsendaverage3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		packsendaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[nl[n]], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		if (block[n_rec][AMR_NODE] == block[n][AMR_NODE]) gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -282,8 +312,14 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
 		int work_size = (j2 - j1)*(z2 - z1);
-		 unpackreceive1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceive1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
 			 update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
+		unpackreceive1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+			update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 //gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess) fprintf(stderr, "unpack_receive1 error! %d \n", status);
@@ -330,8 +366,14 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE]) gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(z2 - z1);
-		 unpackreceive2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceive2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
 			 reverse, update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
+		unpackreceive2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+			reverse, update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 //gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess) fprintf(stderr, "unpack_receive2 error! \n");
@@ -398,8 +440,14 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n][AMR_TIMELEVEL] - 1)){
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE]) gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
-		 unpackreceive3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceive3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
 			 update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
+		unpackreceive3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
+			update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 //gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess) fprintf(stderr, "unpack_receive3 error! \n");
@@ -444,8 +492,14 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE])gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
 		int work_size = (j2 - j1)*(z2 - z1);
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceivecoarse1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
+			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		unpackreceivecoarse1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 ////gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess)fprintf(stderr, "error unpack_receive_coarse1: %d \n", status);
@@ -567,8 +621,14 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE]) gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(z2 - z1);
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceivecoarse2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
+			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		unpackreceivecoarse2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 //gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess)fprintf(stderr, "error unpack_receive_coarse2");
@@ -689,8 +749,14 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE])gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(j2 - j1);
+		#if(SHIP)
+		hipLaunchKernelGGL(unpackreceivecoarse3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
+			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#elif(SCUDA)
 		unpackreceivecoarse3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+		#endif
+
 		 //gpuDeviceSynchronize();
 		 status = gpuGetLastError();
 		if (status != gpuSuccess)fprintf(stderr, "error unpack_receive_coarse3");
