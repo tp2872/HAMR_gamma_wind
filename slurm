@@ -9,8 +9,9 @@
 #BSUB -o HIP.%J
 #BSUB -e HIP.%J
 
-module load xl
-module load cuda/11.0.3
+module load gcc
+module load cuda/11.4.0
+module load hip-cuda/5.1.0
 cd $PROJWORK/phy129/hiptest
 
 jsrun --smpiargs "-gpu" -n1 -a1 -g1 -c42 -bpacked:42 ./harm
