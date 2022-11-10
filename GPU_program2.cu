@@ -1,5 +1,9 @@
-#include <cuda.h>
 #include "config.h"
+#if(SCUDA)
+#include <cuda.h>
+#elif(SHIP)
+#include "hip/hip_runtime.h"
+#endif
 
 __device__ double slope_lim(double y1, double y2, double y3);
 
