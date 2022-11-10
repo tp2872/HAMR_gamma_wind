@@ -221,6 +221,7 @@ void MPI_initialize(int argc, char *argv[])
 	}
 	#if(GPU_ENABLED)
 	gpuGetDeviceCount(&numdevices);
+	fprintf(stderr, "test: %d \n", numdevices);
 	gpuSetDevice(local_rank%numdevices);
 	#endif
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
