@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			#endif
 		}	
-		restart_write();
-		close_rdump();
+		//restart_write();
+		//close_rdump();
 	}
 
 	/* do initial diagnostics */
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 1000.0;
-	DTd = 25.0;
+	DTd = 1.0;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
-			#if(!CARTESIAN)
+			#if(!(CARTESIAN || CARTESIAN_GR))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
 				exit(0);

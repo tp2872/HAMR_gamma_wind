@@ -156,7 +156,7 @@ double advance_res(int flag)
 	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
-	#if(!TRANS_BOUND && !CARTESIAN)
+	#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fix_flux(F1, F2, F3, n_ord[n]);
 	#endif
 	#if(!STAGGERED)
@@ -652,7 +652,7 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
-						#if(!TRANS_BOUND && !CARTESIAN)
+						#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL]))) {
                             PLOOP F[nl[n]][ind0][k] = 0.;
 						}

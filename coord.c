@@ -27,7 +27,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 {
 	X[0] = 0.0;
 	int j_local = j;
-	#if(!CARTESIAN)
+	#if(SPHERICAL || SPHERICAL_GR)
 	if (j < 0) j_local = -j - 1;
 	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j;
 	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && loc == FACE2) j_local = j;
@@ -58,7 +58,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[3] = startx[3] + z*dx[nl[n]][3];
 	}
 
-	#if(!CARTESIAN)
+	#if(SPHERICAL || SPHERICAL_GR)
 	if (j < 0){
 		X[2] = X[2] + 1;
 		X[2] = -X[2];
@@ -72,7 +72,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[2] = X[2] - 1;
 	}
 	#endif
-	//if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]))fprintf(stderr, "test: %f %d \n" ,X[2], loc==FACE2);
+
 	return;
 }
 
@@ -96,7 +96,7 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 	#endif
 
 	// avoid singularity at polar axis
-	#if(COORDSINGFIX && !CARTESIAN)
+	#if(COORDSINGFIX)
 	if (fabs(V[2])<SINGSMALL){
 		if (V[2] >= 0.0) V[2] = SINGSMALL;
 		if (V[2]<0.0)  V[2] = -SINGSMALL;
@@ -114,10 +114,10 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 }
 
 void vofx_matthewcoords(double *X, double *V){
-	#if(CARTESIAN)
-	V[1] = X[1];
-	V[2] = X[2];
-	V[3] = X[3];
+	#if(CARTESIAN || CARTESIAN_GR)
+	V[1] = sqrt(X[1] * X[1] + X[2] * X[2] + X[3] * X[3]);
+	V[2] = acos(X[3] / V[1]);
+	V[3] = atan2(X[2], X[1]);
 	#else
 	V[0] = X[0];
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
@@ -153,7 +153,7 @@ void vofx_matthewcoords(double *X, double *V){
 		V[2] = sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
 	}
 	V[3] = X[3];
-#endif
+	#endif
 }
 
 void vofx_sjetcoords( double *X, double *V )
@@ -272,15 +272,15 @@ double thetaofx2(double x2, double ror0nu)
 /* some grid location, dxs */
 void set_points(int n)
 {
-	#if(CARTESIAN)
+	#if(CARTESIAN || CARTESIAN_GR)
 	#if(WHICHPROBLEM==SHOCK_TUBE)
 	dx[nl[n]][1] = 2.2 / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	dx[nl[n]][2] = 2.2 / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.2 / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
 	#else
-	dx[nl[n]][1] = 1. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
-	dx[nl[n]][2] = 1. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
-	dx[nl[n]][3] = 1. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+	dx[nl[n]][1] = 2 * Rout / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
+	dx[nl[n]][2] = 2 * Rout / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+	dx[nl[n]][3] = 2 * Rout / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
 	#endif
 	#else
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
@@ -308,15 +308,15 @@ void set_gridparam(void) {
 	R0 = 0.0;
 	gam = GAMMA;
 
-	#if(CARTESIAN)
+	#if(CARTESIAN || CARTESIAN_GR)
 	#if(WHICHPROBLEM==SHOCK_TUBE)
 	startx[1] = -1.1;
 	startx[2] = -1.1;
 	startx[3] = -1.1;
 	#else
-	startx[1] = 0.;
-	startx[2] = 0.;
-	startx[3] = 0.;
+	startx[1] = -Rout;
+	startx[2] = -Rout;
+	startx[3] = -Rout;
 	#endif
 	#else
 	if (N2 != 1) {

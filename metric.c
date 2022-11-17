@@ -1,16 +1,17 @@
 #include "include.h"
 #include "decs.h"
 /* insert metric here */
-void gcov_func(double *X, double gcovp[][NDIM])
-{
-	#if(CARTESIAN)
-	int j, k;
-	DLOOP gcovp[j][k] = 0.;
-	gcovp[0][0] = -1.;
-	gcovp[1][1] = 1.;
-	gcovp[2][2] = 1.;
-	gcovp[3][3] = 1.;
+
+void gcov_func(double* X, double gcovp[][NDIM]) {
+	#if(CARTESIAN || CARTESIAN_GR)
+	gcov_func_cartesian(X, gcovp);
 	#else
+	gcov_func_spherical(X, gcovp);
+	#endif
+}
+
+void gcov_func_spherical(double *X, double gcovp[][NDIM])
+{
 	int i, j, k, l;
 	double sth, cth, s2, rho2, sph, cph;
 	double r, th, phi;
@@ -22,7 +23,8 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	double offset = 0.000000001;
 	double tilt = TILT_ANGLE / 180.*M_PI;
 	DLOOP gcov[j][k] = 0.;
-#if(NSY)
+
+	#if(NSY)
 	bl_coord(X, &r, &th, &phi);
 
 	//compute Jacobian nt->t (dt/dnt)
@@ -60,7 +62,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	if (Vp[2] < 0.0) Vp[2] *= -1;
 	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
 
-#if(COORDSINGFIX)
+	#if(COORDSINGFIX)
 	if (fabs(Vp[2])<SINGSMALL){
 		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
 		if (Vp[2]<0.0)  Vp[2] = -SINGSMALL;
@@ -69,7 +71,8 @@ void gcov_func(double *X, double gcovp[][NDIM])
 		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
 		if (Vp[2]<M_PI)  Vp[2] = M_PI - SINGSMALL;
 	}
-#endif
+	#endif
+
 	//fprintf(stderr, "r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
 	r = Vp[1];
 	th = Vp[2];
@@ -94,7 +97,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	gcov[3][0] = gcov[0][3];
 	gcov[3][1] = gcov[1][3];
 	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
-#else
+	#else
 	bl_coord(X, &r, &th, &phi);
 
 	cth = cos(th);
@@ -135,7 +138,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	gcov[3][1] = gcov[1][3];
 	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 	#endif
-#endif
+	#endif
 
 #if(NSY)
 	//compute Jacobian r,th,phi->x,y,z (dx/dr)
@@ -216,7 +219,8 @@ void gcov_func(double *X, double gcovp[][NDIM])
 			gcov[i][j] = gcovp[i][j];
 		}
 	}
-#endif
+	#endif
+
 	//convert to code coordinates
 	for (i = 0; i<NDIM; i++){
 		for (j = 0; j<NDIM; j++){
@@ -228,7 +232,111 @@ void gcov_func(double *X, double gcovp[][NDIM])
 			}
 		}
 	}
-#endif
+}
+
+void gcov_func_cartesian(double *X, double gcovp[][NDIM])
+{
+	int i, j, k, l;
+	double r, th, phi;
+	double gcov[NDIM][NDIM];
+	double dxdxp[NDIM][NDIM], dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM];
+	double offset = 0.000000001;
+	double tilt = TILT_ANGLE / 180.*M_PI;
+	DLOOP gcov[j][k] = 0.;
+	DLOOP gcovp[j][k] = 0.;
+
+	bl_coord(X, &r, &th, &phi);
+
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	dxdxp_func(X, dxdxp);
+
+	#if(NSY)
+	//compute Jacobian nt->t (dt/dnt)
+	dxdxt[0][0] = 1.;
+	dxdxt[0][1] = 0.;
+	dxdxt[0][2] = 0.;
+	dxdxt[0][3] = 0.;
+	dxdxt[1][0] = 0.;
+	dxdxt[1][1] = cos(tilt);
+	dxdxt[1][2] = 0.;
+	dxdxt[1][3] = -sin(tilt);
+	dxdxt[2][0] = 0.;
+	dxdxt[2][1] = 0.;
+	dxdxt[2][2] = 1.;
+	dxdxt[2][3] = 0.;
+	dxdxt[3][0] = 0.;
+	dxdxt[3][1] = sin(tilt);
+	dxdxt[3][2] = 0.0;
+	dxdxt[3][3] = cos(tilt);
+
+	//compute Jacobian t->nt (dnt/dt)
+	invert_matrix(dxdxt, dxtdx);
+	#endif
+
+	#if(CARTESIAN)
+	gcov[0][0] = -1;
+	gcov[1][1] = 1 ;
+	gcov[2][2] = 1;
+	gcov[3][3] = 1;
+	#else
+	//Set Cartesian KS metric
+	double f, L[NDIM], x, y, z;
+	x = X[1];
+	y = X[2];
+	z = X[3];
+	f = 2 * r * r * r / (r * r * r * r + a * a * z * z);
+	L[0] = 1.0;
+	L[1] = (r * x + a * y) / (r * r + a * a);
+	L[2] = (r * y - a * x) / (r * r + a * a);
+	L[3] = z / r;
+
+	gcov[0][0] = -1+f* L[0]* L[0];
+	gcov[0][1] = f * L[0] * L[1];
+	gcov[0][2] = f * L[0] * L[2];
+	gcov[0][3] = f * L[0] * L[3];
+
+	gcov[1][9] = f * L[1] * L[0];
+	gcov[1][1] = 1 + f * L[1] * L[1];
+	gcov[1][2] = f * L[1] * L[2];
+	gcov[1][3] = f * L[1] * L[3];
+
+	gcov[2][0] = f * L[2] * L[0];
+	gcov[2][1] = f * L[2] * L[1];
+	gcov[2][2] = 1 + f * L[2] * L[2];
+	gcov[2][3] = f * L[2] * L[3];
+
+	gcov[3][0] = f * L[3] * L[0];
+	gcov[3][1] = f * L[3] * L[1];
+	gcov[3][2] = f * L[3] * L[2];
+	gcov[3][3] = 1 + f * L[3] * L[3];
+	#endif
+
+	#if(NSY)
+	//convert from cartesian to tilted cartesian coordinates
+	/*for (i = 0; i<NDIM; i++) {
+		for (j = 0; j<NDIM; j++){
+			gcov[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * dxtdx[k][i] * dxtdx[l][j];
+				}
+			}
+		}
+	}*/
+	//convert to code coordinates
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) {
+			gcovp[i][j] = gcov[i][j];
+		}
+	}
+	#else
+	//convert to code coordinates
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) {
+			gcovp[i][j] = gcov[i][j];
+		}
+	}
+	#endif
 }
 
 /* assumes gcov has been set first; returns determinant */

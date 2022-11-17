@@ -25,8 +25,14 @@ Physical Parameters section
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
 
+/*Set Cartesian GR grid for test problems*/
+#define CARTESIAN_GR (1)
+
 /*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
+
+/*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
+#define SPHERICAL_GR (0)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
@@ -125,8 +131,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (1)
-#define SCUDA (0)
+#define SHIP (0)
+#define SCUDA (1)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
@@ -278,10 +284,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
+#define TRANS_BOUND (1*((BS_3*NB_3)>1) && (SPHERICAL || SPHERICAL_GR))
 
 /*Use smaller than usual cutout of 10^-13*/
 #define TRANS_BOUND_SMALL (0)
@@ -304,7 +310,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /* maximum fractional increase in timestep per timestep */
 #define SAFE	(1.3)
 
+/*Use a small excission around the pole*/
+#if(SPHERICAL || SPHERICAL_GR)
 #define COORDSINGFIX 1
+#else
+#define COORDSINGFIX 0
+#endif
+
 // whether to move polar axis to a bit larger theta
 // theta value where singularity is displaced to
 #define SINGSMALL (1.E-20)
