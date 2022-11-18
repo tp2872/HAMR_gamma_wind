@@ -235,7 +235,7 @@ void rdump_block_read(FILE *fp, int n)
 			reduce_factor = 1.0 / (double)(red_1 * red_3);
 			double fractheta_old = 1.e-2;
 			if (N2 != 1) {
-				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (TRANS_BOUND == 1);
+				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (BOUND_TYPE2 == TRANSMISSIVE);
 			}
 			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
 			reduce_factor = 1.0 / (double)(red_1 * red_2);

@@ -286,23 +286,38 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (1)
 
-/*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1*((BS_3*NB_3)>1) && (SPHERICAL || SPHERICAL_GR))
-
-/*Use smaller than usual cutout of 10^-13*/
-#define TRANS_BOUND_SMALL (0)
-
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
 
-/*Set periodic boundary conditions only in the third dimension is supported*/
-#define PERIODIC1 (CARTESIAN || CARTESIAN_GR)
-#define PERIODIC2 (CARTESIAN || CARTESIAN_GR)
-#if (BS_3*NB_3==1)
-#define PERIODIC3 0
+/*Set values for periodic, reflective and transmissive boundary conditions*/
+#define PERIODIC 1
+#define REFLECTIVE 2
+#define TRANSMISSIVE 3
+#define OUTFLOW 4
+
+/*Set boundary conditions in first dimensions; possible options: OUTFLOW, PERIODIC*/
+#define BOUND_TYPE1 OUTFLOW
+
+/*Set boundary conditions in second dimensions; possible options: OUTFLOW, TRANSMISSIVE, PERIODIC*/
+#if(((BS_3*NB_3)>1) && (SPHERICAL || SPHERICAL_GR))
+#define BOUND_TYPE2 TRANSMISSIVE
+#elif(SPHERICAL || SPHERICAL_GR)
+#define BOUND_TYPE2 REFLECTIVE
 #else
-#define PERIODIC3 1
+#define BOUND_TYPE2 OUTFLOW
 #endif
+
+/*Set boundary conditions in third dimensions; possible options: OUTFLOW and PERIODIC*/
+#if(BS_3*NB_3==1)
+#define BOUND_TYPE3 -1
+#elif(SPHERICAL || SPHERICAL_GR)
+#define BOUND_TYPE3 PERIODIC
+#else
+#define BOUND_TYPE3 OUTFLOW
+#endif
+
+/*Use smaller than usual cutout of 10^-13*/
+#define TRANS_BOUND_SMALL (0)
 
 /* A numerical convenience to represent a small non-zero quantity compared to unity:*/
 #define SMALL	(1.e-20)

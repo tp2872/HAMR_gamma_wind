@@ -324,7 +324,7 @@ void set_gridparam(void) {
 		#if(TRANS_BOUND_SMALL)
 		fractheta = 1.0 - 1.0e-13;
 		#else
-		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND == 1);
+		fractheta = 1.0 - 2.0 / ((double)N2)*(BOUND_TYPE2 == TRANSMISSIVE);
 		#endif
 	}
 	else {

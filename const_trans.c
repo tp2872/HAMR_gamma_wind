@@ -146,7 +146,7 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 				+ (-F1[nl[n]][ind0][B2] - (dE[nl[n]][ind0][LEFT][3][2] * (double)(F1[nl[n]][ind0][RHO] <= 0.0) + dE[nl[n]][index_3D(n, i - D1, j, z)][LEFT][3][2] * (double)(F1[nl[n]][ind0][RHO] > 0.0)))
 				+ (-F1[nl[n]][index_3D(n, i, j - D2, z)][B2] + (dE[nl[n]][index_3D(n, i, j - D2, z)][RIGHT][3][2] * (double)(F1[nl[n]][index_3D(n, i, j - D2, z)][RHO] <= 0.0) + dE[nl[n]][index_3D(n, i - D1, j - D2, z)][RIGHT][3][2] * (double)(F1[nl[n]][index_3D(n, i, j - D2, z)][RHO] > 0.0))));
 
-			#if(!CARTESIAN)
+			#if(!(CARTESIAN || CARTESIAN_GR))
 			if (j == 0 || j == (int)(N2 * pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][1] += 0.5 * 0.5 * (-F2[nl[n]][ind0][B3] - F2[nl[n]][index_3D(n, i, j, z - D3)][B3]);
 			if (j == 0 || j == (int)(N2 * pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][3] = 0.0;
 			#endif
@@ -158,7 +158,7 @@ void const_transport_bound(void){
 	int n, flag;
 	gpu = 0;
 
-	#if(TRANS_BOUND)
+	#if(BOUND_TYPE2 == TRANSMISSIVE)
 	E_average();
 	#endif
 

@@ -473,27 +473,27 @@ void set_AMR(void){
 		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//First dimension is trivial
-		if (i + 1 > i_max && PERIODIC1 == 1) i1 = 0;
-		else if (i + 1 > i_max && PERIODIC1 == 0) i1 = -1;
+		if (i + 1 > i_max && BOUND_TYPE1==PERIODIC) i1 = 0;
+		else if (i + 1 > i_max) i1 = -1;
 		else i1 = i + 1;
 		block[n][AMR_NBR2] = AMR_coord_linear2(level, j0, i1, j, z);
 
-		if (i - 1 < 0 && PERIODIC1 == 1) i1 = i_max;
+		if (i - 1 < 0 && BOUND_TYPE1 == PERIODIC) i1 = i_max;
 		else i1 = i - 1;
 		block[n][AMR_NBR4] = AMR_coord_linear2(level, j0, i1, j, z);
 
 		//Third dimension is trivial
-		if (z + 1 > z_max && PERIODIC3 == 1) z1 = 0;
-		else if (z + 1 > z_max && PERIODIC3 == 0) z1 = -1;
+		if (z + 1 > z_max && BOUND_TYPE3 == PERIODIC) z1 = 0;
+		else if (z + 1 > z_max) z1 = -1;
 		else z1 = z + 1;
 		block[n][AMR_NBR5] = AMR_coord_linear2(level, j0, i, j, z1);
 
-		if (z - 1 < 0 && PERIODIC3 == 1) z1 = z_max;
+		if (z - 1 < 0 && BOUND_TYPE3 == PERIODIC) z1 = z_max;
 		else z1 = z - 1;
 		block[n][AMR_NBR6] = AMR_coord_linear2(level, j0, i, j, z1);
 
 		//Second dimension is not trivial
-		if (j - 1 < 0 && PERIODIC2 == 1) j1 = j_max;
+		if (j - 1 < 0 && BOUND_TYPE2 == PERIODIC) j1 = j_max;
 		else j1 = j - 1;
 		flag = 0;
 		block[n][AMR_TAG1] = 0;
@@ -520,8 +520,8 @@ void set_AMR(void){
 		}
 		if (flag == 0) block[n][AMR_NBR1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z);
 
-		if (j + 1 > j_max && PERIODIC2 == 1) j1 = 0;
-		else if (j + 1 > j_max && PERIODIC2 == 0) j1 = -1;
+		if (j + 1 > j_max && BOUND_TYPE2 == PERIODIC) j1 = 0;
+		else if (j + 1 > j_max) j1 = -1;
 		else j1 = j + 1;
 		flag = 0;
 		block[n][AMR_TAG3] = 0;
@@ -552,7 +552,7 @@ void set_AMR(void){
 
 		//Set transmissive pole
 		block[n][AMR_POLE] = 0; 
-		#if (TRANS_BOUND)
+		#if (BOUND_TYPE2 == TRANSMISSIVE)
 		//if (NB_3 % 2 != 0 && rank==0) fprintf(stderr, "Number of blocks in the third dimension is not an even number. This is incompatible with TRANS_BOUND");
 		//Find the neighbours in the case we have transmissive boundary conditions at the pole
 		if (j == 0){
@@ -588,12 +588,12 @@ void set_AMR(void){
 		//x-y plane
 		//Corn 1
 		if (i + 1 > i_max){
-			if (PERIODIC1) i1 = 0;
+			if (BOUND_TYPE1 == PERIODIC) i1 = 0;
 			else i1 = -1;
 		}
 		else i1 = i + 1;
 		if (j - 1 < 0) {
-			if (PERIODIC2) j1 = j_max;
+			if (BOUND_TYPE2 == PERIODIC) j1 = j_max;
 			else j1 = -1;
 		}
 		else  j1 = j - 1;
@@ -602,12 +602,12 @@ void set_AMR(void){
 
 		//Corn 2
 		if (i + 1 > i_max){
-			if (PERIODIC1) i1 = 0;
+			if (BOUND_TYPE1 == PERIODIC) i1 = 0;
 			else i1 = -1;
 		}
 		else i1 = i + 1;
 		if (j + 1 > j_max) {
-			if (PERIODIC2) j1 = 0;
+			if (BOUND_TYPE2 == PERIODIC) j1 = 0;
 			else j1 = -1;
 		}
 		else j1 = j + 1;
@@ -616,12 +616,12 @@ void set_AMR(void){
 
 		//Corn 3
 		if (i - 1 < 0 ){
-			if (PERIODIC1) i1 = i_max;
+			if (BOUND_TYPE1 == PERIODIC) i1 = i_max;
 			else i1 = -1;
 		}
 		else i1 = i - 1;
 		if (j + 1 > j_max) {
-			if (PERIODIC2) j1 = 0;
+			if (BOUND_TYPE2 == PERIODIC) j1 = 0;
 			else j1 = -1;
 		}
 		else j1 = j + 1;
@@ -630,12 +630,12 @@ void set_AMR(void){
 
 		//Corn 4
 		if (i - 1 < 0){
-			if (PERIODIC1) i1 = i_max;
+			if (BOUND_TYPE1 == PERIODIC) i1 = i_max;
 			else i1 = -1;
 		}
 		else i1 = i - 1;
 		if (j - 1 < 0) {
-			if (PERIODIC2) j1 = j_max;
+			if (BOUND_TYPE2 == PERIODIC) j1 = j_max;
 			else j1 = -1;
 		}
 		else j1 = j - 1;
@@ -645,12 +645,12 @@ void set_AMR(void){
 		//x-z plane
 		//Corn 5
 		if (i + 1 > i_max) {
-			if (PERIODIC1) i1 = 0;
+			if (BOUND_TYPE1 == PERIODIC) i1 = 0;
 			else i1 = -1;
 		}
 		else i1 = i + 1;
 		if (z - 1 < 0) {
-			if (PERIODIC3) z1 = z_max;
+			if (BOUND_TYPE3 == PERIODIC) z1 = z_max;
 			else z1 = -1;
 		}
 		else z1 = z - 1;
@@ -658,12 +658,12 @@ void set_AMR(void){
 
 		//Corn 6
 		if (i + 1 > i_max) {
-			if (PERIODIC1) i1 = 0;
+			if (BOUND_TYPE1 == PERIODIC) i1 = 0;
 			else i1 = -1;
 		}
 		else i1 = i + 1;
 		if (z + 1 > z_max) {
-			if (PERIODIC3) z1 = 0;
+			if (BOUND_TYPE3 == PERIODIC) z1 = 0;
 			else z1 = -1;
 		}
 		else z1 = z + 1;
@@ -671,12 +671,12 @@ void set_AMR(void){
 
 		//Corn 7
 		if (i - 1 < 0) {
-			if (PERIODIC1) i1 = i_max;
+			if (BOUND_TYPE1 == PERIODIC) i1 = i_max;
 			else i1 = -1;
 		}
 		else i1 = i - 1;
 		if (z + 1 > z_max) {
-			if ( PERIODIC3) z1 = 0;
+			if (BOUND_TYPE3 == PERIODIC) z1 = 0;
 			else z1 = -1;
 		}
 		else z1 = z + 1;
@@ -684,12 +684,12 @@ void set_AMR(void){
 
 		//Corn 8
 		if (i - 1 < 0) {
-			if (PERIODIC1) i1 = i_max;
+			if (BOUND_TYPE1 == PERIODIC) i1 = i_max;
 			else i1 = -1;
 		}
 		else i1 = i - 1;
 		if (z - 1 < 0) {
-			if (PERIODIC3) z1 = z_max;
+			if (BOUND_TYPE3 == PERIODIC) z1 = z_max;
 			else z1 = -1;
 		}
 		else z1 = z - 1;
@@ -698,12 +698,12 @@ void set_AMR(void){
 		//y-z plane
 		//Corn 9
 		if (j - 1 < 0) {
-			if (PERIODIC2) j1 = j_max;
+			if (BOUND_TYPE2 == PERIODIC) j1 = j_max;
 			else j1 = -1;
 		}
 		else j1 = j - 1;
 		if (z + 1 > z_max) {
-			if (PERIODIC3) z1 = 0;
+			if (BOUND_TYPE3 == PERIODIC) z1 = 0;
 			else z1 = -1;
 		}
 		else z1 = z + 1;
@@ -712,12 +712,12 @@ void set_AMR(void){
 
 		//Corn 10
 		if (j + 1 > j_max) {
-			if (PERIODIC2) j1 = 0;
+			if (BOUND_TYPE2 == PERIODIC) j1 = 0;
 			else j1 = -1;
 		}
 		else j1 = j + 1;
 		if (z + 1 > z_max) {
-			if (PERIODIC3) z1 = 0;
+			if (BOUND_TYPE3 == PERIODIC) z1 = 0;
 			else z1 = -1;
 		}
 		else z1 = z + 1;
@@ -726,12 +726,12 @@ void set_AMR(void){
 
 		//Corn 11
 		if (j + 1 > j_max) {
-			if (PERIODIC2) j1 = 0;
+			if (BOUND_TYPE2 == PERIODIC) j1 = 0;
 			else j1 = -1;
 		}
 		else j1 = j + 1;
 		if (z - 1 < 0) {
-			if (PERIODIC3) z1 = z_max;
+			if (BOUND_TYPE3 == PERIODIC) z1 = z_max;
 			else z1 = -1;
 		}
 		else z1 = z - 1;
@@ -740,12 +740,12 @@ void set_AMR(void){
 
 		//Corn 12
 		if (j - 1 < 0) {
-			if (PERIODIC2) j1 = j_max;
+			if (BOUND_TYPE2 == PERIODIC) j1 = j_max;
 			else j1 = -1;
 		}
 		else j1 = j - 1;
 		if (z - 1 < 0) {
-			if (PERIODIC3) z1 = z_max;
+			if (BOUND_TYPE3 == PERIODIC) z1 = z_max;
 			else z1 = -1;
 		}
 		else z1 = z - 1;
@@ -1068,14 +1068,14 @@ void set_AMR(void){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
-					if (z > z_max && PERIODIC3 == 1) z = 0;
+					if (z > z_max && BOUND_TYPE3 == PERIODIC) z = 0;
 					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					//if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
-					if (z > z_max && PERIODIC3 == 1) z = 0;
+					if (z > z_max && BOUND_TYPE3 == PERIODIC) z = 0;
 					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
@@ -1087,13 +1087,13 @@ void set_AMR(void){
 					//if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
-					if (z > z_max && PERIODIC3 == 1) z = 0;
+					if (z > z_max && BOUND_TYPE3 == PERIODIC) z = 0;
 					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
-					if (z > z_max && PERIODIC3 == 1) z = 0;
+					if (z > z_max && BOUND_TYPE3 == PERIODIC) z = 0;
 					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
@@ -1105,13 +1105,13 @@ void set_AMR(void){
 					//if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] - REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && BOUND_TYPE3 == PERIODIC) z = z_max;
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && BOUND_TYPE3 == PERIODIC) z = z_max;
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
@@ -1122,14 +1122,14 @@ void set_AMR(void){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && BOUND_TYPE3 == PERIODIC) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					//if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] - REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && BOUND_TYPE3 == PERIODIC) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}

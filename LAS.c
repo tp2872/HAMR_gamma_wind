@@ -301,15 +301,35 @@ void prestep_bound(void){
 	int flag, n;
 	//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+
+	#if(BOUND_TYPE1==OUTFLOW)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1(1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1(0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1_outflow(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1_outflow(0, n_ord[n]);
 	}
-	#if(!TRANS_BOUND)
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
+
+	#if(BOUND_TYPE2==OUTFLOW)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2(1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2(0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2_outflow(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2_outflow(0, n_ord[n]);
+	}
+	#elif(BOUND_TYPE2==REFLECTIVE)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2_reflective(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2_reflective(0, n_ord[n]);
+	}
+	#elif(BOUND_TYPE2==TRANSMISSIVE && NB_3==1)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2_transmissive(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2_transmissive(0, n_ord[n]);
+	}
+	#endif
+
+	#if(BOUND_TYPE3==OUTFLOW)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim3_outflow(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim3_outflow(0, n_ord[n]);
 	}
 	#endif
 

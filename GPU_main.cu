@@ -1967,7 +1967,7 @@ void GPU_consttransport_bound(void){
 	int n, flag;
 
 	gpu = 1;
-	#if(TRANS_BOUND)
+	#if(BOUND_TYPE2 == TRANSMISSIVE)
 	E_average();
 	#endif
 	set_iprobe(0, &flag);
@@ -2698,24 +2698,49 @@ void GPU_boundprim(int bound_force)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
-	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
-			GPU_boundprim1(1, n_ord[n]);
-			if (nstep == -1) GPU_boundprim1(0, n_ord[n]);
+
+	#if(BOUND_TYPE1==OUTFLOW)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
+				GPU_boundprim1_outflow(1, n_ord[n]);
+				if (nstep == -1) GPU_boundprim1_outflow(0, n_ord[n]);
+			}
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1_outflow(0, n_ord[n]);
 		}
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
-	}
-	#if(!TRANS_BOUND)
-	#if(GPU_OPENMP)
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
-	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
-			GPU_boundprim2(1, n_ord[n]);
-			if (nstep == -1) GPU_boundprim2(0, n_ord[n]);
+
+	#if(BOUND_TYPE2==OUTFLOW)
+		#if(GPU_OPENMP)
+		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
+				GPU_boundprim2_outflow(1, n_ord[n]);
+				if (nstep == -1) GPU_boundprim2_outflow(0, n_ord[n]);
+			}
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2_outflow(0, n_ord[n]);
 		}
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
-	}
+	#elif(BOUND_TYPE2==REFLECTIVE)
+		#if(GPU_OPENMP)
+		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
+				GPU_boundprim2_reflective(1, n_ord[n]);
+				if (nstep == -1) GPU_boundprim2_reflective(0, n_ord[n]);
+			}
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2_reflective(0, n_ord[n]);
+		}
+	#endif
+
+	#if(BOUND_TYPE3==OUTFLOW)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
+				GPU_boundprim3_outflow(1, n_ord[n]);
+				if (nstep == -1) GPU_boundprim3_outflow(0, n_ord[n]);
+			}
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim3_outflow(0, n_ord[n]);
+		}
 	#endif
 
 	#if(PRESTEP)
@@ -2886,16 +2911,16 @@ void GPU_boundprim(int bound_force)
 
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
-	#if(TRANS_BOUND && NB_3==1)
+	#if(BOUND_TYPE2==TRANSMISSIVE && NB_3==1)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) {
-			GPU_boundprim_trans(1, n_ord[n]);
-			if(nstep==-1) GPU_boundprim_trans(0, n_ord[n]);
+			GPU_boundprim2_trans(1, n_ord[n]);
+			if(nstep==-1) GPU_boundprim2_trans(0, n_ord[n]);
 		}
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim_trans(0, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2_trans(0, n_ord[n]);
 	}
 	#endif
 
@@ -2918,7 +2943,7 @@ void GPU_boundprim(int bound_force)
 	nstep = temp;
 }
 
-void GPU_boundprim1(int flag, int n)
+void GPU_boundprim1_outflow(int flag, int n)
 {
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
@@ -2926,25 +2951,25 @@ void GPU_boundprim1(int flag, int n)
 	if (block[n][AMR_NBR2] == -1 || block[n][AMR_NBR4] == -1){
 		if (flag == 0){
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim1, nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim1_outflow, nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
+			boundprim1_outflow << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
 			#endif
 		}
 		else{
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim1, nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim1_outflow, nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
+			boundprim1_outflow << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
 			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
-		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1 %d\n", status);
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1_outflow %d\n", status);
 	}
 }
 
-void GPU_boundprim2(int flag, int n)
+void GPU_boundprim2_reflective(int flag, int n)
 {
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
@@ -2952,25 +2977,51 @@ void GPU_boundprim2(int flag, int n)
 	if (block[n][AMR_NBR1] == -1 || block[n][AMR_NBR3] == -1){
 		if (flag == 0){
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim2, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim2_reflective, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim2 << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
+			boundprim2_reflective << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
 			#endif
 		}
 		else{
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim2, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim2_reflective, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim2 << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
+			boundprim2_reflective << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
 			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
-		if (gpuSuccess != status) fprintf(stderr, "Error boundprim2.1 %d\n", status);
+		if (gpuSuccess != status) fprintf(stderr, "Error boundprim2_reflective %d\n", status);
 	}
 }
 
-void GPU_boundprim_trans(int flag, int n)
+void GPU_boundprim2_outflow(int flag, int n)
+{
+	#if(N_GPU>1)
+	gpuSetDevice(block[n][AMR_GPU]);
+	#endif
+	if (block[n][AMR_NBR1] == -1 || block[n][AMR_NBR3] == -1){
+		if (flag == 0){
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim2_outflow, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
+			#elif(SCUDA)
+			boundprim2_outflow << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
+			#endif
+		}
+		else{
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim2_outflow, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]]);
+			#elif(SCUDA)
+			boundprim2_outflow << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
+			#endif
+		}
+		//gpuDeviceSynchronize();
+		status = gpuGetLastError();
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1_outflow %d\n", status);
+	}
+}
+
+void GPU_boundprim2_trans(int flag, int n)
 {
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
@@ -2978,21 +3029,47 @@ void GPU_boundprim_trans(int flag, int n)
 	if (block[n][AMR_POLE] != 0 ){
 		if (flag == 0){
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim_trans, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim_trans2, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
+			boundprim2_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
 			#endif
 		}
 		else{
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim_trans, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim2_trans, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
 			#elif(SCUDA)
-			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
+			boundprim2_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
 			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
-		if (gpuSuccess != status) fprintf(stderr, "Error boundprim2.1 %d\n", status);
+		if (gpuSuccess != status) fprintf(stderr, "Error boundprim2_trans %d\n", status);
+	}
+}
+
+void GPU_boundprim3_outflow(int flag, int n)
+{
+	#if(N_GPU>1)
+	gpuSetDevice(block[n][AMR_GPU]);
+	#endif
+	if (block[n][AMR_NBR5] == -1 || block[n][AMR_NBR6] == -1){
+		if (flag == 0){
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim3_outflow, nr_workgroups_special3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR5], block[n][AMR_NBR6], Bufferpsh_1[nl[n]]);
+			#elif(SCUDA)
+			boundprim3_outflow << < nr_workgroups_special3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR5], block[n][AMR_NBR6], Bufferpsh_1[nl[n]]);
+			#endif
+		}
+		else{
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim3_outflow, nr_workgroups_special3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR5], block[n][AMR_NBR6], Bufferps_1[nl[n]]);
+			#elif(SCUDA)
+			boundprim3_outflow << < nr_workgroups_special3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR5], block[n][AMR_NBR6], Bufferps_1[nl[n]]);
+			#endif
+		}
+		//gpuDeviceSynchronize();
+		status = gpuGetLastError();
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1_outflow %d\n", status);
 	}
 }
 

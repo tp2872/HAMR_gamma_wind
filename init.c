@@ -4532,7 +4532,7 @@ double compute_B_from_A(void){
 	double bsq_max = 0., bsq_ij;
 	int n, i, j, z;
 	struct of_geom geom;
-	#if(TRANS_BOUND && STAGGERED)
+	#if(BOUND_TYPE2 == TRANSMISSIVE && STAGGERED)
 	gpu = 0;
 	E_average();
 	#endif
@@ -5147,7 +5147,7 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 void set_uniform_Bphi(void){
 	int n, i, j, z;
 	struct of_geom geom;
-	#if(TRANS_BOUND && STAGGERED)
+	#if(BOUND_TYPE2 == TRANSMISSIVE && STAGGERED)
 	gpu = 0;
 	E_average();
 	#endif

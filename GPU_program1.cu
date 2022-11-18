@@ -396,7 +396,7 @@ __device__ double calc_entropy(double* pr
 	, double gamma_g
 	#endif
 );
-__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
+__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3, int dir);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq);
@@ -9761,7 +9761,7 @@ __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans *trans
 	#endif
 }
 
-__device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
+__device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int dir)
 {
 	struct of_geom geom;
 	double ucon[NDIM];
@@ -12462,7 +12462,7 @@ __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage)
 	}
 }
 
-__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps)
+__global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
@@ -12474,6 +12474,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
+	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -12490,15 +12491,15 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		}
 
 		/*Make sure there is no inflow at inner boundary*/
-		inflow_check(prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
-		inflow_check(prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
 		#if(N1G==3)
-		inflow_check(prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
 		#endif
-		inflow_check(prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
-		inflow_check(prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
 		#if(N1G==3)
-		inflow_check(prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
 		#endif
 		/*Write primitives back to global memory*/
 		#pragma unroll 9
@@ -12525,6 +12526,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		jcurr = -10;
 		zcurr = -10;
 	}
+	#endif
 
 	if (global_id<isize){
 		global_id = -10;
@@ -12553,15 +12555,15 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		}
 
 		//Make sure there is no inflow at outer boundary
-		inflow_check(prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
-		inflow_check(prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 		#if(N1G==3)
-		inflow_check(prim5, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(prim5, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 		#endif
-		inflow_check(prim3, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
-		inflow_check(prim4, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(prim3, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim4, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 		#if(N1G==3)
-		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 		#endif
 
 		#pragma unroll 9
@@ -12586,7 +12588,135 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	#endif
 }
 
-__global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
+__global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
+{
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int isize = (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G);
+	int gridsize= (BS_1 + 2 * N1G) * (BS_3 + 2 * N3G);
+	int k;
+	int zcurr = global_id % (BS_3 + 2 * N3G);
+	int icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
+
+	// inner r boundary condition: u, gdet extrapolation
+	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1){
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim5[k] = pv[k * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		}
+
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim1[k] = prim5[k];
+			prim2[k] = prim5[k];
+			#if(N1G==3)
+			prim3[k] = prim5[k];
+			#endif
+		}
+
+		/*Make sure there is no inflow at inner boundary*/
+		inflow_check(prim1, icurr, 0, zcurr, 0, gcov, gcon, gdet, 2);
+		inflow_check(prim2, icurr, 0, zcurr, 0, gcov, gcon, gdet, 2);
+		#if(N2G==3)
+		inflow_check(prim3, icurr, 0, zcurr, 0, gcov, gcon, gdet, 2);
+		#endif
+		inflow_check(prim1, icurr, 1, zcurr, 0, gcov, gcon, gdet, 2);
+		inflow_check(prim2, icurr, 1, zcurr, 0, gcov, gcon, gdet, 2);
+		#if(N2G==3)
+		inflow_check(prim3, icurr, 1, zcurr, 0, gcov, gcon, gdet, 2);
+		#endif
+
+		/*Write primitives back to global memory*/
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			pv[k * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = prim2[k];
+			pv[k * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = prim1[k];
+			#if(N2G==3)
+			pv[k * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = prim3[k];
+			#endif
+		}
+
+		#if(STAGGERED)
+		ps[1 * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[1 * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		#if(N2G==3)
+		ps[1 * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		#endif
+		#endif
+
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
+	#endif
+
+	if (global_id<gridsize){
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
+	else if (global_id >= gridsize){
+		global_id = global_id - gridsize;
+		zcurr = global_id % (BS_3 + 2 * N3G);
+		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	}
+
+	// outer r BC: outflow
+	#if(!CONSTANT_BC)
+	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1){
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim6[k] = pv[k * (ksize) + icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		}
+
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			prim3[k] = prim6[k];
+			prim4[k] = prim6[k];
+			prim5[k] = prim6[k];
+		}
+
+		//Make sure there is no inflow at outer boundary
+		inflow_check(prim3, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim4, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
+		#if(N2G==3)
+		inflow_check(prim5, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
+		#endif
+		inflow_check(prim3, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim4, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
+		#if(N2G==3)
+		inflow_check(prim5, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
+		#endif
+
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			pv[k * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = prim3[k];
+			pv[k * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = prim4[k];
+			#if(N2G==3)
+			pv[k * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = prim5[k];
+			#endif
+		}
+		#if(STAGGERED)
+		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		#if(N2G==3)
+		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		#endif
+		#endif
+	}
+	#endif
+}
+
+__global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
 {
 	int j, jref, k;
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
@@ -12739,7 +12869,7 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 	}
 }
 
-__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
+__global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -12815,6 +12945,134 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 			#endif
 		}
 	}
+}
+
+__global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_5, int NBR_6, double *  ps)
+{
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int isize = (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G);
+	int gridsize= (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G);
+	int k;
+	int jcurr = global_id % (BS_2 + 2 * N2G);
+	int icurr = (global_id - jcurr) / (BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
+
+	// inner r boundary condition: u, gdet extrapolation
+	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && jcurr >= 0 && jcurr<BS_2 + 2 * N2G && NBR_6 == -1){
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim5[k] = pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + N3G];
+		}
+
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim1[k] = prim5[k];
+			prim2[k] = prim5[k];
+			#if(N1G==3)
+			prim3[k] = prim5[k];
+			#endif
+		}
+
+		/*Make sure there is no inflow at inner boundary*/
+		inflow_check(prim1, icurr, jcurr, 0, 0, gcov, gcon, gdet, 3);
+		inflow_check(prim2, icurr, jcurr, 0, 0, gcov, gcon, gdet, 3);
+		#if(N3G==3)
+		inflow_check(prim3, icurr, jcurr, 0, 0, gcov, gcon, gdet, 3);
+		#endif
+		inflow_check(prim1, icurr, jcurr, 1, 0, gcov, gcon, gdet, 3);
+		inflow_check(prim2, icurr, jcurr, 1, 0, gcov, gcon, gdet, 3);
+		#if(N3G==3)
+		inflow_check(prim3, icurr, jcurr, 1, 0, gcov, gcon, gdet, 3);
+		#endif
+
+		/*Write primitives back to global memory*/
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G)] = prim2[k];
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + 1] = prim1[k];
+			#if(N3G==3)
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + 2] = prim3[k];
+			#endif
+		}
+
+		#if(STAGGERED)
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +0] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +1] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +0] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +1] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		#if(N3G==3)
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +2] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +2] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		#endif
+		#endif
+
+		global_id = -10;
+		icurr = -10;
+		jcurr = -10;
+	}
+	#endif
+
+	if (global_id<gridsize){
+		global_id = -10;
+		icurr = -10;
+		jcurr = -10;
+	}
+	else if (global_id >= gridsize){
+		global_id = global_id - gridsize;
+		jcurr = global_id % (BS_2 + 2 * N2G);
+		icurr = (global_id - jcurr) / (BS_2 + 2 * N2G);
+	}
+
+	// outer r BC: outflow
+	#if(!CONSTANT_BC)
+	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && jcurr >= 0 && jcurr<BS_2 + 2 * N2G && NBR_5 == -1){
+		#pragma unroll 9
+		for (k = 0; k< NPR; k++){
+			prim6[k] = pv[k * (ksize) + icurr * isize + jcurr * (BS_3 + 2 * N3G) + (BS_3 + N3G - 1)];
+		}
+
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			prim3[k] = prim6[k];
+			prim4[k] = prim6[k];
+			prim5[k] = prim6[k];
+		}
+
+		//Make sure there is no inflow at outer boundary
+		inflow_check(prim3, icurr, jcurr, BS_3 + N3G, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim4, icurr, jcurr, BS_3 + N3G, 1, gcov, gcon, gdet, 3);
+		#if(N3G==3)
+		inflow_check(prim5, icurr, jcurr, BS_3 + N3G, 1, gcov, gcon, gdet, 3);
+		#endif
+		inflow_check(prim3, icurr, jcurr, BS_3 + N3G + 1, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim4, icurr, jcurr, BS_3 + N3G + 1, 1, gcov, gcon, gdet, 3);
+		#if(N3G==3)
+		inflow_check(prim5, icurr, jcurr, BS_3 + N3G + 1, 1, gcov, gcon, gdet, 3);
+		#endif
+
+		#pragma unroll 9
+		for (k = 0; k<NPR; k++){
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + (BS_3 + N3G)] = prim3[k];
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + (BS_3 + N3G + 1)] = prim4[k];
+			#if(N3G==3)
+			pv[k * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) + (BS_3 + N3G + 2)] = prim5[k];
+			#endif
+		}
+		#if(STAGGERED)
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_1 + N3G - 1)];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		#if(N3G==3)
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 2)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 2)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		#endif
+		#endif
+	}
+	#endif
 }
 
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,

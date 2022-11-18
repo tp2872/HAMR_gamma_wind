@@ -193,7 +193,7 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
 
-	#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
+	#if(BOUND_TYPE2 == REFLECTIVE)
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fix_flux(F1, F2, F3, n_ord[n]);
 	#endif
 
@@ -790,7 +790,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
-						#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
+						#if(BOUND_TYPE2 == REFLECTIVE)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL2]))) {
 							PLOOP F[nl[n]][ind0][k] = 0.;
 						}
@@ -898,24 +898,6 @@ double advance_GPU(void)
 			GPU_Utoprim_M1_0(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 		}
 	}
-	#if(GPU_OPENMP)
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
-		}
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(1, n_ord[n]);
-	}
-	#if(!TRANS_BOUND)
-	#if(GPU_OPENMP)
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
-		}
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(1, n_ord[n]);
-	}
-	#endif
 	#endif
 
 	#if(N3G>0)		
@@ -1097,7 +1079,7 @@ double advance_GPU(void)
 	#endif 
 
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
-	#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
+	#if(BOUND_TYPE2 == REFLECTIVE)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
@@ -1225,7 +1207,7 @@ void benchmark_GPU(int n)
 		GPU_fluxcalc2D(1, 0, n);
 		#endif
 
-		#if(!TRANS_BOUND && (SPHERICAL || SPHERICAL_GR))
+		#if(BOUND_TYPE2 == REFLECTIVE)
 		GPU_fix_flux(n);
 		#endif
 

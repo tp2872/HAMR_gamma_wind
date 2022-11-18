@@ -320,7 +320,7 @@ void set_grid(int n)
 		#else
 		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		#endif
-			if (j<0 || j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND) a = -temp;
+			if (j<0 || j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE) a = -temp;
 			else a = temp;
 
 			zlevel = 0;
@@ -331,40 +331,40 @@ void set_grid(int n)
 
 			/* zone-centered */
 			coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
-			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
-			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == 0 && BOUND_TYPE2==TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && BOUND_TYPE2 == TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
 			gdet[nl[n]][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT], gcon[nl[n]][index_2D(n, i, j, z)][CENT]);
 			get_geometry(n, i, j, z, CENT, &geom);
 			conn_func(X, &geom, conn[nl[n]][index_2D(n, i, j, z)]);
-			if ((j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2])) && (TRANS_BOUND==1)){
+			if ((j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2])) && BOUND_TYPE2 == TRANSMISSIVE){
 				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[nl[n]][index_2D(n, i, j, z)][i1][j1][z1] = 0.;
 			}
 
 			/* r-face-centered */
 			coord(n, i, j, z - zoffset + zsize / 2, FACE1, X);
-			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
-			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && BOUND_TYPE2 == TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1], gcon[nl[n]][index_2D(n, i, j, z)][FACE1]);
 
 			/* phi-face-centered */
 			coord(n, i, j, z - zoffset, FACE3, X);
-			if (j == 0 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
-			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] += 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
+			if (j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && BOUND_TYPE2 == TRANSMISSIVE && TRANS_BOUND_SMALL)X[2] -= 0.25 * 2.0 / ((double)N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3], gcon[nl[n]][index_2D(n, i, j, z)][FACE3]);
 
 			/* theta-face-centered */
-			if (j == 0 && TRANS_BOUND==1){
+			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, 1, z, FACE2, X);
 				a = 0. ;
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 			}
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==1){
+			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 				a = 0.;
@@ -520,6 +520,7 @@ void check_input() {
 		fprintf(stderr, "PPM not suppoerted in CPU version"); 
 		exit(0);
 	}
+
 
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
