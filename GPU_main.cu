@@ -1575,6 +1575,11 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) / LOCAL_WORK_SIZE;
 
+	//If on an Cartesion grid, first set boundary conditions in the hole in the middle (or holes anywhere else in case of binary metric)
+	#if(CARTESIAN_GR)
+	GPU_boundprim_cart(dir, flag, n);
+	#endif
+
 	/*Calculate reconstructed left state*/
 	GPU_fluxcalcprep(dir, flag, 1, n);
 	if (flag == 1){
@@ -2743,6 +2748,11 @@ void GPU_boundprim(int bound_force)
 		}
 	#endif
 
+	#if(CARTESIAN_GR)
+		for (n = 0; n < n_active; n++) GPU_boundprim_cart(1, 0, n_ord[n]);
+		for (n = 0; n < n_active; n++) GPU_boundprim_cart(1, 1, n_ord[n]);
+	#endif
+
 	#if(PRESTEP)
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		set_iprobe(0, &flag);
@@ -3017,7 +3027,7 @@ void GPU_boundprim2_outflow(int flag, int n)
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
-		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1_outflow %d\n", status);
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim2_outflow %d\n", status);
 	}
 }
 
@@ -3069,7 +3079,35 @@ void GPU_boundprim3_outflow(int flag, int n)
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
-		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim1_outflow %d\n", status);
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim3_outflow %d\n", status);
+	}
+}
+
+void GPU_boundprim_cart(int dir, int flag, int n)
+{
+	if(block[n][AMR_CARTFLAG]==1){
+		int nr_workgroups_local = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G))) / LOCAL_WORK_SIZE;
+
+		#if(N_GPU>1)
+		gpuSetDevice(block[n][AMR_GPU]);
+		#endif
+		if (flag == 0){
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			#elif(SCUDA)
+			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			#endif
+		}
+		else{
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			#elif(SCUDA)
+			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			#endif
+		}
+		//gpuDeviceSynchronize();
+		status = gpuGetLastError();
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim_cart %d\n", status);
 	}
 }
 

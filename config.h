@@ -574,7 +574,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 183
+#define NV 184
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -757,6 +757,7 @@ MNEMONICS SECTION
 #define AMR_TAG3 180
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
+#define AMR_CARTFLAG 183
 
 //Same as above but for old datasets used in grid_read function
 #define READ_AMR_COORD1 (0)

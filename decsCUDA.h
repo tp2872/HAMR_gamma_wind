@@ -149,5 +149,6 @@ __global__ void boundprim2_outflow(double* pv, const  double* __restrict__ gcov,
 __global__ void boundprim2_reflective(double* pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double* ps);
 __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 __global__ void boundprim3_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_5, int NBR_6, double* ps);
+__global__ void boundprim_cart(double* pv, double* ps, int* pflag_cart, int dir);
 
 		

@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 1000.0;
-	DTd = 1.0;
+	DTd = 10.0;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -377,7 +377,7 @@ void set_grid(int n)
 	}
 
 	#if(CARTESIAN_GR)
-	set_pflag_cart();
+	set_pflag_cart(n);
 	#endif
 
 	#if(FRAME_TRANSFORM)
@@ -520,7 +520,6 @@ void check_input() {
 		fprintf(stderr, "PPM not suppoerted in CPU version"); 
 		exit(0);
 	}
-
 
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {

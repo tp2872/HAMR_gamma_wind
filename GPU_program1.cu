@@ -11368,6 +11368,10 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	double gamma_g, fel;
 	#endif
 
+	#if(CARTESIAN_GR)
+	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
+	#endif
+
 	if (k == 1) {
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		for (k = 0; k < NPR; k++) {
@@ -11470,6 +11474,10 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
 	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	#if(CARTESIAN_GR)
+	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k == 1) {
@@ -11628,6 +11636,10 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
 	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	#if(CARTESIAN_GR)
+	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k == 1) {
@@ -11826,6 +11838,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
 	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	#if(CARTESIAN_GR)
+	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k == 1) {
@@ -12160,6 +12176,10 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
 	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	#if(CARTESIAN_GR)
+	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k > 0){
@@ -13073,6 +13093,90 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 		#endif
 	}
 	#endif
+}
+
+__global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int dir)
+{
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	zcurr = (global_id % (isize)) % (BS_3+2*N3G);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3+2*N3G);
+	icurr = (global_id - (jcurr * (BS_3+2*N3G)+zcurr)) / (isize);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	int k;
+	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
+
+	if (k==1 && pflag_cart[global_id] == 1) {
+		if (dir == 1) {
+			int itest, i;
+			for (i = D1; i <= N1G; i++) {
+				itest = MY_MIN(icurr + i, BS_1 + 2 * N1G - 1);
+				if (pflag_cart[global_id + itest * isize] == 0) {
+					//PLOOP pv[k * ksize + global_id] =  pv[k * ksize + global_id + itest * isize];
+					//pv[RHO * ksize + global_id] = 1e5;
+					//ps[1 * ksize + global_id] = ps[1 * ksize + global_id + itest * isize];
+					//ps[2 * ksize + global_id] = ps[2 * ksize + global_id + itest * isize];
+					break;
+				}
+
+				itest = MY_MAX(icurr - i, 0);
+				if (pflag_cart[global_id + itest * isize] == 0) {
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + itest * isize];
+					//pv[RHO * ksize + global_id] = 1e5;
+					//ps[1 * ksize + global_id] = ps[1 * ksize + global_id + itest * isize];
+					//ps[2 * ksize + global_id] = ps[2 * ksize + global_id + itest * isize];
+					break;
+				}
+			}
+		}
+		else if (dir == -2) {
+			int jtest, j;
+			for (j = D2; j <= N2G; j++) {
+				jtest = MY_MIN(jcurr + j, BS_2 + 2 * N2G - 1);
+				if (pflag_cart[global_id + jtest * (BS_3 + 2 * N3G)] == 0) {
+					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					//pv[RHO * ksize + global_id] = 1e5;
+					ps[0 * ksize + global_id] = ps[0 * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					ps[2 * ksize + global_id] = ps[2 * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					break;
+				}
+
+				jtest = MY_MAX(jcurr - j, 0);
+				if (pflag_cart[global_id + jtest * (BS_3 + 2 * N3G)] == 0) {
+					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					//pv[RHO * ksize + global_id] = 1e5;
+					ps[0 * ksize + global_id] = ps[0 * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					ps[2 * ksize + global_id] = ps[2 * ksize + global_id + jtest * (BS_3 + 2 * N3G)];
+					break;
+				}
+			}
+		}
+		else if(dir==-3){
+			int ztest, z;
+			for (z = D3; z <= N3G; z++) {
+				ztest = MY_MIN(zcurr + z, BS_3 + 2 * N3G - 1);
+				if (pflag_cart[global_id + ztest] == 0) {
+					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + ztest];
+					//pv[RHO * ksize + global_id] = 1e5;
+					ps[0 * ksize + global_id] = ps[0 * ksize + global_id + ztest];
+					ps[1 * ksize + global_id] = ps[1 * ksize + global_id + ztest];
+					break;
+				}
+
+				ztest = MY_MAX(zcurr - z, 0);
+				if (pflag_cart[global_id + ztest] == 0) {
+					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + ztest];
+					//pv[RHO * ksize + global_id] = 1e5;
+					ps[0 * ksize + global_id] = ps[0 * ksize + global_id + ztest];
+					ps[1 * ksize + global_id] = ps[1 * ksize + global_id + ztest];
+					break;
+				}
+			}
+		}
+	}
 }
 
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
