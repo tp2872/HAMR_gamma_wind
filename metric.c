@@ -280,22 +280,27 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][3] = 1;
 	#else
 	//Set Cartesian KS metric
-	double f, L[NDIM], x, y, z;
-	x = X[1];
-	y = X[2];
-	z = X[3];
-	f = 2 * r * r * r / (r * r * r * r + a * a * z * z);
-	L[0] = 1.0;
-	L[1] = (r * x + a * y) / (r * r + a * a);
-	L[2] = (r * y - a * x) / (r * r + a * a);
-	L[3] = z / r;
+	double f, L[NDIM], x, y, z, R;
+	x = X[1] + 0.00001;
+	y = X[2] + 0.00001;
+	z = X[3] + 0.00001;
+	R = sqrt(0.5 * (r * r - a * a + sqrt(pow(r * r - a * a, 2.0) + 4 * a * a * z * z)));
+	if (!isfinite(R))fprintf(stderr, "Metric error1 \n");
+	f = 2 * R * R * R / (R * R * R * R + a * a * z * z);
+	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, R, z, a);
 
-	gcov[0][0] = -1+f* L[0]* L[0];
+	L[0] = 1.0;
+	L[1] = (R * x + a * y) / (R * R + a * a);
+	L[2] = (R * y - a * x) / (R * R + a * a);
+	L[3] = z / R;
+	if (!isfinite(L[3]))fprintf(stderr, "Metric error3 \n");
+
+	gcov[0][0] = -1 + f * L[0] * L[0];
 	gcov[0][1] = f * L[0] * L[1];
 	gcov[0][2] = f * L[0] * L[2];
 	gcov[0][3] = f * L[0] * L[3];
 
-	gcov[1][9] = f * L[1] * L[0];
+	gcov[1][0] = f * L[1] * L[0];
 	gcov[1][1] = 1 + f * L[1] * L[1];
 	gcov[1][2] = f * L[1] * L[2];
 	gcov[1][3] = f * L[1] * L[3];

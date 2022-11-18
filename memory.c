@@ -86,6 +86,9 @@ void set_arrays(int n)
 	#if(RAD_M1)
 	pflag_rad[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
+	#if(CARTESIAN_GR)
+	pflag_cart[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
+	#endif
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
@@ -689,6 +692,9 @@ void free_arrays(int n){
 	#endif
 	#if(RAD_M1)
 	free(pflag_rad[nl[n]]);
+	#endif
+	#if(CARTESIAN_GR)
+	free(pflag_cart[nl[n]]);
 	#endif
 	free(U[nl[n]]);
 	free(dq[nl[n]]);
@@ -2612,6 +2618,21 @@ double calc_mem_gpu(int n){
 	return mem;
 }
 
+//Flag cells that need inflow boundary conditions in Cartesian mesh
+void set_pflag_cart() {
+	int n, i, j, z;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + D3) {
+			if (i < NB_1*BS_1*pow(2,block[n_ord[n]][AMR_LEVEL1])/2+2 && i > NB_1 * BS_1 * pow(2, block[n_ord[n]][AMR_LEVEL1])/2 - 2 && j < NB_2 * BS_2 * pow(2, block[n_ord[n]][AMR_LEVEL2]) / 2 + 2 && j > NB_2 * BS_2 * pow(2, block[n_ord[n]][AMR_LEVEL2]) / 2 - 2 && z < NB_3 * BS_3 * pow(2, block[n_ord[n]][AMR_LEVEL3]) / 2 + 2 && z > NB_3 * BS_3 * pow(2, block[n_ord[n]][AMR_LEVEL3]) / 2 - 2) {
+				pflag_cart[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)] = 1;
+			}
+			else {
+				pflag_cart[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)] = 0;
+			}
+		}
+	}
+}
 //Trash functions
 /*
 // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS

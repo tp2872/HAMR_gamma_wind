@@ -77,6 +77,7 @@ extern double(*restrict F2[NB_LOCAL])[NPR];
 extern double(*restrict F3[NB_LOCAL])[NPR];
 extern int(*restrict pflag[NB_LOCAL]);
 extern int(*restrict pflag_rad[NB_LOCAL]);
+extern int(*restrict pflag_cart[NB_LOCAL]);
 extern double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
@@ -136,6 +137,7 @@ extern double *dtij3_GPU[NB_LOCAL];
 extern double *Katm_GPU[NB_LOCAL];
 extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
+extern int* pflag_CART_GPU[NB_LOCAL];
 extern int failimage_counter[NFAIL];
 
 /*MPI arrays*/
@@ -321,6 +323,7 @@ extern double * Bufferdtij1[NB_LOCAL];
 extern double * Bufferdtij2[NB_LOCAL];
 extern double * Bufferdtij3[NB_LOCAL];
 extern int * Bufferpflag[NB_LOCAL];
+extern int * Bufferpflag_CART[NB_LOCAL];
 extern int * Bufferpflag_RAD[NB_LOCAL];
 extern int * Bufferfailimage[NB_LOCAL];
 extern double * BufferKatm[NB_LOCAL];
@@ -930,7 +933,7 @@ void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_st
 	#endif
 );
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
-void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
+void inflow_check(double *pr, int n, int ii, int jj, int zz, int type, int dir);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt
 	#if(TWO_T)
 	, double gamma_g
@@ -1354,6 +1357,8 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent);
 void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent, int neg);
 void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent);
+
+void set_pflag_cart();
 
 //Cylindrification related
 double Ftr(double x);

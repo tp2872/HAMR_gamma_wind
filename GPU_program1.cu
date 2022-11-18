@@ -11344,6 +11344,9 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	#if(CALC_MDOT)
 	, double mass_density_scale
 	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
+	#endif
 )
 {
 	#if(RAD_M1)
@@ -11427,6 +11430,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 )
 {
@@ -11582,6 +11588,9 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 )
 {
@@ -11774,6 +11783,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 )
 {
@@ -12066,6 +12078,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 	#if(RAD_M1)
 	, int *pflag_rad
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 )
 {

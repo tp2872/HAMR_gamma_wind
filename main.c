@@ -375,6 +375,11 @@ void set_grid(int n)
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);
 		}
 	}
+
+	#if(CARTESIAN_GR)
+	set_pflag_cart();
+	#endif
+
 	#if(FRAME_TRANSFORM)
 	set_Mud(n);
 	#endif

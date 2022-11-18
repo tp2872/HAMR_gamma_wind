@@ -1,7 +1,8 @@
 #include "include.h"
 #include "decs_MPI.h"
-void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
-void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 
 /* bound array containing entire set of primitive variables */
@@ -10,17 +11,29 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	int i, n, flag;
 	double temp=nstep;
 	if (bound_force == 1) nstep = -1;
-	#if(!PERIODIC1)
+	#if(BOUND_TYPE1==OUTFLOW)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1(p,ps, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1(ph, psh, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1_outflow(p,ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1_outflow(ph, psh, n_ord[n]);
 	}
 	#endif
 
-	#if(!TRANS_BOUND && !PERIODIC2)
+	#if(BOUND_TYPE2==OUTFLOW)
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim2_outflow(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2_outflow(ph, psh, n_ord[n]);
+	}
+	#elif(BOUND_TYPE2==REFLECTIVE)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim2(p,ps, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2(ph,psh, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim2_reflective(p,ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2_reflective(ph,psh, n_ord[n]);
+	}
+	#endif
+
+	#if(BOUND_TYPE3==OUTFLOW)
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim3_outflow(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim3_outflow(ph, psh, n_ord[n]);
 	}
 	#endif
 
@@ -69,10 +82,10 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
-	#if(TRANS_BOUND && NB_3==1 && !PERIODIC2)
+	#if(BOUND_TYPE2==TRANSMISSIVE && NB_3==1)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim_trans(p, ps, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim_trans(ph, psh, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim2_trans(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2_trans(ph, psh, n_ord[n]);
 	}
 	#endif
 
@@ -120,7 +133,7 @@ void set_iprobe(int mode, int * flag){
 	return;
 }
 
-void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
 	int i, j, z, k;
 	struct of_geom geom;
 
@@ -137,9 +150,8 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, 0, j, z)][k];
 						}
 						#if(STAGGERED)
-						for (k = 2; k < NDIM; k++){
-							ps[nl[n]][index_3D(n, i, j, z)][k] = ps[nl[n]][index_3D(n, 0, j, z)][k];
-						}
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, 0, j, z)][2];
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, 0, j, z)][3];
 						#endif
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, 0, j, z)];
 					}
@@ -160,9 +172,8 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)];
 						#if(STAGGERED)
-						for (k = 2; k < NDIM; k++){
-							ps[nl[n]][index_3D(n, i, j, z)][k] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
-						}
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][2];
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][3];
 						#endif
 					}
 				}
@@ -179,10 +190,10 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
-						inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 0);
-						inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 0);
+						inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 0, 1);
+						inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 0, 1);
 						#if(N1G==3)
-						inflow_check(prim[nl[n]][index_3D(n, -3, j, z)], n, i, j, z, 0);
+						inflow_check(prim[nl[n]][index_3D(n, -3, j, z)], n, i, j, z, 0, 1);
 						#endif
 					}
 				}
@@ -190,7 +201,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		}
 	}
 	// make sure there is no inflow at the outer boundary
-	#if(CONSTANT_BC)
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR2] == -1){
 		for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i <= N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G - 1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
@@ -198,10 +209,10 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
-						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]), j, z)], n, i, j, z, 1);
-						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 1, j, z)], n, i, j, z, 1);
+						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]), j, z)], n, i, j, z, 1, 1);
+						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 1, j, z)], n, i, j, z, 1, 1);
 						#if(N1G==3)
-						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 2, j, z)], n, i, j, z, 1);
+						inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 2, j, z)], n, i, j, z, 1, 1);
 						#endif
 					}
 				}
@@ -211,7 +222,93 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	#endif
 }
 
-void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+	int i, j, z, k;
+	struct of_geom geom;
+
+	// inner r boundary condition: u, gdet extrapolation
+	if (block[n][AMR_NBR1] == -1){
+		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
+		{
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+			for (i = N1_GPU_offset[n]-N1G; i < N1_GPU_offset[n] + BS_1+N1G; i++){
+				for (z = N3_GPU_offset[n]-N3G; z < N3_GPU_offset[n] + BS_3+N3G; z++){
+					//#pragma omp   simd
+					for (j = -N2G; j < 0; j++){
+						for (k = 0; k < NPR; k++){
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 0, z)][k];
+						}
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, 0, z)][1];
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, 0, z)][3];
+						#endif
+						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, i, 0, z)];
+					}
+				}
+			}
+		}
+	}
+
+	if (block[n][AMR_NBR3] == -1){
+		// outer r BC: outflow 		
+		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
+		{
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++) {
+				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++){
+					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G; j++){
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z)][k];
+						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z)];
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z)][1];
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z)][3];
+						#endif
+					}
+				}
+			}
+		}
+	}
+
+	// make sure there is no inflow at the inner boundary 
+	if (block[n][AMR_NBR1] == -1){
+		for (j = -N2G; j <= -1; j++){
+			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
+			{
+				#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+				for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
+					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+						inflow_check(prim[nl[n]][index_3D(n, i, -1, z)], n, i, j, z, 0, 2);
+						inflow_check(prim[nl[n]][index_3D(n, i, -2, z)], n, i, j, z, 0, 2);
+						#if(N2G==3)
+						inflow_check(prim[nl[n]][index_3D(n, i, -2, z)], n, i, j, z, 0, 2);
+						#endif
+					}
+				}
+			}
+		}
+	}
+
+	// make sure there is no inflow at the outer boundary
+	if (block[n][AMR_NBR3] == -1){
+		for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j <= N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G - 1; j++){
+			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
+			{
+				#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+				for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++) {
+					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+						inflow_check(prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]), z)], n, i, j, z, 1, 2);
+						inflow_check(prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z)], n, i, j, z, 1, 2);
+						#if(N2G==3)
+						inflow_check(prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + 2, z)], n, i, j, z, 1, 2);
+						#endif
+					}
+				}
+			}
+		}
+	}
+}
+
+void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
 	int i, j, z, k, jref;
 
 	//copy all densities and B^phi in; interpolate linearly transverse velocity
@@ -401,8 +498,7 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	}
 }
 
-
-void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
 	int i, j, z, k;
 
 	// polar BCs 
@@ -467,7 +563,93 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 	}
 }
 
-void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type){
+void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+	int i, j, z, k;
+	struct of_geom geom;
+
+	// inner r boundary condition: u, gdet extrapolation
+	if (block[n][AMR_NBR5] == -1){
+		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
+		{
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)/nthreads)	
+			for (i = N1_GPU_offset[n]-N1G; i < N1_GPU_offset[n] + BS_1+N1G; i++){
+				for (j = N2_GPU_offset[n]-N2G; j < N2_GPU_offset[n] + BS_2+N2G; j++){
+					//#pragma omp   simd
+					for (z = -N3G; z < 0; z++){
+						for (k = 0; k < NPR; k++){
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, 0)][k];
+						}
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, 0)][1];
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, 0)][2];
+						#endif
+						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, i, j, 0)];
+					}
+				}
+			}
+		}
+	}
+
+	if (block[n][AMR_NBR6] == -1){
+		// outer r BC: outflow 		
+		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
+		{
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)/nthreads)	
+			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++) {
+				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
+					for (z = N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]); z < N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) + N3G; z++){
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1)][k];
+						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1)];
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1)][1];
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1)][2];
+						#endif
+					}
+				}
+			}
+		}
+	}
+
+	// make sure there is no inflow at the inner boundary 
+	if (block[n][AMR_NBR5] == -1){
+		for (z = -N3G; z <= -1; z++){
+			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, z) private(j,z)
+			{
+				#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)/nthreads)	
+				for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
+					for (j = -N2G + N3_GPU_offset[n]; j < BS_2 + N2_GPU_offset[n] + N2G; j++) {
+						inflow_check(prim[nl[n]][index_3D(n, i, j, -1)], n, i, j, z, 0, 3);
+						inflow_check(prim[nl[n]][index_3D(n, i, j, -2)], n, i, j, z, 0, 3);
+						#if(N3G==3)
+						inflow_check(prim[nl[n]][index_3D(n, i, j, -3)], n, i, j, z, 0, 3);
+						#endif
+					}
+				}
+			}
+		}
+	}
+
+	// make sure there is no inflow at the outer boundary
+	if (block[n][AMR_NBR6] == -1){
+		for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j <= N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G - 1; j++){
+			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
+			{
+				#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+				for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++) {
+					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+						inflow_check(prim[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]))], n, i, j, z, 1, 3);
+						inflow_check(prim[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) + 1)], n, i, j, z, 1, 3);
+						#if(N3G==3)
+						inflow_check(prim[nl[n]][index_3D(n, i, j, N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) + 2)], n, i, j, z, 1, 3);
+						#endif
+					}
+				}
+			}
+		}
+	}
+}
+
+void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type, int dir){
     struct of_geom geom ;
     double ucon[NDIM];
     int j,k ;
@@ -476,7 +658,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
     get_geometry(n, ii,jj,zz,CENT,&geom) ;
     ucon_calc(pr, &geom, ucon) ;
 
-    if( ((ucon[1] > 0.) && (type==0)) || ((ucon[1] < 0.) && (type==1)) ) { 
+    if( ((ucon[dir] > 0.) && (type==0)) || ((ucon[dir] < 0.) && (type==1)) ) { 
 		/* find gamma and remove it from primitives */
 		if( gamma_calc(pr,&geom,&gamma) ) { 
 			fprintf(stderr,"\ninflow_check(): gamma failure \n");
@@ -486,7 +668,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 		pr[U2] /= gamma ;
 		pr[U3] /= gamma ;
 		alpha = 1./sqrt(-geom.gcon[0][0]) ;
-		beta1 = geom.gcon[0][1]*alpha*alpha ;
+		beta1 = geom.gcon[0][dir]*alpha*alpha ;
 
 		/* reset radial velocity so radial 4-velocity is zero */
 		pr[U1] = beta1/alpha ;
@@ -509,7 +691,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 	#if(RAD_M1)
 	double ucon_rad[NDIM], gamma_rad, vsq_rad;
 	ucon_calc_rad(pr, &geom, ucon_rad);
-	if (((ucon_rad[1] > 0.) && (type == 0)) || ((ucon_rad[1] < 0.) && (type == 1))) {
+	if (((ucon_rad[dir] > 0.) && (type == 0)) || ((ucon_rad[dir] < 0.) && (type == 1))) {
 		/* find gamma and remove it from primitives */
 		if (gamma_calc_rad(pr, &geom, &gamma_rad)) {
 			fprintf(stderr, "\ninflow_check(): gamma failure \n");
@@ -519,7 +701,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 		pr[U2_RAD] /= gamma_rad;
 		pr[U3_RAD] /= gamma_rad;
 		alpha = 1. / sqrt(-geom.gcon[0][0]);
-		beta1 = geom.gcon[0][1] * alpha * alpha;
+		beta1 = geom.gcon[0][dir] * alpha * alpha;
 
 		/* reset radial velocity so radial 4-velocity is zero */
 		pr[U1_RAD] = beta1 / alpha;

@@ -296,8 +296,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define POLEFIX 2
 
 /*Set periodic boundary conditions only in the third dimension is supported*/
-#define PERIODIC1 CARTESIAN
-#define PERIODIC2 CARTESIAN
+#define PERIODIC1 (CARTESIAN || CARTESIAN_GR)
+#define PERIODIC2 (CARTESIAN || CARTESIAN_GR)
 #if (BS_3*NB_3==1)
 #define PERIODIC3 0
 #else
