@@ -284,9 +284,9 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	x = X[1] + 0.00001;
 	y = X[2] + 0.00001;
 	z = X[3] + 0.00001;
-	R = sqrt(0.5 * (r * r - a * a + sqrt(pow(r * r - a * a, 2.0) + 4 * a * a * z * z)));
+	R = sqrt(0.5 * (r * r - a * a + sqrt(pow(r * r - a * a, 2.0) + 4.0 * a * a * z * z)));
 	if (!isfinite(R))fprintf(stderr, "Metric error1 \n");
-	f = 2 * R * R * R / (R * R * R * R + a * a * z * z);
+	f = 2.0 * R * R * R / (R * R * R * R + a * a * z * z);
 	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, R, z, a);
 
 	L[0] = 1.0;

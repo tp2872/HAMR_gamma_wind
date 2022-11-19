@@ -624,6 +624,11 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	int counter1 = 0;
 	double test;
 
+	#if(CARTESIAN_GR)
+	if(flag==0)bound_prim_cart(pr, ps, dir, n);
+	else if(flag==1)bound_prim_cart(pr, psh, dir, n);
+	#endif
+
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }

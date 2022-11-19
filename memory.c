@@ -2629,6 +2629,7 @@ void set_pflag_cart(int n) {
 			&& (z < NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 + N3G) && (z >= NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 - N3G)) {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
 			block[n][AMR_CARTFLAG] = 1;
+			//fprintf(stderr, "coord: (%d %d %d) \n", i,j,z);
 		}
 		else {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;

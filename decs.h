@@ -137,6 +137,7 @@ extern double *dtij3_GPU[NB_LOCAL];
 extern double *Katm_GPU[NB_LOCAL];
 extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
+extern double* radius_GPU[NB_LOCAL];
 extern int* pflag_CART_GPU[NB_LOCAL];
 extern int failimage_counter[NFAIL];
 
@@ -907,6 +908,7 @@ void set_E_init(double p[NPR], struct of_geom geom);
 double advance(int flag);
 double advance_GPU(void);
 void bound_prim(double(*restrict pr[NB_LOCAL])[NPR], int MPI);
+void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n);
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 void   flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
 void const_transport1(double(*restrict p[NB_LOCAL])[NPR], int n);

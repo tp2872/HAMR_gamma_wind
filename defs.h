@@ -95,6 +95,7 @@ double *Katm_GPU[NB_LOCAL];
 int *pflag_GPU[NB_LOCAL];
 int* pflag_CART_GPU[NB_LOCAL];
 int *failimage_GPU[NB_LOCAL];
+double* radius_GPU[NB_LOCAL];
 int failimage_counter[NFAIL];
 
 /*MPI arrays*/
