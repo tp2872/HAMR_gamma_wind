@@ -1594,7 +1594,8 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 
 	//If on an Cartesion grid, first set boundary conditions in the hole in the middle (or holes anywhere else in case of binary metric)
 	#if(CARTESIAN_GR)
-	GPU_boundprim_cart(dir, flag, n);
+	GPU_boundprim_cart(dir, 0, n);
+	GPU_boundprim_cart(dir, 1, n);
 	#endif
 
 	/*Calculate reconstructed left state*/
@@ -2765,8 +2766,6 @@ void GPU_boundprim(int bound_force)
 		}
 	#endif
 
-	
-
 	#if(PRESTEP)
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		set_iprobe(0, &flag);
@@ -2945,6 +2944,13 @@ void GPU_boundprim(int bound_force)
 			if(nstep==-1) GPU_boundprim2_trans(0, n_ord[n]);
 		}
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2_trans(0, n_ord[n]);
+	}
+	#endif
+
+	#if(CARTESIAN_GR)
+	for (n = 0; n < n_active; n++) {
+		GPU_boundprim_cart(1, 0, n_ord[n]);
+		GPU_boundprim_cart(1, 1, n_ord[n]);
 	}
 	#endif
 
