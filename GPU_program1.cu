@@ -9769,17 +9769,17 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 	get_geometry(ii, jj, zz, CENT, &geom, gcov, gcon, gdet);
 	ucon_calc(pr, &geom, ucon);
 
-	if (((ucon[1] > 0.) && (type == 0)) || ((ucon[1] < 0.) && (type == 1))) {
+	if (((ucon[dir] > 0.) && (type == 0)) || ((ucon[dir] < 0.) && (type == 1))) {
 		// find gamma and remove it from primitives 
 		gamma_calc(pr, &geom, &gamma);
 		pr[U1] /= gamma;
 		pr[U2] /= gamma;
 		pr[U3] /= gamma;
 		alpha = 1. / sqrt(-geom.gcon[0]);
-		beta1 = geom.gcon[1] * alpha*alpha;
+		beta1 = geom.gcon[dir] * alpha*alpha;
 
 		// reset radial velocity so radial 4-velocity is zero
-		pr[U1] = beta1 / alpha;
+		pr[UU+dir] = beta1 / alpha;
 
 		// now find new gamma and put it back in
 		vsq = geom.gcov[4] * pr[UTCON1 + 1 - 1] * pr[UTCON1 + 1 - 1]; //1,1
@@ -9801,17 +9801,17 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 	#if(0)
 	double ucon_rad[NDIM], gamma_rad, vsq_rad;
 	ucon_calc_rad(pr, &geom, ucon_rad);
-	if (((ucon_rad[1] > 0.) && (type == 0)) || ((ucon_rad[1] < 0.) && (type == 1))) {
+	if (((ucon_rad[dir] > 0.) && (type == 0)) || ((ucon_rad[dir] < 0.) && (type == 1))) {
 		/* find gamma and remove it from primitives */
 		gamma_calc_rad(pr, &geom, &gamma_rad);
 		pr[U1_RAD] /= gamma_rad;
 		pr[U2_RAD] /= gamma_rad;
 		pr[U3_RAD] /= gamma_rad;		
 		alpha = 1. / sqrt(-geom.gcon[0]);
-		beta1 = geom.gcon[1] * alpha * alpha;
+		beta1 = geom.gcon[dir] * alpha * alpha;
 
 		/* reset radial velocity so radial 4-velocity is zero */
-		pr[U1_RAD] = beta1 / alpha;
+		pr[UU_RAD+dir] = beta1 / alpha;
 
 		// now find new gamma and put it back in 		
 		vsq_rad = geom.gcov[4] * pr[U1_RAD + 1 - 1] * pr[U1_RAD + 1 - 1]; //1,1
@@ -12660,12 +12660,12 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		}
 
 		#if(STAGGERED)
-		ps[1 * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
-		ps[1 * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		#if(N2G==3)
-		ps[1 * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + 2 * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		#endif
 		#endif
@@ -12723,12 +12723,12 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 			#endif
 		}
 		#if(STAGGERED)
-		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
-		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		#if(N2G==3)
-		ps[1 * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		ps[2 * (ksize)+icurr * isize + (BS_2 + N2G + 2) * (BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		#endif
 		#endif
@@ -13019,13 +13019,13 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 		}
 
 		#if(STAGGERED)
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +0] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +1] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
 		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +0] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
 		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +1] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +0] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +1] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
 		#if(N3G==3)
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +2] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
 		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +2] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +2] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +N3G];
 		#endif
 		#endif
 
@@ -13082,13 +13082,13 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 			#endif
 		}
 		#if(STAGGERED)
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G)] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_1 + N3G - 1)];
 		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
-		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_1 + N3G - 1)];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
+		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 1)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
 		#if(N3G==3)
+		ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 2)] = ps[0 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
 		ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 2)] = ps[1 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
-		ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G + 2)] = ps[2 * (ksize)+icurr * isize + jcurr * (BS_3 + 2 * N3G) +(BS_3 + N3G - 1)];
 		#endif
 		#endif
 	}

@@ -469,61 +469,65 @@ void check_input() {
 	//Select a grid that is compatible with DEREFINE_POLE
 	if (DEREFINE_POLE && (NB_2==3 || NB_2 == 6 || NB_2 == 12 || NB_2 == 24 || NB_2 == 48 || NB_2 == 96)) {}
 	else if(DEREFINE_POLE){
-		fprintf(stderr, "Init error 1");
+		if (rank == 0) fprintf(stderr, "Init error 1");
 		exit(0);
 	}
 
 	//You can only select on version
 	if (VARGAMMA + FIXEDGAMMA + CONSTANTGAMMA != 1) {
-		fprintf(stderr, "Init error 2");
+		if (rank == 0) fprintf(stderr, "Init error 2");
 		exit(0);
 	}
 
 	//NB_3 has to be even in 3D
 	if (NB_3 % 2 == 0 || (NB_3 * BS_3 == 1)) {}
 	else {
-		fprintf(stderr, "Init error 3");
+		if (rank == 0) fprintf(stderr, "Init error 3");
 		exit(0);
 	}
 
 	//Don't use block sizes this small in any case
 	if ((BS_3 < 8 && NB_3 * BS_3 > 1)|| BS_2 < 8 || BS_1 < 8) {
-		fprintf(stderr, "Init error 4");
+		if (rank == 0) fprintf(stderr, "Init error 4");
 		exit(0);
 	}
 
 	if (((BS_3%2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {
-		fprintf(stderr, "Init error 5");
+		if (rank == 0) fprintf(stderr, "Init error 5");
 		exit(0);
 	}
 	
 	//You can't run on CPU and GPU
 	if (GPU_ENABLED + CPU_OPENMP > 1) {
-		fprintf(stderr, "Init error 6");
+		if (rank == 0) fprintf(stderr, "Init error 6");
 		exit(0);
 	}
 
 	//Photon number evolution needs M1
 	if (P_NUM && !RAD_M1) {
-		fprintf(stderr, "Init error 7");
+		if (rank == 0) fprintf(stderr, "Init error 7");
 		exit(0);
 	}
 
 	//These features are not supported anymore
 	if (FULL_ENTROPY || !DOKTOT) {
-		fprintf(stderr, "Init error 8");
+		if (rank == 0) fprintf(stderr, "Init error 8");
 		exit(0);
 	}
 
 	//PPM not implemented in CPU version
 	if (CPU_OPENMP && PPM) { 
-		fprintf(stderr, "PPM not suppoerted in CPU version"); 
+		if (rank == 0) fprintf(stderr, "PPM not suppoerted in CPU version");
 		exit(0);
 	}
-
+	//Check if nested cartesian grid is used properly
+	if (GRID_CARTESIAN && !CARTESIAN_GR) {
+		if (rank == 0) fprintf(stderr, "You cannot use nested Cartesian grid without CARTESIAN_GR \n");
+		exit(0);
+	}
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
-		fprintf(stderr, "You are choosing the resolution per block too small! Do this only for debugging!");
+		if (rank == 0) fprintf(stderr, "You are choosing the resolution per block too small! Do this only for debugging!");
 		//exit(0);
 	}
 
@@ -545,13 +549,13 @@ void check_input() {
 
 	//You cannot have more than 9 3D refinement levels
 	if (N_LEVELS_3D > 9) {
-		fprintf(stderr, "N_LEVELS_3D needs to be smaller than 6");
+		if (rank == 0) fprintf(stderr, "N_LEVELS_3D needs to be smaller than 10");
 		exit(0);
 	}
 
 	//You cannot have more than 5 external derefinement refinement levels
 	if (N_LEVELS_1D > 9) {
-		fprintf(stderr, "N_LEVELS_1D needs to be smaller than 6");
+		if (rank == 0) fprintf(stderr, "N_LEVELS_1D needs to be smaller than 10");
 		exit(0);
 	}
 }

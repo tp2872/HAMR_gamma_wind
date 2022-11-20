@@ -3165,6 +3165,20 @@ void set_mag(void){
 				}
 				#endif
 			}
+			#if(CARTESIAN_GR)
+			double dxdxp[NDIM][NDIM], dq_temp[NDIM];
+			int k1, k2;
+			dxdxp_func(X, dxdxp);
+
+			for (k = 0; k < NDIM; k++) dq_temp[k] = dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k];
+
+			for (k1 = 0; k1 < NDIM; k1++) {
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k1] = 0;
+				for (k2 = 0; k2 < NDIM; k2++) {
+					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k1] += dxdxp[k2][k1] * dq_temp[k2];
+				}
+			}
+			#endif
 		}
 	}
 
