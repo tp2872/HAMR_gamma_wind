@@ -59,7 +59,7 @@ void diag(int call_code)
 		}
 		if (divbmax > 0.00001) {
 			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
-			exit(0);
+			//exit(0);
 		}
 	}
 

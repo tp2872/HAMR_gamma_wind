@@ -13157,10 +13157,10 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 				if (pflag_cart[global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)] == 0) {
 					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[0 * ksize + global_id] = 0.0;//ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[2 * ksize + global_id] = 0.0;//ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					break;
 				}

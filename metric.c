@@ -247,6 +247,8 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 
 	bl_coord(X, &r, &th, &phi);
 
+	r = MY_MAX(r, 1.0);
+
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
 
