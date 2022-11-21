@@ -82,6 +82,7 @@ void set_timelevel(int tag){
 		}*/
 
 		//Fixate the timestep around the pole
+		#if(SPHERICAL || SPHERICAL_GR)
 		for (l = 0; l < N_LEVELS_3D; l++) {
 			ni = NB_1 * pow(1 + REF_1, l);
 			nj = NB_2 * pow(1 + REF_2, l);
@@ -115,9 +116,11 @@ void set_timelevel(int tag){
 				}
 			}
 		}
+		#endif		
 		free(min_j);
 	}
 	else {
+		#if(SPHERICAL || SPHERICAL_GR)
 		//First set the timestep around the poles
 		for (n = 0; n < n_active; n++) {
 			if (block[n_ord[n]][AMR_POLE] > 0) {
@@ -149,6 +152,7 @@ void set_timelevel(int tag){
 				}
 			}
 		}
+		#endif
 
 		//Now set timelevel for all neighbours and corners
 		for (n = 0; n < n_active; n++) {
