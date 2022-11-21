@@ -91,6 +91,13 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	#endif
 
+	//#if(CARTESIAN_GR)
+	//for (n = 0; n < n_active; n++) {
+	//	bound_prim_cart(p, ps, 1, n_ord[n]);
+	//	bound_prim_cart(ph, psh, 1, n_ord[n]);
+	//}
+	//#endif
+
 	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1 || bound_force == 1){ //watch out does this for both half and full timestep while only needed for full timestep
@@ -672,6 +679,100 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 }
 
+void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n){
+	int i, j, z, k;
+	struct of_geom geom;
+
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G - 1) {
+		if (pflag_cart[nl[n]][index_3D(n, i, j, z)] == 1) {
+			if (dir == 1) {
+				int itest, i_add;
+				for (i_add = D1; i_add <= N1G; i_add++) {
+					itest = MY_MIN(i + i_add, N1_GPU_offset[n] + BS_1 + N1G - 1);
+					if (pflag_cart[nl[n]][index_3D(n, itest, j, z)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, itest, j, z)][k];
+						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
+							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, itest, j, z)][2];
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, itest, j, z)][3];
+						}
+						break;
+					}
+
+					itest = MY_MAX(i - i_add, N1_GPU_offset[n] - N1G);
+					if (pflag_cart[nl[n]][index_3D(n, itest, j, z)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, itest, j, z)][k];
+						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
+							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, itest, j, z)][2];
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, itest, j, z)][3];
+						}
+						break;
+					}
+				}
+			}
+			else if (dir == 2) {
+				int jtest, j_add;
+				for (j_add = D2; j_add <= N2G; j_add++) {
+					jtest = MY_MIN(j + j_add, N2_GPU_offset[n] + BS_2 + N2G - 1);
+					if (pflag_cart[nl[n]][index_3D(n, i, jtest, z)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jtest, z)][k];
+						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, jtest, z)][1];
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, jtest, z)][3];
+						}
+						break;
+					}
+
+					jtest = MY_MAX(j - j_add, N2_GPU_offset[n] - N2G);
+					if (pflag_cart[nl[n]][index_3D(n, i, jtest, z)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jtest, z)][k];
+						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, jtest, z)][1];
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, jtest, z)][3];
+						}
+						break;
+					}
+				}
+			}
+			else if (dir == 3) {
+				int ztest, z_add;
+				for (z_add = D3; z_add <= N3G; z_add++) {
+					ztest = MY_MIN(z + z_add, N3_GPU_offset[n] + BS_3 + N3G - 1);
+					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
+						if (pflag_cart[index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1];
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2
+							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, ztest)][2];
+						}
+						break;
+					}
+
+					ztest = MY_MAX(z - z_add, N3_GPU_offset[n] - N3G);
+					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
+						if (pflag_cart[index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1]; 
+						}
+						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2
+							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, ztest)][2];
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
 void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type, int dir){
     struct of_geom geom ;
     double ucon[NDIM];
@@ -694,7 +795,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type,
 		beta1 = geom.gcon[0][dir]*alpha*alpha ;
 
 		/* reset radial velocity so radial 4-velocity is zero */
-		pr[U1] = beta1/alpha ;
+		pr[UU+dir] = beta1/alpha ;
 
 		/* now find new gamma and put it back in */
 		vsq = 0. ;
@@ -711,7 +812,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type,
 		/* done */
 	}
 
-	#if(RAD_M1)
+	#if(0)
 	double ucon_rad[NDIM], gamma_rad, vsq_rad;
 	ucon_calc_rad(pr, &geom, ucon_rad);
 	if (((ucon_rad[dir] > 0.) && (type == 0)) || ((ucon_rad[dir] < 0.) && (type == 1))) {
@@ -727,7 +828,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type,
 		beta1 = geom.gcon[0][dir] * alpha * alpha;
 
 		/* reset radial velocity so radial 4-velocity is zero */
-		pr[U1_RAD] = beta1 / alpha;
+		pr[UU_RAD+dir] = beta1 / alpha;
 
 		/* now find new gamma and put it back in */
 		vsq_rad = 0.;

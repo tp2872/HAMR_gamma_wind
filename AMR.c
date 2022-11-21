@@ -39,6 +39,24 @@ int AMR_coord_linear(int l, int i, int j, int z){
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
+
+	#if(0)
+	if (l < 0 || b2 < 0 || i < 0 || j < 0 || z < 0 || i >= NB_1 * pow(1 + REF_1, l) || j >= NB_2 * pow(1 + REF_2, l) || z >= NB_3 * pow(1 + REF_3, l)) {
+		n = -1;
+	}
+	else {
+		offset = N_LEVELS_1D - L_1DMAX;
+		index = (int)(i * NB_3 * (int)pow(1 + REF_3, l + offset) * NB_2 * pow(1 + REF_2 * ((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3 * pow(1 + REF_3, l + offset) + z);
+		
+		
+		n = lin_coord[l + offset][index];
+		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z) {
+			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
+			fprintf(stderr, "Incorrect values are l: %d j0: %d i: %d j: %d z: %d \n", l, b2, i, j, z);
+			exit(0);
+		}
+	}
+	#else
 	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
 	else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 
@@ -55,7 +73,7 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 			exit(0);
 		}
 	}
-
+	#endif
 	return n;
 }
 
@@ -194,8 +212,12 @@ void AMR_set_coord(void){
 		}
 
 		//Based on value of 0-th level block determine the number of 1D refinement levels
+		#if(GRID_CARTESIAN)
+		L_1DMAX = 0;
+		#else
 		if (j[0] < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j[0] + 1.0) / log(2.)), N_LEVELS_1D);
 		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j[0]) + 1.0) / log(2.)), N_LEVELS_1D);
+		#endif
 
 		//Set coordinates based on values from last iteration
 		block[n][AMR_COORD1] = block[n][AMR_COORD2] = block[n][AMR_COORD3] = 0;
@@ -307,6 +329,7 @@ void set_AMR(void){
 	n_ord_node= (int(*)[NB_LOCAL])calloc(numtasks, sizeof(int[NB_LOCAL]));
 	n_active_node= (int(*))calloc(numtasks, sizeof(int));
 
+	#if(BOUND_TYPE2==TRANSMISSIVE)
 	for (l = 0; l < N_LEVELS_3D; l++){
 		E_avg1[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1+REF_1, l)*NB_3*pow(1+REF_3,l), sizeof(double[BS_1 + 2 * N1G]));
 		E_avg2[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
@@ -314,6 +337,7 @@ void set_AMR(void){
 		E_avg2_new[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
 
 	}
+	#endif
 	max_levels = 0;
 
 	//Set memory flag to unallocated
@@ -2653,17 +2677,19 @@ void check_refcrit(void){
 				
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
-				#if(NB_1<20 || !DEREFINE_POLE)
-				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
-					block[n_ord_total[n]][AMR_TAG] = 0;
-				}
-				#else
-				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 10) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 26)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 42 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 96 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 196 + 2)){
-					block[n_ord_total[n]][AMR_TAG] = 0;
-				}
-				#endif
+				#if(SPHERICAL || SPHERICAL_GR)
+					#if(NB_1<20 || !DEREFINE_POLE)
+					if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
+						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
+						block[n_ord_total[n]][AMR_TAG] = 0;
+					}
+					#else
+					if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 10) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 26)
+						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 42 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 96 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 196 + 2)){
+						block[n_ord_total[n]][AMR_TAG] = 0;
+					}
+					#endif
+				#endif			
 				#if(DEREFINE_POLE)
 				//var = NB_2 / 3-1;
 				//if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && block[n_ord_total[n]][AMR_COORD2] <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && block[n_ord_total[n]][AMR_COORD2] <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && block[n_ord_total[n]][AMR_COORD2] <= 6 + var*pow(1 + REF_2, 2))
@@ -3054,6 +3080,19 @@ double calc_refcrit(int n){
 	#if(CARTESIAN)
 	if (block[n][AMR_COORD1] / pow(1 + REF_1, block[n][AMR_LEVEL1]) == 1 && block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]) == 1 && block[n][AMR_COORD3] / pow(1 + REF_3, block[n][AMR_LEVEL3]) == 1) {
 		ref_val = 1.01 * REFINEMENT_CUTOFF;
+	}
+	#elif(CARTESIAN_GR)
+	if (NB_1 < 4 || NB_2 < 4 || NB_3 < 4) {
+		if (rank == 0) fprintf(stderr, "Warning: Cartesian grid set up improperly");
+		exit(0);
+	}
+	if (block[n][AMR_COORD1]<=NB_1*pow(1+REF_1, block[n][AMR_LEVEL1]) / 2 && block[n][AMR_COORD1] >= NB_1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) / 2 -1
+		 && block[n][AMR_COORD2] <= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2 && block[n][AMR_COORD2] >= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2 - 1
+		&& block[n][AMR_COORD3] <= NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2 && block[n][AMR_COORD3] >= NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2 - 1) {
+		ref_val = 1.1*REFINEMENT_CUTOFF;
+	}
+	else {
+		ref_val = 0.6 * REFINEMENT_CUTOFF;
 	}
 	#elif(REFINE_GIBWA)
 	if (block[n][AMR_LEVEL2] == 0) {
