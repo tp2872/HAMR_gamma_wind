@@ -52,10 +52,10 @@ void set_arrays(int n)
 	#if(DUMP_SMALL)
 	array_reduced[nl[n]] = (float *)malloc(NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
 	array_gdump1_reduced[nl[n]] = (double *)malloc(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
-	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
+	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * (!NSY + NSY * BS_3 / REDUCE_FACTOR3) * sizeof(double));
 	#endif
 	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
-	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1*BS_2 * sizeof(double));
+	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1 * BS_2 * (!NSY + NSY * BS_3) * sizeof(double));
 	array_rdump[nl[n]] = (double *)malloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	array_diag[nl[n]] = (float *)malloc(4 * BS_1*BS_2*BS_3 * sizeof(float));
 	Katm[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * sizeof(double));

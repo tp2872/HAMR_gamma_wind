@@ -26,13 +26,13 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Set Cartesian GR grid for test problems*/
-#define CARTESIAN_GR (1)
+#define CARTESIAN_GR (0)
 
 /*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
 
 /*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
-#define SPHERICAL_GR (0)
+#define SPHERICAL_GR (1)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
@@ -58,8 +58,8 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -162,7 +162,7 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (1)
+#define GRID_CARTESIAN (0)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -175,10 +175,10 @@ Numerical Parameters section
 #define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 6
+#define N_LEVELS_3D 1
 
 /*Set the number of base layers in Cartesian grid*/
-#define N_LEVELS_CART (5)
+#define N_LEVELS_CART (0)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

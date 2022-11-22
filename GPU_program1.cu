@@ -12703,15 +12703,15 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		}
 
 		//Make sure there is no inflow at outer boundary
-		inflow_check(prim3, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
-		inflow_check(prim4, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim3, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 2);
+		inflow_check(prim4, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 2);
 		#if(N2G==3)
-		inflow_check(prim5, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim5, icurr, BS_2 + N2G, zcurr, 1, gcov, gcon, gdet, 2);
 		#endif
-		inflow_check(prim3, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
-		inflow_check(prim4, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim3, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 2);
+		inflow_check(prim4, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 2);
 		#if(N2G==3)
-		inflow_check(prim5, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 3);
+		inflow_check(prim5, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 2);
 		#endif
 
 		#pragma unroll 9
