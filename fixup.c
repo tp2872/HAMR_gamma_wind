@@ -218,9 +218,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		}
 
 		Bcon[0] = 0.;
-		for (m = 1; m < NDIM; m++) {
-			Bcon[m] = pv[B1 - 1 + m];
-		}
+		#if(CALC_MDOT)
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) Bcon[m] = magnetic_density_scale_cpu*pv[B1 - 1 + m];
+		#else
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) Bcon[m] = pv[B1 - 1 + m];
+		#endif
 
 		lower(Bcon, &geom, Bcov);
 		udotB = dot(q.ucon, Bcov);

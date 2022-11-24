@@ -21,7 +21,7 @@ Physical Parameters section
 #define SHOCK_TUBE 17
 #define SPHERICAL_PROBLEM 18
 
-#define WHICHPROBLEM SPHERICAL_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -36,10 +36,10 @@ Physical Parameters section
 #define SPHERICAL_GR (1)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
-#define CALC_MDOT (0)
-#define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
+#define CALC_MDOT (1)
+#define T_INIT (100.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
-#define T_DOUBLE (10000.0) //Time during which Mdot doubles
+#define T_DOUBLE (1000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Enable special refinement criterion for large scale jet simulations*/
@@ -55,12 +55,12 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
-#define BH_SPIN (0.95)
+#define GAMMA	(5./3.)
+#define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -98,8 +98,8 @@ Physical Parameters section
     #define RHOMINLIMIT (1.e-30)
     #define UUMINLIMIT  (1.e-30)
 #else
-    #define RHOMIN	(1.e-12)
-    #define UUMIN	(1.e-14)
+    #define RHOMIN	(1.e-7)
+    #define UUMIN	(1.e-9)
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20)
 #endif
@@ -145,7 +145,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (50.0)
+#define GPU_MEM (16.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -166,14 +166,14 @@ Numerical Parameters section
 #define GRID_CARTESIAN (0)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
-#define NB_2 6
-#define NB_3 2
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 58
-#define BS_2 48
-#define BS_3 64
+#define BS_1 256
+#define BS_2 256
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -230,7 +230,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (240)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -254,7 +254,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 100.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -263,7 +263,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY_VARGAMMA (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma for electrons in case of 2T fluid
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (1)
+#define PPM (0)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -291,7 +291,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -371,7 +371,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ZIRI_DUMP 0
 
 /*Whether to output a reduced resolution file*/
-#define DUMP_SMALL (1)
+#define DUMP_SMALL (0)
 #define REDUCE_FACTOR1 (2)
 #define REDUCE_FACTOR2 (2)
 #define REDUCE_FACTOR3 (2)

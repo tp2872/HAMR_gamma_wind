@@ -73,7 +73,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 #else
 __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
@@ -83,7 +83,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_
 	, int *pflag_rad
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -93,13 +93,16 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(RAD_M1)
 	, int *pflag_rad
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
 );
 __global__ void Utoprim_M1_0(double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -111,7 +114,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -120,8 +123,8 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, const double* __restrict__ U_1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
 	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if(CALC_MDOT)
-	, double mass_density_scale
-	#endif
+	, double mass_density_scale, double magnetic_density_scale
+#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
@@ -131,7 +134,11 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
 __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void consttransport2(double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
-	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2
+	#if(CALC_MDOT)
+	, double magnetic_density_scale
+	#endif
+);
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
 __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,

@@ -1312,7 +1312,7 @@ void set_AMR(void){
 
 	if (max_blocks * numtasks < n_active_total) {
 		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d Quiting! \n", max_blocks);
-		exit(0);
+		//exit(0);
 	}
 	max_blocks =100000;
 	#endif

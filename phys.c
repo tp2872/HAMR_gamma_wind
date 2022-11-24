@@ -676,6 +676,14 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 	bcon_calc(pr, q->ucon, q->ucov, q->bcon) ;
 	lower(q->bcon, geom, q->bcov) ;
 
+	#if(CALC_MDOT)
+	int k;
+	for (k = 0; k < NDIM; k++) {
+		q->bcon[k] *= magnetic_density_scale_cpu;
+		q->bcov[k] *= magnetic_density_scale_cpu;
+	}
+	#endif
+
 	return ;
 }
 

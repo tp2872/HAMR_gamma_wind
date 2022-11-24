@@ -5448,8 +5448,8 @@ void set_mag_spherical(void){
 	double coeff;
 
 	static const size_t Nloops = 0;//10000;
-        FILE *fp = fopen("1000loops.dat", "r+");
-        int kk;
+		FILE* fp = fopen("3dloops_size.dat", "r+");
+		int kk;
         double xc[Nloops], yc[Nloops], zc[Nloops], size[Nloops];
         double xx, yy, zz, dist;
         for (kk = 0;kk<Nloops;kk++){

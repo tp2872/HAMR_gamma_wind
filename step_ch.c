@@ -71,7 +71,7 @@ void step_ch()
 
 	//Set mass density scale if necessary
 	#if(CALC_MDOT)
-	set_mass_density_scale(&mass_density_scale_cpu);
+	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
 
 	/* done! */
@@ -299,6 +299,12 @@ void utoprim_M1_0(double Dt, int n)
 					, fel
 				#endif
 				);
+
+				#if(CALC_MDOT)
+				p[nl[n]][ind0][B1] /= magnetic_density_scale_cpu;
+				p[nl[n]][ind0][B2] /= magnetic_density_scale_cpu;
+				p[nl[n]][ind0][B3] /= magnetic_density_scale_cpu;
+				#endif
 			}
 		}
 	}
@@ -355,6 +361,12 @@ void utoprim_M1_1(double Dt, int n){
 			U_1[nl[n]][ind0][B3] = 0.5*(psh[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psh[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
+	
+			#if(CALC_MDOT)
+			U_1[B1] *= magnetic_density_scale_cpu;
+			U_1[B2] *= magnetic_density_scale_cpu;
+			U_1[B3] *= magnetic_density_scale_cpu;
+			#endif
 
 			PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
@@ -363,6 +375,12 @@ void utoprim_M1_1(double Dt, int n){
 				, fel
 				#endif	
 			);
+
+			#if(CALC_MDOT)
+			ph[nl[n]][ind0][B1] /= magnetic_density_scale_cpu;
+			ph[nl[n]][ind0][B2] /= magnetic_density_scale_cpu;
+			ph[nl[n]][ind0][B3] /= magnetic_density_scale_cpu;
+			#endif
 		}
 	}
 }
@@ -418,6 +436,12 @@ void utoprim_M1_2(double Dt, int n){
 			#endif
 			#endif
 
+			#if(CALC_MDOT)
+			U[B1] *= magnetic_density_scale_cpu;
+			U[B2] *= magnetic_density_scale_cpu;
+			U[B3] *= magnetic_density_scale_cpu;
+			#endif
+
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC
 				#if(TWO_T)
@@ -439,7 +463,7 @@ void utoprim_M1_2(double Dt, int n){
 					, fel
 					#endif
 				);
-				if (pflag[nl[n]][ind0]) {
+				if (pflag[nl[n]][ind0] && !TWO_T) {
 					failimage[nl[n]][ind0][1]++;
 					pflag[nl[n]][ind0] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC
 						#if(TWO_T)
@@ -454,6 +478,12 @@ void utoprim_M1_2(double Dt, int n){
 			}
 			#endif
 			pflag_rad[nl[n]][ind0] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
+
+			#if(CALC_MDOT)
+			p[nl[n]][ind0][B1] /= magnetic_density_scale_cpu;
+			p[nl[n]][ind0][B2] /= magnetic_density_scale_cpu;
+			p[nl[n]][ind0][B3] /= magnetic_density_scale_cpu;
+			#endif
 		}
 	}
 }
@@ -531,6 +561,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#endif
 
+			#if(CALC_MDOT)
+			U[B1] *= magnetic_density_scale_cpu;
+			U[B2] *= magnetic_density_scale_cpu;
+			U[B3] *= magnetic_density_scale_cpu;
+			#endif
+
 			#if(RAD_M1)
 			double U_0[NPR];
 			int pflag_local, pflag_rad_local;
@@ -545,45 +581,50 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			);
 			#else
 
-
-			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
-				#if(TWO_T)
-				, fel
-				#endif
-			);
-			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
-				#if(TWO_T)
-				, fel
-				#endif
-			);
-			#endif
-
-			/*#if(DO_FONT_FIX)
-			if (pflag[nl[n]][ind0]) {
-				failimage[nl[n]][ind0][0]++;
-				#if DOKTOT
-				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
-				#if(TWO_T)
-				, fel
-				#endif
+				#if(NEWMAN)
+				pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
+					#if(TWO_T)
+					, fel
+					#endif
+				);
+				#else
+				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
+					#if(TWO_T)
+					, fel
+					#endif
 				);
 				#endif
+
+				#if(DO_FONT_FIX)
 				if (pflag[nl[n]][ind0]) {
-					failimage[nl[n]][ind0][1]++;
-					pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
+					failimage[nl[n]][ind0][0]++;
+					#if DOKTOT
+					pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
 					#if(TWO_T)
 					, fel
 					#endif
 					);
-					if (pflag[nl[n]][ind0]) {
-						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[nl[n]][ind0][2]++;
+					#endif
+					if (pflag[nl[n]][ind0] && !TWO_T) {
+						failimage[nl[n]][ind0][1]++;
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC
+						#if(TWO_T)
+						, fel
+						#endif
+						);
+						if (pflag[nl[n]][ind0]) {
+							pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+							failimage[nl[n]][ind0][2]++;
+						}
 					}
 				}
-			}
-			#endif*/
+				#endif
+			#endif
+
+			#if(CALC_MDOT)
+			pf[nl[n]][ind0][B1] /= magnetic_density_scale_cpu;
+			pf[nl[n]][ind0][B2] /= magnetic_density_scale_cpu;
+			pf[nl[n]][ind0][B3] /= magnetic_density_scale_cpu;
 			#endif
 		}
 	}
@@ -872,7 +913,7 @@ void GPU_step_ch()
 
 	//Set mass density scale if necessary
 	#if(CALC_MDOT)
-	set_mass_density_scale(&mass_density_scale_cpu);
+	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
 }
 

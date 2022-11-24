@@ -16,7 +16,11 @@ __device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], doub
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
 __device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
 __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, const  double* __restrict__ gpu_eos_table);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, const  double* __restrict__ gpu_eos_table
+#if(CALC_MDOT)
+	,  double magnetic_density_scale
+#endif
+);
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r, const  double* __restrict__ gpu_eos_table);
 __device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd, const  double* __restrict__ gpu_eos_table);
 __device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR], const  double* __restrict__ gpu_eos_table);
@@ -116,7 +120,11 @@ __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_ge
 	, double gamma_g
 	#endif
 );
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom
+	#if(CALC_MDOT)
+	,  double magnetic_density_scale
+	#endif
+);
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r
 	#if(TWO_T)
 	, double gamma_g
@@ -137,7 +145,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int* pflag_rad
@@ -148,7 +156,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 
@@ -158,7 +166,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
@@ -166,7 +174,7 @@ __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
@@ -174,7 +182,7 @@ __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
@@ -182,7 +190,7 @@ __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
@@ -190,7 +198,7 @@ __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 
@@ -202,7 +210,7 @@ __device__ void source_rad(double* ph, struct of_geom* geom, struct of_state* q,
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
@@ -216,7 +224,7 @@ __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], doub
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov[NDIM]
@@ -224,7 +232,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	, double *exp_xi
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ double calc_Te(double* ph);
@@ -234,7 +242,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	, double gamma_g
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
@@ -297,7 +305,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	, double exp_xi
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 #endif
@@ -347,12 +355,12 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 /*Declerations of functions related to (M1) radiation scheme*/
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ void mhd_calc_rad(double* pr, int dir, struct of_state_rad* q_rad, double* mhd_rad);
@@ -375,7 +383,11 @@ __device__ void LU_substitution_6D(double A[][6], double B[], int permute[]);
 __device__ int gamma_calc_rad(double* pr, struct of_geom* geom, double* gamma_rad);
 
 /*Declare other functions*/
-__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q);
+__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q
+	#if(CALC_MDOT)
+	,  double magnetic_density_scale
+	#endif
+);
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
@@ -397,7 +409,6 @@ __device__ double calc_entropy(double* pr
 	#endif
 );
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3, int dir);
-__device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double readImageDouble(int4 a);
@@ -443,7 +454,11 @@ __device__ void bcon_calc_res(double* pr, struct of_geom* geom, double* ucon, do
 __device__ void mhd_calc_res(double* pr, int dir, struct of_geom* geom, struct of_state_res* q_res, double* mhd);
 __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double* q, double Dt, const  double* __restrict__ conn_GPU, struct of_state_res* q_res, double r);
 __device__ double bsq_calc_res(double* pr, struct of_geom* geom);
-__device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res);
+__device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res
+	#if(CALC_MDOT)
+	,  double magnetic_density_scale
+	#endif
+);
 __device__ void vchar_res(struct of_geom* geom, int js, double* vmax, double* vmin);
 __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* geom, int js, double* vmax, double* vmin);
 __device__ double divE_calc(double* p, const  double* __restrict__ gdet, double _dx1, double _dx2, double _dx3, int ii, int jj, int zz);
@@ -456,7 +471,7 @@ __device__ double calc_delta(double* ph, double bsq);
 __device__ void heating(double* ph, struct of_state* q);
 __device__ double source_Coulomb(double* p
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __device__ double calc_gamma_gas_conserved(double* S, double rho);
@@ -516,7 +531,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double error_t[2]; 
@@ -552,7 +567,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		, r
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 
@@ -574,7 +589,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 
@@ -586,7 +601,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		#else
@@ -598,7 +613,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 
@@ -610,7 +625,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		#endif
@@ -622,7 +637,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		if (pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
@@ -633,7 +648,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 	
@@ -644,7 +659,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//Invert using basic limiter
 			Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_i, y_max, BASIC
 				#if(CALC_MDOT)
-				, mass_density_scale
+				, mass_density_scale, magnetic_density_scale
 				#endif
 			);
 
@@ -687,7 +702,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double kappa_abs, kappa_es, tau, norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
@@ -753,7 +768,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Even if MHD inversion fails, use updated value of radiation variable as gues
 	pflag_rad[0] = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);	
 	if (pflag_rad[0]) {
@@ -805,7 +820,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			#else
 			pb[ENTRI] = pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb[RHO];
 			#endif
-		get_state(pb, geom, &q);
+		get_state(pb, geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		U_i[ENTRE] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRE];
 		U_i[ENTRI] = geom->g * pb[RHO] * q.ucon[0] * pb[ENTRI];
 		#endif	*/
@@ -816,7 +835,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
-	get_state(pb, geom, &q);
+	get_state(pb, geom, &q
+	#if(CALC_MDOT)
+	,  magnetic_density_scale
+	#endif
+	);
 	#if(TWO_T)
 	gamma_g = calc_gamma_gas_prim(pb);
 	#endif
@@ -886,7 +909,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, r
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 
@@ -991,7 +1014,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 , double r
 #endif
 #if(CALC_MDOT)
-, double mass_density_scale
+, double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb,  dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
@@ -1094,7 +1117,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 
 				// Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
-				get_state(pb_new, geom, &q);
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				U_new[RHO] = U_i[RHO];
 				#if(TWO_T)
@@ -1177,7 +1204,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				//Invert radiation variables
 				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -1203,7 +1230,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					, r
 					#endif
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -1370,7 +1397,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#endif
 
 		//Obtain new conserved quantaties from MHD variables
-		get_state(pb_new, geom, &q);
+		get_state(pb_new, geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
@@ -1466,7 +1497,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Get new radiation primitives using TYPE2 limiter
 		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		if (flag_rad) PLOOP U_old_prev[k] = U_new[k];		
@@ -1493,7 +1524,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			, r
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 
@@ -1663,7 +1694,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 , double r
 #endif
 #if(CALC_MDOT)
-, double mass_density_scale
+, double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
@@ -1794,7 +1825,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
-					get_state(pb_new, geom, &q);
+					get_state(pb_new, geom, &q
+					#if(CALC_MDOT)
+					, magnetic_density_scale
+					#endif
+					);
 					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(pb_new);
 					#endif
@@ -1836,7 +1871,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					//Invert radiation conserved variables to primitives
 					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -1862,7 +1897,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						, r
 						#endif
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -2058,7 +2093,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
-				get_state(pb_new, geom, &q);
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 				#if(TWO_T)
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
@@ -2100,7 +2139,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				//Get new radiation primitives using TYPE2 limiter
 				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -2126,7 +2165,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					, r
 					#endif
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -2276,7 +2315,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 , double r
 #endif
 #if(CALC_MDOT)
-, double mass_density_scale
+, double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR],  pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
@@ -2397,7 +2436,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
-					get_state(pb_new, geom, &q);
+					get_state(pb_new, geom, &q
+					#if(CALC_MDOT)
+					, magnetic_density_scale
+					#endif
+					);
 					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(pb_new);
 					#endif
@@ -2438,7 +2481,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -2464,7 +2507,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						, r
 						#endif
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -2670,7 +2713,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
-				get_state(pb_new, geom, &q);
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 				#if(TWO_T)
 				gamma_g = calc_gamma_gas_prim(pb_new);
 					#endif
@@ -2712,7 +2759,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				//Get new radiation primitives using TYPE2 limiter
 				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -2738,7 +2785,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					, r
 					#endif
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -2884,7 +2931,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 , double r
 #endif
 #if(CALC_MDOT)
-, double mass_density_scale
+, double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], U_prev_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
@@ -3007,7 +3054,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					//Invert radiation conserved quantities
 					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -3023,7 +3070,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
-					get_state(pb_new, geom, &q);
+					get_state(pb_new, geom, &q
+					#if(CALC_MDOT)
+					, magnetic_density_scale
+					#endif
+					);
 					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(pb_new);
 					#endif
@@ -3068,7 +3119,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 						, r
 						#endif
 						#if(CALC_MDOT)
-						, mass_density_scale
+						, mass_density_scale, magnetic_density_scale
 						#endif
 					);
 
@@ -3252,7 +3303,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				//Get new radiation primitives using TYPE2 limiter
 				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 				PLOOP U_prev_old[k] = U_new[k];
@@ -3274,7 +3325,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
-				get_state(pb_new, geom, &q);
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 				#if(TWO_T)
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
@@ -3319,7 +3374,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					, r
 					#endif
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 			
@@ -3476,7 +3531,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 , double r
 #endif
 #if(CALC_MDOT)
-, double mass_density_scale
+, double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
@@ -3610,7 +3665,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					if (flag == 0) {
 						//Recompute T_t^mu for consistency
 						U_new[RHO] = U_i[RHO];
-						get_state(pb_new, geom, &q);
+						get_state(pb_new, geom, &q
+						#if(CALC_MDOT)
+						, magnetic_density_scale
+						#endif
+						);
 						#if(TWO_T)
 						gamma_g = calc_gamma_gas_prim(pb_new);
 						#endif
@@ -3660,7 +3719,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 							, r
 							#endif
 							#if(CALC_MDOT)
-							, mass_density_scale
+							, mass_density_scale, magnetic_density_scale
 							#endif
 						);
 
@@ -3866,7 +3925,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			if (flag == 0) {
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
-				get_state(pb_new, geom, &q);
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 				#if(TWO_T)
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
@@ -3916,7 +3979,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					, r
 					#endif
 					#if(CALC_MDOT)
-					, mass_density_scale
+					, mass_density_scale, magnetic_density_scale
 					#endif
 				);
 
@@ -4121,7 +4184,7 @@ __device__ void heating(double* ph, struct of_state* q)
 
 __device__ double source_Coulomb(double* p
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double th_mean, th_sum, Theta_e, Theta_i, coeff, n_cgs, ne_cgs, T_e, T_i;
@@ -4130,7 +4193,7 @@ __device__ double source_Coulomb(double* p
 	double coulog; 
 	double res;
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -5770,7 +5833,7 @@ __device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
 //Inversion from radiation conserved to primitive quantities
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ){
 	double U_tmp[NPR_R + P_NUM], prim_tmp[NPR_R+P_NUM];
@@ -5795,7 +5858,7 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	//Do inversion
 	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 
@@ -5812,7 +5875,7 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 
 __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
@@ -7644,6 +7707,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(CALC_MDOT)
+	, double magnetic_density_scale
+	#endif
 ) {
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
@@ -7665,9 +7731,17 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	uuflr = UUMIN * uuscal;
 
 	#if(RESISTIVE)
-	get_state_res(pf, geom, &q);
+	get_state_res(pf, geom, &q
+	#if(CALC_MDOT)
+	, magnetic_density_scale
+	#endif
+	);
 	#else
-	get_state(pf, geom, &q);
+	get_state(pf, geom, &q
+	#if(CALC_MDOT)
+	, magnetic_density_scale
+	#endif
+	);
 	#endif
 	bsq = dot(q.bcon, q.bcov);
 
@@ -7828,9 +7902,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		for (m = 0; m < NDIM; m++) ucondr[m] = gamma * (q.ucon[m] + betapar * q.bcon[m]);
 
 		Bcon[0] = 0.;
+		#if(CALC_MDOT)
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) Bcon[m] = magnetic_density_scale*pf[B1 - 1 + m];
+		#else
 		#pragma unroll 3
 		for (m = 1; m < NDIM; m++) Bcon[m] = pf[B1 - 1 + m];
-
+		#endif
 		lower(Bcon, geom->gcov, Bcov);
 		udotB = dot(q.ucon, Bcov);
 		Bsq = dot(Bcon, Bcov);
@@ -7901,7 +7979,11 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		for (k = 0; k < NPR_U; k++) dpf[k] = pf[k] - pf_prefloor[k];
 
 		//compute the conserved quantity associated with floor addition
-		get_state(dpf, geom, q);
+		get_state(dpf, geom, q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		primtoflux(dpf, q, 0, geom, dU, NULL, NULL
 			#if (DOHELM)
 			, gpu_eos_table
@@ -7909,7 +7991,11 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		);
 
 		//compute the prefloor conserved quantity
-		get_state(pf_prefloor, geom, q);
+		get_state(pf_prefloor, geom, q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		primtoflux(pf_prefloor, q, 0, geom, U_prefloor, NULL, NULL
 			#if (DOHELM)
 			, gpu_eos_table
@@ -8301,7 +8387,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 )
 {
@@ -8312,7 +8398,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	double src_coulomb, dK_dS_i;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	PLOOP dU[k] = 0.;
@@ -8340,7 +8426,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		, r
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 	lower(Gcon, geom->gcov, Gcov);
@@ -8417,7 +8503,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 		src_coulomb = source_Coulomb(ph
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		dU[ENTRE] += dK_dS * src_coulomb;
@@ -8444,7 +8530,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	, double r
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	#if(RAD_M1)
@@ -8458,7 +8544,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	double G0, Theta_e, Theta_r;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE*C_CGS*C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -8470,7 +8556,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		, &exp_xi
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 	#if (DOHELM)
@@ -8495,7 +8581,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		, exp_xi
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 
@@ -8539,12 +8625,12 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	, double *exp_xi
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double Tr, u_dot_urad, u_dot_u, Ehat;
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -8852,7 +8938,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	, double gamma_g
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	#if(RAD_M1)
@@ -8863,7 +8949,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	double exp_xi, kappa_abs_ph;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	if (dir == 1) {
@@ -8921,7 +9007,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		,  &exp_xi
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 	Te = calc_Te(pr) * MU_E * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS;
@@ -8940,7 +9026,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		, exp_xi
 		#endif
 		#if(CALC_MDOT)
-		, mass_density_scale
+		, mass_density_scale, magnetic_density_scale
 		#endif
 	);
 	#if(P_NUM)
@@ -9037,7 +9123,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	, double exp_xi
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	double kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff_abs, kappa_ff_emmit, kappa_HOPAL, kappa_COPAL, kappa_fe, kappa_ff_unity, kappa_sy_abs, kappa_sy_emmit, kappa_dc,  ne, p_theta, scaling_factor;
@@ -9047,17 +9133,17 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	one_exp_xi = 1.0 - exp_xi;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
-	double magnetic_density_scale = sqrt(MASS_DENSITY_SCALE) * C_CGS;
+	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double magnetic_density_scale_2 = sqrt(MASS_DENSITY_SCALE) * C_CGS;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
 	#else
-	double magnetic_density_scale = sqrt(mass_density_scale) * C_CGS;
+	double magnetic_density_scale_2 = sqrt(mass_density_scale) * C_CGS;
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
 	#endif
 
 	ne = ph[RHO] * mass_density_scale / (MU_E * MH_CGS);
 	Theta_e = Te * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
-	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
+	nu_mu = 1.5 * E_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale_2 * Theta_e * Theta_e / (2.0 * M_PI * ME_CGS * C_CGS);
 
 	#if(OP_EXTRA)
 	Theta_gamma = Tr * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS);
@@ -9329,7 +9415,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#else
 	kappa_m = 30.0 * 0.1 * Z_AB;
 	if (kappa_abs != NULL) {
-		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * magnetic_density_scale * Te * Te);	
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001*ph[RHO]) * magnetic_density_scale_2 * Te * Te);	
 		//zeta = MY_MIN(zeta, 1.e5);
 		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
 		kappa_chianti = 30.0e33 * ph[RHO] * mass_density_scale * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -1.7) * pow(Tr, -3.);
@@ -9370,7 +9456,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 		#endif
 	}
 	if (kappa_emmit != NULL) {
-		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale * Te * Te);
+		//zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Te / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq * 4. * M_PI + 0.00000001 * ph[RHO]) * magnetic_density_scale_2 * Te * Te);
 		//zeta = MY_MIN(zeta, 1.e5);
 		kappa_h = 33.0e-25 * sqrt(Z_AB * ph[RHO] * mass_density_scale) * pow(Te, 7.7);
 		kappa_chianti = 30.0e33 * ph[RHO] * mass_density_scale * (0.1 + Z_AB / 0.02) * X_AB * (1.0 + X_AB) * pow(Te, -4.7);
@@ -9510,14 +9596,24 @@ __device__ double calc_kappa_emmit_ph(double* ph, double bsq, double Tr
 	return 1.0;
 }
 
-__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q)
+__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q
+	#if(CALC_MDOT)
+	, double magnetic_density_scale
+	#endif
+)
 {
 	/* get ucon */
 	ucon_calc(pr, geom, q->ucon);
 	lower(q->ucon, geom->gcov, q->ucov);
 	bcon_calc(pr, q->ucon, q->ucov, q->bcon);
 	lower(q->bcon, geom->gcov, q->bcov);
-
+	#if(CALC_MDOT)
+	int k;
+	for (k = 0; k < NDIM; k++) {
+		q->bcon[k] *= magnetic_density_scale;
+		q->bcov[k] *= magnetic_density_scale;
+	}
+	#endif
 	return;
 }
 
@@ -9915,15 +10011,6 @@ __device__ void calculate_flattener(double x1, double x2, double  x3, double  x4
 	if (fabs(x4 - x2) / MY_MIN(x4, x2) < 0.33) F[0] = 0;
 }
 
-
-/* returns b^2 (i.e., twice magnetic pressure) */
-__device__ double bsq_calc(double *  pr, struct of_geom *  geom)
-{
-	struct of_state q;
-	get_state(pr, geom, &q);
-	return(dot(q.bcon, q.bcov));
-}
-
 __device__ double interp(double y1, double y2, double y3)
 {
 	double Dqm, Dqp, Dqc, s;
@@ -10222,7 +10309,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -10310,12 +10397,20 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#endif
 
 		#if(RESISTIVE)
-		get_state_res(p, &geom, &state);
+		get_state_res(p, &geom, &state
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		primtoflux_res(p, &state, dir, &geom, temp1);
 		primtoflux_res(p, &state, 0, &geom, temp2);
 		vchar_res(&geom, dir, &cmax_l, &cmin_l);
 		#else
-		get_state(p, &geom, &state);
+		get_state(p, &geom, &state
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		#if(TWO_T)
 		gamma_g = calc_gamma_gas_prim(p);
 		#endif
@@ -10349,7 +10444,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			, gamma_g
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		#endif
@@ -10383,12 +10478,20 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#endif
 
 		#if(RESISTIVE)
-		get_state_res(p, &geom, &state);
+		get_state_res(p, &geom, &state
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		primtoflux_res(p, &state, dir, &geom, temp3);
 		primtoflux_res(p, &state, 0, &geom, temp4);
 		vchar_res(&geom, dir, &cmax_r, &cmin_r);
 		#else
-		get_state(p, &geom, &state);
+		get_state(p, &geom, &state
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		#if(TWO_T)
 		gamma_g = calc_gamma_gas_prim(p);
 		#endif
@@ -10427,7 +10530,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			, gamma_g
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
@@ -10838,7 +10941,11 @@ __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_c
 }
 
 __global__ void consttransport2(double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
-	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2
+	#if(CALC_MDOT)
+	, double magnetic_density_scale
+	#endif
+)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
@@ -10855,6 +10962,11 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int jsize = BS_3 + 2 * N3G;
+	#if(CALC_MDOT)
+	double factor = 1.0 / magnetic_density_scale;
+	#else
+	double factor = 1.0;
+	#endif
 
 	if (k==1){
 		#if(RESISTIVE || CARTESIAN)
@@ -10883,48 +10995,48 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		double dE_RIGHT_32_1 = 0.0;
 		double dE_RIGHT_32_2 = 0.0;
 		#else
-		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
-		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
-		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
-		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
-		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
-		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
-		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
-		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
-		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
-		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
-		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
-		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
-		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
-		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - factor * F3[B2 * (ksize)+global_id];
+		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - factor * F3[B2 * (ksize)+global_id - jsize * D2];
+		double dE_RIGHT_13_1 = factor * F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+		double dE_RIGHT_13_2 = factor * F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + factor * F2[B3 * (ksize)+global_id];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + factor * F2[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_12_1 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_12_2 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - factor * F1[B3 * (ksize)+global_id];
+		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - factor * F1[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_21_1 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + factor * F3[B1 * (ksize)+global_id];
+		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + factor * F3[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_23_1 = -factor * F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+		double dE_RIGHT_23_2 = -factor * F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + factor * F1[B2 * (ksize)+global_id];
+		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + factor * F1[B2 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_31_1 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_31_2 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - factor * F2[B1 * (ksize)+global_id];
+		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - factor * F2[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_32_1 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_32_2 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
 		#endif
 
-		emf[1 * (ksize)+global_id] = 0.25*((-F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (-F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
-			+(F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*(ksize)+global_id - D2*jsize]>0.0))));
-		emf[2 * (ksize)+global_id] = 0.25*((-F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (-F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*(ksize)+global_id - D3]>0.0))));
-		emf[3 * (ksize)+global_id] = 0.25*((F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (-F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (-F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*(ksize)+global_id - D2*jsize] >0.0))));
+		emf[1 * (ksize)+global_id] = 0.25*((-factor * F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
+			+ (-factor * F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
+			+(factor * F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
+			+ (factor * F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*(ksize)+global_id - D2*jsize]>0.0))));
+		emf[2 * (ksize)+global_id] = 0.25*((-factor * F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
+			+ (-factor * F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*(ksize)+global_id - D1*isize]>0.0)))
+			+ (factor * F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
+			+ (factor * F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*(ksize)+global_id - D3]>0.0))));
+		emf[3 * (ksize)+global_id] = 0.25*((factor * F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
+			+ (factor * F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*(ksize)+global_id - D1*isize]>0.0)))
+			+ (-factor * F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
+			+ (-factor * F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*(ksize)+global_id - D2*jsize] >0.0))));
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = -0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] = -0.5 * factor * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 	}
 }
@@ -11009,7 +11121,7 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 		#if(!CARTESIAN)
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] += -0.5 * 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] += - 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 		#endif
 	}*/
@@ -11342,7 +11454,7 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -11381,7 +11493,11 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 			}
 		}
 
-		get_state(p, &geom, &q);
+		get_state(p, &geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		#if(TWO_T)
 		gamma_g = calc_gamma_gas_prim(p);
 		#endif
@@ -11416,6 +11532,12 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 			#endif
 		);
 
+		#if(CALC_MDOT)
+		p[B1] /= magnetic_density_scale;
+		p[B2] /= magnetic_density_scale;
+		p[B3] /= magnetic_density_scale;
+		#endif
+
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {
 			U_n[k * (ksize)+global_id] = U[k];
@@ -11433,7 +11555,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -11489,7 +11611,11 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			}
 		}
 
-		get_state(p, &geom, &q);
+		get_state(p, &geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		#if(TWO_T)
 		gamma_g = calc_gamma_gas_prim(p);
 		#endif
@@ -11545,6 +11671,12 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		#endif
 		#endif
 
+		#if(CALC_MDOT)
+		UU1[B1] *= magnetic_density_scale;
+		UU1[B2] *= magnetic_density_scale;
+		UU1[B3] *= magnetic_density_scale;
+		#endif
+
 		//Set temporary variable
 		for (k = 0; k < NPR; k++) U_n_tmp[k] = UU1[k];
 
@@ -11568,10 +11700,19 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			#endif
 		);
 
+		#if(CALC_MDOT)
+		p[B1] /= magnetic_density_scale;
+		p[B2] /= magnetic_density_scale;
+		p[B3] /= magnetic_density_scale;
+		#endif
+
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(p, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(CALC_MDOT)
+			, magnetic_density_scale
 			#endif
 		)) {
 			pflag[global_id] = -333;
@@ -11595,7 +11736,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -11651,7 +11792,11 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 			}
 		}
 
-		get_state(ph, &geom, &q);
+		get_state(ph, &geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 		#if(TWO_T)
 		gamma_g = calc_gamma_gas_prim(ph);
 		#endif
@@ -11707,6 +11852,12 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#endif
 		#endif
 
+		#if(CALC_MDOT)
+		U_2[B1] *= magnetic_density_scale;
+		U_2[B2] *= magnetic_density_scale;
+		U_2[B3] *= magnetic_density_scale;
+		#endif
+
 		#if(TWO_T)
 		fel = calc_delta(ph, dot(q.bcon, q.bcov));
 		#endif
@@ -11744,6 +11895,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 			);			
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
+				#if(!TWO_T)
 				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY
 					#if(DOHELM==10)
 					, gpu_eos_table
@@ -11752,6 +11904,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 					, fel
 					#endif
 				);
+				#endif
 				if (pflag[global_id]) {
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
@@ -11761,14 +11914,23 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#endif
 		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC
 			#if(CALC_MDOT)
-			, mass_density_scale
+			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
+
+		#if(CALC_MDOT)
+		ph[B1] /= magnetic_density_scale;
+		ph[B2] /= magnetic_density_scale;
+		ph[B3] /= magnetic_density_scale;
+		#endif
 
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(ph, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(CALC_MDOT)
+			, magnetic_density_scale
 			#endif
 		)) {
 			pflag[global_id] = -333;
@@ -11794,7 +11956,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	, int *pflag_rad
 	#endif
 	#if(CALC_MDOT)
-	, double mass_density_scale
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -11858,18 +12020,26 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			gamma_g = calc_gamma_gas_prim(pf);
 			#endif
 			#if(RESISTIVE)
-			get_state_res(pf, &geom, &q);
-			primtoflux_res(pf, &q, 0, &geom, U);
+				get_state_res(pf, &geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
+				primtoflux_res(pf, &q, 0, &geom, U);
 			#else
-			get_state(pf, &geom, &q);
-			primtoflux(pf, &q, 0, &geom, U, NULL, NULL
-				#if (DOHELM)
-				, gpu_eos_table
+				get_state(pf, &geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
 				#endif
-				#if(TWO_T)
-				, gamma_g
-				#endif
-			);
+				);
+				primtoflux(pf, &q, 0, &geom, U, NULL, NULL
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
 			#endif
 
 			#if(RAD_M1)
@@ -11896,10 +12066,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#if(TWO_T)
 			gamma_g = calc_gamma_gas_prim(pf);
 			#endif
-			#if(RESISTIVE)
-			get_state_res(pf, &geom, &q);
+				#if(RESISTIVE)
+				get_state_res(pf, &geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 			#else
-			get_state(pf, &geom, &q);
+				get_state(pf, &geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
 			#endif
 		}
 
@@ -11962,6 +12140,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
+		#endif
+	
+		#if(CALC_MDOT)
+		U[B1] *= magnetic_density_scale;
+		U[B2] *= magnetic_density_scale;
+		U[B3] *= magnetic_density_scale;
 		#endif
 
 		#if(TWO_T)
@@ -12034,7 +12218,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					);
 					#endif
 				#endif
-				if (pflag[global_id]) {
+				if (pflag[global_id]){
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
@@ -12068,10 +12252,19 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		#endif
 
+		#if(CALC_MDOT)
+		pf[B1] = U[B1] / geom.g / magnetic_density_scale;
+		pf[B2] = U[B2] / geom.g / magnetic_density_scale;
+		pf[B3] = U[B3] / geom.g / magnetic_density_scale;
+		#endif
+
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(pf, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(CALC_MDOT)
+			, magnetic_density_scale
 			#endif
 		)) {
 			pflag[global_id] = -333;
@@ -12094,6 +12287,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 	#if(RAD_M1)
 	, int *pflag_rad
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
@@ -12192,7 +12388,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 					pf[k] += (1.0 / ((double)zsize))*pi_i[k*(ksize)+global_id - zoffset + u];
 				}
 			}
-			get_state(pf, &geom, &q);
+			get_state(pf, &geom, &q
+			#if(CALC_MDOT)
+			, magnetic_density_scale
+			#endif
+			);
 			#if(TWO_T)
 			gamma_g = calc_gamma_gas_prim(pf);
 			#endif
@@ -12244,6 +12444,12 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 			#endif
 			#endif
+			#endif
+
+			#if(CALC_MDOT)
+			U[B1] *= magnetic_density_scale;
+			U[B2] *= magnetic_density_scale;
+			U[B3] *= magnetic_density_scale;
 			#endif
 
 			#if(TWO_T)
@@ -12307,6 +12513,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			if (fixup_cell(pf, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(CALC_MDOT)
+				, magnetic_density_scale
 				#endif
 			)){
 				pflag[global_id] = -333;
@@ -13202,6 +13411,9 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
 	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
 )
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -13282,8 +13494,16 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		int_velocity = geom.gcon[dir] / (sqrt(geom.gcon[dir] * geom.gcon[dir] - geom.gcon[0] * geom.gcon[4 * (dir == 1) + 7 * (dir == 2) + 9 * (dir == 3)]));
 
 		//First calculate HLL fluxes for F[B1], F[B2] and F[B3]
-		get_state(p_l, &geom, &state_l);
-		get_state(p_r, &geom, &state_r);
+		get_state(p_l, &geom, &state_l
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
+		get_state(p_r, &geom, &state_r
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
 
 		vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l)
 			#if (DOHELM)
@@ -15636,20 +15856,12 @@ __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcur
 	PLOOP dU[k] *= geom->g;
 }
 
-//returns b^2 (i.e., twice magnetic pressure)
-__device__ double bsq_calc_res(double* pr, struct of_geom* geom)
-{
-	double ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM];
-	ucon_calc(pr, geom, ucon);
-	lower(ucon, geom->gcov, ucov);
-	bcon_calc_res(pr, geom, ucon, ucov, bcon);
-	lower(bcon, geom->gcov, bcov);
-
-	return(dot(bcon, bcov));
-}
-
 //find ucon, ucov, bcon, bcov from primitive variables */
-__device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res)
+__device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res
+	#if(CALC_MDOT)
+	, double magnetic_density_scale
+	#endif
+)
 {
 	#if(RESISTIVE)
 	//get ucon
@@ -15659,6 +15871,14 @@ __device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_
 	//get bcon
 	bcon_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->bcon);
 	lower(q_res->bcon, geom->gcov, q_res->bcov);
+
+	#if(CALC_MDOT)
+	int k;
+	for (k = 0; k < NDIM; k++) {
+		q_res->bcon[k] *= magnetic_density_scale;
+		q_res->bcov[k] *= magnetic_density_scale;
+	}
+	#endif
 
 	//get econ
 	econ_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->econ);

@@ -747,7 +747,7 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 					ztest = MY_MIN(z + z_add, N3_GPU_offset[n] + BS_3 + N3G - 1);
 					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
-						if (pflag_cart[index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
 							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1];
 						}
 						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2
@@ -759,7 +759,7 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 					ztest = MY_MAX(z - z_add, N3_GPU_offset[n] - N3G);
 					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
-						if (pflag_cart[index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
 							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1]; 
 						}
 						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2

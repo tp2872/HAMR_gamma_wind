@@ -504,7 +504,7 @@ int restart_read_param(void)
 	}
 
 	#if(CALC_MDOT)
-	set_mass_density_scale(&mass_density_scale_cpu);
+	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
 
 	if (restart_number == -1) {
@@ -767,10 +767,11 @@ double calc_Mdot() {
 }
 
 //Calculate mass density scaling
-void set_mass_density_scale(double* mass_density_scale_cpu) {
+void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_density_scale_cpu) {
 	double mdot_target, mdot_cgs, mdot_cgs_edd, scaling_factor;
 	double L_dot_edd, M_dot_edd, efficiency;
 	double n_steps;
+	magnetic_density_scale_cpu[0] = 1.0;
 
 	//Initialize mdot_cpu and t_mdot at start of run
 	if (!isfinite(mdot_cpu)) mdot_cpu = 0.;
@@ -799,6 +800,7 @@ void set_mass_density_scale(double* mass_density_scale_cpu) {
 		//Set equal to mass density scale before T_INIT
 		if (t < T_INIT) {
 			mass_density_scale_cpu[0] = MASS_DENSITY_SCALE;
+			magnetic_density_scale_cpu[0] = 1.0;
 		}
 		else {
 			//Flip sign for super-Eddington flow
@@ -809,6 +811,7 @@ void set_mass_density_scale(double* mass_density_scale_cpu) {
 			#endif
 			scaling_factor = mdot_target / mdot_cgs_edd;
 			mass_density_scale_cpu[0] = scaling_factor * MASS_DENSITY_SCALE;
+			magnetic_density_scale_cpu[0] = 1.0;
 		}
 	}
 }
