@@ -1,4 +1,9 @@
 #include "config.h"
+#if(SCUDA)
+#include <cuda.h>
+#elif(SHIP)
+#include "hip/hip_runtime.h"
+#endif
 
 /*Declarations of functions for Utoprim2D*/
 #if(DOHELM)
@@ -411,7 +416,7 @@ __device__ double calc_entropy(double* pr
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3, int dir);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq);
-__device__ double readImageDouble(int4 a);
+__device__ double readImageDouble(int a);
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
@@ -4193,7 +4198,7 @@ __device__ double source_Coulomb(double* p
 	double coulog; 
 	double res;
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -8630,7 +8635,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 ) {
 	double Tr, u_dot_urad, u_dot_u, Ehat;
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -9133,7 +9138,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	one_exp_xi = 1.0 - exp_xi;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
 	double magnetic_density_scale_2 = sqrt(MASS_DENSITY_SCALE) * C_CGS;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
 	#else

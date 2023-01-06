@@ -841,7 +841,11 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 			}
 		}
 		else {
+			#if(SHIP)
+			hipLaunchKernelGGL(packsendE1corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1);
+			#elif(SCUDA)
 			packsendE1corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1);
+			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -887,7 +891,11 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 			}
 		}
 		else {
+			#if(SHIP)
+			hipLaunchKernelGGL(packsendE2corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_2);
+			#elif(SCUDA)
 			packsendE2corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_2);
+			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -933,7 +941,11 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 			}
 		}
 		else {
+			#if(SHIP)
+			hipLaunchKernelGGL(packsendE3corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_3);
+			#elif(SCUDA)
 			packsendE3corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_3);
+			#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();

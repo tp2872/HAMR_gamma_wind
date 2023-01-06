@@ -794,7 +794,7 @@ void set_corners(int tag){
 					else
 					{
 						block[n_ord_total[n]][AMR_CORN4D] = n_ord_total[n];
-						if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D]; //good
+						if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN4D] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D]; //good
 						if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN4D] = block[n_ord_total[n]][AMR_NBR1]; //good
 						if (block[n_ord_total[n]][AMR_NBR1_3] >= 0 && block[block[n_ord_total[n]][AMR_NBR1_3]][AMR_ACTIVE] == 1) {
 							block[n_ord_total[n]][AMR_CORN4D] = -2;
@@ -1089,7 +1089,7 @@ void set_corners(int tag){
 					else
 					{
 						block[n_ord_total[n]][AMR_CORN8D] = n_ord_total[n];
-						if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D]; //good
+						if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN8D] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D]; //good
 						if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR6]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN8D] = block[n_ord_total[n]][AMR_NBR6]; //good
 					}
 				}
@@ -1381,7 +1381,7 @@ void set_corners(int tag){
 					else
 					{
 						block[n_ord_total[n]][AMR_CORN12D] = n_ord_total[n];
-						if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D]; //good
+						if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN12D] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D]; //good
 						if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN12D] = block[n_ord_total[n]][AMR_NBR1]; //good
 					}
 				}

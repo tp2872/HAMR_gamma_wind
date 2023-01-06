@@ -2246,20 +2246,38 @@ void GPU_consttransport2(int flag, double Dt, int n){
 
 	/*Run kernel*/
 	if (flag == 1){
-	consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
-		Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
+		#if(SHIP)
+		hipLaunchKernelGGL(consttransport2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
+			#if(CALC_MDOT)
+			, magnetic_density_scale_cpu
+			#endif
+			);
+		#elif(SCUDA)
+		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
+			#if(CALC_MDOT)
+			, magnetic_density_scale_cpu
+			#endif
+			);
+		#endif
+	}
+	else{
+	#if(SHIP)
+	hipLaunchKernelGGL(consttransport2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]],  BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+		Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
 		#if(CALC_MDOT)
 		, magnetic_density_scale_cpu
 		#endif
 		);
-	}
-	else{
+	#elif(SCUDA)
 	consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
 		#if(CALC_MDOT)
 		, magnetic_density_scale_cpu
 		#endif
 		);
+	#endif
 	}
 
 	//gpuDeviceSynchronize();
@@ -3063,7 +3081,7 @@ void GPU_boundprim2_trans(int flag, int n)
 	if (block[n][AMR_POLE] != 0 ){
 		if (flag == 0){
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim_trans2, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
+			hipLaunchKernelGGL(boundprim2_trans, nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
 			#elif(SCUDA)
 			boundprim2_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
 			#endif

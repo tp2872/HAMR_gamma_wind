@@ -700,7 +700,9 @@ void param_read(FILE *fp) {
 		}
 	}
 	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
-		if(BS1_read % BS_1 == 0 && BS2_read % BS_2 == 0 && BS3_read % BS_3 == 0)if (rank == 0) fprintf(stderr, "Downscaling bigger data set of original resolution of %dx%dx%d to resolution %dx%dx%d! \n", BS1_read, BS2_read, BS3_read, BS_1, BS_2, BS_3);
+		if (BS1_read % BS_1 == 0 && BS2_read % BS_2 == 0 && BS3_read % BS_3 == 0) {
+			if (rank == 0) fprintf(stderr, "Downscaling bigger data set of original resolution of %dx%dx%d to resolution %dx%dx%d! \n", BS1_read, BS2_read, BS3_read, BS_1, BS_2, BS_3);
+		}
 		else {
 			if (rank == 0) fprintf(stderr, "Error reading in input parameters. Failed upscaling resolution due to incompatible ratios! \n");
 			exit_r = 1;

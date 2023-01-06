@@ -2384,7 +2384,7 @@ void init_postmerger()
       nvars = ext.nvars;
       nitems = (size_t)nvars*nx*ny*nz;
 	  memsize = sizeof(double) * nitems;
-      icdata = malloc(memsize);
+      icdata = (double *)malloc(memsize);
       if(NULL == icdata) {
         fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
         fclose(fp1);
@@ -2736,7 +2736,7 @@ void init_disruption()
       }
       nitems = (size_t)ext.nvars*ext.nx*ext.ny*ext.nz;
       memsize = sizeof(double)*nitems;
-      icdata = malloc(memsize);
+      icdata = (double*)malloc(memsize);
       if(NULL == icdata) {
         fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
         fclose(fp);

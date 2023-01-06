@@ -722,7 +722,6 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	raise_g(ncov, gcon, ncon);
 	Qdotn = Qcon[0] * ncov[0];
 
-	#pragma ivdep
 	Qsq = 0.;
 	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn*Qdotn;

@@ -187,7 +187,7 @@ double  *receive4_5E1[NB_LOCAL], *receive4_6E1[NB_LOCAL], *receive4_7E1[NB_LOCAL
 double  *receive5_1E1[NB_LOCAL], *receive5_3E1[NB_LOCAL], *receive5_5E1[NB_LOCAL], *receive5_7E1[NB_LOCAL];
 double  *receive6_2E1[NB_LOCAL], *receive6_4E1[NB_LOCAL], *receive6_6E1[NB_LOCAL], *receive6_8E1[NB_LOCAL];
 
-double  *cornsend1[NB_LOCAL], *cornsend2[NB_LOCAL], *cornsend3[NB_LOCAL], *cornsend4[NB_LOCAL], *cornsend5[NB_LOCAL], *cornsend7[NB_LOCAL], *cornsend7[NB_LOCAL], *cornsend8[NB_LOCAL];
+double  *cornsend1[NB_LOCAL], *cornsend2[NB_LOCAL], *cornsend3[NB_LOCAL], *cornsend4[NB_LOCAL], *cornsend5[NB_LOCAL], *cornsend6[NB_LOCAL], *cornsend7[NB_LOCAL], *cornsend8[NB_LOCAL];
 double *cornreceive1[NB_LOCAL], *cornreceive2[NB_LOCAL], *cornreceive3[NB_LOCAL], *cornreceive4[NB_LOCAL], *cornreceive5[NB_LOCAL], *cornreceive6[NB_LOCAL], *cornreceive7[NB_LOCAL], *cornreceive8[NB_LOCAL];
 
 double *send_E3_corn1[NB_LOCAL], *send_E3_corn2[NB_LOCAL], *send_E3_corn3[NB_LOCAL], *send_E3_corn4[NB_LOCAL], *send_E2_corn5[NB_LOCAL], *send_E2_corn6[NB_LOCAL],

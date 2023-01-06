@@ -2825,7 +2825,7 @@ void check_refcrit(void){
 						}
 					}
 					else {
-						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == 0;
+						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 						tag = 1;
 					}
 				//}

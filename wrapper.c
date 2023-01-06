@@ -51,7 +51,7 @@ gpuError_t gpuSetDevice(int deviceId) {
 
 gpuError_t gpuDeviceSetCacheConfig(int cache) {
 #if(SHIP)
-	return hipDeviceSetCacheConfig(cache);
+	return hipDeviceSetCacheConfig((hipFuncCache_t)cache);
 #elif(SCUDA)
 	return cudaDeviceSetCacheConfig(cache);
 #endif
@@ -75,7 +75,7 @@ gpuError_t gpuDeviceSynchronize() {
 
 gpuError_t gpuMemcpyAsync(void* dst, const void* src, size_t count, int kind, gpuStream_t stream) {
 #if(SHIP)
-	return hipMemcpyAsync(dst, src, count, kind, stream);
+	return hipMemcpyAsync(dst, src, count, (hipMemcpyKind)kind, stream);
 #elif(SCUDA)
 	return cudaMemcpyAsync(dst, src, count, kind, stream);
 #endif
@@ -83,7 +83,7 @@ gpuError_t gpuMemcpyAsync(void* dst, const void* src, size_t count, int kind, gp
 
 gpuError_t gpuMemcpy(void* dst, const void* src, size_t count, int kind) {
 #if(SHIP)
-	return hipMemcpy(dst, src, count, kind);
+	return hipMemcpy(dst, src, count, (hipMemcpyKind)kind);
 #elif(SCUDA)
 	return cudaMemcpy(dst, src, count, kind);
 #endif
@@ -155,7 +155,7 @@ gpuError_t gpuGetDeviceCount(int* count) {
 
 gpuError_t gpuDeviceSetSharedMemConfig(int kind) {
 #if(SHIP)
-	return hipDeviceSetSharedMemConfig(kind);
+	return hipDeviceSetSharedMemConfig((hipSharedMemConfig)kind);
 #elif(SCUDA)
 	return cudaDeviceSetSharedMemConfig(kind);
 #endif

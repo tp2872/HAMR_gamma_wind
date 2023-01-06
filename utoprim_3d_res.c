@@ -46,7 +46,6 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	S[2] = -ncov_0 * (U[U3]) / gdet;
 
 	//Magnetic field to 3+1
-	#pragma ivdep
 	B_guess[0] = alpha * U[B1] / gdet;
 	B_guess[1] = alpha * U[B2] / gdet;
 	B_guess[2] = alpha * U[B3] / gdet;

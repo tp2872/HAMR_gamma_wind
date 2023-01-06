@@ -36,7 +36,7 @@ Physical Parameters section
 #define SPHERICAL_GR (1)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
-#define CALC_MDOT (1)
+#define CALC_MDOT (0)
 #define T_INIT (100.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
 #define T_DOUBLE (1000.0) //Time during which Mdot doubles
@@ -132,8 +132,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (0)
-#define SCUDA (1)
+#define SHIP (1)
+#define SCUDA (0)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
@@ -168,12 +168,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 1
 #define NB_2 1
-#define NB_3 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 256
-#define BS_3 1
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -221,16 +221,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 16
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (240)
+#define DUMPFACTOR (960)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -344,7 +344,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define SINGSMALL (1.E-20)
 
 /*Define local work size for GPU, for NVIDIA Kepler,Pascal, Volta and AMD GCN chose 64*/
-#define LOCAL_WORK_SIZE 64
+#define LOCAL_WORK_SIZE 256
 
 /*Set grid parameters X1*/
 #define RADEXP 1.0
