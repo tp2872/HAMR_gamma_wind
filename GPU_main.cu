@@ -1,16 +1,29 @@
-#include "decsCUDA.h"
+﻿#include "decsCUDA.h"
 #include "include.h"
 extern "C" {
 #include "decs.h"
 }
-int gpuAlloc(void **devPtr, int size);
+//int gpuAlloc(void **devPtr, int size);
 int gpuFree(void *devPtr, int trash1, int trash2);
 
-#define GPU_SET (1)
+#define GPU_SET (10000)
 
 //Wrapper for allocation of boundary cells
 #if(GPU_DIRECT)
-#define gpuAlloc(val1,val2, val3) if(val3) gpuMalloc((void**)val1,val2); else gpuMallocHost((void**)val1,val2)
+int gpuAlloc(double** ptr, size_t size, int val);
+
+int gpuAlloc(double** ptr, size_t size, int val3) {
+	int error;
+	if (val3) { 
+		error = gpuMalloc((void**)ptr, size);
+	}
+	else {
+		error = gpuMallocHost((void**)ptr, size);
+	}
+	return error;
+}
+
+//#define gpuAlloc(val1,val2, val3) if(val3){ gpuMalloc((void**)val1,val2);} else {gpuMallocHost((void**)val1,val2);}
 #else
 #define gpuAlloc(val1,val2, val3) gpuMallocHost((void**)val1,val2,0)
 #endif

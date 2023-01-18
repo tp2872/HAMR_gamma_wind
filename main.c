@@ -1,7 +1,7 @@
 #include "include.h"
 #include "decs_MPI.h"
 #include "defs.h"
-//#include "cudaProfiler.h"
+#include "cudaProfiler.h"
 
 
 /*****************************************************************/
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 3000.0;
-	DTd = 20;
-	DTd_reduced = 5.0;
+	DTl = 300000.0;
+	DTd = 200000;
+	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
 	tlog = t + DTl;
@@ -271,6 +271,7 @@ void MPI_initialize(int argc, char *argv[])
 	}
 
 	//Killswitch
+	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
 	if (numtasks > 100) exit(0);
 }
 
@@ -512,7 +513,7 @@ void check_input() {
 	//These features are not supported anymore
 	if (FULL_ENTROPY || !DOKTOT) {
 		if (rank == 0) fprintf(stderr, "Init error 8");
-		exit(0);
+		//exit(0);
 	}
 
 	//PPM not implemented in CPU version

@@ -213,6 +213,7 @@ __device__ void source_rad(double* ph, struct of_geom* geom, struct of_state* q,
 	#endif
 	#if(COOL_STOP)
 	, double r
+	, double r
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
@@ -597,7 +598,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			, mass_density_scale, magnetic_density_scale
 			#endif
 		);
-
+		
 		if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
@@ -634,7 +635,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		);
 		#endif
-		if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+		/*if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
@@ -655,7 +656,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#if(CALC_MDOT)
 			, mass_density_scale, magnetic_density_scale
 			#endif
-		);
+		);*/
 	
 		//If used TYPE2 limiter for inversion radiative quantities, redo with BASIC limiter
 		if(pflag_rad[0]){
@@ -8403,7 +8404,8 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	double src_coulomb, dK_dS_i;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double magnetic_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	PLOOP dU[k] = 0.;
@@ -8549,7 +8551,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	double G0, Theta_e, Theta_r;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE*C_CGS*C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -8954,7 +8957,8 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	double exp_xi, kappa_abs_ph;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale, double magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE;
+	double magnetic_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	if (dir == 1) {
@@ -10257,7 +10261,7 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
 
-	if ((k == 1)){
+	if (k == 1){
 		if (zoffset == 0){
 			for (k = 0; k < NPR; k++) temp[k] = 0.0;
 			for (u = 0; u < zsize; u++) {
@@ -10666,7 +10670,7 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	#else
 	// 2. Ideal gas EOS
 	#if AMD
-	EF = fma(gam, pr[UU], pr[RHO]);
+	EF = fma(GAMMA, pr[UU], pr[RHO]);
 	#else
 	EF = pr[RHO] + GAMMA * pr[UU];
 	#endif
@@ -10771,7 +10775,7 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
     #else
     // 2. Ideal gas EOS
 	#if AMD
-	w = fma(gam, pr[UU], pr[RHO]);
+	w = fma(GAMMA, pr[UU], pr[RHO]);
 	#else
 	w = pr[RHO] + GAMMA*pr[UU];
 	#endif
@@ -11466,6 +11470,7 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	#endif
 )
 {
+#if(DO_IMEX)
 	#if(RAD_M1)
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
@@ -11552,6 +11557,7 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 		}
 	}
 	#endif
+#endif
 }
 
 __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, double*  U_1, const double* __restrict__ dU_RAD0, double* dU_RAD1, const  double* __restrict__  psh, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
@@ -11567,6 +11573,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	#endif
 )
 {
+#if(DO_IMEX)
 	#if(RAD_M1)
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
@@ -11733,6 +11740,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		}
 	}
 	#endif
+#endif
 }
 
 __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, const double* __restrict__ U_1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
@@ -11748,6 +11756,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	#endif
 )
 {
+#if(DO_IMEX)
 	#if(RAD_M1)
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
@@ -11949,6 +11958,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		}
 	}
 	#endif
+#endif
 }
 
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
@@ -11968,6 +11978,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 )
 {
+#if(1)
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
 	isize = (BS_3)*(BS_2);
@@ -12282,6 +12293,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
+#endif
 }
 
 
@@ -12301,6 +12313,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 )
 {
+#if(DO_IMEX)
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
 	if (global_id < BS_2*BS_3){
@@ -12534,6 +12547,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 		}
 	}
+#endif
 }
 
 __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn)
