@@ -4199,7 +4199,7 @@ __device__ double source_Coulomb(double* p
 	double coulog; 
 	double res;
 	#if(!CALC_MDOT)
-	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE, magnetic_density_scale = MASS_DENSITY_SCALE;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -5562,6 +5562,92 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	}
 
 	return(0);
+}
+
+//5D LU-decomposition
+__device__ int LU_decompose_3D(double A[][3], int permute[])
+{
+	double row_norm[3];
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+	double  absmax, maxtemp;
+	int i, j, k, max_row;
+	int n = 3;
+
+	max_row = 0;
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+			if (!isfinite((A[i][j]))) return(1);
+			absmax = MY_MAX(absmax, maxtemp);
+		}
+
+		if (absmax == 0.) {
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		for (i = j; i < n; i++) {
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+		}
+
+		if (max_row != j) {
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
 }
 
 //5D LU-decomposition
@@ -9142,7 +9228,7 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	one_exp_xi = 1.0 - exp_xi;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE, magnetic_density_scale = MASS_DENSITY_SCALE;
 	double magnetic_density_scale_2 = sqrt(MASS_DENSITY_SCALE) * C_CGS;
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
 	#else
