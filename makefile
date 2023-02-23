@@ -46,21 +46,24 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = hipcc 
-CCFLAGS  = -I/sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/spectrum-mpi-10.4.0.3-20210112-6jbupg3thjwhsabgevk6xmwhd2bbyxdc/include -Xcompiler \-fopenmp -lgomp -O3
+CC       = CC 
+CCFLAGS  = -I${ROCM_PATH}/include -std=c++11 -D CRAY_CPU_TARGET=x86-64 -D__HIP_ROCclr__ -D__HIP_ARCH_GFX90A__=1 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -fgpu-rdc -x hip -O3 
 endif
 
-EXTRALIBS = -lm -L /sw/summit/cuda/11.4.0/lib64 -L /sw/summit/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/spectrum-mpi-10.4.0.3-20210112-6jbupg3thjwhsabgevk6xmwhd2bbyxdc/lib -lmpiprofilesupport -lmpi_ibm -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -fgpu-rdc --rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64 -lstdc++
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = hipcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
-CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = hipcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -dlink
+CUDA_COMPILE  = hipcc --amdgpu-target=gfx90a -I${MPICH_DIR}/include -I${ROCM_PATH}/include -D__HIP_PLATFORM_AMD__ -fopenmp -O3 -c
+CC_LOAD     = $(CC) $(CCFLAGS)
+CUDA_LOAD  = hipcc --amdgpu-target=gfx90a -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -D__HIP_PLATFORM_AMD__ -fopenmp -lmpi_gtl_hsa -lamdhip64
+
+CUDA_LOAD2  = hipcc -v --amdgpu-target=gfx90a -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa 
+
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
 .c.o:
-	$(CC_COMPILE) $*.c
+	$(CUDA_COMPILE) $*.c
 
 EXE = harm
 all: $(EXE)
@@ -78,13 +81,11 @@ const_trans_res.o utoprim_3d_res.o wrapper.o
 
 INCS = decs.h decs_MPI.h decsCUDA.h defs.h include.h u2p_defs.h  u2p_util.h config.h
 
-
 $(OBJS) : $(INCS) makefile
 
 $(EXE): $(OBJS) $(INCS) makefile
 	$(CUDA_COMPILE) $(GPU_FILES)
-	$(CUDA_LOAD) GPU_boundcomP.o GPU_boundcomF.o GPU_boundcomE.o GPU_main.o GPU_program1.o GPU_program2.o -o GPU.o
-	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
+	$(CUDA_LOAD) $(OBJS) -o $(EXE)
 
 clean:
 	/bin/rm -f *.o *.il

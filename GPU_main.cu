@@ -63,7 +63,7 @@ void GPU_init(void)
 	}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
-	gpuDeviceSetCacheConfig(gpuFuncCachePreferL1);
+	//gpuDeviceSetCacheConfig(gpuFuncCachePreferL1);
 	//gpuDeviceSetSharedMemConfig(gpuSharedMemBankSizeEightByte);
 
 	status = gpuGetLastError();
