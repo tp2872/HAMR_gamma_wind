@@ -174,6 +174,14 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
+__device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max,int do_entropy, int do_staged
+	#if(COOL_STOP)
+	, double r
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
+);
 __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
 	#if(COOL_STOP)
 	, double r
@@ -1010,6 +1018,596 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[1] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_f[U1_RAD] - U_i[U1_RAD] - Dt * dU[U1_RAD]) / norm);
 	error_t[1] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2_RAD] - U_i[U2_RAD] - Dt * dU[U2_RAD]) / norm);
 	error_t[1] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3_RAD] - U_i[U3_RAD] - Dt * dU[U3_RAD]) / norm);
+}
+
+__device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+#if(DOHELM)
+, const double* __restrict__ gpu_eos_table
+#endif
+#if(COOL_STOP)
+, double r
+#endif
+#if(CALC_MDOT)
+, double mass_density_scale, double magnetic_density_scale
+#endif
+) {
+	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[1+TWO_T+P_NUM], dpb,  dEdpb_inv[1 + TWO_T + P_NUM][1 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
+	double T_GAS, dK_dS, norm, D;
+	struct of_state q;
+	struct of_state_rad q_rad;
+	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;
+	
+#if(TWO_T)
+	int flag_floor_kappa;
+	double gamma_g, ue, ui, Theta_e, Theta_i; 
+		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+		#if(TWO_T)
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
+			#elif(VARGAMMA)
+				//For variable entropy
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRE])), 2. / 3.)) - 1.0);
+				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+				#else
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO], 2. / 3.) * fabs(pb_old[ENTRE])) - 1.0);
+				dK_dS = 2. / 3. * (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+				#endif
+			#endif
+		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+		#endif
+		#if(P_NUM)
+		T_GAS = 1.0;// (GAMMA - 1.)* pb_old[UU] / pb_old[RHO];
+		E_old[4 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		#endif
+		if (do_entropy == 1) {
+			#if(TWO_T)	
+				#if(CONSTANTGAMMA || FIXEDGAMMA)
+				dK_dS = (GAMMA - 1.) / pow(pb_old[RHO], GAMMA - 1.0);
+				#elif(VARGAMMA)
+					//For variable entropy
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_old[RHO] * exp(pb_old[ENTRI])), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_i) * (MU_I);
+					#else
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_old[RHO], 2. / 3.) * fabs(pb_old[ENTRI])) - 1.0);
+					dK_dS = 2. / 3. * (pb_old[ENTRI] / Theta_i) * (MU_I);
+					#endif
+				#endif
+				E_old[0] = (1.0 / dK_dS) * (U_old[ENTRI] - U_i[ENTRI] - Dt * dU_old[ENTRI]);
+			#else
+				#if(FULL_ENTROPY)
+				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+				#else
+				T_GAS = pow(pb_old[RHO], GAMMA - 1.0) / (GAMMA - 1.);
+				#endif			
+				E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
+			#endif
+		}
+		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
+
+		//Calculate jacobian dEdpb
+		n_iter_jacob = 0;
+		do {
+			for (i = 0; i < 1 + TWO_T + P_NUM; i++) {
+				PLOOP pb_new[k] = pb_old[k];
+				if (i == UU) {
+					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
+					pb_new[UU] = pb_old[UU] + dpb;
+				}
+				#if(TWO_T)
+				else if (i == 1) {
+					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[ENTRE]);
+					U_new[ENTRE] = U_old[ENTRE] + dpb;
+				}
+				#endif
+				#if(P_NUM)
+				else if (i == 1 + TWO_T) {
+					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[PHOTON]);
+					U_new[PHOTON] = U_old[PHOTON] + dpb;
+				}
+				#endif
+
+				// Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
+				get_state(pb_new, geom, &q
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
+				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
+				U_new[RHO] = U_i[RHO];
+				#if(TWO_T)
+					pb_new[ENTRE] = U_new[ENTRE] / U_new[RHO];
+					//Set for 2T fluid entropy of ions based on electron entropy
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
+					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
+					ui = pb_new[UU] - ue;
+					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+					#elif(VARGAMMA)
+					double Theta, gam, C;
+					
+					//Calculate ue
+						#if(FULL_ENTROPY_VARGAMMA)
+						Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRE])), 2. / 3.)) - 1.0));
+						#else
+						Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO], 2. / 3.) * fabs(pb_new[ENTRE])) - 1.0));
+						#endif
+					gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+					ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+
+					//Check limits
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					ui = pb_new[UU] - ue;
+
+					//Set electron entropy
+					C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+						#if(FULL_ENTROPY_VARGAMMA)
+						pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+						#else
+						pb_new[ENTRE] = (Theta) * (Theta + 0.4) / pow(pb_new[RHO], 2. / 3.);
+						#endif
+
+					//Set ion entropy
+					C = ui / pb_new[RHO] * MU_I;
+					Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+						#if(FULL_ENTROPY_VARGAMMA)
+						pb_new[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+						#else
+						pb_new[ENTRI] = (Theta) * (Theta + 0.4) / pow(pb_new[RHO], 2. / 3.);
+						#endif
+					#endif
+				//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				gamma_g = calc_gamma_gas_prim(pb_new);
+				#endif
+				mhd_calc(pb_new, 0, &q, &U_new[UU]
+					#if(DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
+				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
+				U_new[UU] = U_new[UU] + U_new[RHO];
+
+				//Recalculate gas entropy for consistency
+				#if(DOKTOT)
+				U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
+				#endif
+
+				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
+				U_new[U1_RAD] = U_i[U1_RAD] - (U_new[U1] - U_i[U1]);
+				U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
+				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
+
+				//Invert radiation variables
+				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+					#if(CALC_MDOT)
+					, mass_density_scale, magnetic_density_scale
+					#endif
+				);
+
+				//Recompute R_t^mu for consistency
+				get_state_rad(pb_new, geom, &q_rad);
+				//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+				//Recompute photon number for consistency
+				//#if(P_NUM)
+				//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				//#endif
+
+				//Calculate radiative (including coulomb) source term
+				source_rad(pb_new, geom, &q, &q_rad, dU_new
+					#if(DOHELM)
+					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
+					#endif
+					#if(COOL_STOP)
+					, r
+					#endif
+					#if(CALC_MDOT)
+					, mass_density_scale, magnetic_density_scale
+					#endif
+				);
+
+				//Calculate Jacobian
+				E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
+				dEdpb_inv[0][i] = (E_new[0] - E_old[0]) / dpb;
+				#if(TWO_T)
+					#if(CONSTANTGAMMA || FIXEDGAMMA)
+					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					#elif(VARGAMMA)
+						//For variable entropy
+						#if(FULL_ENTROPY_VARGAMMA)
+						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+						dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+						#else
+						Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO], 2. / 3.) * fabs(pb_new[ENTRE])) - 1.0);
+						dK_dS = 2. / 3. * (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+						#endif
+					#endif
+				E_new[1] = (1.0 / dK_dS) * (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
+				dEdpb_inv[1][i] = (E_new[1] - E_old[1]) / dpb;
+				#endif
+				#if(P_NUM)
+				T_GAS = 1.0;// (GAMMA - 1.)* pb_new[UU] / pb_new[RHO];
+				E_new[1 + TWO_T] = T_GAS  * (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
+				dEdpb_inv[1 + TWO_T][i] = (E_new[1 + TWO_T] - E_old[1 + TWO_T]) / dpb;
+				#endif
+				if (do_entropy == 1) {
+					#if(TWO_T)
+						#if(CONSTANTGAMMA || FIXEDGAMMA)
+						dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+						#elif(VARGAMMA)
+							//For variable entropy
+							#if(FULL_ENTROPY_VARGAMMA)
+							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRI])), 2. / 3.)) - 1.0);
+							dK_dS = (1.0 / Theta_i) * (MU_I);
+							#else
+							Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO], 2. / 3.) * fabs(pb_new[ENTRI])) - 1.0);
+							dK_dS = 2. / 3. * (pb_new[ENTRI] / Theta_i) * (MU_I);
+							#endif
+						#endif
+					E_new[0] = (1.0 / dK_dS) * (U_new[ENTRI] - U_i[ENTRI] - Dt * dU_new[ENTRI]);					
+					#else
+						#if(FULL_ENTROPY)
+						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+						#else
+						T_GAS = pow(pb_new[RHO], GAMMA - 1.0) / (GAMMA - 1.);
+						#endif
+					E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
+					#endif
+				}
+				else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
+				dEdpb_inv[0][i] = (E_new[0] - E_old[0]) / dpb;
+			}
+
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_3D(dEdpb_inv, dEdpb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_2D(dEdpb_inv, dEdpb_inv);
+			#else
+			flag = invert_matrix_1D(dEdpb_inv, dEdpb_inv);
+			#endif
+
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
+		
+		//Set primitive variables before Newton step
+		PLOOP pb_new[k] = pb_old[k];
+
+		/* Make the newton step: */
+		D = 1.0;
+		dpb = -D * (E_old[0] * dEdpb_inv[0][0]
+			#if(TWO_T)
+				+ E_old[1] * dEdpb_inv[0][1]
+			#endif
+			#if(P_NUM)
+			+ E_old[1 + TWO_T] * dEdpb_inv[0][1 + TWO_T]
+			#endif
+			);
+		pb_new[UU] = pb_old[UU] + dpb;
+		#if(TWO_T)
+		dpb = -D * (E_old[0] * dEdpb_inv[1][0] + E_old[1] * dEdpb_inv[1][1]
+			#if(P_NUM)
+			+ E_old[2] * dEdpb_inv[1][2]
+			#endif	
+			);
+		U_new[ENTRE] = U_old[ENTRE] + dpb;
+		#endif
+		#if(P_NUM)
+		dpb = -D * (E_old[0] * dEdpb_inv[1 + TWO_T][0] + E_old[1] * dEdpb_inv[1 + TWO_T][1]
+			#if(TWO_T)
+			+ E_old[1 + TWO_T] * dEdpb_inv[1 + TWO_T][1 + TWO_T]
+			#endif			
+			);
+		U_new[PHOTON] = U_old[PHOTON] + dpb;
+		#endif
+
+		//Make sure that internal energy stays positive
+		if (pb_new[UU] < 0.0) pb_new[UU] = 0.5 * fabs(pb_new[UU]);
+		
+		//Make sure that electron entropy stays positive
+		#if(TWO_T)
+		//if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+		#endif
+		
+		//Make sure that photon number stays positive
+		#if(P_NUM)
+		//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+		#endif
+
+		//Obtain new conserved quantaties from MHD variables
+		get_state(pb_new, geom, &q
+		#if(CALC_MDOT)
+		, magnetic_density_scale
+		#endif
+		);
+		U_new[RHO] = U_i[RHO];
+		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
+		#if(TWO_T)
+			pb_new[ENTRE] = U_new[ENTRE] / U_new[RHO];
+			flag_floor_kappa = 0;
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
+				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
+				//flag_floor_kappa = 1;
+			}
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
+				ue = FLOOR_ENTROPY * pb_new[UU];
+				//flag_floor_kappa = 1;
+			}
+			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
+			ui = pb_new[UU] - ue;
+			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
+			#elif(VARGAMMA)
+			double Theta, gam, C;
+
+			//Calculate ue
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRE])), 2. / 3.)) - 1.0));
+				#else
+				Theta = fabs(0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO], 2. / 3.) * fabs(pb_new[ENTRE])) - 1.0));
+				#endif
+			gam = (10.0 + 20.0 * Theta) / (6.0 + 15.0 * Theta);
+			ue = Theta / (MU_E * MASS_RATIO) * pb_new[RHO] / (gam - 1.0);
+
+			//Check limits
+			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
+				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
+				//flag_floor_kappa = 1;
+			}
+			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
+				ue = FLOOR_ENTROPY * pb_new[UU];
+				//flag_floor_kappa = 1;
+			}
+			ui = pb_new[UU] - ue;
+		
+			//Set electron entropy
+			C = ue / pb_new[RHO] * MU_E * MASS_RATIO;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				#if(FULL_ENTROPY_VARGAMMA)
+				pb_new[ENTRE] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+				#else
+				pb_new[ENTRE] = Theta * (Theta + 0.4) / pow(pb_new[RHO], 2. / 3.);
+				#endif
+
+			//Set ion entropy
+			C = ui / pb_new[RHO] * MU_I;
+			Theta = (1.0 / 30.0) * (sqrt(25.0 * C * C + 180.0 * C + 36.0) + 5.0 * C - 6.0);
+				#if(FULL_ENTROPY_VARGAMMA)
+				pb_new[ENTRI] = log(pow(Theta, 1.5) * pow(Theta + 0.4, 1.5) / pb_new[RHO]);
+				#else
+				pb_new[ENTRI] = Theta * (Theta + 0.4) / pow(pb_new[RHO], 2. / 3.);
+				#endif
+			#endif
+		//U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
+		U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+		gamma_g = calc_gamma_gas_prim(pb_new);
+		#endif
+		mhd_calc(pb_new, 0, &q, &U_new[UU]
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
+		);
+		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
+		U_new[UU] = U_new[UU] + U_new[RHO];
+
+		//Recalculate gas entropy for consistency
+		#if(DOKTOT)
+		U_new[KTOT] = U_new[RHO] * calc_entropy(pb_new
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
+		);
+		#endif
+
+		//Derive new conserved quantaties for radiation variables
+		U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
+		U_new[U1_RAD] = U_i[U1_RAD] - (U_new[U1] - U_i[U1]);
+		U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
+		U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
+
+		//Get new radiation primitives using TYPE2 limiter
+		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2
+			#if(CALC_MDOT)
+			, mass_density_scale, magnetic_density_scale
+			#endif
+		);
+		if (flag_rad) PLOOP U_old_prev[k] = U_new[k];		
+		
+		//Recompute R_t^mu for consistency
+		get_state_rad(pb_new, geom, &q_rad);
+		//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
+		//Recompute photon number
+		//#if(P_NUM)
+		//U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+		//#endif
+
+		//Get radiative source term
+		source_rad(pb_new, geom, &q, &q_rad, dU_new
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale, magnetic_density_scale
+			#endif
+		);
+
+		//Calculate iterated error
+		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
+		if (do_entropy == 0)error_new[n_iter % 5] = 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+		else {
+			#if(TWO_T)
+				#if(CONSTANTGAMMA || FIXEDGAMMA)
+				dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+				#elif(VARGAMMA)
+					//For variable entropy
+					#if(FULL_ENTROPY_VARGAMMA)
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * exp(pb_new[ENTRI])), 2. / 3.)) - 1.0);
+					dK_dS = (1.0 / Theta_i) * (MU_I);
+					#else
+					Theta_i = 0.2 * (sqrt(1.0 + 25.0 * pow(fabs(pb_new[RHO] * pb_new[ENTRI]), 2. / 3.)) - 1.0);
+					dK_dS = 2. / 3. * (pb_new[ENTRI] / Theta_i) * (MU_I);
+					#endif
+				#endif
+				error_new[n_iter % 5] += 0.25 * (fabs((U_new[ENTRI] - U_i[ENTRI] - Dt * dU_new[ENTRI]))) / (norm * dK_dS);
+			#else
+				#if(FULL_ENTROPY)
+				dK_dS = pb_new[RHO] / ((GAMMA - 1.) * pb_new[UU]);
+				error_new[n_iter % 5] += 0.25 * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm * dK_dS);
+				#else
+				dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+				error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]))) / (norm * dK_dS);
+				#endif
+			#endif
+		}
+		#if(TWO_T)
+			#if(CONSTANTGAMMA || FIXEDGAMMA)
+			dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+			#elif(VARGAMMA)
+			double Theta_e;
+			//For variable entropy
+				#if(FULL_ENTROPY_VARGAMMA)
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO] * exp(pb_new[ENTRE]), 2. / 3.)) - 1.0);
+				dK_dS = (1.0 / Theta_e) * (MU_E * MASS_RATIO);
+				#else
+				Theta_e = 0.2 * (sqrt(1.0 + 25.0 * pow(pb_new[RHO], 2. / 3.) * fabs(pb_new[ENTRE])) - 1.0);
+				dK_dS = 2. / 3. * (pb_new[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
+				#endif
+			#endif
+		if(flag_floor_kappa==0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (norm * dK_dS));
+		#endif
+		#if(P_NUM)
+		if (flag_rad == 0) {
+			norm = (fabs(U_i[PHOTON]) + fabs(U_new[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+			error_new[n_iter % 5] += 0.25 * (fabs(U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		}
+		else {
+			norm = (fabs(U_i[PHOTON]) + fabs(U_old_prev[PHOTON]) + fabs(Dt * dU_new[PHOTON]));
+			error_new[n_iter % 5] += 0.25 * (fabs(U_old_prev[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]) / (norm));
+		}
+		#endif
+
+		//Set correct offset for Jacobian for next iteration
+		if (error_new[n_iter % 5] < 1.e-9) offset = 1.e-10 ;
+		else offset = 1.e-9;
+
+		//Set total error to iterated error
+		error_new[n_iter % 5 + 5] = error_new[n_iter % 5];
+		if (do_entropy == 0) {
+			if (flag_rad == 0) {
+				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+				error_new[n_iter % 5 + 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+			}
+			else {
+				norm = (fabs(U_i[UU_RAD]) + fabs(U_old_prev[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+				error_new[n_iter % 5 + 5] += 0.25 * (fabs(U_old_prev[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+			}
+		}
+
+		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 20)) {
+			keep_iterating = 0;
+		}
+
+		//If residual drops below bound exit
+		//double residual = 0.;
+		//for (k = 0; k < NPR; k++)residual += fabs(pb_new[k]/pb_old[k]-1.0);
+		//if (residual<1.0e-15) {
+			//keep_iterating = 0;
+		//}
+
+		//If total error increasing stop iterating
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+			keep_iterating = 0;
+		}
+
+		//If iterated error increasing stop iterating
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
+			//keep_iterating = 0;
+		}
+
+		//If total error increased more than 4 times stop iterating
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
+			count_increase++;
+			if (count_increase >= 5) keep_iterating = 0;
+		}
+
+		//If iterated error increased more than 4 times stop iterating
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+			count_increase2++;
+			//if (count_increase2 >= 5) keep_iterating = 0;
+		}
+
+		//If error decreased compared to start value, update variables
+		if (((fabs(error_new[n_iter % 5 + 5]) < error_t[1])) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
+			error_t[0] = error_new[n_iter % 5];
+			error_t[1] = error_new[n_iter % 5 + 5];
+
+			//Reset radiation inversion error
+			if (flag_rad) {
+				for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_old_prev[k];
+				#if(P_NUM)
+				U_prev[PHOTON] = U_old_prev[PHOTON];
+				#endif
+			}
+			pflag_rad[0] = flag_rad;
+
+			//Update variables
+			for (k = 0; k < NPR; k++) {
+				pb[k] = pb_new[k];
+				U_f[k] = U_new[k];
+				dU[k] = dU_new[k];
+			}
+		}
+
+		//Reset variables if Newton step succesfull
+		if (keep_iterating) {
+			for (k = 0; k < NPR; k++) {
+				U_old[k] = U_new[k];
+				pb_old[k] = pb_new[k];
+				dU_old[k] = dU_new[k];
+			}
+		}
+		n_iter++;
+	}
+
+	return(0);
 }
 
 __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
