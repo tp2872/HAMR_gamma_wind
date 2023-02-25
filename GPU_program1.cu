@@ -395,6 +395,8 @@ __device__ int invert_matrix_6D(double Am[][6], double Aminv[][6]);
 __device__ int LU_decompose_6D(double A[][6], int permute[]);
 __device__ void LU_substitution_6D(double A[][6], double B[], int permute[]);
 __device__ int gamma_calc_rad(double* pr, struct of_geom* geom, double* gamma_rad);
+__device__ int invert_matrix_1D(double Am[][1], double Aminv[][1]);
+__device__ int invert_matrix_2D(double Am[][2], double Aminv[][2]);
 
 /*Declare other functions*/
 __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q
@@ -595,7 +597,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 	else {
 		#if (HIGH_MDOT)
-		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD_fast(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
@@ -607,7 +609,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		);
 		
-		if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+		/*if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
@@ -617,7 +619,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#if(CALC_MDOT)
 			, mass_density_scale, magnetic_density_scale
 			#endif
-		);
+		);*/
 		#else
 		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
@@ -1035,12 +1037,28 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 	double T_GAS, dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;
-	
-#if(TWO_T)
+	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;	
+	#if(TWO_T)
 	int flag_floor_kappa;
-	double gamma_g, ue, ui, Theta_e, Theta_i; 
-		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+	double gamma_g, ue, ui, Theta_e, Theta_i;
+	#endif
+
+	//Set error to previous value
+	for (k = 0; k < 5; k++) {
+		error_new[k] = error_t[0];
+		error_new[k + 5] = error_t[1];
+	}
+
+	//Set variables to previously iterated values
+	for (k = 0; k < NPR; k++) {
+		pb_old[k] = pb[k];
+		U_old[k] = U_f[k];
+		dU_old[k] = dU[k];
+		U_new[k] = U_old[k];
+	}
+
+	/* Start the Newton-Raphson iterations : */
+	while (keep_iterating) {
 		#if(TWO_T)
 			#if(CONSTANTGAMMA || FIXEDGAMMA)
 			dK_dS = (GAMMAE - 1.) / pow(pb_old[RHO], GAMMAE - 1.0);
@@ -1054,11 +1072,11 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 				dK_dS = 2. / 3. * (pb_old[ENTRE] / Theta_e) * (MU_E * MASS_RATIO);
 				#endif
 			#endif
-		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+		E_old[1] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
 		T_GAS = 1.0;// (GAMMA - 1.)* pb_old[UU] / pb_old[RHO];
-		E_old[4 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		E_old[1 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
 		#endif
 		if (do_entropy == 1) {
 			#if(TWO_T)	
@@ -1091,7 +1109,13 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 		do {
 			for (i = 0; i < 1 + TWO_T + P_NUM; i++) {
 				PLOOP pb_new[k] = pb_old[k];
-				if (i == UU) {
+				#if(TWO_T)
+				U_new[ENTRE] = U_old[ENTRE];
+				#endif
+				#if(P_NUM)
+				U_new[PHOTON] = U_old[PHOTON]
+				#endif
+				if (i == 0) {
 					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
 					pb_new[UU] = pb_old[UU] + dpb;
 				}
@@ -1485,14 +1509,14 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 					dK_dS = 2. / 3. * (pb_new[ENTRI] / Theta_i) * (MU_I);
 					#endif
 				#endif
-				error_new[n_iter % 5] += 0.25 * (fabs((U_new[ENTRI] - U_i[ENTRI] - Dt * dU_new[ENTRI]))) / (norm * dK_dS);
+				error_new[n_iter % 5] = 0.25 * (fabs((U_new[ENTRI] - U_i[ENTRI] - Dt * dU_new[ENTRI]))) / (norm * dK_dS);
 			#else
 				#if(FULL_ENTROPY)
 				dK_dS = pb_new[RHO] / ((GAMMA - 1.) * pb_new[UU]);
-				error_new[n_iter % 5] += 0.25 * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm * dK_dS);
+				error_new[n_iter % 5] = 0.25 * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm * dK_dS);
 				#else
 				dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
-				error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]))) / (norm * dK_dS);
+				error_new[n_iter % 5] = 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]))) / (norm * dK_dS);
 				#endif
 			#endif
 		}
@@ -1699,6 +1723,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		do {
 			for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
 				PLOOP pb_new[k] = pb_old[k];
+				#if(TWO_T)
+				U_new[ENTRE] = U_old[ENTRE];
+				#endif
+				#if(P_NUM)
+				U_new[PHOTON] = U_old[PHOTON]
+				#endif
 				if (i == UU) {
 					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
 					pb_new[i] = pb_old[i] + dpb;
@@ -5992,6 +6022,40 @@ __device__ int invert_matrix_4D(double Am[][NDIM], double Aminv[][NDIM]){
 	}
 
 	return(0);
+}
+
+//2D Matrix inversion
+__device__ int invert_matrix_1D(double Am[][1], double Aminv[][1])
+{
+	double D;
+
+	D = 1.0 / (Am[0][0]);
+	if (!isfinite(D)) {
+		return(1);
+	}
+	else {
+		Aminv[0][0] = D;
+		return(0);
+	}
+}
+
+
+//2D Matrix inversion
+__device__ int invert_matrix_2D(double Am[][2], double Aminv[][2])
+{
+	double D;
+
+	D = 1.0 / (Am[0][0] * Am[1][1] - Am[1][0] * Am[0][1]);
+	if (!isfinite(D)) {
+		return(1);
+	}
+	else {
+		Aminv[0][0] = D * Am[1][1];
+		Aminv[0][1] = -D * Am[0][1];
+		Aminv[1][0] = -D * Am[1][0];
+		Aminv[1][1] = D * Am[0][0];
+		return(0);
+	}
 }
 
 //3D Matrix inversion
