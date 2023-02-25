@@ -244,12 +244,12 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.;
 #if (WHICHPROBLEM == RAD_PULSE)
 	DTd = 10.;
 #else 
 	DTd = 50.;// 0.1;
 #endif
+	DTl = 2.*DTd;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;

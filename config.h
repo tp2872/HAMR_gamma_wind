@@ -18,7 +18,7 @@ Physical Parameters section
 #define RAD_PULSE 14
 #define COLLAPSAR 15
 
-#define WHICHPROBLEM COLLAPSAR
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 // DIMARK: rad.pulse kappa_es
@@ -46,7 +46,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (100.0)
+#define BETA (1e2)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
@@ -67,7 +67,8 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 // Postmerger problem, ICs from SpEC
-#define BHNSQ2 (0)
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (1)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
@@ -77,7 +78,7 @@ Physical Parameters section
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_SUBCYCLING (0)
 #define NU_DEBUG (1) // (1)
@@ -141,16 +142,16 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-20) //(1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN	(1.e-7)
-    #define UUMIN	(1.e-9)
-    #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT  (1.e-20)
-    //#define RHOMIN    (1.e-14)
-    //#define UUMIN    (1.e-16)
-    //#define RHOMINLIMIT (1.e-30)
-    //#define UUMINLIMIT  (1.e-30)
-#else
+    //#define RHOMIN	(1.e-7)
+    //#define UUMIN	(1.e-9)
+    //#define RHOMINLIMIT (1.e-20)
+    //#define UUMINLIMIT  (1.e-20)
     #define RHOMIN    (1.e-14)
+    #define UUMIN    (1.e-16)
+    #define RHOMINLIMIT (1.e-30)
+    #define UUMINLIMIT  (1.e-30)
+#else
+    #define RHOMIN    (1.e-14) 
     #define UUMIN    (1.e-16)
     #define RHOMINLIMIT (1.e-30)
     #define UUMINLIMIT  (1.e-30)
@@ -201,7 +202,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (40.0)
+#define GPU_MEM (80.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -220,16 +221,16 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 2
+#define NB_2 4
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 48
+#define BS_1 32
+#define BS_2 32
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -541,7 +542,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2)
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (1.87456e-5) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#define MASS_DENSITY_SCALE (23661320709691.3) // (1.87456e-5)
 #else
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #endif

@@ -1650,7 +1650,7 @@ void init_rad_pres(double pi[NPR]) {
 	pi[U3_RAD] = pi[U3];
 }
 
-
+#undef dd
 #define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 #define VARI 0
 #define VARJ 1
@@ -1705,7 +1705,11 @@ void init_postmerger() {
 	double *icdata;
 
 	#if (BHNSQ2)
+	#if (BHNSQ2_1)
+	char fname1[] = "spec_ic_1.dat";
+	#else
 	char fname1[] = "InterpolatedDataBHNSQ2.dat";
+	#endif
 	#else
 	char fname1[] = "PointsToInterpolateHAMR.dat";
 	char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
@@ -1762,28 +1766,39 @@ void init_postmerger() {
 				exit(1234);
 			}
 			#if (BHNSQ2)
+			#if (BHNSQ2_1)
 			ext.nx = 384;
 			ext.ny = 96;
 			ext.nz = 96;
-
+			#else
+			ext.nx = 384;
+			ext.ny = 96;
+			ext.nz = 96;
+			#endif
 			read_last_line(last_line, MAXLEN, fp1);
 			sscanf(last_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmax, &ext.ymax, &ext.zmax);
 			rewind(fp1);
 
 			read_first_line(first_line, MAXLEN, fp1);
 			sscanf(first_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmin, &ext.ymin, &ext.zmin);
-
+			#if (!BHNSQ2_1)
 			ext.xmin /= r_unit;
 			ext.xmax /= r_unit;
-
+			#endif
 			if (0 == rank) {
 				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1);
 				fflush(stderr);
 			}
 
+			#if (BHNSQ2_1)
 			nx = 384;
 			ny = 96;
 			nz = 96;
+			#else
+			nx = 384;
+			ny = 96;
+			nz = 96;
+			#endif
 			nvars = ext.nvars;
 			nitems = (size_t)nvars * nx * ny * nz;
 			memsize = sizeof(double) * nitems;
@@ -1868,8 +1883,10 @@ void init_postmerger() {
 				dd(ii, jj, kk, VARK) = (double)kk;
 
 				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI), &dd(ii, jj, kk, VARRHO), &dd(ii, jj, kk, VARP), &dd(ii, jj, kk, VARYE), &dd(ii, jj, kk, VARMUDT), &dd(ii, jj, kk, VARUDPHI), &dd(ii, jj, kk, VARVUR), &dd(ii, jj, kk, VARVUTHETA), &dd(ii, jj, kk, VARVUPHI));
+				#if (!BHNSQ2_1)
 				dd(ii, jj, kk, VARR) /= r_unit;
-				dd(ii, jj, kk, VARUDPHI) /= r_unit;
+				#endif
+				//dd(ii, jj, kk, VARUDPHI) /= r_unit;
 
 				nitems_expected = 11;
 				if (nitems_expected != nitems_read) break;
@@ -1980,7 +1997,7 @@ void init_postmerger() {
 				prim[U3] = 0.0;
 
 				#if (DO_YE)
-				prim[YE] = 0.5;
+				prim[YE] = 1.0;
 				#endif
 				#if (DONUCLEAR)
 				prim[XALPHA] = 0.0;
@@ -2090,6 +2107,16 @@ void init_postmerger() {
 			);
 		}
 	}
+
+	#if (NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+	//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] < 1.0)
+				init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
 	#endif
 
 	bound_prim(p, 1);
@@ -2377,7 +2404,7 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 	//note that this is pressure, not internal energy
 	res += interpolate_spec_var(r, th, ph, ext, data, VARP, &p[UU]); p[UU] /= (gam - 1);
 	#if(DO_YE)
-	res += interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARYE, &p[YE]);
 	#endif
 	res += interpolate_spec_var(r, th, ph, ext, data, VARUDPHI, udphi);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARMUDT, mudt);
@@ -3179,6 +3206,7 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
 
+  #if (!BHNSQ2_1)
   // converts the input Utilde^{x,y,z} to Utilde^{r,th,phi}
   utcon[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -3187,6 +3215,12 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
       utcon[i] += drdx[i][j] * vtcon[j];
     }
   }
+  #else
+  utcon[0] = 0.0;
+  utcon[1] = vtcon[1];
+  utcon[2] = vtcon[2];
+  utcon[3] = vtcon[3];
+  #endif
 
 #if(USEKS)
   //already in KS coordinates; no transformation needed
@@ -3245,9 +3279,70 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
+  #if (!BHNSQ2_1)
   get_geometry(n,ii, jj,zz, CENT, &geom);
-  ucon_calc(pr, &geom, ucon);
-  double ucont_IC = ucon[0];
+  double gamma_IC;
+  gamma_calc(pr, &geom, &gamma_IC);
+  //ucon_calc(pr, &geom, ucon);
+  //double ucont_IC = ucon[0];
+  double alphasq_inv = -geom.gcon[0][0];
+  double u2_o_u3 = utconp[2] / (utconp[3] + 1e-30);
+  double A = 2 * alphasq_inv * geom.gcov[1][0] * geom.gcov[1][3] * geom.gcov[3][0] * 1.0 / geom.gcov[3][3] - alphasq_inv * geom.gcov[1][0] * geom.gcov[1][0] - alphasq_inv * geom.gcov[1][3] * geom.gcov[1][3] * geom.gcov[3][0] * geom.gcov[3][0] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) + geom.gcov[1][1] + geom.gcov[2][2] * (geom.gcov[1][3] * geom.gcov[1][3]) * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * (u2_o_u3 * u2_o_u3) - geom.gcov[1][3] * geom.gcov[1][3] * 1.0 / geom.gcov[3][3];
+  double B = -2 * alphasq_inv * geom.gcov[1][0] * geom.gcov[3][0] * udphi * 1.0 / geom.gcov[3][3] - 2 * alphasq_inv * geom.gcov[1][0] * mudt + 2 * alphasq_inv * geom.gcov[1][3] * geom.gcov[3][0] * mudt * 1.0 / geom.gcov[3][3] + 2 * alphasq_inv * geom.gcov[1][3] * udphi * (geom.gcov[3][0] * geom.gcov[3][0]) * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) - 2 * geom.gcov[1][3] * geom.gcov[2][2] * udphi * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * u2_o_u3 * u2_o_u3;
+  double C = 1 - 2 * alphasq_inv * geom.gcov[3][0] * mudt * udphi * 1.0 / geom.gcov[3][3] - alphasq_inv * geom.gcov[3][0] * geom.gcov[3][0] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * (udphi * udphi) - alphasq_inv * (mudt * mudt) + geom.gcov[2][2] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * (u2_o_u3 * u2_o_u3) * (udphi * udphi) + 1.0 / geom.gcov[3][3] * (udphi * udphi);
+
+  double discr_sq = B * B - 4 * A * C;
+  double alpha1 = geom.gcov[2][2] * (geom.gcov[1][3] * geom.gcov[1][3]) * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]);
+  double beta1 = -2 * geom.gcov[1][3] * geom.gcov[2][2] * udphi * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]);
+  double gamma1 = geom.gcov[2][2] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * (udphi * udphi);
+
+  double alpha2 = 2 * alphasq_inv * geom.gcov[1][0] * geom.gcov[1][3] * geom.gcov[3][0] * 1.0 / geom.gcov[3][3] - alphasq_inv * geom.gcov[1][0] * geom.gcov[1][0] - alphasq_inv * geom.gcov[1][3] * geom.gcov[1][3] * geom.gcov[3][0] * geom.gcov[3][0] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) + geom.gcov[1][1] - geom.gcov[1][3] * geom.gcov[1][3] * 1.0 / geom.gcov[3][3];
+  double beta2 = -2 * alphasq_inv * geom.gcov[1][0] * geom.gcov[3][0] * udphi * 1.0 / geom.gcov[3][3] - 2 * alphasq_inv * geom.gcov[1][0] * mudt + 2 * alphasq_inv * geom.gcov[1][3] * geom.gcov[3][0] * mudt * 1.0 / geom.gcov[3][3] + 2 * alphasq_inv * geom.gcov[1][3] * udphi * (geom.gcov[3][0] * geom.gcov[3][0]) * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]);
+  double gamma2 = 1 - 2 * alphasq_inv * geom.gcov[3][0] * mudt * udphi * 1.0 / geom.gcov[3][3] - alphasq_inv * geom.gcov[3][0] * geom.gcov[3][0] * 1.0 / (geom.gcov[3][3] * geom.gcov[3][3]) * (udphi * udphi) - alphasq_inv * (mudt * mudt) + 1.0 / geom.gcov[3][3] * (udphi * udphi);
+
+  double b_u2ou3 = 2 * beta1 * beta2 - 4 * (alpha1 * gamma2 + alpha2 * gamma1);
+  double c_u2ou3 = beta2 * beta2 - 4 * alpha2 * gamma2;
+  double u2_o_u3_sq = - c_u2ou3 / b_u2ou3;
+  double u2_o_u3_new = 1.0;
+  double u1_plus, u1_minus, gamma_plus, gamma_minus;
+  if (discr_sq < 0.0) {
+	  if (u2_o_u3_sq > 0.0) {
+		  if (u2_o_u3 > 0.0) u2_o_u3_new = sqrt(u2_o_u3_sq);
+		  else u2_o_u3_new = -sqrt(u2_o_u3_sq);
+		  utconp[1] = -B / (2 * A);
+		  utconp[3] = (udphi - geom.gcov[3][1] * utconp[1]) / geom.gcov[3][3];
+		  utconp[2] = u2_o_u3_new * utconp[3];
+	  }
+	  else {
+		  //utconp[1] = 0.0;
+		  //utconp[2] = 0.0;
+		  //utconp[3] = 0.0;
+	  }
+	  //if (pr[RHO] > 1e-10) fprintf(stderr, "(%d, %d, %d) discr is negative! (rho: %e) discr^2: %e, (ratio: %e), u2/u3: %e, (u2/u3^2: %e) udphi: %e, mudt: %e\n", ii, jj, zz, pr[RHO], discr_sq, discr_sq / (B * B + fabs(4.0 * A * C)), u2_o_u3, u2_o_u3_sq, udphi, mudt);
+  }
+  else {
+	  u1_plus = (-B + sqrt(discr_sq))/ (2 * A);
+	  pr[U1] = u1_plus;
+	  pr[U3] = (udphi - geom.gcov[3][1] * pr[U1]) / geom.gcov[3][3];
+	  pr[U2] = u2_o_u3 * pr[U3];
+	  gamma_calc(pr, &geom, &gamma_plus);
+	  
+	  u1_minus = (-B - sqrt(discr_sq))/ (2 * A);
+	  pr[U1] = u1_minus;
+	  pr[U3] = (udphi - geom.gcov[3][1] * pr[U1]) / geom.gcov[3][3];
+	  pr[U2] = u2_o_u3 * pr[U3];
+	  gamma_calc(pr, &geom, &gamma_minus);
+
+	  if (fabs(gamma_IC - gamma_plus) < fabs(gamma_IC - gamma_minus)) {
+		  utconp[1] = u1_plus;
+	  }
+	  else {
+		  utconp[1] = u1_minus;
+	  }
+	  utconp[3] = (udphi - geom.gcov[3][1] * utconp[1]) / geom.gcov[3][3];
+	  utconp[2] = u2_o_u3 * utconp[3];
+  }
+  #endif
 
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
@@ -3435,12 +3530,14 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   ucon[3] = ucon_sol[2];
   ucon_to_utcon(ucon, &geom, utconp);
   /// end
-  #else
+  #elif (0)
 double usq;
 pr[U1] = utconp[1];
 pr[U2] = utconp[2];
 pr[U3] = utconp[3];
 ucon_calc(pr, &geom, ucon);
+double ucon_ini[NDIM];
+DLOOPA ucon_ini[j] = ucon[j];
 double u2_o_u3 = ucon[2] / (ucon[3] + 1e-16);
 double u2_o_u1 = ucon[2] / (ucon[1] + 1e-16);
 
@@ -3459,9 +3556,13 @@ double D = a21 * udphi - a22 * mudt;
 #if (FIX_U2U3)
 //u2_o_u3 = 0.0;
 // keep u2/u3 fixed
-AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * C * C + geom.gcov[1][3] * A * C;
-BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * 2 * C * D + geom.gcov[1][3] * (A * D + B * C);
-CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * D * D + geom.gcov[1][3] * B * D;
+//AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * C * C + geom.gcov[1][3] * A * C;
+//BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * 2 * C * D + geom.gcov[1][3] * (A * D + B * C);
+//CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * D * D + geom.gcov[1][3] * B * D;
+
+AA = geom.gcov[1][1] * A * A + 2 * geom.gcov[1][3] * A * C + 2 * geom.gcov[1][0] * A + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * C * C + geom.gcov[3][3] * C * C + 2 * C * geom.gcov[3][0] + geom.gcov[0][0];
+BB = geom.gcov[1][1] * 2 * A * B + 2 * geom.gcov[1][3] * (A * D + B * C) + 2 * geom.gcov[1][0] * B + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * 2 * C * D + 2 * geom.gcov[3][3] * C * D + 2 * geom.gcov[3][0] * D;
+CC = 1 + B * B * geom.gcov[1][1] + geom.gcov[2][2] * u2_o_u3 * u2_o_u3 * D * D + 2 * geom.gcov[1][3] * B * D + geom.gcov[3][3] * D * D;
 #else
 // keep u2/u1 fixed
 AA = geom.gcov[1][3] * A * C + geom.gcov[1][0] * A + (geom.gcov[1][1] + u2_o_u1 * u2_o_u1 * geom.gcov[2][2]) * A * A;
@@ -3477,23 +3578,21 @@ if (discr_sq < 0.0) {
 	//BB = 4 * AA * CC;
 	#if (FIX_U2U3)
 	alpha1 = geom.gcov[2][2] * C * C;
-	alpha2 = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A + geom.gcov[1][3] * A * C;
 	beta1 = geom.gcov[2][2] * 2 * C * D;
-	beta2 = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[1][3] * (A * D + B * C);
 	gamma1 = geom.gcov[2][2] * D * D;
-	gamma2 = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[1][3] * B * D;
+
+	alpha2 = geom.gcov[1][1] * A * A + 2 * geom.gcov[1][3] * A * C + 2 * geom.gcov[1][0] * A + geom.gcov[3][3] * C * C + 2 * C * geom.gcov[3][0] + geom.gcov[0][0];
+	beta2 = geom.gcov[1][1] * 2 * A * B + 2 * geom.gcov[1][3] * (A * D + B * C) + 2 * geom.gcov[1][0] * B + 2 * geom.gcov[3][3] * C * D + 2 * geom.gcov[3][0] * D;
+	gamma2 = 1 + B * B * geom.gcov[1][1] + 2 * geom.gcov[1][3] * B * D + geom.gcov[3][3] * D * D;
 	
-	double a_u2ou3 = beta1 * beta1 - 4 * alpha1 * gamma1;
 	double b_u2ou3 = 2 * beta1 * beta2 - 4 * (alpha1 * gamma2 + alpha2 * gamma1);
 	double c_u2ou3 = beta2 * beta2 - 4 * alpha2 * gamma2;
-	double discr_u2ou3 = b_u2ou3 * b_u2ou3 - 4 * a_u2ou3 * c_u2ou3;
 
-	double u2_o_u3_sq_plus = (-b_u2ou3 + sqrt(discr_u2ou3)) / (2 * a_u2ou3);
-	double u2_o_u3_sq_minus = (-b_u2ou3 - sqrt(discr_u2ou3)) / (2 * a_u2ou3);
+	double u2_o_u3_sq = -c_u2ou3 / b_u2ou3;
 
-	AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A  + geom.gcov[1][3] * A * C;
-	BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[1][3] * (A * D + B * C);
-	CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[1][3] * B * D;
+	//AA = geom.gcov[1][0] * A + geom.gcov[1][1] * A * A  + geom.gcov[1][3] * A * C;
+	//BB = -mudt + C * udphi + geom.gcov[1][0] * B + geom.gcov[1][1] * 2 * A * B + geom.gcov[1][3] * (A * D + B * C);
+	//CC = 1.0 + D * udphi + B * B * geom.gcov[1][1] + geom.gcov[1][3] * B * D;
 	#else
 	// keep u2/u1 fixed
 	AA = geom.gcov[1][3] * A * C + geom.gcov[1][0] * A + (geom.gcov[1][1]) * A * A;
@@ -3501,49 +3600,51 @@ if (discr_sq < 0.0) {
 	CC = 1.0 + B * udphi + (geom.gcov[1][1]) * B * B + geom.gcov[1][3] * B * D;
 	#endif
 	discr_sq = BB * BB - 4.0 * AA * CC;
-	if (discr_sq < 0.0) {
-		fprintf(stderr, "(%d, %d, %d) discr is STILL negative! b: %e, 4ac: %e, discr^2: %e (from %e), discr_u2ou3: %e (%e), u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e, ut_IC: %e\n", ii, jj, zz, BB, 4 * AA * CC, discr_sq, discr_sq0, discr_u2ou3, -c_u2ou3/b_u2ou3, u2_o_u3, u2_o_u1, udphi, mudt, ucont_IC);
+	//if (discr_sq < 0.0 && u2_o_u3_sq_top < 0.0) {
+	if (u2_o_u3_sq < 0.0) {
+		fprintf(stderr, "(%d, %d, %d) discr is STILL negative! discr^2: %e, (ratio: %e) (u2/u3_sq new: %e), u2/u3 old: %e, udphi: %e, mudt: %e\n", ii, jj, zz, discr_sq0, discr_sq0 / (BB * BB + fabs(4.0 * AA * CC)), u2_o_u3_sq, u2_o_u3, udphi, mudt);
 		discr_sq = 0.0;
 		BB = -sqrt(fabs(4 * AA * CC));
 	}
-
+	DLOOPA ucon[j] = ucon_ini[j];
 }
-
-double ucont_plus = 0.5 / AA * (-BB + sqrt(discr_sq));
-double ucont_minus = 0.5 / AA * (-BB - sqrt(discr_sq));
-
-/// fix u^i u^j = epsilon
-//double eps = 0.0;
-//for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++) eps += geom.gcov[i][j] * ucon[i] * ucon[j];
-//eps /= ucon[0] * ucon[0];
-//
-//// Find u^t
-//AA = geom.gcov[0][0] + 2 * (geom.gcov[0][1] * A + geom.gcov[0][3] * C) + eps;
-//BB = 2 * (geom.gcov[0][1] * B + geom.gcov[0][3] * C);
-//CC = 1.0;
-//discr_sq = BB * BB - 4.0 * AA * CC;
-//if (discr_sq < 0.0) {
-//	fprintf(stderr, "(%d, %d, %d) discr is negative! b: %e, 4ac: %e, b^2/4ac: %e, eps: %e, discr^2: %e, u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e, ut_IC: %e\n", ii, jj, zz, BB, 4 * AA * CC, BB*BB/(4*AA*CC), eps, discr_sq, u2_o_u3, u2_o_u1, udphi, mudt, ucont_IC);
-//}
-
-if (ucont_plus * ucont_minus > 0.0) {
-	// compute relative difference from ucont from ICs
-	if (fabs(ucont_IC - ucont_plus) < fabs(ucont_IC - ucont_minus)) {
-		ucon[0] = ucont_plus;
-	}
-	else {
-		ucon[0] = ucont_minus;
-	}
-}
-else if (ucont_plus > 0.0) ucon[0] = ucont_plus;
-else if (ucont_minus > 0.0) ucon[0] = ucont_minus;
 else {
-	ucon[0] = ucont_IC;
-	fprintf(stderr, "(%d, %d, %d) both roots are negative! %e, %e, b: %e, 2a: %e, discr: %e \n", ii, jj, zz, ucont_plus, ucont_minus, BB, 2.0 * AA, sqrt(discr_sq)); 
+	double ucont_plus = 0.5 / AA * (-BB + sqrt(discr_sq));
+	double ucont_minus = 0.5 / AA * (-BB - sqrt(discr_sq));
+
+	/// fix u^i u^j = epsilon
+	//double eps = 0.0;
+	//for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++) eps += geom.gcov[i][j] * ucon[i] * ucon[j];
+	//eps /= ucon[0] * ucon[0];
+	//
+	//// Find u^t
+	//AA = geom.gcov[0][0] + 2 * (geom.gcov[0][1] * A + geom.gcov[0][3] * C) + eps;
+	//BB = 2 * (geom.gcov[0][1] * B + geom.gcov[0][3] * C);
+	//CC = 1.0;
+	//discr_sq = BB * BB - 4.0 * AA * CC;
+	//if (discr_sq < 0.0) {
+	//	fprintf(stderr, "(%d, %d, %d) discr is negative! b: %e, 4ac: %e, b^2/4ac: %e, eps: %e, discr^2: %e, u2/u3: %e, u2/u1: %e, udphi: %e, mudt: %e, ut_IC: %e\n", ii, jj, zz, BB, 4 * AA * CC, BB*BB/(4*AA*CC), eps, discr_sq, u2_o_u3, u2_o_u1, udphi, mudt, ucont_IC);
+	//}
+
+	if (ucont_plus * ucont_minus > 0.0) {
+		// compute relative difference from ucont from ICs
+		if (fabs(ucont_IC - ucont_plus) < fabs(ucont_IC - ucont_minus)) {
+			ucon[0] = ucont_plus;
+		}
+		else {
+			ucon[0] = ucont_minus;
+		}
+	}
+	else if (ucont_plus > 0.0) ucon[0] = ucont_plus;
+	else if (ucont_minus > 0.0) ucon[0] = ucont_minus;
+	else {
+		ucon[0] = ucont_IC;
+		//fprintf(stderr, "(%d, %d, %d) both roots are negative! %e, %e, b: %e, 2a: %e, discr: %e \n", ii, jj, zz, ucont_plus, ucont_minus, BB, 2.0 * AA, sqrt(discr_sq)); 
+	}
+	ucon[1] = A * ucon[0] + B;
+	ucon[3] = C * ucon[0] + D;
+	ucon[2] = u2_o_u3 * ucon[3];
 }
-ucon[1] = A * ucon[0] + B;
-ucon[3] = C * ucon[0] + D;
-ucon[2] = u2_o_u3 * ucon[3];
 
 ucon_to_utcon(ucon, &geom, utconp);
 
@@ -3551,12 +3652,12 @@ lower(ucon, &geom, ucov);
 usq = ucon[0] * ucov[0] + ucon[1] * ucov[1] + ucon[2] * ucov[2] + ucon[3] * ucov[3];
 
 //fprintf(stderr, "(%d, %d, %d) u_dot_u: %e, ut: %e, u: %e %e %e, ut+: %e, ut-:%e, (u2/u3: %e)\n", ii, jj, zz, usq, ucon[0], ucon[1], ucon[2], ucon[3], ucont_plus, ucont_minus, u2_o_u3);
-#endif
 
+#endif
+  
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
-  
   //gamma_calc(pr, &geom, &gamma);
   //double ucon[NDIM], ucov[NDIM
   //ucon_calc(pr, &geom, ucon);
