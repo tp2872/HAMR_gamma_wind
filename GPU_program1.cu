@@ -1113,7 +1113,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 				U_new[ENTRE] = U_old[ENTRE];
 				#endif
 				#if(P_NUM)
-				U_new[PHOTON] = U_old[PHOTON]
+				U_new[PHOTON] = U_old[PHOTON];
 				#endif
 				if (i == 0) {
 					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
@@ -1251,8 +1251,6 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 				);
 
 				//Calculate Jacobian
-				E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
-				dEdpb_inv[0][i] = (E_new[0] - E_old[0]) / dpb;
 				#if(TWO_T)
 					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
@@ -1727,7 +1725,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[ENTRE] = U_old[ENTRE];
 				#endif
 				#if(P_NUM)
-				U_new[PHOTON] = U_old[PHOTON]
+				U_new[PHOTON] = U_old[PHOTON];
 				#endif
 				if (i == UU) {
 					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
@@ -6031,7 +6029,8 @@ __device__ int invert_matrix_1D(double Am[][1], double Aminv[][1])
 
 	D = 1.0 / (Am[0][0]);
 	if (!isfinite(D)) {
-		return(1);
+		Aminv[0][0] = D;
+		return(0);
 	}
 	else {
 		Aminv[0][0] = D;
@@ -6043,17 +6042,23 @@ __device__ int invert_matrix_1D(double Am[][1], double Aminv[][1])
 //2D Matrix inversion
 __device__ int invert_matrix_2D(double Am[][2], double Aminv[][2])
 {
-	double D;
+	double D, temp[2][2];
 
 	D = 1.0 / (Am[0][0] * Am[1][1] - Am[1][0] * Am[0][1]);
 	if (!isfinite(D)) {
 		return(1);
 	}
 	else {
-		Aminv[0][0] = D * Am[1][1];
-		Aminv[0][1] = -D * Am[0][1];
-		Aminv[1][0] = -D * Am[1][0];
-		Aminv[1][1] = D * Am[0][0];
+		temp[0][0] = D * Am[1][1];
+		temp[0][1] = -D * Am[0][1];
+		temp[1][0] = -D * Am[1][0];
+		temp[1][1] = D * Am[0][0];
+
+		Aminv[0][0] = temp[0][0];
+		Aminv[1][0] = temp[1][0];
+		Aminv[0][1] = temp[0][1];
+		Aminv[1][1] = temp[1][1];
+
 		return(0);
 	}
 }
