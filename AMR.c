@@ -3067,8 +3067,11 @@ void rm_order2(void){
 #define R3 (6000.0)
 #define R4 (25000.0)
 #define R5 (1000000.0)
-#define BLOCKS_PER_THETA_JET (2) //Minimum number of blocks per *half* opening angle of the jet
-#define BLOCKS_PER_THETA_COCCOON (2) //Minimum number of blocks per *half* opening angle of the coccoon
+#define BLOCKS_PER_THETA_JET (0) //Minimum number of blocks per *half* opening angle of the jet
+#define BLOCKS_PER_THETA_COCCOON (0) //Minimum number of blocks per *half* opening angle of the coccoon
+#define HIGH_CUTOFF (1E1) //Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
+#define LOW_CUTOFF (1E-1) //Define the free-fall time for initial gap to close//
+#define t_ff (pow(R_BONDI,1.5))
 
 //Calculate refinement criterion
 double calc_refcrit(int n){
@@ -3165,7 +3168,7 @@ double calc_refcrit(int n){
 					block_angle = M_PI / (NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]));
 
 					//Check if cell is part of the jet; If so set the cell up for refinement
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 1 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1.0e-5)
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > HIGH_CUTOFF && t>t_ff)
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3188,7 +3191,7 @@ double calc_refcrit(int n){
 							}
 						}		
 					}
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 1 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5) {
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < HIGH_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5 * HIGH_CUTOFF && t>t_ff) {
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
 								if ((jet_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_JET) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
@@ -3208,7 +3211,7 @@ double calc_refcrit(int n){
 					}
 				
 					//Check if cell is part of the coccoon; If so set the cell up for refinement
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] * r * r > 1.0e-5)
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > LOW_CUTOFF & t>t_ff)
 					{
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
@@ -3231,7 +3234,7 @@ double calc_refcrit(int n){
 							}
 						}
 					}
-					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < 0.01 && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.005) {
+					if (p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) < LOW_CUTOFF && p[nl[n]][index_3D(n, i, j, z)][UU] / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], 1.33) > 0.5*LOW_CUTOFF && t>t_ff) {
 						if (TILT_ANGLE < 60) {
 							if (th < M_PI / 2.0) {
 								if ((coccoon_angle1[index] / block_angle) < 3 * BLOCKS_PER_THETA_COCCOON) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);

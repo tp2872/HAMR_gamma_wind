@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 		for (l = 0; l < N_LEVELS_3D; l++) {
-			if(REFINE_GRB==0) init();
+			if(REFINE_GRB==0 || l==0) init();
 			average_grid();
 			#if(N_LEVELS_3D>0)
 			check_refcrit();
@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 300.0;
-	DTd = 100;
+	DTl = 3000.0;
+	DTd = 1000;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;

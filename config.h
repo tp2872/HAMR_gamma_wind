@@ -21,7 +21,7 @@ Physical Parameters section
 #define SHOCK_TUBE 17
 #define SPHERICAL_PROBLEM 18
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM BONDI_PROBLEM_2D
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -41,6 +41,9 @@ Physical Parameters section
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
 #define T_DOUBLE (1000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
+
+/*Normalize calculation of divB*/
+#define NORMALIZE_DIVB (1)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -148,7 +151,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (16.0)
+#define GPU_MEM (40.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -174,12 +177,12 @@ Numerical Parameters section
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 38
-#define BS_2 32
-#define BS_3 32
+#define BS_1 32
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 6
 
 /*Set the number of base layers in Cartesian grid*/
 #define N_LEVELS_CART (0)
@@ -254,7 +257,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 100.0
+#define TREF 200.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
