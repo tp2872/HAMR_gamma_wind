@@ -151,7 +151,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (40.0)
+#define GPU_MEM (13.0)
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -177,9 +177,9 @@ Numerical Parameters section
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 24
-#define BS_3 24
+#define BS_1 56
+#define BS_2 48
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 6

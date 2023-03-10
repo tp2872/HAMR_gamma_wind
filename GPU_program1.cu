@@ -597,7 +597,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 	else {
 		#if (HIGH_MDOT)
-		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD_fast(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
