@@ -142,6 +142,308 @@ void init()
 	#endif
 }
 
+void init_bondi()
+{
+	int i, j, z, n;
+	double r, th, phi, sth, cth, sphi, cphi;
+	double ur, uh, up, u, rho;
+	double bl_gcov[NDIM][NDIM];
+	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+	double tilt, eccentricity;
+	struct of_geom geom;
+
+	/* for disk interior */
+	double l, lnh, expm2chi, up1;
+	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
+	double kappa, hm1;
+
+	/*For MPI*/
+	double inmsg;
+
+	/* for magnetic field */
+	double sigma, bmag, b1, b2, b3;
+
+	/* disk parameters (use fishbone.m to select new solutions) */
+	double temp = a;
+
+	/* wind tunnel parameters */
+	double ra; // accretion radius. default units of rg. sets scale of problem.
+	double mach, cinf, vinf, rhoinf; // properties of wind.
+	double epsilon_rho, y_offset; // upstream density parameter
+
+								  // User Parameters // 
+
+								  /* For circularization radius */
+	double rcir, l_angular, Omega_angular, r_kep, frac_kep, up_max;
+
+	/* For sound speed. */
+	double c_s;
+
+	/* for magnetic field */
+	double rho_av, rhomax, umax, beta, bsq_ij, beta_ij, norm, q, beta_act;
+	double rmax, lfish_calc(double rmax);
+
+	/* some physics parameters */
+	beta = BETA;
+
+	/* radius of the inner edge of the initial density distribution */
+	// Below, we set the Bondi radius as a function of r_g. This then determines the ratio of
+	// c/c_s, with c_s being the speed of sound.
+
+	double rin, rout;
+	rin = R_BONDI;
+	rout = 1e6;
+	c_s = sqrt(1. / rin);
+
+	// Below, we set the circularization radius as a function of r_g. This determined the specific
+	// angular momentum l. We also set the characterization radius at which the specific angular
+	// momentum is a fraction (say 10-30%) of Keplerian.
+	rcir = R_CIRC;
+	frac_kep = 0.1;
+	Omega_angular = 1.;
+	l_angular = sqrt(rcir);
+	//r_kep =rcir*pow(1./0.1 ,2.);
+
+	/* bondi-hoyle parameters */
+	// ra = 10.0; // setting accretion radius in r_g units
+	// mach = 2.0; // setting mach number of incident wind
+	// rhoinf = 1.0; // set ambient density
+	// epsilon_rho = 0.5; // upstream density parameter
+	// sigma = 0.01; // magnetization of ambient medium
+
+	/* Black hole spin and gamma-law are set in config.h. Unpack here. */
+	a = BH_SPIN;
+	gam = GAMMA;
+
+	/* Set size of computational domain */
+	// rin = 10.0; // 2.0*(1. + sqrt(1. - a * a)); // inner radius of initial density distribution
+	// rmax = 10. * rin;// 20.0 * ra;                         // outer radius of computational domain
+
+	// Do calculations from user parameters here
+	// vinf = sqrt(2.0 / ra); // Follows definition of accretion radius in G=M=1 units
+	// cinf = vinf / mach; // Get ambient sound speed from wind velocity and mach number
+	// kappa = (gam - 1.0) * cinf * cinf / gam; // Polytropic constant as function of sound speed
+	// bmag = 0.086;//sqrt(8*M_PI*sigma*kappa*pow(rhoinf,gam)/(gam - 1.)) ; // B field magnitude calculated from magnetization * gas pressure
+
+	/* output choices */
+	tf = 1e10;// 20.0 * ra / vinf; // Simulation duration equals wind crossing time of box
+
+			  // fprintf(stderr, "bmag: %g\n", bmag);
+
+	coord(0, 5, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	if (rank == 0) {
+		fprintf(stderr, "r[5]: %g\n", r);
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
+			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+		}
+		else {
+			fprintf(stderr, "\n");
+		}
+	}
+
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+
+	#if(!NSY)
+	tilt = (TILT_ANGLE) / 180. * M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180. * M_PI;
+	#endif
+	eccentricity = 0.0;
+
+	rhomax = 0.0;
+	umax = 0.0;
+
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z) firstprivate(r,th,phi,sth,cth,sphi,cphi,ur,uh,up,u,rho,X,rin,rout,kappa,gam,rhoinf,vinf,epsilon_rho,b1,b2,b3,bmag,geom, V, V_old, V_new, pos_new, X_cart,tilt)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			// First unpack spherical coordinates
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			//get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			blgset(n_ord[n], i, j, &geom);
+
+
+			//////// Tilted corrections /////////
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
+#if (TILTED)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
+#endif
+
+			////////////////
+
+
+			sth = sin(th);
+			cth = cos(th);
+			sphi = sin(phi);
+			cphi = cos(phi);
+
+			//printf("%e \n", r);
+			// inner density distribution (near the black hole)
+			//if (r < rin || r>rout) {
+			if (r < rin) {
+				rho = 1.e-7 * RHOMIN;
+				u = 1.e-7 * UUMIN;
+
+				ur = 0.;
+				uh = 0.;
+				up = 0.;
+
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+
+
+			} // end inner density distribution statement
+			  // main computational domain
+			else {
+				// Below, we test that l is a function of the cylindrical radius squared. Specifically, we say that
+				// l is not constant but omega is.
+				//      if (r*sth <= sqrt(0.1)) {l_angular = Omega_angular*pow(r*sth,2.);}
+				//      else {l_angular = 0.1 * Omega_angular;}
+
+				// Below is the expression for mass density, determined from momentum conservation.
+				// Note that rho_0 (the normalization constant) was set to unity and for now, we ignore
+				// the centrifugal term.
+
+				//rho = 1. * exp((1./r - pow(l_angular, 2.)/(2*pow(r,2.)*pow(sth, 3.)))/pow(c_s, 2.));
+				//rho = 1. * exp(1. / (r * pow(c_s, 2.)));
+
+				rho = 1.;
+				//rho = 1e-3;
+
+				//collapsar-like
+				//rho = 1. / pow(r, 2);
+
+				// Below, we determine the normalizaition constant kappa for the pressure (assuming
+				// a polyotropic process) and then determine the energy density.
+				// u = kappa*pow(rho,gam)/(gam - 1.) ; //assume ideal gas
+				kappa = pow(c_s, 2.) / (gam * pow(rho, gam - 1.));
+				u = pow(c_s, 2.) * rho / (gam * (gam - 1.));
+
+				//u = 0.1 * rho;
+
+				// Here, we set the initial geometry. We then determine the four-velocity components of the fluid.
+				ur = 0.;
+				uh = 0.;
+				//if (r <= r_kep) {up = 1./(a + pow(r_kep, 3./2.));}
+				//else {up = 1./(a + pow(r, 3./2.));}
+
+
+				/* Simplify up to check for bugs */
+
+				up = l_angular / (r * r);
+				//up = 0.;
+
+				//up = (l_angular - geom.gcov[0][3] * sqrt((pow(l_angular, 2) + geom.gcov[3][3]) / (pow(geom.gcov[0][3], 2) - geom.gcov[0][0] * geom.gcov[3][3]))) / geom.gcov[3][3]; //4./(r*r);
+
+				if (up != up) {
+					printf("%e \n", up);
+				}
+
+				//up = 0;
+
+				/*This might be causing some issues. I will disable for now*/
+				/*up_max = frac_kep / (a + pow(rcir, 3. / 2.));
+				if (up > up_max) { up = up_max; }*/
+
+
+				#if (TILTED)
+				V[1] = ur;
+				V[2] = uh;
+				V[3] = up;
+				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
+				/* convert from 4-vel to 3-vel */
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#else		
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+				/* convert from 4-vel to 3-vel */
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#endif
+
+
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+
+
+
+				if (rho > rhomax) {
+					#pragma omp critical
+					rhomax = rho;
+				}
+
+				/* This is creates random 2% perturbations on pressure, so our 3D solutions are not "axisymmetric"*/
+
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
+				if (u > umax && r > rin) {
+					#pragma omp critical
+					umax = u;
+				}
+
+
+			} // end main density distribution statement
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+		} // End of ZSLOOP3D
+	} // End active block loop
+
+	a = temp;
+	#if (MPI_enable)
+	/*Share rhomax among MPI processes*/
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
+	/*Share umax among MPI processes*/
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+
+	/* Normalize the densities so that max(rho) = 1 */
+	if (rank == 0) {
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
+
+	#if(1)
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
+		}
+	}
+	#endif
+
+	umax /= rhomax;
+	rhomax = 1.;
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+
+	bound_prim(p, 1);
+
+	set_mag();
+
+	sourceflag = 0.;
+	#if(ELLIPTICAL2)
+	calc_source();
+	#endif
+}
+
 void init_blastwave()
 {
 	int n, i, j, z, k;
@@ -3074,6 +3376,12 @@ void set_mag(void){
 	beta = 100.0 / (3.6 * Bfactor * Bfactor);
 	#endif
 
+	#if(WHICHPROBLEM==BONDI_PROBLEM_2D)
+	beta = BETA;
+	double rin = R_BONDI;
+	double rout = 1e6;
+	#endif
+
 	do{
 		i100++;
 		coord(0, i100, 0, 0, CENT, X);
@@ -3113,6 +3421,9 @@ void set_mag(void){
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
+			#elif(WHICHPROBLEM==BONDI_PROBLEM_2D)
+			if (r >= rin) q = (r * r - rin * rin) * (sin(th) * sin(th));
+			else q = 0.;
 			#elif(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
 			if (r < 1.5 * r_hole) {
 				q = r * r * 1e-20 * pow(sin(th), 2);//1 - pow((r-Fe_core)/(Rs-Fe_core),2);

@@ -49,7 +49,7 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (0)
+#define REFINE_GRB (1)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
@@ -57,6 +57,9 @@ Physical Parameters section
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
+#define R_BONDI (1e3)
+#define R_CIRC (120)
+#define BETA (1e2)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -166,14 +169,14 @@ Numerical Parameters section
 #define GRID_CARTESIAN (0)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
+#define NB_1 8
 #define NB_2 2
-#define NB_3 2
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 64
-#define BS_3 64
+#define BS_1 38
+#define BS_2 32
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -221,16 +224,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 1
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (240)
+#define DUMPFACTOR (120)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -386,7 +389,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
