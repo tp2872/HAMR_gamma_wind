@@ -1239,6 +1239,7 @@ void free_bound_gpu(int n);
 void set_points(int n);
 void set_gridparam(void);
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);
+void check_cart_grid(void);
 double calc_mem(int n_blocks);
 double calc_mem_gpu(int n);
 void calc_mem_cpu(int n);

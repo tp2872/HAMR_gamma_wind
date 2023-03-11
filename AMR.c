@@ -10,46 +10,40 @@ void test_AMR(void){
 }
 
 int AMR_coord_linear(int l, int i, int j, int z){
-	int index, n, offset, L_1DMAX;
-	int b2 = j;
-	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-	else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
-
-	if (l != 0){
-		fprintf(stderr, "This function only works at the 0-th level for 3D AMR. Please check and disable this comment if not applicable! \n");
-		exit(0);
-	}
-
-	if (l<0 || b2<0 || i<0 || j<0 || z<0 || i >= NB_1*pow(1 + (l>L_1DMAX)*REF_1, l - L_1DMAX) || j >= NB_2*pow(1 + (l>L_1DMAX)*REF_2, l - L_1DMAX) || z >= NB_3*pow(1 + REF_3, l)){
-		n = -1;
-	}
-	else{
-		offset = N_LEVELS_1D - L_1DMAX;
-		index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
-		n = lin_coord[l + offset][index];
-		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z){
-			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
-			fprintf(stderr, "Incorrect values are l: %d j0: %d i: %d j: %d z: %d \n", l, b2, i, j, z);
-			exit(0);
-		}
-	}
-
-	return n;
+	fprintf(stderr, "Error: AMR_coord_linear is not used anymore! \n");
+	exit(0);
+	return -1;
 }
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
+	int min_i, min_j, min_z;
+	int max_i, max_j, max_z;
 
-	#if(0)
-	if (l < 0 || b2 < 0 || i < 0 || j < 0 || z < 0 || i >= NB_1 * pow(1 + REF_1, l) || j >= NB_2 * pow(1 + REF_2, l) || z >= NB_3 * pow(1 + REF_3, l)) {
+	#if(GRID_CARTESIAN)
+	if (l >= N_LEVELS_3D) {
+		//Calculate minimum index
+		min_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+		min_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+		min_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+
+		//Calculate maximum index
+		max_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+		max_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+		max_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+	}
+	else {
+		min_i = min_j = min_z = 0;
+		max_i = NB_1 * pow(1 + REF_1, l);
+		max_j = NB_2 * pow(1 + REF_2, l);
+		max_z = NB_3 * pow(1 + REF_3, l);
+	}
+	if (l < 0 || i < min_i || j < min_j || z < min_z || i >= max_i || j >= max_j || z >= max_j) {
 		n = -1;
 	}
 	else {
-		offset = N_LEVELS_1D - L_1DMAX;
-		index = (int)(i * NB_3 * (int)pow(1 + REF_3, l + offset) * NB_2 * pow(1 + REF_2 * ((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3 * pow(1 + REF_3, l + offset) + z);
-		
-		
-		n = lin_coord[l + offset][index];
+		index = (int)((i - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (j - min_j) * NB_3 * pow(1 + REF_3, l) + (z - min_z));
+		n = lin_coord[l][index];
 		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z) {
 			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
 			fprintf(stderr, "Incorrect values are l: %d j0: %d i: %d j: %d z: %d \n", l, b2, i, j, z);
@@ -104,7 +98,13 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_set_coord(void){
 	int n, n0, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_looping, index, offset;
-	int max_level, i1, i2, i3, increment1, increment2, increment3, coord1, coord2, coord3, counter;
+	int max_level, i1, i2, i3, increment1, increment2, increment3, coord1, coord2, coord3, counter, n_levels_tot;
+	#if(GRID_CARTESIAN)
+	int n_extra_cart;
+	int min_i, min_j, min_z;
+	int max_i, max_j, max_z;
+	#endif
+
 	//Initialize counters
 	for (l = 0; l < N_LEVELS; l++) i[l] = j[l] = z[l] = 0;
 	l_1D = l_3D = l = 0;
@@ -239,11 +239,27 @@ void AMR_set_coord(void){
 
 		//Store in array such that one can recover linear coordinate based on 4D coordinate
 		offset = N_LEVELS_1D - L_1DMAX;
+		#if(GRID_CARTESIAN)
+		if (l >= N_LEVELS_3D) {
+			//Calculate minimum index
+			min_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+			min_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+			min_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+		}
+		else {
+			min_i = min_j = min_z = 0;
+		}
+		if (block[n][AMR_COORD1] < min_i || block[n][AMR_COORD2] < min_j || block[n][AMR_COORD3] < min_z) {
+			if (rank == 0) fprintf(stderr, "Error in gridding for Cartesian 1! \n");
+			exit(0);
+		}
+		index = (int)((block[n][AMR_COORD1] - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (block[n][AMR_COORD2] - min_j) * NB_3 * pow(1 + REF_3, l) + (block[n][AMR_COORD3] - min_z));
+		#else
 		index = (int)(block[n][AMR_COORD1] * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + block[n][AMR_COORD2] * NB_3*pow(1 + REF_3, l + offset) + block[n][AMR_COORD3]);
+		#endif
 		if (lin_coord[l + offset][index] != 0) fprintf(stderr, "Failure in setting grid! \n");
 		lin_coord[l + offset][index] = n;
 		lin_coord_RM[l + offset][index] = n;
-
 		//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Break out of loop if maximum block number reached and set n_max
@@ -251,9 +267,35 @@ void AMR_set_coord(void){
 			n_max = n;
 			break;
 		}
-		
+
+		//Determine if there is a nested-cartesian refinement level
+		#if(GRID_CARTESIAN)
+		//Calculate minimum index
+		min_i = NB_1 * pow(1 + REF_1, l) * (1 / 4);
+		min_j = NB_2 * pow(1 + REF_2, l) * (1 / 4);
+		min_z = NB_3 * pow(1 + REF_3, l) * (1 / 4);
+
+		//Calculate maximum index
+		max_i = NB_1 * pow(1 + REF_1, l) * (3 / 4);
+		max_j = NB_2 * pow(1 + REF_2, l) * (3 / 4);
+		max_z = NB_3 * pow(1 + REF_3, l) * (3 / 4);
+
+		//Calculate extra cartesian levels
+		if (block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
+			n_extra_cart = 1;
+		}
+		else {
+			n_extra_cart = 0;
+		}
+
+		//Calculate total refinement levels (with a maximum cutoff)
+		n_levels_tot = MY_MIN(MY_MAX((l + 1) + n_extra_cart, N_LEVELS_3D), N_LEVELS_3D + N_LEVELS_CART);
+		#else
+		n_levels_tot = N_LEVELS_3D + L_1DMAX;
+		#endif
+
 		//Advance linear index by 1
-		if (l < N_LEVELS_3D+L_1DMAX-1){	
+		if (l < n_levels_tot - 1) {
 			l++;
 			i[l] = j[l] = z[l] = 0;
 			if (l_1D < L_1DMAX) l_1D++;
@@ -314,6 +356,34 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 	ref_3[0] = block[n_rec][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 }
 
+void check_cart_grid(void) {
+	double delta_x1, delta_x2, delta_x3;
+
+	//Check if you enough blocks for Cartesian grid
+	if (NB_1 % 4 != 0 || NB_2 % 4 != 0 || NB_3 % 4 != 0) {
+		if (rank == 0) fprintf(stderr, "Error 1 in setting up Cartesian grid! \n");
+		exit(0);
+	}
+
+	//Check if refinement happens in all 3 dimensions
+	if (REF_1 + REF_2 + REF_3 != 3) {
+		if (rank == 0) fprintf(stderr, "Error 2 in setting up Cartesian grid");
+		exit(0);
+	}
+
+	//Calculate and print grid spacing near BH
+	delta_x1 = 2 * Rout / pow(1 + REF_1, N_LEVELS_CART);
+	delta_x2 = 2 * Rout / pow(1 + REF_2, N_LEVELS_CART);
+	delta_x3 = 2 * Rout / pow(1 + REF_3, N_LEVELS_CART);
+	if(rank==0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f)", delta_x1, delta_x2, delta_x3);
+
+	//Calculate and print grid spacing far away from BH
+	delta_x1 = 2 * Rout;
+	delta_x2 = 2 * Rout;
+	delta_x3 = 2 * Rout;
+	if (rank == 0) fprintf(stderr, "Grid spacing (max) is: (%f x %f x %f)", delta_x1, delta_x2, delta_x3);
+}
+
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1,
@@ -322,6 +392,11 @@ void set_AMR(void){
 
 	#if(RAD_M1)
 	calc_ymax();
+	#endif
+
+	//Check if Cartesian grid is set up properly
+	#if(GRID_CARTESIAN)
+	check_cart_grid();
 	#endif
 
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps

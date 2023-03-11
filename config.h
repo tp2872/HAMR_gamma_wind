@@ -27,13 +27,13 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Set Cartesian GR grid for test problems*/
-#define CARTESIAN_GR (0)
+#define CARTESIAN_GR (1)
 
 /*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
 
 /*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
-#define SPHERICAL_GR (1)
+#define SPHERICAL_GR (0)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
@@ -168,24 +168,24 @@ Numerical Parameters section
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
 #define NB_LOCAL (4000)
 
-/*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (0)
-
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 8
-#define NB_2 2
+#define NB_1 4
+#define NB_2 4
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 56
-#define BS_2 48
-#define BS_3 48
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 6
 
-/*Set the number of base layers in Cartesian grid*/
-#define N_LEVELS_CART (0)
+/*Use nested Cartesian grid*/
+#define GRID_CARTESIAN (1)
+
+/*Set the number of *extra* base layers in Cartesian grid*/
+#define N_LEVELS_CART (4)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -1049,6 +1049,8 @@ Section with derived quantities
 #if (N_LEVELS_1D==0)
 #if(DEREFINE_POLE)
 #define NB (NB_1*NB_3*(1*FACTOR1+2*FACTOR2))
+#elif(GRID_CARTESIAN)
+#define NB (NB_1*NB_2*NB_3*(N_LEVELS_CART+1)*FACTOR1)
 #else
 #define NB (NB_1*NB_2*NB_3*FACTOR1)
 #endif
