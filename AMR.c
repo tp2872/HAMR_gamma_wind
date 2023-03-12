@@ -23,14 +23,14 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	#if(GRID_CARTESIAN)
 	if (l >= N_LEVELS_3D) {
 		//Calculate minimum index
-		min_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
-		min_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
-		min_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+		min_i = NB_1 * pow(1 + REF_1, l) / 2 - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+		min_j = NB_2 * pow(1 + REF_2, l) / 2 - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+		min_z = NB_3 * pow(1 + REF_3, l) / 2 - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
 
 		//Calculate maximum index
-		max_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
-		max_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
-		max_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+		max_i = NB_1 * pow(1 + REF_1, l) / 2 + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+		max_j = NB_2 * pow(1 + REF_2, l) / 2 + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+		max_z = NB_3 * pow(1 + REF_3, l) / 2 + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
 	}
 	else {
 		min_i = min_j = min_z = 0;
@@ -42,7 +42,12 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 		n = -1;
 	}
 	else {
-		index = (int)((i - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (j - min_j) * NB_3 * pow(1 + REF_3, l) + (z - min_z));
+		if (l >= N_LEVELS_3D) {
+			index = (int)((i - min_i) * NB_3 * (int)pow(1 + REF_3, N_LEVELS_3D - 1) * NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) + (j - min_j) * NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) + (z - min_z));
+		}
+		else {
+			index = (int)((i - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (j - min_j) * NB_3 * pow(1 + REF_3, l) + (z - min_z));
+		}
 		n = lin_coord[l][index];
 		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z) {
 			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
@@ -240,11 +245,11 @@ void AMR_set_coord(void){
 		//Store in array such that one can recover linear coordinate based on 4D coordinate
 		offset = N_LEVELS_1D - L_1DMAX;
 		#if(GRID_CARTESIAN)
-		if (l >= N_LEVELS_3D) {
+		if (l >= N_LEVELS_3D) { 
 			//Calculate minimum index
-			min_i = NB_1 * pow(1 + REF_1, l) * (1 / 2) - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
-			min_j = NB_2 * pow(1 + REF_2, l) * (1 / 2) - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
-			min_z = NB_3 * pow(1 + REF_3, l) * (1 / 2) - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
+			min_i = NB_1 * pow(1 + REF_1, l) / 2 - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 1) / 2;
+			min_j = NB_2 * pow(1 + REF_2, l) / 2 - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) / 2;
+			min_z = NB_3 * pow(1 + REF_3, l) / 2 - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) / 2;
 		}
 		else {
 			min_i = min_j = min_z = 0;
@@ -253,7 +258,12 @@ void AMR_set_coord(void){
 			if (rank == 0) fprintf(stderr, "Error in gridding for Cartesian 1! \n");
 			exit(0);
 		}
-		index = (int)((block[n][AMR_COORD1] - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (block[n][AMR_COORD2] - min_j) * NB_3 * pow(1 + REF_3, l) + (block[n][AMR_COORD3] - min_z));
+		if (l >= N_LEVELS_3D) {
+			index = (int)((block[n][AMR_COORD1] - min_i) * NB_3 * (int)pow(1 + REF_3, N_LEVELS_3D - 1) * NB_2 * pow(1 + REF_2, N_LEVELS_3D - 1) + (block[n][AMR_COORD2] - min_j) * NB_3 * pow(1 + REF_3, N_LEVELS_3D - 1) + (block[n][AMR_COORD3] - min_z));
+		}
+		else {
+			index = (int)((block[n][AMR_COORD1] - min_i) * NB_3 * (int)pow(1 + REF_3, l) * NB_2 * pow(1 + REF_2, l) + (block[n][AMR_COORD2] - min_j) * NB_3 * pow(1 + REF_3, l) + (block[n][AMR_COORD3] - min_z));
+		}
 		#else
 		index = (int)(block[n][AMR_COORD1] * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + block[n][AMR_COORD2] * NB_3*pow(1 + REF_3, l + offset) + block[n][AMR_COORD3]);
 		#endif
@@ -270,15 +280,23 @@ void AMR_set_coord(void){
 
 		//Determine if there is a nested-cartesian refinement level
 		#if(GRID_CARTESIAN)
-		//Calculate minimum index
-		min_i = NB_1 * pow(1 + REF_1, l) * (1 / 4);
-		min_j = NB_2 * pow(1 + REF_2, l) * (1 / 4);
-		min_z = NB_3 * pow(1 + REF_3, l) * (1 / 4);
+		if (l >= N_LEVELS_3D-1) {
+			//Calculate minimum index
+			min_i = NB_1 * pow(1 + REF_1, l) / 2 - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
+			min_j = NB_2 * pow(1 + REF_2, l) / 2 - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
+			min_z = NB_3 * pow(1 + REF_3, l) / 2 - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
 
-		//Calculate maximum index
-		max_i = NB_1 * pow(1 + REF_1, l) * (3 / 4);
-		max_j = NB_2 * pow(1 + REF_2, l) * (3 / 4);
-		max_z = NB_3 * pow(1 + REF_3, l) * (3 / 4);
+			//Calculate maximum index
+			max_i = NB_1 * pow(1 + REF_1, l) / 2 + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
+			max_j = NB_2 * pow(1 + REF_2, l) / 2 + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
+			max_z = NB_3 * pow(1 + REF_3, l) / 2 + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
+		}
+		else {
+			min_i = min_j = min_z = 0;
+			max_i = NB_1 * pow(1 + REF_1, l);
+			max_j = NB_2 * pow(1 + REF_2, l);
+			max_z = NB_3 * pow(1 + REF_3, l);
+		}
 
 		//Calculate extra cartesian levels
 		if (block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
@@ -367,21 +385,21 @@ void check_cart_grid(void) {
 
 	//Check if refinement happens in all 3 dimensions
 	if (REF_1 + REF_2 + REF_3 != 3) {
-		if (rank == 0) fprintf(stderr, "Error 2 in setting up Cartesian grid");
+		if (rank == 0) fprintf(stderr, "Error 2 in setting up Cartesian grid \n");
 		exit(0);
 	}
 
 	//Calculate and print grid spacing near BH
-	delta_x1 = 2 * Rout / pow(1 + REF_1, N_LEVELS_CART);
-	delta_x2 = 2 * Rout / pow(1 + REF_2, N_LEVELS_CART);
-	delta_x3 = 2 * Rout / pow(1 + REF_3, N_LEVELS_CART);
-	if(rank==0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f)", delta_x1, delta_x2, delta_x3);
+	delta_x1 = 2 * ROUT / pow(1 + REF_1, N_LEVELS_CART) / NB_1;
+	delta_x2 = 2 * ROUT / pow(1 + REF_2, N_LEVELS_CART) / NB_2;
+	delta_x3 = 2 * ROUT / pow(1 + REF_3, N_LEVELS_CART) / NB_3;
+	if(rank==0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
 
 	//Calculate and print grid spacing far away from BH
-	delta_x1 = 2 * Rout;
-	delta_x2 = 2 * Rout;
-	delta_x3 = 2 * Rout;
-	if (rank == 0) fprintf(stderr, "Grid spacing (max) is: (%f x %f x %f)", delta_x1, delta_x2, delta_x3);
+	delta_x1 = 2 * ROUT / NB_1;
+	delta_x2 = 2 * ROUT / NB_2;
+	delta_x3 = 2 * ROUT / NB_3;
+	if (rank == 0) fprintf(stderr, "Grid spacing (max) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
 }
 
 //Sets the AMR hierarchy
@@ -428,13 +446,20 @@ void set_AMR(void){
 		array_rdumpgrid = (int *)malloc((1 + NB*NV) * sizeof(int));
 	}
 
-	for (l = 0; l < N_LEVELS; l++){
+
+	for (l = 0; l < N_LEVELS; l++) {
+		#if(GRID_CARTESIAN)
+		lin_coord[l] = (int*)calloc(NB_1 * pow(1 + REF_1, MY_MIN(l, N_LEVELS_3D - 1)) * NB_2 * pow(1 + REF_2, MY_MIN(l, N_LEVELS_3D - 1)) * NB_3 * pow(1 + REF_3, MY_MIN(l, N_LEVELS_3D - 1)), sizeof(int));
+		lin_coord_RM[l] = (int*)calloc(NB_1 * pow(1 + REF_1, MY_MIN(l, N_LEVELS_3D - 1)) * NB_2 * pow(1 +REF_2, MY_MIN(l, N_LEVELS_3D - 1)) * NB_3 * pow(1 + REF_3, MY_MIN(l, N_LEVELS_3D - 1)), sizeof(int));
+		#else
 		lin_coord[l] = (int *)calloc(NB_1*pow(1 + (l > N_LEVELS_1D)*REF_1, (l - N_LEVELS_1D))*NB_2*pow(1 + (l > N_LEVELS_1D)*REF_2, (l - N_LEVELS_1D))*NB_3*pow(1 + REF_3, l), sizeof(int));
 		lin_coord_RM[l] = (int *)calloc(NB_1*pow(1 + (l > N_LEVELS_1D)*REF_1, (l - N_LEVELS_1D))*NB_2*pow(1 + (l > N_LEVELS_1D)*REF_2, (l - N_LEVELS_1D))*NB_3*pow(1 + REF_3, l), sizeof(int));
+		#endif
 	}
 
 	//Set mapping from linear to 3D coordinates and vice-versa
 	AMR_set_coord();
+	fprintf(stderr, "n_max: %d and NB: %d do not match! \n", n_max, NB);
 
 	//Indicates something is wrok with the grid mapping
 	if (n_max != NB - 1){
@@ -482,6 +507,7 @@ void set_AMR(void){
 
 		}
 	}
+	fprintf(stderr, "n_max: %d and NB: %d do not match! \n", n_max, NB);
 
 	//Find children of block, -1 means no children
 	#pragma omp parallel for schedule(static,  NB/nthreads) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)

@@ -60,6 +60,11 @@ Physical Parameters section
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
+
+/*Select grid outer radius*/
+#define ROUT (100.0)
+
+/*Set parameters for BONDI_PROBLEM_3D*/
 #define R_BONDI (1e3)
 #define R_CIRC (120)
 #define BETA (1e2)
@@ -179,7 +184,7 @@ Numerical Parameters section
 #define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 6
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (1)
@@ -994,7 +999,7 @@ Section with derived quantities
 #else
 #define N_LEVELS_1D 0
 #endif
-#define N_LEVELS (N_LEVELS_1D+N_LEVELS_3D)
+#define N_LEVELS (N_LEVELS_1D+N_LEVELS_3D+N_LEVELS_CART)
 
 /*Calculate number of AMR blocks for different refinement levels and configurations*/
 #if(REF_3+REF_2+REF_1==2)
