@@ -21,7 +21,7 @@ Physical Parameters section
 #define SHOCK_TUBE 17
 #define SPHERICAL_PROBLEM 18
 
-#define WHICHPROBLEM BONDI_PROBLEM_2D
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -43,7 +43,7 @@ Physical Parameters section
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Normalize calculation of divB*/
-#define NORMALIZE_DIVB (1)
+#define NORMALIZE_DIVB (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -52,7 +52,7 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (1)
+#define REFINE_GRB (0)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
@@ -184,13 +184,13 @@ Numerical Parameters section
 #define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 4
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (1)
+#define GRID_CARTESIAN (0)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (4)
+#define N_LEVELS_CART (0)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

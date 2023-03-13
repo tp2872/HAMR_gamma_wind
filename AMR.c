@@ -19,6 +19,7 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
 	int min_i, min_j, min_z;
 	int max_i, max_j, max_z;
+	int n_levels_tot;
 
 	#if(GRID_CARTESIAN)
 	if (l >= N_LEVELS_3D) {
@@ -38,8 +39,18 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 		max_j = NB_2 * pow(1 + REF_2, l);
 		max_z = NB_3 * pow(1 + REF_3, l);
 	}
-	if (l < 0 || i < min_i || j < min_j || z < min_z || i >= max_i || j >= max_j || z >= max_j) {
-		n = -1;
+
+	//Calculate maximum number of refinement levels 
+	n_levels_tot = calc_nlevels_tot(l, i, j, z);
+
+	//Either reject coordinates (n=-1) or set to special values (n=NB) at e.g. boundaries where only a parent bound exists
+	if (l < 0 || l >= n_levels_tot || i < min_i || j < min_j || z < min_z || i >= max_i || j >= max_j || z >= max_j) {
+		if (l < 0 || l >= n_levels_tot || i < 0 || j < 0 || z < 0 || i >= NB_1 * pow(1 + REF_1, l) || j >= NB_2 * pow(1 + REF_2, l) || z >= NB_3 * pow(1 + REF_3, l)) {
+			n = -1;
+		}
+		else { 
+			n = NB;
+		}
 	}
 	else {
 		if (l >= N_LEVELS_3D) {
@@ -76,6 +87,48 @@ int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	return n;
 }
 
+int calc_nlevels_tot(int l, int coord1, int coord2, int coord3) {
+	int min_i, min_j, min_z;
+	int max_i, max_j, max_z;
+	int n_levels_tot, n_extra_cart; 
+
+	//Determine if there is a nested-cartesian refinement level
+	#if(GRID_CARTESIAN)
+	if (l >= N_LEVELS_3D - 1) {
+		//Calculate minimum index
+		min_i = NB_1 * pow(1 + REF_1, l) / 2 - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
+		min_j = NB_2 * pow(1 + REF_2, l) / 2 - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
+		min_z = NB_3 * pow(1 + REF_3, l) / 2 - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
+
+		//Calculate maximum index
+		max_i = NB_1 * pow(1 + REF_1, l) / 2 + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
+		max_j = NB_2 * pow(1 + REF_2, l) / 2 + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
+		max_z = NB_3 * pow(1 + REF_3, l) / 2 + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
+	}
+	else {
+		min_i = min_j = min_z = 0;
+		max_i = NB_1 * pow(1 + REF_1, l);
+		max_j = NB_2 * pow(1 + REF_2, l);
+		max_z = NB_3 * pow(1 + REF_3, l);
+	}
+
+	//Calculate extra cartesian levels
+	if (coord1 >= min_i && coord1 < max_i && coord2 >= min_j && coord2 < max_j && coord3 >= min_z && coord3 < max_z) {
+		n_extra_cart = 1;
+	}
+	else {
+		n_extra_cart = 0;
+	}
+
+	//Calculate total refinement levels (with a maximum cutoff)
+	n_levels_tot = MY_MIN(MY_MAX((l + 1) + n_extra_cart, N_LEVELS_3D), N_LEVELS_3D + N_LEVELS_CART);
+	#else
+	n_levels_tot = N_LEVELS_3D;
+	#endif
+
+	return n_levels_tot;
+}
+
 int AMR_coord_linear_RM(int level, int i, int j, int z){
 	int index, n;
 	index = (int)(i * NB_3*(int)pow(1 + REF_3, level) * NB_2*pow(1 + REF_2, level) + j * NB_3*pow(1 + REF_3, level) + z);
@@ -107,7 +160,6 @@ void AMR_set_coord(void){
 	#if(GRID_CARTESIAN)
 	int n_extra_cart;
 	int min_i, min_j, min_z;
-	int max_i, max_j, max_z;
 	#endif
 
 	//Initialize counters
@@ -278,42 +330,11 @@ void AMR_set_coord(void){
 			break;
 		}
 
-		//Determine if there is a nested-cartesian refinement level
-		#if(GRID_CARTESIAN)
-		if (l >= N_LEVELS_3D-1) {
-			//Calculate minimum index
-			min_i = NB_1 * pow(1 + REF_1, l) / 2 - NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
-			min_j = NB_2 * pow(1 + REF_2, l) / 2 - NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
-			min_z = NB_3 * pow(1 + REF_3, l) / 2 - NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
-
-			//Calculate maximum index
-			max_i = NB_1 * pow(1 + REF_1, l) / 2 + NB_1 * pow(1 + REF_1, N_LEVELS_3D - 2) / 2;
-			max_j = NB_2 * pow(1 + REF_2, l) / 2 + NB_2 * pow(1 + REF_2, N_LEVELS_3D - 2) / 2;
-			max_z = NB_3 * pow(1 + REF_3, l) / 2 + NB_3 * pow(1 + REF_3, N_LEVELS_3D - 2) / 2;
-		}
-		else {
-			min_i = min_j = min_z = 0;
-			max_i = NB_1 * pow(1 + REF_1, l);
-			max_j = NB_2 * pow(1 + REF_2, l);
-			max_z = NB_3 * pow(1 + REF_3, l);
-		}
-
-		//Calculate extra cartesian levels
-		if (block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
-			n_extra_cart = 1;
-		}
-		else {
-			n_extra_cart = 0;
-		}
-
-		//Calculate total refinement levels (with a maximum cutoff)
-		n_levels_tot = MY_MIN(MY_MAX((l + 1) + n_extra_cart, N_LEVELS_3D), N_LEVELS_3D + N_LEVELS_CART);
-		#else
-		n_levels_tot = N_LEVELS_3D + L_1DMAX;
-		#endif
+		//Calculate total number of levels in different block
+		n_levels_tot= calc_nlevels_tot(l, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Advance linear index by 1
-		if (l < n_levels_tot - 1) {
+		if (l < n_levels_tot + L_1DMAX - 1) {
 			l++;
 			i[l] = j[l] = z[l] = 0;
 			if (l_1D < L_1DMAX) l_1D++;
@@ -389,16 +410,22 @@ void check_cart_grid(void) {
 		exit(0);
 	}
 
+	//You cannot use GRID_CARTESIAN together with DEREFINE_POLE
+	if (DEREFINE_POLE) {
+		if (rank == 0) fprintf(stderr, "Error 3 in setting up Cartesian grid \n");
+		exit(0);
+	}
+
 	//Calculate and print grid spacing near BH
-	delta_x1 = 2 * ROUT / pow(1 + REF_1, N_LEVELS_CART) / NB_1;
-	delta_x2 = 2 * ROUT / pow(1 + REF_2, N_LEVELS_CART) / NB_2;
-	delta_x3 = 2 * ROUT / pow(1 + REF_3, N_LEVELS_CART) / NB_3;
+	delta_x1 = 2 * ROUT / pow(1 + REF_1, N_LEVELS_CART) / (NB_1 * BS_1);
+	delta_x2 = 2 * ROUT / pow(1 + REF_2, N_LEVELS_CART) / (NB_2 * BS_2);
+	delta_x3 = 2 * ROUT / pow(1 + REF_3, N_LEVELS_CART) / (NB_3 * BS_3);
 	if(rank==0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
 
 	//Calculate and print grid spacing far away from BH
-	delta_x1 = 2 * ROUT / NB_1;
-	delta_x2 = 2 * ROUT / NB_2;
-	delta_x3 = 2 * ROUT / NB_3;
+	delta_x1 = 2 * ROUT / (NB_1 * BS_1);
+	delta_x2 = 2 * ROUT / (NB_2 * BS_2);
+	delta_x3 = 2 * ROUT / (NB_3 * BS_3);
 	if (rank == 0) fprintf(stderr, "Grid spacing (max) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
 }
 
@@ -459,7 +486,6 @@ void set_AMR(void){
 
 	//Set mapping from linear to 3D coordinates and vice-versa
 	AMR_set_coord();
-	fprintf(stderr, "n_max: %d and NB: %d do not match! \n", n_max, NB);
 
 	//Indicates something is wrok with the grid mapping
 	if (n_max != NB - 1){
@@ -507,7 +533,6 @@ void set_AMR(void){
 
 		}
 	}
-	fprintf(stderr, "n_max: %d and NB: %d do not match! \n", n_max, NB);
 
 	//Find children of block, -1 means no children
 	#pragma omp parallel for schedule(static,  NB/nthreads) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
@@ -516,8 +541,11 @@ void set_AMR(void){
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
 		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
 		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
-
-		if (block[n][AMR_LEVEL] == N_LEVELS_3D + L_1DMAX-1){
+		
+		//Calculate the maximum number of refinement levels
+		int n_levels_tot=calc_nlevels_tot(block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+		
+		if (block[n][AMR_LEVEL] == n_levels_tot + L_1DMAX - 1){
 			block[n][AMR_CHILD1] = -1;
 			block[n][AMR_CHILD2] = -1;
 			block[n][AMR_CHILD3] = -1;
@@ -722,7 +750,7 @@ void set_AMR(void){
 			else j1 = -1;
 		}
 		else  j1 = j - 1;
-		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN1] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR2] >= 0 && DEREFINE_POLE) block[n][AMR_CORN1] = NB;
 		else block[n][AMR_CORN1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//Corn 2
@@ -736,7 +764,7 @@ void set_AMR(void){
 			else j1 = -1;
 		}
 		else j1 = j + 1;
-		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN2] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR2] >= 0 && DEREFINE_POLE) block[n][AMR_CORN2] = NB;
 		else block[n][AMR_CORN2] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//Corn 3
@@ -750,7 +778,7 @@ void set_AMR(void){
 			else j1 = -1;
 		}
 		else j1 = j + 1;
-		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN3] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR4] >= 0 && DEREFINE_POLE) block[n][AMR_CORN3] = NB;
 		else block[n][AMR_CORN3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//Corn 4
@@ -764,7 +792,7 @@ void set_AMR(void){
 			else j1 = -1;
 		}
 		else j1 = j - 1;
-		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN4] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR4] >= 0 && DEREFINE_POLE) block[n][AMR_CORN4] = NB;
 		else block[n][AMR_CORN4] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//x-z plane
@@ -832,7 +860,7 @@ void set_AMR(void){
 			else z1 = -1;
 		}
 		else z1 = z + 1;
-		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN9] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR5] >= 0 && DEREFINE_POLE) block[n][AMR_CORN9] = NB;
 		else block[n][AMR_CORN9] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		//Corn 10
@@ -846,7 +874,7 @@ void set_AMR(void){
 			else z1 = -1;
 		}
 		else z1 = z + 1;
-		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN10] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR5] >= 0 && DEREFINE_POLE) block[n][AMR_CORN10] = NB;
 		else block[n][AMR_CORN10] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		//Corn 11
@@ -860,7 +888,7 @@ void set_AMR(void){
 			else z1 = -1;
 		}
 		else z1 = z - 1;
-		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN11] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR6] >= 0 && DEREFINE_POLE) block[n][AMR_CORN11] = NB;
 		else block[n][AMR_CORN11] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		//Corn 12
@@ -874,7 +902,7 @@ void set_AMR(void){
 			else z1 = -1;
 		}
 		else z1 = z - 1;
-		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN12] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR6] >= 0 && DEREFINE_POLE) block[n][AMR_CORN12] = NB;
 		else block[n][AMR_CORN12] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 	}
 	
@@ -900,6 +928,7 @@ void set_AMR(void){
 				block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
 			}
 			else{
+				#if(DEREFINE_POLE)
 				//Difference in REF_1, REF_2
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
 					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
@@ -915,13 +944,27 @@ void set_AMR(void){
 					block[n][AMR_NBR1_7] = block[n][AMR_NBR1_3];
 					block[n][AMR_NBR1_8] = block[n][AMR_NBR1_4];
 				}
+				#elif(GRID_CARTESIAN)
+				block[n][AMR_NBR1_3] = -1;
+				block[n][AMR_NBR1_4] = -1;
+				block[n][AMR_NBR1_7] = -1;
+				block[n][AMR_NBR1_8] = -1;
+				#endif
 			}
 		}
 		if (block[n][AMR_NBR2] >= 0){
-			block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
-			block[n][AMR_NBR2_2] = block[block[n][AMR_NBR2]][AMR_CHILD2];
-			block[n][AMR_NBR2_3] = block[block[n][AMR_NBR2]][AMR_CHILD3];
-			block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
+			if (block[n][AMR_NBR2] != NB) {
+				block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
+				block[n][AMR_NBR2_2] = block[block[n][AMR_NBR2]][AMR_CHILD2];
+				block[n][AMR_NBR2_3] = block[block[n][AMR_NBR2]][AMR_CHILD3];
+				block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
+			}
+			else {
+				block[n][AMR_NBR2_1] = -1;
+				block[n][AMR_NBR2_2] = -1;
+				block[n][AMR_NBR2_3] = -1;
+				block[n][AMR_NBR2_4] = -1;
+			}
 		}
 		if (block[n][AMR_NBR3] >= 0){
 			if (block[n][AMR_NBR3] != NB){
@@ -931,6 +974,7 @@ void set_AMR(void){
 				block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
 			}
 			else{
+				#if(DEREFINE_POLE)
 				//Difference in REF_3
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
 					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
@@ -949,25 +993,55 @@ void set_AMR(void){
 						block[n][AMR_NBR3_6] = block[n][AMR_NBR3_5];
 					}
 				}
+				#elif(GRID_CARTESIAN)
+				block[n][AMR_NBR3_1] = -1;
+				block[n][AMR_NBR3_2] = -1;
+				block[n][AMR_NBR3_5] = -1;
+				block[n][AMR_NBR3_6] = -1;
+				#endif
 			}
 		}
 		if (block[n][AMR_NBR4] >= 0){
-			block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
-			block[n][AMR_NBR4_6] = block[block[n][AMR_NBR4]][AMR_CHILD6];
-			block[n][AMR_NBR4_7] = block[block[n][AMR_NBR4]][AMR_CHILD7];
-			block[n][AMR_NBR4_8] = block[block[n][AMR_NBR4]][AMR_CHILD8];
+			if (block[n][AMR_NBR4] != NB) {
+				block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
+				block[n][AMR_NBR4_6] = block[block[n][AMR_NBR4]][AMR_CHILD6];
+				block[n][AMR_NBR4_7] = block[block[n][AMR_NBR4]][AMR_CHILD7];
+				block[n][AMR_NBR4_8] = block[block[n][AMR_NBR4]][AMR_CHILD8];
+			}
+			else {
+				block[n][AMR_NBR4_5] = -1;
+				block[n][AMR_NBR4_6] = -1;
+				block[n][AMR_NBR4_7] = -1;
+				block[n][AMR_NBR4_8] = -1;
+			}
 		}
 		if (block[n][AMR_NBR5] >= 0){
-			block[n][AMR_NBR5_1] = block[block[n][AMR_NBR5]][AMR_CHILD1];
-			block[n][AMR_NBR5_3] = block[block[n][AMR_NBR5]][AMR_CHILD3];
-			block[n][AMR_NBR5_5] = block[block[n][AMR_NBR5]][AMR_CHILD5];
-			block[n][AMR_NBR5_7] = block[block[n][AMR_NBR5]][AMR_CHILD7];
+			if (block[n][AMR_NBR5] != NB) {
+				block[n][AMR_NBR5_1] = block[block[n][AMR_NBR5]][AMR_CHILD1];
+				block[n][AMR_NBR5_3] = block[block[n][AMR_NBR5]][AMR_CHILD3];
+				block[n][AMR_NBR5_5] = block[block[n][AMR_NBR5]][AMR_CHILD5];
+				block[n][AMR_NBR5_7] = block[block[n][AMR_NBR5]][AMR_CHILD7];
+			}
+			else {
+				block[n][AMR_NBR5_1] = -1;
+				block[n][AMR_NBR5_3] = -1;
+				block[n][AMR_NBR5_5] = -1;
+				block[n][AMR_NBR5_7] = -1;
+			}
 		}
 		if (block[n][AMR_NBR6] >= 0){
-			block[n][AMR_NBR6_2] = block[block[n][AMR_NBR6]][AMR_CHILD2];
-			block[n][AMR_NBR6_4] = block[block[n][AMR_NBR6]][AMR_CHILD4];
-			block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
-			block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
+			if (block[n][AMR_NBR6] != NB) {
+				block[n][AMR_NBR6_2] = block[block[n][AMR_NBR6]][AMR_CHILD2];
+				block[n][AMR_NBR6_4] = block[block[n][AMR_NBR6]][AMR_CHILD4];
+				block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
+				block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
+			}
+			else {
+				block[n][AMR_NBR6_2] = -1;
+				block[n][AMR_NBR6_4] = -1;
+				block[n][AMR_NBR6_6] = -1;
+				block[n][AMR_NBR6_8] = -1;
+			}
 		}
 	}
 	
@@ -979,9 +1053,13 @@ void set_AMR(void){
 				block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
 				block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
 			}
-			else{
+			else if(DEREFINE_POLE){
 				if (block[n][AMR_NBR1_7] >= 0) block[n][AMR_CORN1_1] = block[block[n][AMR_NBR1_7]][AMR_NBR2];
 				if (block[n][AMR_NBR1_8] >= 0) block[n][AMR_CORN1_2] = block[block[n][AMR_NBR1_8]][AMR_NBR2];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN1_1] = -1;
+				block[n][AMR_CORN1_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN2] >= 0){
@@ -989,9 +1067,13 @@ void set_AMR(void){
 				block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
 				block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR3_5] >= 0) block[n][AMR_CORN2_1] = block[block[n][AMR_NBR3_5]][AMR_NBR2];
 				if (block[n][AMR_NBR3_6] >= 0) block[n][AMR_CORN2_2] = block[block[n][AMR_NBR3_6]][AMR_NBR2];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN2_1] = -1;
+				block[n][AMR_CORN2_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN3] >= 0){
@@ -999,9 +1081,13 @@ void set_AMR(void){
 				block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
 				block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR3_1] >= 0) block[n][AMR_CORN3_1] = block[block[n][AMR_NBR3_1]][AMR_NBR4];
 				if (block[n][AMR_NBR3_2] >= 0) block[n][AMR_CORN3_2] = block[block[n][AMR_NBR3_2]][AMR_NBR4];
+			}
+			else if (GRID_CARTESIAN){
+				block[n][AMR_CORN3_1] = -1;
+				block[n][AMR_CORN3_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN4] >= 0){
@@ -1009,27 +1095,55 @@ void set_AMR(void){
 				block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
 				block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR1_3] >= 0) block[n][AMR_CORN4_1] = block[block[n][AMR_NBR1_3]][AMR_NBR4];
 				if (block[n][AMR_NBR1_4] >= 0) block[n][AMR_CORN4_2] = block[block[n][AMR_NBR1_4]][AMR_NBR4];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN4_1] = -1;
+				block[n][AMR_CORN4_2] = -1;
 			}
 		}
 
 		if (block[n][AMR_CORN5] >= 0){
-			block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
-			block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
+			if (block[n][AMR_CORN5] != NB) {
+				block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
+				block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN5_1] = -1;
+				block[n][AMR_CORN5_2] = -1;
+			}
 		}
 		if (block[n][AMR_CORN6] >= 0){
-			block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
-			block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
+			if (block[n][AMR_CORN6] != NB) {
+				block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
+				block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN6_1] = -1;
+				block[n][AMR_CORN6_2] = -1;
+			}
 		}
 		if (block[n][AMR_CORN7] >= 0){
-			block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
-			block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
+			if (block[n][AMR_CORN7] != NB) {
+				block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
+				block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN7_1] = -1;
+				block[n][AMR_CORN7_2] = -1;
+			}
 		}
 		if (block[n][AMR_CORN8] >= 0){
-			block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
-			block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
+			if (block[n][AMR_CORN8] != NB) {
+				block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
+				block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN8_1] = -1;
+				block[n][AMR_CORN8_2] = -1;
+			}
 		}
 
 		if (block[n][AMR_CORN9] >= 0){
@@ -1037,9 +1151,13 @@ void set_AMR(void){
 				block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
 				block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
 			}
-			else{
+			else if(DEREFINE_POLE){
 				if (block[n][AMR_NBR1_4] >= 0) block[n][AMR_CORN9_1] = block[block[n][AMR_NBR1_4]][AMR_NBR5];
 				if (block[n][AMR_NBR1_8] >= 0) block[n][AMR_CORN9_2] = block[block[n][AMR_NBR1_8]][AMR_NBR5];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN9_1] = -1;
+				block[n][AMR_CORN9_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN10] >= 0){
@@ -1047,9 +1165,13 @@ void set_AMR(void){
 				block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
 				block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR3_2] >= 0) block[n][AMR_CORN10_1] = block[block[n][AMR_NBR3_2]][AMR_NBR5];
 				if (block[n][AMR_NBR3_6] >= 0) block[n][AMR_CORN10_2] = block[block[n][AMR_NBR3_6]][AMR_NBR5];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN10_1] = -1;
+				block[n][AMR_CORN10_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN11] >= 0){
@@ -1057,9 +1179,13 @@ void set_AMR(void){
 				block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
 				block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR3_1] >= 0) block[n][AMR_CORN11_1] = block[block[n][AMR_NBR3_1]][AMR_NBR6];
 				if (block[n][AMR_NBR3_5] >= 0) block[n][AMR_CORN11_2] = block[block[n][AMR_NBR3_5]][AMR_NBR6];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN11_1] = -1;
+				block[n][AMR_CORN11_2] = -1;
 			}
 		}
 		if (block[n][AMR_CORN12] >= 0){
@@ -1067,9 +1193,13 @@ void set_AMR(void){
 				block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
 				block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_NBR1_3] >= 0) block[n][AMR_CORN12_1] = block[block[n][AMR_NBR1_3]][AMR_NBR6];
 				if (block[n][AMR_NBR1_7] >= 0) block[n][AMR_CORN12_2] = block[block[n][AMR_NBR1_7]][AMR_NBR6];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN12_1] = -1;
+				block[n][AMR_CORN12_2] = -1;
 			}
 		}
 	}
@@ -1082,8 +1212,10 @@ void set_AMR(void){
 		//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d tag: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_TAG1]);
 
 		if (block[n][AMR_NBR1] >= 0){
-			if (block[n][AMR_NBR1] != NB) block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
-			else{
+			if (block[n][AMR_NBR1] != NB) {
+				block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
+			}
+			else if(DEREFINE_POLE){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
@@ -1092,15 +1224,23 @@ void set_AMR(void){
 					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_NBR2] >= 0){
-			block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
+			if (block[n][AMR_NBR2] != NB) {
+				block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] + 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_NBR3] >= 0){
 			if (block[n][AMR_NBR3] != NB){
 				block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
 			}
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
 					//block[n][AMR_NBR3P] = block[block[n][AMR_NBR3_1]][AMR_PARENT];
 					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
@@ -1109,15 +1249,33 @@ void set_AMR(void){
 					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_NBR4] >= 0){
-			block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
+			if (block[n][AMR_NBR4] != NB) {
+				block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] - 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_NBR5] >= 0){
-			block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
+			if (block[n][AMR_NBR5] != NB) {
+				block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR5P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] + 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_NBR6] >= 0){
-			block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
+			if (block[n][AMR_NBR6] != NB) {
+				block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_NBR6P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] - 1) / (1 + REF_3));
+			}
 		}
 	}
 
@@ -1129,7 +1287,7 @@ void set_AMR(void){
 
 		if (block[n][AMR_CORN1] >= 0){
 			if (block[n][AMR_CORN1] != NB)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
@@ -1138,10 +1296,13 @@ void set_AMR(void){
 					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN2] >= 0){
 			if (block[n][AMR_CORN2] != NB)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					//if (block[n][AMR_CORN2_1] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2_1]][AMR_PARENT];
 					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
@@ -1150,10 +1311,13 @@ void set_AMR(void){
 					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN3] >= 0){
 			if (block[n][AMR_CORN3] != NB)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					//if (block[n][AMR_CORN3_1] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3_1]][AMR_PARENT];
 					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
@@ -1162,10 +1326,13 @@ void set_AMR(void){
 					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN4] >= 0){
 			if (block[n][AMR_CORN4] != NB)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
@@ -1174,22 +1341,45 @@ void set_AMR(void){
 					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3] / (1 + REF_3));
+			}
 		}
-		if (block[n][AMR_CORN5] >= 0){
-			block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
+		if (block[n][AMR_CORN5] >= 0) {
+			if (block[n][AMR_CORN5] != NB){
+				block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN5P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] + 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] - 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN6] >= 0){
-			block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
+			if (block[n][AMR_CORN6] != NB) {
+				block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN6P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] + 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] + 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN7] >= 0){
-			block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
+			if (block[n][AMR_CORN7] != NB) {
+				block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN7P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] - 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] + 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN8] >= 0){
-			block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
+			if (block[n][AMR_CORN8] != NB) {
+				block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN8P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, (block[n][AMR_COORD1] - 1) / (1 + REF_1), block[n][AMR_COORD2] / (1 + REF_2), (block[n][AMR_COORD3] - 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN9] >= 0){
 			if (block[n][AMR_CORN9] != NB)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
-			else{		
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
@@ -1204,10 +1394,13 @@ void set_AMR(void){
 					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), (block[n][AMR_COORD3] + 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN10] >= 0){
 			if (block[n][AMR_CORN10] != NB)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3	
 					//if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] + REF_3);
@@ -1222,10 +1415,13 @@ void set_AMR(void){
 					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), (block[n][AMR_COORD3] + 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN11] >= 0){
 			if (block[n][AMR_CORN11] != NB)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					//if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] - REF_3);
@@ -1240,10 +1436,13 @@ void set_AMR(void){
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), (block[n][AMR_COORD3] - 1) / (1 + REF_3));
+			}
 		}
 		if (block[n][AMR_CORN12] >= 0){
 			if (block[n][AMR_CORN12] != NB)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
-			else{
+			else if (DEREFINE_POLE) {
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
 					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
@@ -1257,6 +1456,9 @@ void set_AMR(void){
 					if (block[n][AMR_COORD3] - REF_3 < 0 && BOUND_TYPE3 == PERIODIC) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
+			}
+			else if (GRID_CARTESIAN) {
+				block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), (block[n][AMR_COORD3] - 1) / (1 + REF_3));
 			}
 		}
 	}
@@ -2497,8 +2699,11 @@ int refine(int n){
 		return 0; //First make sure nesting criteria are satisfied
 	}
 	else{
-		if (rank == 0 && numtasks<10) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
-		if (rank == 0 && block[n][AMR_COORD1]==0) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+		if (rank == 0) {
+			if (numtasks < 10 || block[n][AMR_COORD1] == 0) {
+				fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+			}
+		}
 		ref_1 = block[block[n][AMR_CHILD2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 		ref_2 = block[block[n][AMR_CHILD2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + ref_1)*(1 + ref_2)*(1 + REF_3) - 1;
@@ -2773,6 +2978,9 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
+			#if(GRID_CARTESIAN)
+			max_levels = calc_nlevels_tot(block[n_ord_total[n]][AMR_LEVEL], block[n_ord_total[n]][AMR_COORD1], block[n_ord_total[n]][AMR_COORD2], block[n_ord_total[n]][AMR_COORD3]);
+			#endif
 			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && (block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1) && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
@@ -3190,10 +3398,23 @@ double calc_refcrit(int n){
 		if (rank == 0) fprintf(stderr, "Warning: Cartesian grid set up improperly");
 		exit(0);
 	}
-	if (block[n][AMR_COORD1]<=NB_1*pow(1+REF_1, block[n][AMR_LEVEL1]) / 2 && block[n][AMR_COORD1] >= NB_1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) / 2 -1
-		 && block[n][AMR_COORD2] <= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2 && block[n][AMR_COORD2] >= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2 - 1
-		&& block[n][AMR_COORD3] <= NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2 && block[n][AMR_COORD3] >= NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2 - 1) {
-		ref_val = 1.1*REFINEMENT_CUTOFF;
+
+	int min_i, min_j, min_z;
+	int max_i, max_j, max_z;
+
+	//Calculate minimum index
+	min_i = NB_1 * pow(1 + REF_1, block[n][AMR_LEVEL]) / 2 - NB_1 * pow(1 + REF_1, 1 - 2) / 2;
+	min_j = NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL]) / 2 - NB_2 * pow(1 + REF_2, 1 - 2) / 2;
+	min_z = NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL]) / 2 - NB_3 * pow(1 + REF_3, 1 - 2) / 2;
+
+	//Calculate maximum index
+	max_i = NB_1 * pow(1 + REF_1, block[n][AMR_LEVEL]) / 2 + NB_1 * pow(1 + REF_1, 1 - 2) / 2;
+	max_j = NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL]) / 2 + NB_2 * pow(1 + REF_2, 1 - 2) / 2;
+	max_z = NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL]) / 2 + NB_3 * pow(1 + REF_3, 1 - 2) / 2;
+
+	//Calculate extra cartesian levels
+	if (block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
+		ref_val = 1.1 * REFINEMENT_CUTOFF;
 	}
 	else {
 		ref_val = 0.6 * REFINEMENT_CUTOFF;
@@ -3222,8 +3443,6 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-
-
 
 			if ((r > 50.0) && (phi>0.5*3.14) && (phi<1.5*3.14)){
 				get_geometry(n, i, j, z, CENT, &geom);
@@ -3255,7 +3474,7 @@ double calc_refcrit(int n){
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			if(block[n][AMR_LEVEL1] >= BASE_LEVELS){
-				if (r > 50.0) {
+				if (r > 6.5) {
 					//Calc misc quantities
 					get_geometry(n, i, j, z, CENT, &geom);
 					get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);

@@ -947,6 +947,7 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom, double * r
 	#endif
 );
 void calc_ymax(void);
+int calc_nlevels_tot(int l, int coord1, int coord2, int coord3);
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size
 	#if(TWO_T)
 	, double fel

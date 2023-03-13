@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
-		for (l = 0; l < N_LEVELS_3D; l++) {
+		for (l = 0; l < N_LEVELS_3D + N_LEVELS_CART; l++) {
 			if(REFINE_GRB==0 || l==0) init();
 			average_grid();
 			#if(N_LEVELS_3D>0)
