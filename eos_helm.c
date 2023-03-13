@@ -326,6 +326,118 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 }
 #endif
 
+void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele)
+{
+    // Local variables
+    double prad, dpraddt, erad, deraddt, srad, dsraddt;
+    double pion, dpiondt, eion, deiondt, sion, dsiondt;
+
+    // Danat: out of all derivatives w.r.t. density we only need dpdrho so far; commented out the others for the sake of optimizing the code
+    double dpraddd, dpiondd;
+    double deraddd, deiondd;
+
+    // Convert from code units to cgs units (EOS table units)
+    btemp *= conv_T_CODE2CGS;
+    den *= conv_dens_CODE2CGS;
+
+    double deni = 1.0 / den;
+    double tempi = 1.0 / btemp;
+
+    /*
+        ye = zbar/abar
+        abar = zbar / ye
+        ytot1 = 1/abar
+
+        Xp = np/(np+nn)
+        Ye = np/(np+nn) = Xp
+        Xn = 1-Xp
+        abar = Xp/1 + Xn/1 + Xa/4 = 1 - 3Xa/4
+    */
+    double abar, ytot1;
+    // Alpha particle recombination part
+
+    // Useful relations
+    //double ytot1 = 1.0 / abar;
+    //double ye = ytot1 * zbar;
+    abar = 1.0; // since we only have protons and neutrons
+    ytot1 = 1.0; // since we only have protons and neutrons#endif
+    double kt = kerg * btemp;
+    double din = ye * den;
+    double kavoy = kergavo * ytot1;
+
+    // ion portion of the gas:
+    double xni = avo * ytot1 * den;
+    pion = xni * kt;
+    eion = 1.5 * pion * deni;
+    sion = kavoy * (2.5 + log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5)));
+
+    // radiation section:
+#if (RAD_M1)
+    prad = erad = srad = 0.;
+#else
+    prad = asoli3 * btemp * btemp * btemp * btemp;
+    double x1 = prad * deni;
+    erad = 3.0 * x1;
+    srad = (x1 + erad) * tempi;
+#endif
+
+    // sackur-tetrode equation for the ion entropy of
+    // a single ideal gas characterized by abar
+    * pres = prad + pion;
+    *ener = erad + eion;
+    *entr = srad + sion;
+
+    if (calc_derivatives) {
+        // Calculate pressure derivatives
+        dpraddt = 4.0 * prad * tempi;
+        dpraddd = 0.0;
+        dpiondd = avo * ytot1 * kt;
+        dpiondt = xni * kerg;
+
+        *dpresdd = dpraddd + dpiondd; // pressure derivative vs density
+        *dpresdt = dpraddt + dpiondt; // pressure derivative vs temperature
+
+        // Calculate energy derivatives
+        deiondd = 0.0;
+        deiondt = 1.5 * xni * kerg * deni;
+
+        deraddd = -erad * deni;
+        deraddt = 4.0 * erad * tempi;
+
+        *denerdd = deraddd + deiondd;  // energy derivative vs density
+        *denerdt = deraddt + deiondt; // energy derivative vs temperature
+
+        // Calculate entropy derivatives
+        //dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
+        dsraddt = (dpraddt * deni + deraddt - srad) * tempi;
+        //dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi - kavoy * deni;
+        dsiondt = (dpiondt * deni + deiondt) * tempi - (pion * deni + eion) * tempi * tempi + 1.5 * kavoy * tempi;
+        //dentrdd = dsraddd + dsiondd + dsepdd; // entropy derivative vs density and density
+        *dentrdt = dsraddt + dsiondt; // entropy derivative vs density and time
+
+        // calculate relativistic soundspeeds
+        double chit, z;
+        chit = btemp / (*pres) * (*dpresdt);
+        z = 1.0 + ((*ener) + (c_light * c_light)) * den / (*pres);
+        *cs2 = (chit * chit * (*pres) * deni * tempi / (*denerdt) + (*dpresdd) * den / (*pres)) / z; // already in the units of the code (c = 1)
+    }
+
+    // Convert from cgs to code units
+    *pres *= conv_pres_CGS2CODE;
+    *ener *= conv_ener_CGS2CODE;
+    *entr *= conv_entr_CGS2CODE;
+
+    *dpresdt *= conv_pres_CGS2CODE * conv_T_CODE2CGS;
+    *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
+    *dentrdt *= conv_entr_CGS2CODE;
+    *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
+    *denerdd *= conv_ener_CGS2CODE * conv_dens_CODE2CGS;
+
+    *etaele = 0.511 * mev2k / btemp;
+
+    return;
+}
+
 /*
 	Helmholtz EOS main function
 		uses global arrays containing data from the table, which are filled in eos_init()
@@ -407,14 +519,25 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     //Look up the desired quantities in the eos table
     double free, df_d, df_t, df_dd, df_tt, df_dt;
     #if (DOHELM_LOWTEMP)
-    if (btemp < eos_temp_low) {
+    double pele1, sele1, eele1, dpepdt_lowtemp, dsepdt_lowtemp, deepdt_lowtemp;
+    double temp_low = pow(10., eos_tlo);
+    if (btemp < temp_low) {
         // the desired electron-positron thermodynamic quantities
-        interp_eostable(den, eos_temp_low, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+        interp_eostable(den, temp_low *(1. + 1e-5), din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
+        pele1 = din * din * df_d + din * din * df_dt * (btemp - temp_low);
+        sele1 = -df_t * ye + (-df_tt * ye) * (btemp - temp_low);
+        eele1 = ye * free + temp_low * sele + temp_low * (-df_tt * ye) * (btemp - temp_low);
+
+        interp_eostable(den, temp_low, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
         dpepdd = 1e-30;
         //free = df_d = df_t = df_dd = df_tt = df_dt = 0.0;
-        pele = din * din * df_d + din * din * df_dt * (btemp - eos_temp_low);
-        sele = -df_t * ye + (-df_tt * ye) * (btemp - eos_temp_low);
-        eele = ye * free + eos_temp_low * sele + eos_temp_low * (-df_tt * ye) * (btemp - eos_temp_low);
+        pele = din * din * df_d + din * din * df_dt * (btemp - temp_low);
+        sele = -df_t * ye + (-df_tt * ye) * (btemp - temp_low);
+        eele = ye * free + temp_low * sele + temp_low * (-df_tt * ye) * (btemp - temp_low);
+
+        dpepdt_lowtemp = (pele1 - pele) / (temp_low * 1e-5);
+        dsepdt_lowtemp = (sele1 - sele) / (temp_low * 1e-5);
+        deepdt_lowtemp = (eele1 - eele) / (temp_low * 1e-5);
     }
     else {
         interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
@@ -510,8 +633,9 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         #endif
 
         #if (DOHELM_LOWTEMP)
-        if (btemp < eos_temp_low) {
-            dpepdt = 0.0;
+        if (btemp < temp_low) {
+            //dpepdt = 0.0;
+            dpepdt = din * din * df_dt + (btemp - temp_low) * dpepdt_lowtemp;
         }
         else {
             dpepdt = din * din * df_dt;
@@ -568,10 +692,12 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         deraddt = 4.0 * erad * tempi;
 
         #if (DOHELM_LOWTEMP)
-        if (btemp < eos_temp_low) {
-            dsepdt = 0.0;
+        if (btemp < temp_low) {
+            //dsepdt = 0.0;
+            dsepdt = -df_tt * ye + (btemp - temp_low) * dsepdt_lowtemp;
             dsepdd = 0.0;
-            deepdt = 0.0;
+            //deepdt = 0.0;
+            deepdt = btemp * dsepdt + (btemp - temp_low) * deepdt_lowtemp;
             deepdd = 0.0;
         }
         else {
@@ -644,7 +770,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
     *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
 
-    *etaele += 0.511 * mev2k / btemp;
+    //*etaele += 0.511 * mev2k / btemp;
 
     return;
 }
@@ -652,11 +778,11 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 void validate_T(double* temp);
 
 void validate_T(double* temp) {
-    #if (DOHELM_LOWTEMP)
-    if (*temp < 1e-10) *temp = 1e-10;
-    #else
+    //#if (DOHELM_LOWTEMP)
+    //if (*temp < 1e-10) *temp = 1e-10;
+    //#else
     if (*temp < eos_temp_low) *temp = eos_temp_low;
-    #endif
+    //#endif
     if (*temp > eos_temp_up) *temp = eos_temp_up;
     return;
 }
@@ -1144,9 +1270,13 @@ void eos_mode_rhopres_u (double* prim) {
     #endif
     // initial guess : temperature
     double temp_ini_guess;
-    if (p_goal <= 0.0) temp_ini_guess = 1.0e3;
+    if (p_goal <= 0.0) temp_ini_guess = eos_temp_low;
     temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
-    if (temp_ini_guess > 1.0e13) temp_ini_guess = 1.0e13;
+
+#if (DOHELM_LOWTEMP)
+    temp_ini_guess = p_goal / (BOLTZ_CGS * avo * den) * C_CGS * C_CGS;
+#endif
+    validate_T(&temp_ini_guess);
     
     double temp_new, temp_old;
     double p_tmp;
@@ -1159,23 +1289,47 @@ void eos_mode_rhopres_u (double* prim) {
     double dpdt, dedt, dpdrho;
     double dsdt, dedrho, etaele;
     
+    // check if the input is valid:
+    int is_valid_input = 1;
+    #if (HELMEOS_INPUT_CHECK)
+    double p_low, p_high;
+    // Lowest Tgas:
+    eos_helm(1, eos_temp_low, den, ye, &p_low, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+        #if (DONUCLEAR)
+        , prim[XALPHA], prim[XATM]
+        #endif
+    );
+    // Highest Tgas:
+    eos_helm(1, eos_temp_up, den, ye, &p_high, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+        #if (DONUCLEAR)
+        , prim[XALPHA], prim[XATM]
+        #endif
+    );
+
+    if (p_goal < p_low || p_goal > p_high) is_valid_input = 0;
+    #endif
+
     temp_old = temp_ini_guess;
     
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     for(i = 0; i < EOS_ITERATIONS; i++){
-        eos_helm(1, temp_old, den, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
-            #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
-            #endif
-        );
-        
+        if (is_valid_input) {
+            eos_helm(1, temp_old, den, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+                #if (DONUCLEAR)
+                , prim[XALPHA], prim[XATM]
+                #endif
+            );
+        }
+        else {
+            eos_helm_backup_nondegenerate(1, temp_old, den, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele);
+        }
         temp_new = temp_old - (p_tmp - p_goal) / dpdt;
         
         // do not allow temp to change more than 2 times in one iteration
-        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
-        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
         
-        error = fabs((temp_new - temp_old) / temp_old);
+        error = fabs((temp_new - temp_old) / temp_new);
         error_p = fabs((p_tmp - p_goal) / p_goal);
         validate_T(&temp_new);
         
@@ -1239,7 +1393,8 @@ void eos_mode_rhopres_u (double* prim) {
     #endif
     
     if (error_p > EOS_TOL || error > EOS_TEMP_TOL) {
-        fprintf(stderr, "5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
+        fprintf(stderr, "5 errP: %g T_ini: %g T_fin: %g rho: %g pG: %g\n", error_p, temp_ini_guess, temp_old, den, p_goal);
+
     }
 
     prim[UU] = xener * den;
@@ -1439,6 +1594,11 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+
+#if (DOHELM_LOWTEMP)
+    temp_ini_guess = (GAMMA - 1.) * ener_goal / (BOLTZ_CGS * avo) * C_CGS * C_CGS;
+    validate_T(&temp_ini_guess);
+#endif
 
     double temp_new, temp_old;
     double ener_tmp;

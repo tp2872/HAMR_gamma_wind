@@ -69,6 +69,8 @@ Physical Parameters section
 // Postmerger problem, ICs from SpEC
 #define BHNSQ2 (1)
 #define BHNSQ2_1 (1)
+// Collapsar problem
+#define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
@@ -521,7 +523,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (8.07) /* Solar masses */
 #endif
 #else
-#define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define M_SGRA_SOLAR (2.5) /* Solar masses */
+#else
+#define M_SGRA_SOLAR (4.0) /* Solar masses */
+#endif
+#else 
+#define M_SGRA_SOLAR (3.0) /* Solar masses */
+#endif
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -553,7 +563,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #endif
 #else
 #if (WHICHPROBLEM == COLLAPSAR)
-#define MASS_DENSITY_SCALE (1.710832e11)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
 #else
 #define MASS_DENSITY_SCALE (1e12)
 #endif
@@ -895,7 +909,11 @@ Section with EOS constants
 #define eos_dlo (-12.0) 
 #define eos_dhi (15.0)
 // EOS quantity limits
+#if (DOHELM_LOWTEMP)
+#define eos_temp_low (1e-10)
+#else
 #define eos_temp_low (1e3)
+#endif
 #define eos_temp_up (1e13)
 #define eos_dens_low (1e-12)
 #define eos_dens_up (1e15)
