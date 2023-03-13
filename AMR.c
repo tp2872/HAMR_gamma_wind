@@ -3413,7 +3413,7 @@ double calc_refcrit(int n){
 	max_z = NB_3 * pow(1 + REF_3, block[n][AMR_LEVEL]) / 2 + NB_3 * pow(1 + REF_3, 1 - 2) / 2;
 
 	//Calculate extra cartesian levels
-	if (block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
+	if (block[n][AMR_LEVEL] <= N_LEVELS_CART - 1 &&  block[n][AMR_COORD1] >= min_i && block[n][AMR_COORD1] < max_i && block[n][AMR_COORD2] >= min_j && block[n][AMR_COORD2] < max_j && block[n][AMR_COORD3] >= min_z && block[n][AMR_COORD3] < max_z) {
 		ref_val = 1.1 * REFINEMENT_CUTOFF;
 	}
 	else {
