@@ -111,6 +111,11 @@ typedef struct {
   int nvars, nx, ny, nz; //resolution
 } extent;
 
+typedef struct {
+	double xmin, xmax; //array extent
+	int nvars, nx; //resolution
+} extent1d;
+
 
 void init()
 {

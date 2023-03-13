@@ -43,7 +43,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
-#define BH_SPIN (0.8)
+#define BH_SPIN (0.86)
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
 #define BETA (1e2)
@@ -78,16 +78,18 @@ Physical Parameters section
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
+#define NU_COOLING (1)
 #define NU_SUBCYCLING (0)
-#define NU_DEBUG (1) // (1)
-#define NEUTRINOS_DEBUG (0) //(1)
+#define NU_DEBUG (1)
+#define NEUTRINOS_DEBUG (0)
 #define NEUTRINOS_DEBUG_NFLAGS (0)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (1)
-#define NU_INNER_STOP (0)
+#define NU_INNER_STOP (1)
+#define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
 #define NU_PREDICTOR (0)
 #define NU_KEEP_COEFF_CONST (1)
 #define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
@@ -113,12 +115,15 @@ Physical Parameters section
 #define DOHELM_TEMPERATURE (0) 
 #endif
 
+#define USE_3D_INV (0)
+
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (0)
 #define revert_gamma        (1)
 #define eos_nr_debug (0)
+#define HELMEOS_INPUT_CHECK (1)
 
 // subcycling testing
 #define RADM1_SUBCYCLING (0)
@@ -136,10 +141,10 @@ Physical Parameters section
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20) 
 #else
-    #define RHOMIN      (1.e-14) //(1.e-26)
-    #define UUMIN       (1.e-16) //(1.e-27)
-    #define RHOMINLIMIT (1.e-20) //(1.e-40)
-    #define UUMINLIMIT  (1.e-20) //(1.e-40)
+    #define RHOMIN      (1.e-26)
+    #define UUMIN       (1.e-27)
+    #define RHOMINLIMIT (1.e-40)
+    #define UUMINLIMIT  (1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
     //#define RHOMIN	(1.e-7)
@@ -542,7 +547,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2)
-#define MASS_DENSITY_SCALE (23661320709691.3) // (1.87456e-5)
+#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
 #else
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #endif

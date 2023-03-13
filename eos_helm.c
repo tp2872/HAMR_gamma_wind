@@ -1449,21 +1449,46 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     int i;
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
 
+    // check if the input is valid:
+    int is_valid_input = 1;
+    #if (HELMEOS_INPUT_CHECK)
+    double e_low, e_high;
+    // Lowest Tgas:
+    eos_helm(1, eos_temp_low, dens, ye, &pres, &e_low, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+        #if (DONUCLEAR)
+        , x_alpha, x_atm
+        #endif
+    );
+    // Highest Tgas:
+    eos_helm(1, eos_temp_up, dens, ye, &pres, &e_high, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+        #if (DONUCLEAR)
+        , x_alpha, x_atm
+        #endif
+    );
+
+    if (ener_goal < e_low || ener_goal > e_high) is_valid_input = 0;
+    #endif
+
     temp_old = temp_ini_guess;
 
     for (i = 0; i < EOS_ITERATIONS; i++) {
-        eos_helm(1, temp_old, dens, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
-            #if (DONUCLEAR)
-            , x_alpha, x_atm
-            #endif
-        );
+        if (is_valid_input) {
+            eos_helm(1, temp_old, dens, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+                #if (DONUCLEAR)
+                , x_alpha, x_atm
+                #endif
+            );
+        }
+        else {
+            eos_helm_backup_nondegenerate(1, temp_old, dens, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele);
+        }
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
 
         //do not allow temp to change more than 2. times in one iteration
-        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
-        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
 
-        error = fabs((temp_new - temp_old) / temp_old);
+        error = fabs((temp_new - temp_old) / temp_new);
         error_e = fabs((ener_tmp - ener_goal) / ener_goal);
         validate_T(&temp_new);
 
@@ -1478,7 +1503,8 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     *temp = temp_old;
 
     if (error_e > EOS_TOL || error > EOS_TEMP_TOL) {
-        fprintf(stderr, "6 %g, %g --> %g (%g %g %g)\n", error_e, temp_ini_guess, temp_old, dens, u_goal, ye);
+        //*temp = temp_ini_guess;
+        fprintf(stderr, "6 errE: %g, errT: %e T_ini: %g T_fin: %g rho: %g uG: %g ye: %g)\n", error_e, error, temp_ini_guess, temp_old, dens, u_goal, ye);
     }
 
     #if (EOS_BISECTION)

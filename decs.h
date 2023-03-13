@@ -1400,6 +1400,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 	, double x_alpha, double x_atm
 	#endif
 );
+void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
 void eos_mode_rhou_entr(double* prim, double* entr);
 void eos_mode_rhou_pres (double* prim, double *pres);
 void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2);
