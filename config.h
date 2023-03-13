@@ -62,7 +62,7 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (50.0)
 
 /*Set parameters for BONDI_PROBLEM_3D*/
 #define R_BONDI (1e3)
@@ -184,13 +184,13 @@ Numerical Parameters section
 #define BS_3 16
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 6
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (1)
+#define GRID_CARTESIAN (0)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (14)
+#define N_LEVELS_CART (0)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

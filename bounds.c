@@ -679,6 +679,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 }
 
+//Set Cartesian boundary conditions
 void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n){
 	int i, j, z, k;
 	struct of_geom geom;

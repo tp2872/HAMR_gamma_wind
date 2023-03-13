@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
 			#endif
 			if (n_old == n_active_total) break;
 		}	
-		//restart_write();
-		//close_rdump();
+		restart_write();
+		close_rdump();
 	}
 
 	/* do initial diagnostics */
