@@ -398,21 +398,33 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 void check_cart_grid(void) {
 	double delta_x1, delta_x2, delta_x3;
 
-	//Check if you enough blocks for Cartesian grid
+	//Check if you have enough blocks for Cartesian grid
 	if (NB_1 % 4 != 0 || NB_2 % 4 != 0 || NB_3 % 4 != 0) {
-		if (rank == 0) fprintf(stderr, "Error 1 in setting up Cartesian grid! \n");
+		if (rank == 0) fprintf(stderr, "Error 1 in setting up Cartesian grid: Check if you have enough blocks for Cartesian grid! \n");
 		exit(0);
 	}
 
 	//Check if refinement happens in all 3 dimensions
 	if (REF_1 + REF_2 + REF_3 != 3) {
-		if (rank == 0) fprintf(stderr, "Error 2 in setting up Cartesian grid \n");
+		if (rank == 0) fprintf(stderr, "Error 2 in setting up Cartesian grid: Check if refinement happens in all 3 dimensions! \n");
 		exit(0);
 	}
 
 	//You cannot use GRID_CARTESIAN together with DEREFINE_POLE
 	if (DEREFINE_POLE) {
-		if (rank == 0) fprintf(stderr, "Error 3 in setting up Cartesian grid \n");
+		if (rank == 0) fprintf(stderr, "Error 3 in setting up Cartesian grid: You cannot use GRID_CARTESIAN together with DEREFINE_POLE! \n");
+		exit(0);
+	}
+
+	//You cannot have internal derefinement with Cartesian grid
+	if (N_LEVELS_1D_INT != 0) {
+		if (rank == 0) fprintf(stderr, "Error 4 in setting up Cartesian grid: You cannot have internal derefinement with Cartesian grid! \n");
+		exit(0);
+	}
+
+	//You need to use asymmetric metric for Cartesian grid!
+	if (NSY != 1) {
+		if (rank == 0) fprintf(stderr, "Error 5 in setting up Cartesian grid: You need to use asymmetric metric for Cartesian grid! \n");
 		exit(0);
 	}
 

@@ -62,7 +62,7 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Select grid outer radius*/
-#define ROUT (100.0)
+#define ROUT (10000.0)
 
 /*Set parameters for BONDI_PROBLEM_3D*/
 #define R_BONDI (1e3)
@@ -179,18 +179,18 @@ Numerical Parameters section
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 16
+#define BS_2 16
+#define BS_3 16
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (0)
+#define GRID_CARTESIAN (1)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (0)
+#define N_LEVELS_CART (14)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -302,7 +302,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
