@@ -71,25 +71,25 @@ int main(int argc, char *argv[])
 
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
+	#if (DOHELM)
+	eos_init();
+	//#if(GPU_ENABLED || GPU_DEBUG )
+	//eos_init_GPU(n_ord[n]);
+	//#endif
+	#endif
+
+	#if(NEUTRINOS_M1)
+	init_nulib_table();
+	//#if(GPU_ENABLED || GPU_DEBUG )
+	//nulib_init_GPU(n_ord[n]);
+	//#endif
+	#endif
 
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
     set_AMR();
 
-	#if (DOHELM)
-	eos_init();
-	#if(GPU_ENABLED || GPU_DEBUG )
-	eos_init_GPU();
-	#endif
-	#endif
-
-	#if(NEUTRINOS_M1)
-	init_nulib_table();
-	#if(GPU_ENABLED || GPU_DEBUG )
-	nulib_init_GPU();
-	#endif
-	#endif
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)

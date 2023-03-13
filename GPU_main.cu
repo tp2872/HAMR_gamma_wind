@@ -39,7 +39,15 @@ void GPU_init(void)
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
 			if (i!=j) cudaDeviceEnablePeerAccess(j, 0);
 		}
+		#if (DOHELM)
+		eos_init_GPU();
+		#endif
+		#if(NEUTRINOS_M1)
+		nulib_init_GPU();
+		#endif
 	}
+
+
 	status = cudaGetLastError();
 	if (cudaSuccess != status){
 		fprintf(stderr, "Error in setting peeraccess: %d \n", status);
