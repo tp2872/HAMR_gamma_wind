@@ -184,13 +184,13 @@ Numerical Parameters section
 #define BS_3 16
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 6
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (0)
+#define GRID_CARTESIAN (1)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (0)
+#define N_LEVELS_CART (6)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
