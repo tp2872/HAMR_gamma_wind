@@ -718,8 +718,8 @@ double * BufferrecE3corn4_72[NB_LOCAL];
 double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-double * eos_table[1];
-double * GPU_eos_table[1];
+double * eos_table[NB_LOCAL];
+double * GPU_eos_table[NB_LOCAL];
 #endif
 
 /*************************************************************************
@@ -819,6 +819,6 @@ double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 
-double* nulib_table[1];
-double* GPU_nulib_table[1];
+double* nulib_table[NB_LOCAL];
+double* GPU_nulib_table[NB_LOCAL];
 #endif

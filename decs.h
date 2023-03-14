@@ -776,8 +776,8 @@ extern double * BufferrecE3corn4_72[NB_LOCAL];
 extern double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-extern double * eos_table[1];
-extern double * GPU_eos_table[1];
+extern double * eos_table[NB_LOCAL];
+extern double * GPU_eos_table[NB_LOCAL];
 #endif
 
 /*************************************************************************
@@ -1392,7 +1392,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 
 //EOS related
 void eos_init(void);
-void eos_init_GPU(void);
+void eos_init_GPU(int n);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
 void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele
@@ -1470,7 +1470,7 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 #if(NEUTRINOS_M1)
 void init_nulib_table(void);
 void interp_nulib_table(double rho, double Tgas, double ye, int species, double* nu_avg, double* kappa_A, double* kappa_S, double* nu_N);
-void nulib_init_GPU(void);
+void nulib_init_GPU(int n);
 
 void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
 void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
@@ -1488,8 +1488,8 @@ extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 
-extern double* nulib_table[1];
-extern double* GPU_nulib_table[1];
+extern double* nulib_table[NB_LOCAL];
+extern double* GPU_nulib_table[NB_LOCAL];
 #endif
 
 #if (DONUCLEAR)
