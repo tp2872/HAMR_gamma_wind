@@ -115,9 +115,23 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 
 void vofx_matthewcoords(double *X, double *V){
 	#if(CARTESIAN || CARTESIAN_GR)
-	V[1] = sqrt(X[1] * X[1] + X[2] * X[2] + X[3] * X[3]);
-	V[2] = acos(X[3] / V[1]);
-	V[3] = atan2(X[2], X[1]);
+	double r, R, x, y, z;
+	x = X[1];
+	y = X[2];
+	z = X[3];
+	if (fabs(z) < 0.00001) z = 0.00001;
+	R = sqrt(x * x + y * y + z * z);
+	r = sqrt(0.5 * (R * R - a * a + sqrt(pow(R * R - a * a, 2.0) + 4.0 * a * a * z * z)));
+	if (!isfinite(r))fprintf(stderr, "Error 1: R not finite! \n");
+	V[1] = r;
+	V[2] = acos(z / r);
+	if (!isfinite(V[2]))fprintf(stderr, "Error 2: V2 not finite! \n");
+	double var;
+	var = x / (sqrt(r * r + a * a) * sin(V[2]));
+	if (var > 1.0)var = 1.0;
+	if (var < -1.0)var = -1.0;
+	V[3] = acos(var) + atan (a / r);
+	if (!isfinite(V[3]))fprintf(stderr, "Error 3: V3 not finite! %f %f %f \n", x / (sqrt(r * r + a * a) * sin(V[2])), atan(a/r));
 	#else
 	V[0] = X[0];
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
