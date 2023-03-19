@@ -126,11 +126,7 @@ void vofx_matthewcoords(double *X, double *V){
 	V[1] = r;
 	V[2] = acos(z / r);
 	if (!isfinite(V[2]))fprintf(stderr, "Error 2: V2 not finite! \n");
-	double var;
-	var = x / (sqrt(r * r + a * a) * sin(V[2]));
-	if (var > 1.0)var = 1.0;
-	if (var < -1.0)var = -1.0;
-	V[3] = acos(var) + atan (a / r);
+	V[3] = atan2(y, x) + atan (a / r);
 	if (!isfinite(V[3]))fprintf(stderr, "Error 3: V3 not finite! %f %f %f \n", x / (sqrt(r * r + a * a) * sin(V[2])), atan(a/r));
 	#else
 	V[0] = X[0];
