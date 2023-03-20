@@ -119,8 +119,9 @@ void vofx_matthewcoords(double *X, double *V){
 	x = X[1];
 	y = X[2];
 	z = X[3];
-	if (fabs(z) < 0.00001) z = 0.00001;
+	if (fabs(z) < 0.0001) z = 0.0001;
 	R = sqrt(x * x + y * y + z * z);
+	R = MY_MAX(R, 1.0);
 	r = sqrt(0.5 * (R * R - a * a + sqrt(pow(R * R - a * a, 2.0) + 4.0 * a * a * z * z)));
 	if (!isfinite(r))fprintf(stderr, "Error 1: R not finite! \n");
 	V[1] = r;

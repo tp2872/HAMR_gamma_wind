@@ -138,6 +138,9 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CALC_MDOT)
 	, double magnetic_density_scale
 	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
+	#endif
 );
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);

@@ -1322,7 +1322,7 @@ void GPU_write(int n)
 	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 
-	#if(SPHERICAL|| SPHERICAL_GR)
+	# if(SPHERICAL|| SPHERICAL_GR)
 	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 		coord(n, i, 0, 0, CENT, X);
 		bl_coord(X, &r, &th, &phi);
@@ -2265,12 +2265,18 @@ void GPU_consttransport2(int flag, double Dt, int n){
 			#if(CALC_MDOT)
 			, magnetic_density_scale_cpu
 			#endif
+			#if(CARTESIAN_GR)
+			, Bufferpflag_CART[nl[n]]
+			#endif
 			);
 		#elif(SCUDA)
 		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
 			#if(CALC_MDOT)
 			, magnetic_density_scale_cpu
+			#endif
+			#if(CARTESIAN_GR)
+			, Bufferpflag_CART[nl[n]]
 			#endif
 			);
 		#endif
@@ -2282,12 +2288,18 @@ void GPU_consttransport2(int flag, double Dt, int n){
 		#if(CALC_MDOT)
 		, magnetic_density_scale_cpu
 		#endif
+		#if(CARTESIAN_GR)
+		, Bufferpflag_CART[nl[n]]
+		#endif
 		);
 	#elif(SCUDA)
 	consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2
 		#if(CALC_MDOT)
 		, magnetic_density_scale_cpu
+		#endif
+		#if(CARTESIAN_GR)
+		, Bufferpflag_CART[nl[n]]
 		#endif
 		);
 	#endif

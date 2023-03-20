@@ -247,8 +247,6 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 
 	bl_coord(X, &r, &th, &phi);
 
-	r = MY_MAX(r, 1.0);
-
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
 
@@ -300,7 +298,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][3] = 1.0;
 	#else
 	//Set Cartesian KS metric
-	/*double f, L[NDIM], x, y, z;
+	double f, L[NDIM], x, y, z;
 	x = X[1];
 	y = X[2];
 	z = X[3];
@@ -333,7 +331,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = f * L[3] * L[1];
 	gcov[3][2] = f * L[3] * L[2];
 	gcov[3][3] = 1.0 + f * L[3] * L[3];
-	*/
+	/*
 	double cth, sth, s2, rho2;
 	cth = cos(th);
 	sth = sin(th);
@@ -360,27 +358,28 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = gcov[1][3];
 	gcov[3][2] = 0.0;
 	gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2));
+	*/
 	#endif
 
 	#if(NSY)
 	//convert to Cartesian coordinates
-	for (i = 0; i < NDIM; i++) {
-		for (j = 0; j < NDIM; j++) {
-			gcovp[i][j] = 0.;
-			for (k = 0; k < NDIM; k++) {
-				for (l = 0; l < NDIM; l++) {
-					gcovp[i][j] += gcov[k][l] * dxdxp_inv[k][i] * dxdxp_inv[l][j];
-				}
-			}
-		}
-	}
+	//for (i = 0; i < NDIM; i++) {
+	//	for (j = 0; j < NDIM; j++) {
+	//		gcovp[i][j] = 0.;
+	//		for (k = 0; k < NDIM; k++) {
+	//			for (l = 0; l < NDIM; l++) {
+	//				gcovp[i][j] += gcov[k][l] * dxdxp_inv[k][i] * dxdxp_inv[l][j];
+	//			}
+	//		}
+	//	}
+	//}
 
 	//convert to code coordinates
-	//for (i = 0; i < NDIM; i++) {
-		//for (j = 0; j < NDIM; j++) {
-			//gcovp[i][j] = gcov[i][j];
-		//}
-	//}
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) {
+			gcovp[i][j] = gcov[i][j];
+		}
+	}
 	#else
 	//convert to code coordinates
 	for (i = 0; i < NDIM; i++) {
@@ -507,6 +506,7 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 	double Xh[NDIM], Xl[NDIM];
 	double Vh[NDIM], Vl[NDIM];
 
+	#if(SPHERCIAL || SPHERICAL_GR)
 	for (k = 0; k<NDIM; k++) {
 		for (l = 0; l<NDIM; l++) Xh[l] = X[l];
 		for (l = 0; l<NDIM; l++) Xl[l] = X[l];
@@ -519,6 +519,24 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 		for (j = 0; j<NDIM; j++)
 			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
 	}
+	#else
+	dxdxp[0][0] = 1.0;
+	dxdxp[0][1] = 0.0;
+	dxdxp[0][2] = 0.0;
+	dxdxp[0][3] = 0.0;
+	dxdxp[1][0] = 0.0;
+	dxdxp[1][1] = 1.0;
+	dxdxp[1][2] = 0.0;
+	dxdxp[1][3] = 0.0;
+	dxdxp[2][0] = 0.0;
+	dxdxp[2][1] = 0.0;
+	dxdxp[2][2] = 1.0;
+	dxdxp[2][3] = 0.0;
+	dxdxp[3][0] = 0.0;
+	dxdxp[3][1] = 0.0;
+	dxdxp[3][2] = 0.0;
+	dxdxp[3][3] = 1.0;
+	#endif
 }
 
 /* load local geometry into structure geom */
