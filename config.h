@@ -59,7 +59,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.0)
 
 /*Select grid outer radius*/
 #define ROUT (50.0)

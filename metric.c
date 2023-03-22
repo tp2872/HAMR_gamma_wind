@@ -252,16 +252,16 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 
 	dxdxp[0][0] = 1.;
 	dxdxp[0][1] = 0.;
-	dxdxp[0][2] = 0.;
+	dxdxp[0][2] = 0.; 
 	dxdxp[0][3] = 0.;
 	dxdxp[1][0] = 0.;
 	dxdxp[1][1] = sin(th) * cos(phi); //done
-	dxdxp[1][2] = r * cos(th) * cos(phi) + a * cos(th) * sin(phi); //done
-	dxdxp[1][3] = -r * sin(th) * sin(phi) + a * sin(th) * cos(phi); //done
+	dxdxp[1][2] = r * cos(th) * cos(phi); //done
+	dxdxp[1][3] = -r * sin(th) * sin(phi); //done
 	dxdxp[2][0] = 0.;
 	dxdxp[2][1] = sin(th) * sin(phi); //done
-	dxdxp[2][2] = r * cos(th) * sin(phi) - a * cos(th) * cos(phi); //done
-	dxdxp[2][3] = r * sin(th) * cos(phi) + a * sin(th) * sin(phi); //done
+	dxdxp[2][2] = r * cos(th) * sin(phi); //done
+	dxdxp[2][3] = r * sin(th) * cos(phi); //done
 	dxdxp[3][0] = 0.;
 	dxdxp[3][1] = cos(th); //done
 	dxdxp[3][2] = -r * sin(th);
@@ -298,15 +298,15 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][3] = 1.0;
 	#else
 	//Set Cartesian KS metric
-	double f, L[NDIM], x, y, z;
+	/*double f, L[NDIM], x, y, z;
 	x = X[1];
 	y = X[2];
 	z = X[3];
 
-	f = 2.0 * r * r * r / (r * r * r * r + a * a * z * z);
+	f = -2.0 * r * r * r / (r * r * r * r + a * a * z * z);
 	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, r, z, a);
 
-	L[0] = 1.0;
+	L[0] = -1.0;
 	L[1] = (r * x + a * y) / (r * r + a * a);
 	L[2] = (r * y - a * x) / (r * r + a * a);
 	L[3] = z / r;
@@ -331,7 +331,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = f * L[3] * L[1];
 	gcov[3][2] = f * L[3] * L[2];
 	gcov[3][3] = 1.0 + f * L[3] * L[3];
-	/*
+	*/
 	double cth, sth, s2, rho2;
 	cth = cos(th);
 	sth = sin(th);
@@ -358,28 +358,28 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = gcov[1][3];
 	gcov[3][2] = 0.0;
 	gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2));
-	*/
 	#endif
 
 	#if(NSY)
 	//convert to Cartesian coordinates
-	//for (i = 0; i < NDIM; i++) {
-	//	for (j = 0; j < NDIM; j++) {
-	//		gcovp[i][j] = 0.;
-	//		for (k = 0; k < NDIM; k++) {
-	//			for (l = 0; l < NDIM; l++) {
-	//				gcovp[i][j] += gcov[k][l] * dxdxp_inv[k][i] * dxdxp_inv[l][j];
-	//			}
-	//		}
-	//	}
-	//}
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) {
+			gcovp[i][j] = 0.;
+			for (k = 0; k < NDIM; k++) {
+				for (l = 0; l < NDIM; l++) {
+					gcovp[i][j] += gcov[k][l] * dxdxp_inv[k][i] * dxdxp_inv[l][j];
+				}
+			}
+		}
+	}
 
 	//convert to code coordinates
 	for (i = 0; i < NDIM; i++) {
 		for (j = 0; j < NDIM; j++) {
-			gcovp[i][j] = gcov[i][j];
+			//gcovp[i][j] = gcov[i][j];
 		}
 	}
+	//invert_matrix(gcov, gcovp);
 	#else
 	//convert to code coordinates
 	for (i = 0; i < NDIM; i++) {
