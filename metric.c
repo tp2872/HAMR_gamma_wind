@@ -249,47 +249,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
-
-	dxdxp[0][0] = 1.;
-	dxdxp[0][1] = 0.;
-	dxdxp[0][2] = 0.; 
-	dxdxp[0][3] = 0.;
-	dxdxp[1][0] = 0.;
-	dxdxp[1][1] = sin(th) * cos(phi); //done
-	dxdxp[1][2] = r * cos(th) * cos(phi); //done
-	dxdxp[1][3] = -r * sin(th) * sin(phi); //done
-	dxdxp[2][0] = 0.;
-	dxdxp[2][1] = sin(th) * sin(phi); //done
-	dxdxp[2][2] = r * cos(th) * sin(phi); //done
-	dxdxp[2][3] = r * sin(th) * cos(phi); //done
-	dxdxp[3][0] = 0.;
-	dxdxp[3][1] = cos(th); //done
-	dxdxp[3][2] = -r * sin(th);
-	dxdxp[3][3] = 0.;
 	invert_matrix(dxdxp, dxdxp_inv);
-
-	#if(NSY)
-	//compute Jacobian nt->t (dt/dnt)
-	dxdxt[0][0] = 1.;
-	dxdxt[0][1] = 0.;
-	dxdxt[0][2] = 0.;
-	dxdxt[0][3] = 0.;
-	dxdxt[1][0] = 0.;
-	dxdxt[1][1] = cos(tilt);
-	dxdxt[1][2] = 0.;
-	dxdxt[1][3] = -sin(tilt);
-	dxdxt[2][0] = 0.;
-	dxdxt[2][1] = 0.;
-	dxdxt[2][2] = 1.;
-	dxdxt[2][3] = 0.;
-	dxdxt[3][0] = 0.;
-	dxdxt[3][1] = sin(tilt);
-	dxdxt[3][2] = 0.0;
-	dxdxt[3][3] = cos(tilt);
-
-	//compute Jacobian t->nt (dnt/dt)
-	invert_matrix(dxdxt, dxtdx);
-	#endif
 
 	#if(CARTESIAN)
 	gcov[0][0] = -1.0;
@@ -303,10 +263,10 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	y = X[2];
 	z = X[3];
 
-	f = -2.0 * r * r * r / (r * r * r * r + a * a * z * z);
+	f = 2.0 * r * r * r / (r * r * r * r + a * a * z * z);
 	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, r, z, a);
 
-	L[0] = -1.0;
+	L[0] = 1.0;
 	L[1] = (r * x + a * y) / (r * r + a * a);
 	L[2] = (r * y - a * x) / (r * r + a * a);
 	L[3] = z / r;
@@ -358,6 +318,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = gcov[1][3];
 	gcov[3][2] = 0.0;
 	gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2));
+	
 	#endif
 
 	#if(NSY)
@@ -374,12 +335,11 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	}
 
 	//convert to code coordinates
-	for (i = 0; i < NDIM; i++) {
-		for (j = 0; j < NDIM; j++) {
+	//for (i = 0; i < NDIM; i++) {
+		//for (j = 0; j < NDIM; j++) {
 			//gcovp[i][j] = gcov[i][j];
-		}
-	}
-	//invert_matrix(gcov, gcovp);
+		//}
+	//}
 	#else
 	//convert to code coordinates
 	for (i = 0; i < NDIM; i++) {
@@ -520,22 +480,24 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
 	}
 	#else
-	dxdxp[0][0] = 1.0;
-	dxdxp[0][1] = 0.0;
-	dxdxp[0][2] = 0.0;
-	dxdxp[0][3] = 0.0;
-	dxdxp[1][0] = 0.0;
-	dxdxp[1][1] = 1.0;
-	dxdxp[1][2] = 0.0;
-	dxdxp[1][3] = 0.0;
-	dxdxp[2][0] = 0.0;
-	dxdxp[2][1] = 0.0;
-	dxdxp[2][2] = 1.0;
-	dxdxp[2][3] = 0.0;
-	dxdxp[3][0] = 0.0;
-	dxdxp[3][1] = 0.0;
-	dxdxp[3][2] = 0.0;
-	dxdxp[3][3] = 1.0;
+	double r, th, phi;
+	bl_coord(X, &r, &th, &phi);
+	dxdxp[0][0] = 1.;
+	dxdxp[0][1] = 0.;
+	dxdxp[0][2] = 0.;
+	dxdxp[0][3] = 0.;
+	dxdxp[1][0] = 0.;
+	dxdxp[1][1] = sin(th) * cos(phi); //done
+	dxdxp[1][2] = r * cos(th) * cos(phi) + a * cos(th) * sin(phi); //done
+	dxdxp[1][3] = -r * sin(th) * sin(phi) + a * sin(th) * cos(phi); //done
+	dxdxp[2][0] = 0.;
+	dxdxp[2][1] = sin(th) * sin(phi); //done
+	dxdxp[2][2] = r * cos(th) * sin(phi) - a * cos(th) * cos(phi); //done
+	dxdxp[2][3] = r * sin(th) * cos(phi) + a * sin(th) * sin(phi); //done
+	dxdxp[3][0] = 0.;
+	dxdxp[3][1] = cos(th); //done
+	dxdxp[3][2] = -r * sin(th);
+	dxdxp[3][3] = 0.;
 	#endif
 }
 
