@@ -119,19 +119,23 @@ void vofx_matthewcoords(double *X, double *V){
 	x = X[1];
 	y = X[2];
 	z = X[3];
-	if (fabs(x) < 0.0001) x = 0.0001;
-	if (fabs(y) < 0.0001) y = 0.0001;
-	if (fabs(z) < 0.0001) z = 0.0001;
+	//if (fabs(x) < 0.0001) x = 0.0001;
+	//if (fabs(y) < 0.0001) y = 0.0001;
+	//if (fabs(z) < 0.0001) z = 0.0001;
+
 	R = sqrt(x * x + y * y + z * z);
-	R = MY_MAX(R, 1.0);
+	//R = MY_MAX(R, 1.0);
 	r = sqrt(0.5 * (R * R - a * a + sqrt(pow(R * R - a * a, 2.0) + 4.0 * a * a * z * z)));
-	r = R;
 	if (!isfinite(r))fprintf(stderr, "Error 1: R not finite! \n");
+	r = R;
 	V[1] = r;
 	V[2] = acos(z / r);
-	if (!isfinite(V[2]))fprintf(stderr, "Error 2: V2 not finite! \n");
+	if (!isfinite(V[2]))fprintf(stderr, "Error 2: V2 not finite! %f %f \n", r,z);
 	V[3] = atan2(y, x);
 	if (!isfinite(V[3]))fprintf(stderr, "Error 3: V3 not finite! %f %f %f \n", x / (sqrt(r * r + a * a) * sin(V[2])), atan(a/r));
+	//V[1] = sqrt(X[1] * X[1] + X[2] * X[2] + X[3] * X[3]);
+	//V[2] = acos(X[3] / V[1]);
+	//V[3] = atan2(X[2], X[1]);
 	#else
 	V[0] = X[0];
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);

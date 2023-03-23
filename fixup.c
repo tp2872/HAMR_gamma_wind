@@ -42,6 +42,9 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	coord(n, i,j, z, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
+	#if(CARTESIAN_GR)
+	r = MY_MAX(r, 1.0);
+	#endif
 
 	// Danat addition: 11/18/19 - avoid rhoflr too large`
 	get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); 
