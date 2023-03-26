@@ -14095,7 +14095,7 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 {
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr;
-	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);  
 	zcurr = (global_id % (isize)) % (BS_3+2*N3G);
 	jcurr = ((global_id - zcurr) % (isize)) / (BS_3+2*N3G);
 	icurr = (global_id - (jcurr * (BS_3+2*N3G)+zcurr)) / (isize);
@@ -14111,15 +14111,15 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 			for (i = D1; i <= N1G; i++) {
 				itest = MY_MIN(icurr + i, BS_1 + 2 * N1G - 1);
 				if (pflag_cart[global_id + (itest - icurr) * isize] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (itest - icurr) * isize];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;//ps[1 * ksize + global_id + (itest - icurr) * isize];
+						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (itest - icurr) * isize];
 					}
 					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;//ps[2 * ksize + global_id + (itest - icurr) * isize];
+						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (itest - icurr) * isize];
 					}
 					break;
 				}
@@ -14127,14 +14127,15 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 				itest = MY_MAX(icurr - i, 0);
 				if (pflag_cart[global_id + (itest - icurr) * isize] == 0) {
 					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (itest - icurr) * isize];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
 						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (itest - icurr) * isize];
 					}
 					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;//ps[2 * ksize + global_id + (itest - icurr) * isize];
+						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (itest - icurr) * isize];
 					}
 					break;
 				}
@@ -14145,30 +14146,30 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 			for (j = D2; j <= N2G; j++) {
 				jtest = MY_MIN(jcurr + j, BS_2 + 2 * N2G - 1);
 				if (pflag_cart[global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;//ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[0 * ksize + global_id] = 0.0;// ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;//ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					break;
 				}
 
 				jtest = MY_MAX(jcurr - j, 0);
 				if (pflag_cart[global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;//ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[0 * ksize + global_id] = 0.0;//  ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;//ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
+						ps[2 * ksize + global_id] = 0.0;//  ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
 					}
 					break;
 				}
@@ -14179,30 +14180,30 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 			for (z = D3; z <= N3G; z++) {
 				ztest = MY_MIN(zcurr + z, BS_3 + 2 * N3G - 1);
 				if (pflag_cart[global_id + (ztest - zcurr)] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;//ps[0 * ksize + global_id + (ztest - zcurr)];
+						ps[0 * ksize + global_id] = 0.0;//  ps[0 * ksize + global_id + (ztest - zcurr)];
 					}
 					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;//ps[1 * ksize + global_id + (ztest - zcurr)];
+						ps[1 * ksize + global_id] = 0.0;//  ps[1 * ksize + global_id + (ztest - zcurr)];
 					}
 					break;
 				}
 
 				ztest = MY_MAX(zcurr - z, 0);
 				if (pflag_cart[global_id + (ztest - zcurr)] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					//PLOOP pv[k * ksize + global_id] = 0.0;
-					//pv[RHO * ksize + global_id] = RHOMIN;
-					//pv[UU * ksize + global_id] = UUMIN;
+					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
+					PLOOP pv[k * ksize + global_id] = 0.0;
+					pv[RHO * ksize + global_id] = RHOMIN;
+					pv[UU * ksize + global_id] = UUMIN;
 					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
 						ps[0 * ksize + global_id] = 0.0;// ps[0 * ksize + global_id + (ztest - zcurr)];
 					}
 					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;//ps[1 * ksize + global_id + (ztest - zcurr)];
+						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (ztest - zcurr)];
 					}
 					break;
 				}

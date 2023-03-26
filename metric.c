@@ -354,7 +354,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[0][1] = (2. * r / rho2);
 	gcov[0][2] = 0.0;
 	gcov[0][3] = (-2. * a * r * s2 / rho2);
-
+	
 	gcov[1][0] = gcov[0][1];
 	gcov[1][1] = (1. + 2. * r / rho2);
 	gcov[1][2] = 0.0;

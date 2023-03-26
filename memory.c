@@ -2621,12 +2621,27 @@ double calc_mem_gpu(int n){
 //Flag cells that need inflow boundary conditions in Cartesian mesh
 void set_pflag_cart(int n) {
 	int i, j, z;
+	int offset;
+	double delta_x1, delta_x2, delta_x3;
+	int offset1, offset2, offset3;
+
+	//Calclate spacing of cells at event horizon
+	delta_x1 = 2 * ROUT / (NB_1 * BS_1) / pow(1 + REF_1, block[n][AMR_LEVEL1]);
+	delta_x2 = 2 * ROUT / (NB_2 * BS_2) / pow(1 + REF_2, block[n][AMR_LEVEL2]);
+	delta_x3 = 2 * ROUT / (NB_3 * BS_3) / pow(1 + REF_3, block[n][AMR_LEVEL3]);
+
+	//Calculate offset in number of cells
+	offset1 = 0.8 / delta_x1;
+	offset2 = 0.8 / delta_x2;
+	offset3 = 0.8 / delta_x3;
+
+	if(rank==0) fprintf(stderr, "Offset: %d %d %d \n", offset1, offset2, offset3);
 
 	block[n][AMR_CARTFLAG] = 0;
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {
-		if (   (i < NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 + N1G) && (i >= NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 - N1G) 
-			&& (j < NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 + N2G) && (j >= NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 - N2G) 
-			&& (z < NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 + N3G) && (z >= NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 - N3G)) {
+		if (   (i < NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 + offset1) && (i >= NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 - offset1)
+			&& (j < NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 + offset2) && (j >= NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 - offset2)
+			&& (z < NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 + offset3) && (z >= NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 - offset3)) {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
 			block[n][AMR_CARTFLAG] = 1;
 			//fprintf(stderr, "coord: (%d %d %d) \n", i,j,z);

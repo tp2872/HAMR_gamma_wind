@@ -347,7 +347,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if(SPHERICAL || SPHERICAL_GR)
 #define COORDSINGFIX 1
 #else
-#define COORDSINGFIX 0
+#define COORDSINGFIX 1
 #endif
 
 // whether to move polar axis to a bit larger theta
