@@ -2624,6 +2624,8 @@ void set_pflag_cart(int n) {
 	int offset;
 	double delta_x1, delta_x2, delta_x3;
 	int offset1, offset2, offset3;
+	int flag;
+	double X[NDIM], r, th, phi, rmin;
 
 	//Calclate spacing of cells at event horizon
 	delta_x1 = 2 * ROUT / (NB_1 * BS_1) / pow(1 + REF_1, block[n][AMR_LEVEL1]);
@@ -2631,23 +2633,69 @@ void set_pflag_cart(int n) {
 	delta_x3 = 2 * ROUT / (NB_3 * BS_3) / pow(1 + REF_3, block[n][AMR_LEVEL3]);
 
 	//Calculate offset in number of cells
-	offset1 = 0.8 / delta_x1;
-	offset2 = 0.8 / delta_x2;
-	offset3 = 0.8 / delta_x3;
-
-	if(rank==0) fprintf(stderr, "Offset: %d %d %d \n", offset1, offset2, offset3);
+	offset1 = 1.2 / delta_x1;
+	offset2 = 1.2 / delta_x2;
+	offset3 = 1.2 / delta_x3;
 
 	block[n][AMR_CARTFLAG] = 0;
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {
-		if (   (i < NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 + offset1) && (i >= NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 - offset1)
+		/*if ((i < NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 + offset1) && (i >= NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 - offset1)
 			&& (j < NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 + offset2) && (j >= NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 - offset2)
 			&& (z < NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 + offset3) && (z >= NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 - offset3)) {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
 			block[n][AMR_CARTFLAG] = 1;
-			//fprintf(stderr, "coord: (%d %d %d) \n", i,j,z);
 		}
 		else {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
+		}*/
+
+		/*
+		//Calculate coordiante
+		coord(n, i, j, z, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+
+		//Calculate rmin
+		rmin = 0.8 * (1. + sqrt(1. - a * a));
+
+		//Flag cells that are smaller than rmin
+		if (r<rmin) {
+			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
+			block[n][AMR_CARTFLAG] = 1;
+		}
+		else {
+			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
+		}
+		*/
+
+		//Calculate coordiante
+		coord(n, i, j, z, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+
+		//Calculate rmin
+		rmin = 0.9 * (1. + sqrt(1. - a * a));
+
+		//Flag cells that are smaller than rmin
+		if (0) {
+			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
+			block[n][AMR_CARTFLAG] = 1;
+		}
+		else {
+			coord(n, (NB_1 * BS_1) * pow(1 + REF_1, block[n][AMR_LEVEL1]) / 2, (NB_2 * BS_2) * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r < rmin) {
+				coord(n, i, j, (NB_3 * BS_3) * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2, CENT, X);
+				bl_coord(X, &r, &th, &phi);
+				if (r < rmin) {
+					pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
+					block[n][AMR_CARTFLAG] = 1;
+				}
+				else {
+					pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
+				}
+			}
+			else {
+				pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
+			}
 		}
 	}
 }

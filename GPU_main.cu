@@ -2998,6 +2998,10 @@ void GPU_boundprim(int bound_force)
 	for (n = 0; n < n_active; n++) {
 		GPU_boundprim_cart(1, 0, n_ord[n]);
 		GPU_boundprim_cart(1, 1, n_ord[n]);
+		GPU_boundprim_cart(2, 0, n_ord[n]);
+		GPU_boundprim_cart(2, 1, n_ord[n]);		
+		GPU_boundprim_cart(3, 0, n_ord[n]);
+		GPU_boundprim_cart(3, 1, n_ord[n]);
 	}
 	#endif
 
