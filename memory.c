@@ -2649,7 +2649,7 @@ void set_pflag_cart(int n) {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
 		}*/
 
-		/*
+		
 		//Calculate coordiante
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
@@ -2665,14 +2665,14 @@ void set_pflag_cart(int n) {
 		else {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
 		}
-		*/
-
+		
+		/*
 		//Calculate coordiante
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 
 		//Calculate rmin
-		rmin = 0.9 * (1. + sqrt(1. - a * a));
+		rmin = 0.8 * (1. + sqrt(1. - a * a));
 
 		//Flag cells that are smaller than rmin
 		if (0) {
@@ -2697,6 +2697,7 @@ void set_pflag_cart(int n) {
 				pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
 			}
 		}
+		*/
 	}
 }
 //Trash functions

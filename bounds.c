@@ -147,7 +147,7 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR4] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -194,7 +194,7 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR4] == -1){
 		for (i = -N1G; i <= -1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
@@ -241,7 +241,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR1] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -265,7 +265,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	}
 	#endif
 
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR3] == -1){
 		// outer r BC: outflow 		
 		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
@@ -288,7 +288,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR1] == -1){
 		for (j = -N2G; j <= -1; j++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
@@ -309,7 +309,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the outer boundary
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR3] == -1){
 		for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j <= N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G - 1; j++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
@@ -590,7 +590,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR6] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -614,7 +614,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	}
 	#endif
 
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR5] == -1){
 		// outer r BC: outflow 		
 		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
@@ -637,7 +637,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR6] == -1){
 		for (z = -N3G; z <= -1; z++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, z) private(j,i)
@@ -658,7 +658,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the outer boundary
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR5] == -1){
 		for (z = N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]); z <= N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) + N3G - 1; z++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, z) private(j,i)
@@ -686,90 +686,19 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G - 1) {
 		if (pflag_cart[nl[n]][index_3D(n, i, j, z)] == 1) {
-			if (dir == 1) {
-				int itest, i_add;
-				for (i_add = D1; i_add <= N1G; i_add++) {
-					itest = MY_MIN(i + i_add, N1_GPU_offset[n] + BS_1 + N1G - 1);
-					if (pflag_cart[nl[n]][index_3D(n, itest, j, z)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, itest, j, z)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
-							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, itest, j, z)][2];
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, itest, j, z)][3];
-						}
-						break;
-					}
+			PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = 0.0;
+			prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHOMIN;
+			prim[nl[n]][index_3D(n, i, j, z)][UU] = UUMIN;
 
-					itest = MY_MAX(i - i_add, N1_GPU_offset[n] - N1G);
-					if (pflag_cart[nl[n]][index_3D(n, itest, j, z)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, itest, j, z)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
-							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, itest, j, z)][2];
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, itest, j, z)][3];
-						}
-						break;
-					}
-				}
+			if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+				ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
 			}
-			else if (dir == 2) {
-				int jtest, j_add;
-				for (j_add = D2; j_add <= N2G; j_add++) {
-					jtest = MY_MIN(j + j_add, N2_GPU_offset[n] + BS_2 + N2G - 1);
-					if (pflag_cart[nl[n]][index_3D(n, i, jtest, z)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jtest, z)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, jtest, z)][1];
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, jtest, z)][3];
-						}
-						break;
-					}
-
-					jtest = MY_MAX(j - j_add, N2_GPU_offset[n] - N2G);
-					if (pflag_cart[nl[n]][index_3D(n, i, jtest, z)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jtest, z)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, jtest, z)][1];
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-							//ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, jtest, z)][3];
-						}
-						break;
-					}
-				}
+			if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
+				ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
 			}
-			else if (dir == 3) {
-				int ztest, z_add;
-				for (z_add = D3; z_add <= N3G; z_add++) {
-					ztest = MY_MIN(z + z_add, N3_GPU_offset[n] + BS_3 + N3G - 1);
-					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1];
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2
-							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, ztest)][2];
-						}
-						break;
-					}
-
-					ztest = MY_MAX(z - z_add, N3_GPU_offset[n] - N3G);
-					if (pflag_cart[nl[n]][index_3D(n, i, j, ztest)] == 0) {
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, j, ztest)][k];
-						if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-							//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, ztest)][1]; 
-						}
-						if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((i - D2) >= 0), z)] == 1) { //B2
-							//ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, ztest)][2];
-						}
-						break;
-					}
-				}
-			}
+			if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+				ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
+			}					
 		}
 	}
 }

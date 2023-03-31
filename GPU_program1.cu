@@ -13490,7 +13490,7 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -13617,7 +13617,7 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -13735,7 +13735,7 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
 {
 	int j, jref, k;
-	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % (BS_3 + 2 * N3G);
 	int icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
@@ -13976,7 +13976,7 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!(CONSTANT_BC && (CARTESIAN || CARTESIAN_GR)))
+	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && jcurr >= 0 && jcurr<BS_2 + 2 * N2G && NBR_6 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -14106,108 +14106,17 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
 
 	if (k==1 && pflag_cart[global_id] == 1) {
-		if (dir == 1) {
-			int itest, i;
-			for (i = D1; i <= N1G; i++) {
-				itest = MY_MIN(icurr + i, BS_1 + 2 * N1G - 1);
-				if (pflag_cart[global_id + (itest - icurr) * isize] == 0) {
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (itest - icurr) * isize];
-					}
-					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (itest - icurr) * isize];
-					}
-					break;
-				}
-
-				itest = MY_MAX(icurr - i, 0);
-				if (pflag_cart[global_id + (itest - icurr) * isize] == 0) {
-					PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (itest - icurr) * isize];
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (itest - icurr) * isize];
-					}
-					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (itest - icurr) * isize];
-					}
-					break;
-				}
-			}
+		PLOOP pv[k * ksize + global_id] = 0.0;
+		pv[RHO * ksize + global_id] = RHOMIN;
+		pv[UU * ksize + global_id] = UUMIN;
+		if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
+			ps[0 * ksize + global_id] = 0.0;
 		}
-		else if (dir == 2) {
-			int jtest, j;
-			for (j = D2; j <= N2G; j++) {
-				jtest = MY_MIN(jcurr + j, BS_2 + 2 * N2G - 1);
-				if (pflag_cart[global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)] == 0) {
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;// ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					}
-					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					}
-					break;
-				}
-
-				jtest = MY_MAX(jcurr - j, 0);
-				if (pflag_cart[global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)] == 0) {
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;//  ps[0 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					}
-					if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-						ps[2 * ksize + global_id] = 0.0;//  ps[2 * ksize + global_id + (jtest - jcurr) * (BS_3 + 2 * N3G)];
-					}
-					break;
-				}
-			}
+		if (pflag_cart[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
+			ps[1 * ksize + global_id] = 0.0;
 		}
-		else if(dir==3){
-			int ztest, z;
-			for (z = D3; z <= N3G; z++) {
-				ztest = MY_MIN(zcurr + z, BS_3 + 2 * N3G - 1);
-				if (pflag_cart[global_id + (ztest - zcurr)] == 0) {
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;//  ps[0 * ksize + global_id + (ztest - zcurr)];
-					}
-					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;//  ps[1 * ksize + global_id + (ztest - zcurr)];
-					}
-					break;
-				}
-
-				ztest = MY_MAX(zcurr - z, 0);
-				if (pflag_cart[global_id + (ztest - zcurr)] == 0) {
-					//PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + (ztest - zcurr)];
-					PLOOP pv[k * ksize + global_id] = 0.0;
-					pv[RHO * ksize + global_id] = RHOMIN;
-					pv[UU * ksize + global_id] = UUMIN;
-					if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-						ps[0 * ksize + global_id] = 0.0;// ps[0 * ksize + global_id + (ztest - zcurr)];
-					}
-					if (pflag_cart[global_id - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-						ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + (ztest - zcurr)];
-					}
-					break;
-				}
-			}
+		if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
+			ps[2 * ksize + global_id] = 0.0;
 		}
 	}
 }

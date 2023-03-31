@@ -397,6 +397,7 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 
 void check_cart_grid(void) {
 	double delta_x1, delta_x2, delta_x3;
+	double nr_cells1, nr_cells2, nr_cells3;
 
 	//Check if you have enough blocks for Cartesian grid
 	if (NB_1 % 4 != 0 || NB_2 % 4 != 0 || NB_3 % 4 != 0) {
@@ -432,12 +433,20 @@ void check_cart_grid(void) {
 	delta_x1 = 2 * ROUT / pow(1 + REF_1, N_LEVELS_CART) / (NB_1 * BS_1);
 	delta_x2 = 2 * ROUT / pow(1 + REF_2, N_LEVELS_CART) / (NB_2 * BS_2);
 	delta_x3 = 2 * ROUT / pow(1 + REF_3, N_LEVELS_CART) / (NB_3 * BS_3);
-	if(rank==0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
+	if (rank == 0) fprintf(stderr, "Grid size (min) is: (%f x %f x %f) \n", delta_x1 * NB_1 * BS_1, delta_x2 * NB_2 * BS_2, delta_x3 * NB_3 * BS_3);
+	if (rank == 0) fprintf(stderr, "Grid spacing (min) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
+
+	//Calculate number of cells inside of event horizon
+	nr_cells1 = 0.2 * (1. + sqrt(1. - BH_SPIN * BH_SPIN)) / (delta_x1 * NB_1 * BS_1);
+	nr_cells2 = 0.2 * (1. + sqrt(1. - BH_SPIN * BH_SPIN)) / (delta_x2 * NB_2 * BS_2);
+	nr_cells3 = 0.2 * (1. + sqrt(1. - BH_SPIN * BH_SPIN)) / (delta_x3 * NB_3 * BS_3);
+	if (rank == 0) fprintf(stderr, "Nr of cells inside event horizon: (%f x %f x %f) \n", nr_cells1, nr_cells2, nr_cells3);
 
 	//Calculate and print grid spacing far away from BH
 	delta_x1 = 2 * ROUT / (NB_1 * BS_1);
 	delta_x2 = 2 * ROUT / (NB_2 * BS_2);
 	delta_x3 = 2 * ROUT / (NB_3 * BS_3);
+	if (rank == 0) fprintf(stderr, "Grid size (max) is: (%f x %f x %f) \n", delta_x1 * NB_1 * BS_1, delta_x2 * NB_2 * BS_2, delta_x3 * NB_3 * BS_3);
 	if (rank == 0) fprintf(stderr, "Grid spacing (max) is: (%f x %f x %f) \n", delta_x1, delta_x2, delta_x3);
 }
 
