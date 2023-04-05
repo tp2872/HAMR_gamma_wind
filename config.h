@@ -58,11 +58,11 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(13./9.)
 #define BH_SPIN (0.9375)
 
 /*Select grid outer radius*/
-#define ROUT (50.0)
+#define ROUT (1000.0)
 
 /*Set parameters for BONDI_PROBLEM_3D*/
 #define R_BONDI (1e3)
@@ -179,9 +179,9 @@ Numerical Parameters section
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 20
+#define BS_2 20
+#define BS_3 20
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -190,7 +190,7 @@ Numerical Parameters section
 #define GRID_CARTESIAN (1)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (4)
+#define N_LEVELS_CART (8)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)

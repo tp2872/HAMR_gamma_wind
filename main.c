@@ -225,6 +225,7 @@ void MPI_initialize(int argc, char *argv[])
 	gpuGetDeviceCount(&numdevices);
 	gpuSetDevice(local_rank%numdevices);
 	#endif
+
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
 	if (rc != MPI_SUCCESS) {
@@ -271,6 +272,14 @@ void MPI_initialize(int argc, char *argv[])
 		#endif
 
 	}
+
+	#if(GPU_ENABLED)
+	if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
+	if (rank % numdevices != local_rank % numdevices) {
+		fprintf(stderr, "Error in initializing GPUs with MPI! \n");
+		exit(0);
+	}
+	#endif
 
 	//Killswitch
 	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
