@@ -35,6 +35,13 @@ int gpuAlloc(double** ptr, size_t size, int val3) {
 #define gpuMem(val1,val2, val3) (double)(val2)
 #endif
 
+//Wrapper for calculation of GPU memory
+#if(GPU_DIRECT)
+#define gpuMem(val1,val2, val3) (double)(val2*(val3==1))
+#else
+#define gpuMem(val1,val2, val3) (double)(val2)
+#endif
+
 void GPU_init(void)
 {
 	int i,j,ranks_per_node;
@@ -54,10 +61,23 @@ void GPU_init(void)
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
 			if (i!=j) gpuDeviceEnablePeerAccess(j, 0);
 		}
+		#if (DOHELM)
+		eos_init_GPU(i + rank / ranks_per_node);
+		#endif
+		#if(NEUTRINOS_M1)
+		nulib_init_GPU(i + rank / ranks_per_node);
+		#endif
 	}
+<<<<<<< HEAD
 	#endif
 	status = gpuGetLastError();
 	if (gpuSuccess != status){
+=======
+
+
+	status = cudaGetLastError();
+	if (cudaSuccess != status){
+>>>>>>> origin/danat_neutrinos_debug
 		fprintf(stderr, "Error in setting peeraccess: %d \n", status);
 		exit(0);
 	}
@@ -70,11 +90,37 @@ void GPU_init(void)
 	if (gpuSuccess != status) fprintf(stderr, "Error in setting cache: %d \n", status);
 }
 
+#if(NEUTRINOS_M1)
+void nulib_init_GPU(int n) {
+	int i, j, k, l;
+#if(N_GPU>1)
+	cudaSetDevice(0);
+#endif
+
+	// Danat: 3 is for emiss, kappa_abs, kappa_es
+	cudaMalloc(&GPU_nulib_table[n], (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double));
+	cudaMallocHost(&nulib_table[n], (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double)); 
+
+	// Check for errors: Nulib array allocation
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting Nulib tables: %d \n", status);
+
+	// fill in the host array
+	for (i = 0; i < NULIB_RHO; i++) for (j = 0; j < NULIB_TEMP; j++) for (k = 0; k < NULIB_YE; k++) for (l = 0; l < NU_SPECIES; l++) {
+		nulib_table[n][(0 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_emiss[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
+		nulib_table[n][(1 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_abs[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
+		nulib_table[n][(2 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_scatt[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
+		nulib_table[n][(3 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_emiss_N[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
+	}
+	cudaMemcpy(GPU_nulib_table[n], nulib_table[n], ((NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double)), cudaMemcpyHostToDevice);
+}
+#endif
+
 void set_arrays_GPU(int n, int device){
 	int i;
 
 	if (mem_spot_gpu[nl[n]] == device){
-		block[n][AMR_GPU] = device;
+		block[n][AMR_GPU] = device;	
 		//alloc_bounds_GPU(n);
 		return;
 	}
@@ -190,9 +236,15 @@ void set_arrays_GPU(int n, int device){
 	gpuMalloc((void**)&BufferdU_RAD0[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferdU_RAD1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	#endif
+<<<<<<< HEAD
 	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T)
 	gpuMalloc((void**)&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for conserved quantities
 	gpuMalloc((void**)&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for cell centered electric field
+=======
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T || NEUTRINOS_M1)
+	cudaMalloc(&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for conserved quantities
+	cudaMalloc(&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for cell centered electric field
+>>>>>>> origin/danat_neutrinos_debug
 	#else
 	Bufferstorage2[nl[n]] = Bufferp_1[nl[n]]; //Temp storage for conserved quantities
 	Bufferstorage3[nl[n]] = Bufferdq_1[nl[n]]; //Temp storage for cell centered electric field
@@ -227,11 +279,29 @@ void set_arrays_GPU(int n, int device){
 	#if(CARTESIAN_GR)
 	gpuMalloc((void**)&Bufferpflag_CART[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
 	#endif
+<<<<<<< HEAD
 	gpuMalloc((void**)&Bufferfailimage[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
 	//gpuMalloc((void**)&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
 	gpuMallocHost((void**)&dtij1_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
 	gpuMallocHost((void**)&dtij2_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
 	gpuMallocHost((void**)&dtij3_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+=======
+	#if(NEUTRINOS_M1)
+	cudaMalloc(&Bufferpflag_NU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
+	#if (NEUTRINOS_DEBUG)
+	cudaMallocHost(&allflags_NU_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double));
+
+	cudaMalloc(&Bufferallflags_NU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double));
+
+	#endif
+	#endif
+	cudaMalloc(&Bufferfailimage[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
+	//cudaMalloc(&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
+	if (cudaSuccess != cudaSuccess ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaSuccess);
+	cudaMallocHost(&dtij1_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+	cudaMallocHost(&dtij2_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+	cudaMallocHost(&dtij3_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+>>>>>>> origin/danat_neutrinos_debug
 
 	//alloc_bounds_GPU(n);
 
@@ -1263,7 +1333,7 @@ void alloc_bounds_GPU(int n){
 double check = 1.0;
 
 #if(DOHELM)
-void eos_init_GPU(void) {
+void eos_init_GPU(int n) {
 	int i, j;
 	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
 	#if(N_GPU>1)
@@ -1271,8 +1341,13 @@ void eos_init_GPU(void) {
 	#endif
 
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
+<<<<<<< HEAD
 	gpuMallocHost((void**)&eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
 	gpuMalloc((void**)&GPU_eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
+=======
+	cudaMallocHost(&eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	cudaMalloc(&GPU_eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
+>>>>>>> origin/danat_neutrinos_debug
 
 	// Check for errors: EOS array allocation
 	status = gpuGetLastError();
@@ -1282,35 +1357,39 @@ void eos_init_GPU(void) {
 	// fill in the host array
 	for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++) {
 		// helmholtz free energy table (total: 9 items)
-		eos_table[0][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
-		eos_table[0][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
-		eos_table[0][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
-		eos_table[0][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
-		eos_table[0][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
-		eos_table[0][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
-		eos_table[0][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
-		eos_table[0][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
-		eos_table[0][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
+		eos_table[n][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
+		eos_table[n][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
+		eos_table[n][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
+		eos_table[n][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
+		eos_table[n][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
+		eos_table[n][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
+		eos_table[n][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
+		eos_table[n][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
+		eos_table[n][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
 
 		// pressure derivative with density table (total: 4 items)
-		eos_table[0][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
-		eos_table[0][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
-		eos_table[0][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
-		eos_table[0][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
+		eos_table[n][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
+		eos_table[n][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
+		eos_table[n][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
+		eos_table[n][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
 
 		// electron chemical potential table (total: 4 items)
-		eos_table[0][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
-		eos_table[0][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
-		eos_table[0][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
-		eos_table[0][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
+		eos_table[n][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
+		eos_table[n][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
+		eos_table[n][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
+		eos_table[n][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
 
 		// number denisty table (total: 4 items)
-		eos_table[0][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
-		eos_table[0][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
-		eos_table[0][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
-		eos_table[0][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
+		eos_table[n][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
+		eos_table[n][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
+		eos_table[n][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
+		eos_table[n][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
 	}
+<<<<<<< HEAD
 	gpuMemcpy(GPU_eos_table[0], eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), gpuMemcpyHostToDevice);
+=======
+	cudaMemcpy(GPU_eos_table[n], eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), cudaMemcpyHostToDevice);
+>>>>>>> origin/danat_neutrinos_debug
 }
 #endif
 
@@ -1589,9 +1668,16 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 			#endif
 		}
 	}
+<<<<<<< HEAD
 	//gpuDeviceSynchronize();
 	status = gpuGetLastError();
 	if (gpuSuccess != status ) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
+=======
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status ) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
+	if (status == 700) exit(1);
+>>>>>>> origin/danat_neutrinos_debug
 }
 
 void GPU_fluxcalc2D(int dir, int flag, int n)
@@ -1616,6 +1702,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	if (flag == 1){
 		if (dir == 1){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
@@ -1632,8 +1719,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
+				dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
@@ -1656,11 +1751,22 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
+				dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
 		if (dir == 2){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
@@ -1677,8 +1783,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
+				dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], 
 					lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2, 
@@ -1701,11 +1815,22 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], 
+				lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2, 
+				dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
 		if (dir == 3){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
@@ -1722,8 +1847,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
+				dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					 lim, dir,cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
@@ -1746,6 +1879,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				 lim, dir,cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
@@ -1753,6 +1896,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	else{
 		if (dir == 1){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
@@ -1769,8 +1913,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					 lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
@@ -1793,11 +1945,22 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				 lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
 		if (dir == 2){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
@@ -1814,8 +1977,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					 lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
@@ -1838,11 +2009,22 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				 lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
 		if (dir == 3){
 			#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
@@ -1859,8 +2041,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, GPU_eos_table[0]
 					#endif
 					);
+=======
+			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
+				 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
+<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					 lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
@@ -1883,6 +2073,16 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+=======
+			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
+				 lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
+				  dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
+				#if (DOHELM) 
+				, GPU_eos_table[block[n][AMR_NODE]]
+				#endif
+				#if(NEUTRINOS_M1)
+				, GPU_nulib_table[block[n][AMR_NODE]]
+>>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#endif
 		}
@@ -1902,6 +2102,7 @@ void GPU_reconstruct_internal(int flag, int n)
 		int nr_workgroups_local[1];
 		int POLE_1 = block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3);
 		int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
+<<<<<<< HEAD
 
 		/*Calculate reconstructed left state*/
 		if (flag == 1) {
@@ -1933,6 +2134,21 @@ void GPU_reconstruct_internal(int flag, int n)
 			#elif(SCUDA)
 			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
 			#endif
+=======
+		
+		/*Calculate reconstructed left state*/
+		if (flag == 1) {
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
+			interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], 3, POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
+		}
+		else {
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
+			interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], 3, POLE_1, POLE_2);
+			nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1)* (BS_2 + 2 * D2)* (BS_3)) / LOCAL_WORK_SIZE;
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], POLE_1, POLE_2);
+>>>>>>> origin/danat_neutrinos_debug
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -2104,6 +2320,7 @@ void GPU_consttransport_bound(void){
 		#endif
 	}
 	#else
+<<<<<<< HEAD
 		#if(AVG_EMF)
 		int nstep_temp;
 			for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
@@ -2132,6 +2349,60 @@ void GPU_consttransport_bound(void){
 				E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 				nstep = nstep_temp;
 			}
+=======
+	#if(AVG_EMF)
+	int nstep_temp;
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		nstep_temp = nstep;
+		nstep = -100;
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+		#if(D3>0)
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		nstep = nstep_temp;
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		nstep_temp = nstep;
+		nstep = -100;
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		#if(D3>0)
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+		nstep = nstep_temp;
+	}
+	#endif
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+		#if(D3>0)
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+		#endif
+	}
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
+		#if(D3>0)
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+>>>>>>> origin/danat_neutrinos_debug
 		#endif
 
 		#if(GPU_OPENMP)
@@ -2453,7 +2724,7 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 	#elif(SCUDA)
 	Utoprim_M1_0 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -2494,7 +2765,7 @@ void GPU_Utoprim_M1_1(int n, double Dt)
 	Utoprim_M1_1 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -2534,7 +2805,7 @@ void GPU_Utoprim_M1_2(int n, double Dt)
 	Utoprim_M1_2 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -2581,7 +2852,13 @@ void GPU_fixup(int flag, int n, double Dt)
 		fixup << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
+			#endif
+			#if (NEUTRINOS_M1) 
+			, GPU_nulib_table[block[n][AMR_NODE]], Bufferpflag_NU[nl[n]]
+			#if (NEUTRINOS_DEBUG)
+			, Bufferallflags_NU[nl[n]]
+			#endif
 			#endif
 			#if(RAD_M1)
 			, Bufferpflag_RAD[nl[n]]
@@ -2616,7 +2893,13 @@ void GPU_fixup(int flag, int n, double Dt)
 		fixup << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
+			#endif
+			#if (NEUTRINOS_M1) 
+			, GPU_nulib_table[block[n][AMR_NODE]], Bufferpflag_NU[nl[n]]
+			#if (NEUTRINOS_DEBUG)
+			, Bufferallflags_NU[nl[n]]
+			#endif
 			#endif
 			#if(RAD_M1)
 			, Bufferpflag_RAD[nl[n]]
@@ -2691,6 +2974,27 @@ void GPU_fixuputoprim_rad(int flag, int n)
 	if (gpuSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
 }
 
+#if (NEUTRINOS_M1)
+void GPU_fixuputoprim_nu(int flag, int n)
+{
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
+	#if(N_GPU>1)
+	cudaSetDevice(block[n][AMR_GPU]);
+	#endif
+
+	if (flag == 1) {
+		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	else {
+		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+	}
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
+}
+#endif
+
 void GPU_cleanup_post(int n)
 {
 	int nr_workgroups_local[1];
@@ -2739,7 +3043,7 @@ void GPU_fixup_post(int n, double Dt)
 		fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, 1, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(RAD_M1)
 		, Bufferpflag_RAD[nl[n]]
@@ -3027,6 +3331,7 @@ void GPU_boundprim1_outflow(int flag, int n)
 	#endif
 	if (block[n][AMR_NBR2] == -1 || block[n][AMR_NBR4] == -1){
 		if (flag == 0){
+<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(boundprim1_outflow, nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]]);
 			#elif(SCUDA)
@@ -3065,6 +3370,20 @@ void GPU_boundprim2_reflective(int flag, int n)
 			#elif(SCUDA)
 			boundprim2_reflective << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
 			#endif
+=======
+			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferpsh_1[nl[n]] 
+				 #if(DANAT_GDET_INTERP)	
+				 , Bufferradius[nl[n]]
+				 #endif
+				 );
+		}
+		else{
+			 boundprim1 << < nr_workgroups_special1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR2], block[n][AMR_NBR4], Bufferps_1[nl[n]] 
+				 #if(DANAT_GDET_INTERP)	
+				 , Bufferradius[nl[n]]
+				 #endif
+				 );
+>>>>>>> origin/danat_neutrinos_debug
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -3219,8 +3538,16 @@ void GPU_read(int n)
 	gpuMemcpyAsync(psh_1[nl[n]], Bufferpsh_1[nl[n]], (int)(3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif
 	#endif
+<<<<<<< HEAD
 	gpuMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	gpuDeviceSynchronize();
+=======
+	cudaMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	cudaMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#endif
+	cudaDeviceSynchronize();
+>>>>>>> origin/danat_neutrinos_debug
 
 	if (n == n_ord[0]) {
 		for (k = 0; k < NFAIL; k++) failimage_counter[k] = 0;
@@ -3245,6 +3572,12 @@ void GPU_read(int n)
 					}
 				}
 			}
+			#if (NEUTRINOS_DEBUG)
+			for (k = 0; k < NU_SPECIES; k++) {
+				allflags_NU[nl[n]][index_3D(n, i, j, z)][k] = allflags_NU_GPU[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+			}
+			#endif
+
 			#if(STAGGERED)
 			for (k = 1; k < NDIM; k++){
 				ps[nl[n]][index_3D(n, i, j, z)][k] = ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
@@ -3291,6 +3624,7 @@ void GPU_finish(int n, int force_delete)
 
 	status += gpuFreeHost(p_1[nl[n]]);
 	#if(STAGGERED)
+<<<<<<< HEAD
 	status += gpuFreeHost(ps_1[nl[n]]);
 	status += gpuFreeHost(psh_1[nl[n]]);
 	#endif
@@ -3301,6 +3635,21 @@ void GPU_finish(int n, int force_delete)
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
 	status += gpuFreeHost(gcon_GPU[nl[n]]);
 	status += gpuFreeHost(conn_GPU[nl[n]]);
+=======
+	cudaFreeHost(ps_1[nl[n]]);
+	cudaFreeHost(psh_1[nl[n]]);
+	#endif
+	cudaFreeHost(ph_1[nl[n]]);
+	//cudaFreeHost(pflag_GPU[nl[n]]);
+	cudaFreeHost(failimage_GPU[nl[n]]);
+	#if(NEUTRINOS_DEBUG)
+	cudaFreeHost(allflags_NU_GPU[nl[n]]);
+	#endif
+	cudaFreeHost(dq_1[nl[n]]);
+	cudaFreeHost(gcov_GPU[nl[n]]);
+	cudaFreeHost(gcon_GPU[nl[n]]);
+	cudaFreeHost(conn_GPU[nl[n]]);
+>>>>>>> origin/danat_neutrinos_debug
 	#if(FRAME_TRANSFORM)
 	status += gpuFreeHost(Mud_GPU[nl[n]]);
 	status += gpuFreeHost(Mud_inv_GPU[nl[n]]);
@@ -3331,9 +3680,15 @@ void GPU_finish(int n, int force_delete)
 	status += gpuFree(BufferdU_RAD0[nl[n]]);
 	status += gpuFree(BufferdU_RAD1[nl[n]]);
 	#endif
+<<<<<<< HEAD
 	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T)
 	status += gpuFree(Bufferstorage2[nl[n]]);
 	status += gpuFree(Bufferstorage3[nl[n]]);
+=======
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T || NEUTRINOS_M1)
+	status += cudaFree(Bufferstorage2[nl[n]]);
+	status += cudaFree(Bufferstorage3[nl[n]]);
+>>>>>>> origin/danat_neutrinos_debug
 	#endif
 	status += gpuFree(Bufferp_1[nl[n]]);
 	status += gpuFree(Bufferph_1[nl[n]]);
@@ -3348,11 +3703,25 @@ void GPU_finish(int n, int force_delete)
 	#if(CARTESIAN_GR)
 	status += gpuFree(Bufferpflag_CART[nl[n]]);
 	#endif
+<<<<<<< HEAD
 	status += gpuFree(Bufferfailimage[nl[n]]);
 	//status += gpuFree(BufferdU[nl[n]]);
 	status += gpuFree(Buffergcov[nl[n]]);
 	status += gpuFree(Buffergcon[nl[n]]);
 	status += gpuFree(Bufferconn[nl[n]]);
+=======
+	#if(NEUTRINOS_M1)
+	status += cudaFree(Bufferpflag_NU[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	status += cudaFree(Bufferallflags_NU[nl[n]]);
+	#endif
+	#endif
+	status += cudaFree(Bufferfailimage[nl[n]]);
+	//status += cudaFree(BufferdU[nl[n]]);
+	status += cudaFree(Buffergcov[nl[n]]);
+	status += cudaFree(Buffergcon[nl[n]]);
+	status += cudaFree(Bufferconn[nl[n]]);
+>>>>>>> origin/danat_neutrinos_debug
 	#if(FRAME_TRANSFORM)
 	status += gpuFree(BufferMud[nl[n]]);
 	status += gpuFree(BufferMud_inv[nl[n]]);

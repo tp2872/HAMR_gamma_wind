@@ -159,7 +159,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 	lower(mhd_u, geom, mhd_d);
 
     #if DOHELM   
-    eos_mode_rhou_pres (pr[RHO], pr[UU], &P); // Helmholtz EOS
+    eos_mode_rhou_pres (pr, &P); // Helmholtz EOS
     #else
 	P = (GAMMA - 1.) * pr[UU]; // Ideal gas EOS
     #endif
@@ -311,7 +311,7 @@ void vchar_res2(double* restrict pr, struct of_state_res* restrict q, struct of_
 	#if DOHELM
 	// Helmholtz EOS
 	double xpres;
-	eos_mode_rhou_pres_cs2(pr[RHO], pr[UU], &xpres, &cs2);
+	eos_mode_rhou_pres_cs2(pr, &xpres, &cs2);
 	va2 = bsq / (bsq + pr[RHO] + pr[UU] + xpres);
 	#else
 	// Ideal gas EOS

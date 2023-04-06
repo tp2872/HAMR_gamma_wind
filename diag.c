@@ -6,7 +6,7 @@ void diag(int call_code);
 void diag(int call_code)
 {
 	int i,j,z,k,n ;
-	double divb,divbmax, divbmax_local;
+	double divb,divbmax, divbmax_local, divb_magnitude;
 	int imax,jmax,zmax, nmax;
 	for (n = 0; n < n_active; n++) B_send1(ps, Bufferps_1, n_ord[n]);
 	for (n = 0; n < n_active; n++) B_rec1(ps, Bufferps_1, n_ord[n]);	
@@ -34,6 +34,7 @@ void diag(int call_code)
 				}
 				#else
 				divb = divb_calc(n_ord[n], i, j, z);
+
 				#pragma omp critical
 				if (divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
 					imax = i;
@@ -45,7 +46,11 @@ void diag(int call_code)
 				#endif
 				//#pragma omp critical
 				//if (divb > 0.0000001 && numtasks<100){
+<<<<<<< HEAD
 				//	fprintf(stderr, "n: %d divb:  (%d)x(%d %d %d)x(%d %d %d)x(%d %d %d) %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
+=======
+					//fprintf(stderr, "n: %d divb:  (%d)x(%d %d %d)x(%d %d %d)x(%d %d %d) %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
+>>>>>>> origin/danat_neutrinos_debug
 				//}
 			}
 		}
@@ -54,10 +59,21 @@ void diag(int call_code)
 		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 		#endif
+<<<<<<< HEAD
 		if (divbmax == divbmax_local) {
 			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
 		}
 		if (divbmax > 0.00001) {
+=======
+		double r, th, phi, X[NDIM];
+		coord(n_ord[n], imax, jmax, zmax, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+
+		if (divbmax == divbmax_local) {
+			fprintf(stderr, "\n LOG      t=%g \t divbmax: (%g %g %g)x(%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, r, th, phi, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
+		}
+		if (divbmax > 0.01) {
+>>>>>>> origin/danat_neutrinos_debug
 			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
 			//exit(0);
 		}
@@ -102,6 +118,11 @@ void diag(int call_code)
 			}
 			gdump_new_reduced();
 			dump_new_reduced();
+if (rank == 0) {
+				fprintf(stderr, "GDUMP_reduced started \n");
+				fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt_reduced);
+			}
+
 		}
 		#endif
 	}
@@ -136,6 +157,7 @@ double divb_calc(int n, int i, int j, int z){
 	int dj = (N2 > 1);
 	int dz = (N3 > 1);
 	double divb=0.0;
+	double divb_magnitude = SMALL_DIVB;
 	int zsize = 1, zoffset = 0, zlevel = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -205,6 +227,7 @@ double divb_calc(int n, int i, int j, int z){
 
 	//calculate the normalization and use it to normalize divb;
 	#if(NORMALIZE_DIVB)
+<<<<<<< HEAD
 	double divb_magnitude;
 	//calculate the magnitude of divb to use for normalization;
 	//divb_magnitude = SMALL_DIVB;
@@ -227,5 +250,30 @@ double divb_calc(int n, int i, int j, int z){
 	//now we have gotten the normalized value of divb!
 	#endif
 
+=======
+	//calculate the magnitude of divb to use for normalization;
+	//divb_magnitude = SMALL_DIVB;
+
+	#if(STAGGERED)
+	#if(N1>1)
+		for (u = 0; u < zsize; u++) {
+			divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i + di, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i + di, j, z - zoffset + u)][FACE1]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE1])) / ((double)(zsize)*dx[nl[n]][1]);
+		}
+	#endif
+	#if(N2>1)
+		for (u = 0; u < zsize; u++) {
+			divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i, j + dj, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z - zoffset + u)][FACE2]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE2])) / ((double)(zsize)*dx[nl[n]][2]);
+		}
+	#endif
+	#if(N3>1)
+		divb_magnitude += (fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3]) + fabs(ps[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3])) / ((double)(zsize)*dx[nl[n]][3]);
+	#endif
+
+	#endif
+	divb /= (divb_magnitude + SMALL);
+	//now we have gotten the normalized value of divb!
+
+	#endif
+>>>>>>> origin/danat_neutrinos_debug
 	return divb;
 }

@@ -362,6 +362,18 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
 							#endif
+							#if(NEUTRINOS_M1)
+							else if (k == U2_NU) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
+							}
+							#if (NU_SPECIES > 1)
+							else if (k == index_nu(U2_NU, 1) || k == index_nu(U2_NU, 2)) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
+							}
+							#endif
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jref, z)][k];
@@ -397,6 +409,18 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
+							#endif
+							#if(NEUTRINOS_M1)
+							else if (k == U2_NU) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
+							}
+							#if (NU_SPECIES > 1)
+							else if (k == index_nu(U2_NU, 1) || k == index_nu(U2_NU, 2)) {
+								//linear interpolation of transverse velocity (both poles)
+								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
+							}
+							#endif
 							#endif
 							else {
 								//everything else copy (both poles)
@@ -495,6 +519,13 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 						#if(RAD_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.;
 						#endif
+						#if(NEUTRINOS_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.;
+						#endif
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
 				}
@@ -511,6 +542,13 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.;
 						#if(RAD_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.;
+						#endif
+						#if(NEUTRINOS_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.;
+						#if(NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
@@ -538,6 +576,16 @@ void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 						#if(RAD_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] *= -1.0;
+						#endif
+						#if(NEUTRINOS_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3_NU] *= -1.0;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 2)] *= -1.0;
+						#endif
 						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
@@ -569,9 +617,18 @@ void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] *= -1.0;
 						#endif
+						#if(NEUTRINOS_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_NU] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3_NU] *= -1.0;
+						#if (NU_SPECIES > 1)
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U2_NU, 2)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 1)] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][index_nu(U3_NU, 2)] *= -1.0;
+						#endif
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
-						#
 						#if(STAGGERED)
 						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1, (z + BS_3 / 2) % BS_3)][1];
 						#if(N3>1)
@@ -773,6 +830,43 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type,
 		pr[U3_RAD] *= gamma_rad;
 
 		/* done */
+	}
+	#endif
+
+	#if(NEUTRINOS_M1)
+	double ucon_nu[NDIM], gamma_nu, vsq_nu;
+	int sp;
+	for (sp = 0; sp < NU_SPECIES; sp++) {
+		ucon_calc_nu(pr, &geom, ucon_nu, sp);
+		if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
+			/* find gamma and remove it from primitives */
+			if (gamma_calc_nu(pr, &geom, &gamma_nu, sp)) {
+				fprintf(stderr, "\ninflow_check(): gamma failure \n");
+				fail(FAIL_GAMMA);
+			}
+			pr[index_nu(U1_NU, sp)] /= gamma_nu;
+			pr[index_nu(U2_NU, sp)] /= gamma_nu;
+			pr[index_nu(U3_NU, sp)] /= gamma_nu;
+			alpha = 1. / sqrt(-geom.gcon[0][0]);
+			beta1 = geom.gcon[0][1] * alpha * alpha;
+
+			/* reset radial velocity so radial 4-velocity is zero */
+			pr[index_nu(U1_NU, sp)] = beta1 / alpha;
+
+			/* now find new gamma and put it back in */
+			vsq_nu = 0.;
+			SLOOP vsq_nu += geom.gcov[j][k] * pr[index_nu(U1_NU, sp) + j - 1] * pr[index_nu(U1_NU, sp) + k - 1];
+			if (fabs(vsq_nu) < 1.e-13)  vsq_nu = 1.e-13;
+			if (vsq_nu >= 1.) {
+				vsq_nu = 1. - 1. / (GAMMAMAX_NU * GAMMAMAX_NU);
+			}
+			gamma_nu = 1. / sqrt(1. - vsq_nu);
+			pr[index_nu(U1_NU, sp)] *= gamma_nu;
+			pr[index_nu(U2_NU, sp)] *= gamma_nu;
+			pr[index_nu(U3_NU, sp)] *= gamma_nu;
+
+			/* done */
+		}
 	}
 	#endif
 }

@@ -46,6 +46,7 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
+<<<<<<< HEAD
 CC       = CC 
 CCFLAGS  = -I${ROCM_PATH}/include -std=c++11 -D CRAY_CPU_TARGET=x86-64 -D__HIP_ROCclr__ -D__HIP_ARCH_GFX90A__=1 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -fgpu-rdc -x hip -O3 
 endif
@@ -59,6 +60,18 @@ CUDA_LOAD  = hipcc --amdgpu-target=gfx90a -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPIC
 
 CUDA_LOAD2  = hipcc -v --amdgpu-target=gfx90a -L${MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa 
 
+=======
+CC       = cc 
+CCFLAGS  =  -fopenmp -g -O2 -I /global/common/software/nersc/cos1.3/cuda/11.0.3/include
+endif
+
+EXTRALIBS = -lm -L /global/common/software/nersc/cos1.3/cuda/11.0.3/lib64 -lstdc++ -lcudart -lcuda -lmpi
+
+CC_COMPILE  = $(CC) $(CCFLAGS) -c 
+CUDA_COMPILE  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -c 
+CC_LOAD     = $(CC) $(CCFLAGS) 
+CUDA_LOAD  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -dlink
+>>>>>>> origin/danat_neutrinos_debug
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -72,7 +85,7 @@ OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o memory.o \
 init.o interp.o main.o metric.o lu.o \
-phys.o ranc.o restart.o step_ch.o radiation.o \
+phys.o ranc.o restart.o step_ch.o radiation.o neutrinos.c eos_helm.c \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\

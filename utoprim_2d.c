@@ -30,10 +30,33 @@ double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2], fel;
 
 // Declarations:
 static double vsq_calc(double W);
-static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim);
-static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[NPR_2T], double tolerance, int lim);
-static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance);
-static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df);
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[NPR_2T], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+);
+static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *
+#if (DOHELM_TEMPERATURE)
+    , double*
+#endif
+), double tolerance
+#if (DOHELM_TEMPERATURE)
+    , double* temp_prev
+#endif
+);
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df
+#if (DOHELM_TEMPERATURE)
+    , double* temp_prev
+#endif
+	#if (DO_YE)
+	, double ye
+	#endif
+);
 
 static double x1_of_x0(double x0);
 static double pressure_W_vsq(double W, double vsq);
@@ -113,7 +136,11 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	fel = fel_input;
 	#endif
 
-	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
+	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
+		#if (DO_YE)
+		, prim[YE]
+		#endif
+	);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -172,7 +199,11 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim)
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+)
 {
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
@@ -238,7 +269,8 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 
     #if DOHELM
     // Helmholtz EOS
-    eos_mode_rhou_pres (rho0, u, &p);
+    prim[RHO] = rho0;
+    eos_mode_rhou_pres (prim, &p);
     #else
 	#if(TWO_T)
 	double gamma_eos;
@@ -263,7 +295,11 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	//Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
-	retval = general_newton_raphson(x_2d, func_vsq, tolerance);
+	retval = general_newton_raphson(x_2d, func_vsq, tolerance
+#if(DOHELM_TEMPERATURE)
+                                    , &prim[UU]
+#endif
+                                    );
 
 	W = x_2d[0];
 	vsq = x_2d[1];
@@ -295,7 +331,9 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     
     #if (DOHELM)
     // Helmholtz EOS
-    eos_mode_rhow_pres_u (rho0, w, &p, &u);
+    prim[RHO] = rho0;
+    prim[UU] = w - rho0;
+    eos_mode_rhow_pres_u (prim, &p, &u); // DI_helmT
     #else
     // Ideal gas EOS
 	#if(TWO_T)
@@ -398,7 +436,15 @@ general_newton_raphson():
 -- inspired in part by Num. Rec.'s routine newt();
 
 *****************************************************************/
-static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance)
+static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *
+#if (DOHELM_TEMPERATURE)
+    , double*
+#endif
+), double tolerance
+#if (DOHELM_TEMPERATURE)
+    , double* temp_prev
+#endif
+)
 {
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
@@ -422,7 +468,11 @@ static int general_newton_raphson(double x[], void(*funcd) (double[], double[], 
 	keep_iterating = 1;
 	while (keep_iterating) {
 		//returns with new dx, f, df
-		(*funcd) (x, dx, resid, jac, &f, &df);  
+		(*funcd) (x, dx, resid, jac, &f, &df
+#if (DOHELM_TEMPERATURE)
+                  , temp_prev
+#endif
+                  );
 
 		//Save old values before calculating the new
 		errx = 0.;
@@ -489,7 +539,14 @@ df    = -2*f;  (on output)
 n    = dimension of x[];
 *********************************************************************************/
 
-static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df)
+static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df
+#if (DOHELM_TEMPERATURE)
+    , double* temp_prev
+#endif
+	#if (DO_YE)
+	, double ye
+	#endif
+)
 {
 	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
 	double t11, t16, t18, t2, t21, t23, t24, t25, t3, t35, t36, t4, t40, t9;
@@ -506,13 +563,22 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     double gamma_sq = 1.0/(1.0 - vsq);
     double gamma = sqrt(gamma_sq);
     double dpdrho, dpde_d;
-    eos_mode_rhow_pres_dpdrho_dpde_d (rho, w, &p_tmp, &dpdrho, &dpde_d);
-    
+    double prim[UU + 1];
+    prim[RHO] = rho;
+    prim[UU] = w - rho;
+    eos_mode_rhow_pres_dpdrho_dpde_d (prim, &p_tmp, &dpdrho, &dpde_d);
+	#if (inversion_w_edits)
+	// Danat: edit (DIMARK)
+	double dudp = rho / dpde_d;
+	dPdW = 1.0 / (1.0 + dudp) * (1.0 - vsq);
+	dPdvsq = (-x[0] + 0.5 * D / sqrt((1.0 - vsq)) * (1. - dpdrho * dudp)) / (1. + dudp);
+	#else 
     double dpdeps_o_rho = dpde_d / rho;
     double dpdvsq_1 = -0.5*D*gamma*dpdrho;
     double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
     dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
+	#endif
 	#elif(TWO_T)
 	double gtmp, gamma_eos1, gamma_eos2, w, rho, dgamma, factor, dvsq, dW;
 
@@ -672,7 +738,11 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	#endif
 	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error \n");
 
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim
+		#if (DO_YE)
+		, prim[YE]
+		#endif
+	);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -695,7 +765,11 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	return(ret);
 }
 
-static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[2], double tolerance, int lim)
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[2], double tolerance, int lim
+	#if (DO_YE)
+	, double ye
+	#endif
+)
 {
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, w,  gamma, gamma_eos, vsq, errx=10000.;
@@ -734,10 +808,17 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     
     #if DOHELM
     double xdens, xpres, xener, xenth;
+    double p_temp[UU + 1];
     // Helmholtz EOS
     xdens = prim[RHO];
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K
-    eos_mode_rhotemp_pres_min (xdens, &xpres);
+    eos_mode_rhotemp_pres_min (xdens, 
+		#if (DO_YE)
+		ye,
+		#else
+		1.0, 
+		#endif
+		&xpres);
     p_array[0] = xpres;
     #else
     // Ideal gas EOS
@@ -775,7 +856,9 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 
         #if (DOHELM)
         // Helmholtz EOS
-        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);        
+        p_temp[RHO] = rho0;
+        p_temp[UU] = w - rho0;
+        eos_mode_rhow_pres_u (p_temp, &xpres, &u); // DI_helmT
         #else
         // Ideal gas EOS
 			#if(TWO_T)
@@ -838,9 +921,10 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		rho0 = U[RHO] / gamma; 
         
         #if (DOHELM)
-        // Helmholtz EOS w/o nuclear physics
-        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
-        p_new = xpres;
+        // Helmholtz EOS
+        p_temp[RHO] = rho0;
+        p_temp[UU] = w - rho0;
+        eos_mode_rhow_pres_u (p_temp, &p_new, &u);
         #else
 		#if(TWO_T)
 		gamma_eos = set_S_w(S2, rho0, w, fel);

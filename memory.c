@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #include "include.h"
+=======
+>>>>>>> origin/danat_neutrinos_debug
 #include "decs_MPI.h"
 
 //Wrapper for calculation of GPU memory
@@ -52,10 +55,17 @@ void set_arrays(int n)
 	#if(DUMP_SMALL)
 	array_reduced[nl[n]] = (float *)malloc(NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
 	array_gdump1_reduced[nl[n]] = (double *)malloc(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
+<<<<<<< HEAD
 	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * (!NSY + NSY * BS_3 / REDUCE_FACTOR3) * sizeof(double));
 	#endif
 	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
 	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1 * BS_2 * (!NSY + NSY * BS_3) * sizeof(double));
+=======
+	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
+	#endif
+	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
+	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1*BS_2 * sizeof(double));
+>>>>>>> origin/danat_neutrinos_debug
 	array_rdump[nl[n]] = (double *)malloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	array_diag[nl[n]] = (float *)malloc(4 * BS_1*BS_2*BS_3 * sizeof(float));
 	Katm[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * sizeof(double));
@@ -86,9 +96,12 @@ void set_arrays(int n)
 	#if(RAD_M1)
 	pflag_rad[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
+<<<<<<< HEAD
 	#if(CARTESIAN_GR)
 	pflag_cart[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
+=======
+>>>>>>> origin/danat_neutrinos_debug
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
@@ -96,6 +109,12 @@ void set_arrays(int n)
 	E_corn[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
 	failimage[nl[n]] = (int(*)[NFAIL])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int[NFAIL]));
+<<<<<<< HEAD
+=======
+	#if (NEUTRINOS_DEBUG)
+	allflags_NU[nl[n]] = (double(*)[NU_SPECIES])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NU_SPECIES]));
+	#endif
+>>>>>>> origin/danat_neutrinos_debug
 	#if(!NSY)
 	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NDIM][NDIM][NDIM]));
 	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
@@ -693,9 +712,12 @@ void free_arrays(int n){
 	#if(RAD_M1)
 	free(pflag_rad[nl[n]]);
 	#endif
+<<<<<<< HEAD
 	#if(CARTESIAN_GR)
 	free(pflag_cart[nl[n]]);
 	#endif
+=======
+>>>>>>> origin/danat_neutrinos_debug
 	free(U[nl[n]]);
 	free(dq[nl[n]]);
 	free(F1[nl[n]]);
@@ -709,6 +731,12 @@ void free_arrays(int n){
 	free(E_corn[nl[n]]);
 	#endif
 	free(failimage[nl[n]]);
+<<<<<<< HEAD
+=======
+	#if (NEUTRINOS_DEBUG)
+	free(allflags_NU[nl[n]]);
+	#endif
+>>>>>>> origin/danat_neutrinos_debug
 	free(conn[nl[n]]);
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
@@ -1127,8 +1155,13 @@ void calc_mem_cpu(int n)
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
 	#if(FRAME_TRANSFORM)
+<<<<<<< HEAD
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+=======
+	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
+>>>>>>> origin/danat_neutrinos_debug
 	#endif
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG * sizeof(double));
 	#else
@@ -2618,6 +2651,7 @@ double calc_mem_gpu(int n){
 	return mem;
 }
 
+<<<<<<< HEAD
 //Flag cells that need inflow boundary conditions in Cartesian mesh
 void set_pflag_cart(int n) {
 	int i, j, z;
@@ -2700,6 +2734,8 @@ void set_pflag_cart(int n) {
 		*/
 	}
 }
+=======
+>>>>>>> origin/danat_neutrinos_debug
 //Trash functions
 /*
 // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
@@ -2828,5 +2864,9 @@ for (n = 0; n < n_active; n++) {
 	}
 }
 #endif
+<<<<<<< HEAD
 */
 
+=======
+*/
+>>>>>>> origin/danat_neutrinos_debug

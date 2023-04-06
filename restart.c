@@ -176,11 +176,19 @@ void rdump_block_read(FILE *fp, int n)
 {
 	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
+<<<<<<< HEAD
 	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM;
 	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + NDIM * STAGGERED;
 	int red_1, red_2, red_3, i1, j1, z1;
 	double reduce_factor;
 	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + NDIM * STAGGERED];
+=======
+	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
+	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
+	int red_1, red_2, red_3, i1, j1, z1;
+	double reduce_factor;
+	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
+>>>>>>> origin/danat_neutrinos_debug
 	struct of_geom geom;
 	#if(RAD_M1)
 	int uu_rad = (8 + DOKTOT);
@@ -200,12 +208,173 @@ void rdump_block_read(FILE *fp, int n)
 	#if(P_NUM)
 	int photon = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2);
 	#endif
+<<<<<<< HEAD
 
 	//Set grid reduction factor
 	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
 		red_1 = BS1_read / BS_1;
 		red_2 = BS2_read / BS_2;
 		red_3 = BS3_read / BS_3;
+=======
+	#if(DO_YE)
+	int ye = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1);
+	#endif
+	#if(NEUTRINOS_M1)
+	int uu_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
+	int u1_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
+	int u2_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 2);
+	int u3_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 3);
+	int number_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 4);
+	#endif
+
+	//Set grid reduction factor
+	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
+		red_1 = BS1_read / BS_1;
+		red_2 = BS2_read / BS_2;
+		red_3 = BS3_read / BS_3;
+	}
+	else red_1 = red_2 = red_3 = 1.0;
+
+	ZSLOOP3D(-N1G + N1_GPU_offset[n] * red_1, (N1_GPU_offset[n] + BS_1) * red_1 - 1 + N1G, -N2G + N2_GPU_offset[n] * red_2, (N2_GPU_offset[n] + BS_2) * red_2 - 1 + N2G, -N3G + N3_GPU_offset[n] * red_3, (N3_GPU_offset[n] + BS_3) * red_3 - 1 + N3G) {
+		for (k = 0; k < npr_file; k++) {
+			fread(&(read[k]), double_size, 1, fp);
+		}
+		read_geom = 0;
+		//Initialize variables
+		if (i >= N1_GPU_offset[n] * red_1 && i <= (N1_GPU_offset[n] + BS_1) * red_1 && j >= N2_GPU_offset[n] * red_2 && j <= (N2_GPU_offset[n] + BS_2) * red_2 && z >= N3_GPU_offset[n] * red_3 && z <= (N3_GPU_offset[n] + BS_3) * red_3) {
+			i1 = i / red_1;
+			j1 = j / red_2;
+			z1 = z / red_3;
+			if ((i % red_1 == 0) && (j % red_2 == 0) && (z % red_3 == 0)) {
+				for (k = 0; k < NPR; k++) p[nl[n]][index_3D(n, i1, j1, z1)][k] = 0.0;
+				for (k = 0; k < NDIM; k++) ps[nl[n]][index_3D(n, i1, j1, z1)][k] = 0.0;
+			}
+		
+			//Read in normal variables
+			reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+			for (k = 0; k < NPR_U; k++) p[nl[n]][index_3D(n, i1, j1, z1)][k] += read[k] * reduce_factor;
+
+			//Read in staggered grid
+			#if(STAGGERED)
+			reduce_factor = 1.0 / (double)(red_2 * red_3);
+			if ((i % red_1 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][1] += read[npr_file - (NDIM - 1)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE1];
+			reduce_factor = 1.0 / (double)(red_1 * red_3);
+			double fractheta_old = 1.e-2;
+			if (N2 != 1) {
+				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (TRANS_BOUND == 1);
+			}
+			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
+			reduce_factor = 1.0 / (double)(red_1 * red_2);
+			if ((z % red_3 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][3] += read[npr_file - (NDIM - 3)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE3];
+			#endif
+
+			//If file doesn't contain physics, initiliaze the physics just like in ICs
+			#if(RAD_M1)
+			if (!read_M1) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
+				}
+				//dt = 1.e-5;
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] += read[uu_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U1_RAD] += read[u1_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U2_RAD] += read[u2_rad] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][U3_RAD] += read[u3_rad] * reduce_factor;
+			}
+			#endif
+			#if(TWO_T)
+			if (!read_2T) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double bsq;
+					get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					bsq = bsq_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom);
+					set_2T_entropy(p[nl[n]][index_3D(n, i1, j1, z1)], bsq);
+				}
+			}
+			else{
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][ENTRE] += read[entre] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][ENTRI] += read[entri] * reduce_factor;
+			}
+			#endif
+			#if(P_NUM)
+			if (!read_Pnum) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					double T_new, exp_xi, ucon[NDIM], ucon_rad[NDIM], ucov_rad[NDIM], u_dot_urad, urad_dot_urad, Ehat;
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					read_geom = 1;
+					ucon_calc(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon);
+					ucon_calc_rad(p[nl[n]][index_3D(n, i1, j1, z1)], &geom, ucon_rad);
+					lower(ucon_rad, &geom, ucov_rad);
+					u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+					urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+					Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * (urad_dot_urad));
+					T_new = pow(Ehat / ARAD, 0.25);
+					p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] = p[nl[n]][index_3D(n, i1, j1, z1)][UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][PHOTON] += read[photon] * reduce_factor;
+			}
+			#endif
+			#if(RESISTIVE)
+			if (!read_Res) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					if (!read_geom)get_geometry(n, i1, j1, z1, CENT, &geom);
+					set_E_init(p[nl[n]][index_3D(n, i1, j1, z1)], geom);
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][E1] += read[e1] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][E2] += read[e2] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][E3] += read[e3] * reduce_factor;
+			}
+			#endif
+			#if(DO_YE)
+			if (!read_Ye) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][YE] = 1.0;
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][YE] += read[ye] * reduce_factor;
+			}
+			#endif
+			#if(NEUTRINOS_M1)
+			int sp;
+			if (!read_neutrinos) {
+				double Tnu;
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					for (sp = 0; sp < NU_SPECIES; sp++) {
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] = 1e-30;
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U1];
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U2];
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][U3];
+
+						Tnu = pow(p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+						p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU, sp)] = p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+					}
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				for (sp = 0; sp < NU_SPECIES; sp++) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(UU_NU,sp)] += read[index_nu(uu_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U1_NU,sp)] += read[index_nu(u1_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U2_NU,sp)] += read[index_nu(u2_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(U3_NU,sp)] += read[index_nu(u3_nu, sp)] * reduce_factor;
+					p[nl[n]][index_3D(n, i1, j1, z1)][index_nu(NUMBER_NU,sp)] += read[index_nu(number_nu,sp)] * reduce_factor;
+				}
+			}
+			#endif
+		}
+>>>>>>> origin/danat_neutrinos_debug
 	}
 	else red_1 = red_2 = red_3 = 1.0;
 
@@ -527,6 +696,14 @@ void param_read(FILE *fp) {
 	int exit_r = 0;
 	double dummy;
 	u = rdump_cnt + 1;
+<<<<<<< HEAD
+=======
+
+
+	if (rank == 0) {
+		fprintf(stderr, "Error asdas! \n");
+	}
+>>>>>>> origin/danat_neutrinos_debug
 	//Read in essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
@@ -561,7 +738,11 @@ void param_read(FILE *fp) {
 	int dk = DOKTOT;
 	double Rin_read;
 	double Rout_read;
+<<<<<<< HEAD
 	double mdot_read;
+=======
+	double R0_read;
+>>>>>>> origin/danat_neutrinos_debug
 	double gam_read;
 	double a_read;
 	double cour_read;
@@ -587,7 +768,11 @@ void param_read(FILE *fp) {
 	fread(&cour_read, double_size, 1, fp);
 	fread(&Rin_read, double_size, 1, fp);
 	fread(&Rout_read, double_size, 1, fp);
+<<<<<<< HEAD
 	fread(&mdot_read, double_size, 1, fp);
+=======
+	fread(&R0_read, double_size, 1, fp);
+>>>>>>> origin/danat_neutrinos_debug
 	fread(&dummy, double_size, 1, fp);
 	fread(&lim, int_size, 1, fp);
 	fread(&stag, int_size, 1, fp);
@@ -603,6 +788,19 @@ void param_read(FILE *fp) {
 	fread(&rt, int_size, 1, fp);
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
+<<<<<<< HEAD
+=======
+	if (docyl >= 100000) {
+		read_neutrinos = 1;
+		docyl -= 100000;
+	}
+	else read_neutrinos = 0;
+	if (docyl >= 10000) {
+		read_Ye = 1;
+		docyl -= 10000;
+	}
+	else read_Ye = 0;
+>>>>>>> origin/danat_neutrinos_debug
 	if (docyl >= 1000) {
 		read_Pnum = 1;
 		docyl -= 1000;
@@ -625,6 +823,13 @@ void param_read(FILE *fp) {
 	else read_M1 = 0;
 	fread(&dk, int_size, 1, fp);
 
+<<<<<<< HEAD
+=======
+	if (rank == 0) {
+		fprintf(stderr, "Error asdas! \n");
+	}
+
+>>>>>>> origin/danat_neutrinos_debug
 	//First deactivate all blocks
 	for (n = 0; n < NB; n++) {
 		block[n][AMR_ACTIVE] = 0;
@@ -635,6 +840,8 @@ void param_read(FILE *fp) {
 	//Now check which blocks are active in grid
 	for (n = 0; n < n_active_total; n++) {
 		fread(&n2, int_size, 1, fp);
+		if (n2 > NB - 1)fprintf(stderr, "Param read error 1. \n");
+
 		block[n2][AMR_ACTIVE] = 1;
 		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
 		block[n2][AMR_TIMELEVEL] = MY_MIN(block[n2][AMR_TIMELEVEL], AMR_MAXTIMELEVEL);
@@ -666,6 +873,7 @@ void param_read(FILE *fp) {
 		}
 		exit_r = 1;
 	}
+<<<<<<< HEAD
 	//if (R0_read != R0) {
 	//	if (rank == 0) {
 	//		fprintf(stderr, "Error reading in input parameters. R0 not set properly! \n");
@@ -680,6 +888,14 @@ void param_read(FILE *fp) {
 		exit_r = 1;
 	}
 	#endif
+=======
+	if (R0_read != R0) {
+		if (rank == 0) {
+			fprintf(stderr, "Error reading in input parameters. R0 not set properly! \n");
+		}
+		exit_r = 1;
+	}
+>>>>>>> origin/danat_neutrinos_debug
 	if (a_read != a) {
 		if (rank == 0) {
 			fprintf(stderr, "Error reading in input parameters. a not set properly! \n");
@@ -694,7 +910,11 @@ void param_read(FILE *fp) {
 	}
 	if (startx_read[1] != startx[1] || startx_read[2] != startx[2] || startx_read[3] != startx[3]) {
 		if (rank == 0) {
+<<<<<<< HEAD
 			fprintf(stderr, "Error reading in input parameters. startx not set properly! \n");
+=======
+			fprintf(stderr, "Error reading in input parameters. startx not set properly! %e == %e\n", startx_read[3], startx[3]);
+>>>>>>> origin/danat_neutrinos_debug
 		}
 		//exit_r = 1;
 	}
@@ -704,9 +924,13 @@ void param_read(FILE *fp) {
 		}
 	}
 	if (BS1_read != BS_1 || BS2_read != BS_2 || BS3_read != BS_3) {
+<<<<<<< HEAD
 		if (BS1_read % BS_1 == 0 && BS2_read % BS_2 == 0 && BS3_read % BS_3 == 0) {
 			if (rank == 0) fprintf(stderr, "Downscaling bigger data set of original resolution of %dx%dx%d to resolution %dx%dx%d! \n", BS1_read, BS2_read, BS3_read, BS_1, BS_2, BS_3);
 		}
+=======
+		if(BS1_read % BS_1 == 0 && BS2_read % BS_2 == 0 && BS3_read % BS_3 == 0)if (rank == 0) fprintf(stderr, "Downscaling bigger data set of original resolution of %dx%dx%d to resolution %dx%dx%d! \n", BS1_read, BS2_read, BS3_read, BS_1, BS_2, BS_3);
+>>>>>>> origin/danat_neutrinos_debug
 		else {
 			if (rank == 0) fprintf(stderr, "Error reading in input parameters. Failed upscaling resolution due to incompatible ratios! \n");
 			exit_r = 1;
@@ -725,6 +949,7 @@ void param_read(FILE *fp) {
 	//Set nstep to 0 for convenience
 	nstep = 0;
 }
+<<<<<<< HEAD
 
 //Calculate Mdot
 double calc_Mdot() {
@@ -822,3 +1047,5 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 	}
 }
 
+=======
+>>>>>>> origin/danat_neutrinos_debug

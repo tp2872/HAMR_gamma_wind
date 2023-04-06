@@ -283,6 +283,12 @@ double * Bufferdtij3[NB_LOCAL];
 int * Bufferpflag[NB_LOCAL];
 int * Bufferpflag_CART[NB_LOCAL];
 int * Bufferpflag_RAD[NB_LOCAL];
+int * Bufferpflag_NU[NB_LOCAL];
+#if (NEUTRINOS_DEBUG)
+double* Bufferallflags_NU[NB_LOCAL];
+double(*restrict allflags_NU[NB_LOCAL])[NU_SPECIES];
+double* allflags_NU_GPU[NB_LOCAL];
+#endif
 int * Bufferfailimage[NB_LOCAL];
 double * BufferKatm[NB_LOCAL];
 double * Buffersend1[NB_LOCAL];
@@ -716,8 +722,8 @@ double * BufferrecE3corn4_72[NB_LOCAL];
 double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-double * eos_table[1];
-double * GPU_eos_table[1];
+double * eos_table[NB_LOCAL];
+double * GPU_eos_table[NB_LOCAL];
 #endif
 
 /*************************************************************************
@@ -780,7 +786,11 @@ int *array_gdumpgrid, *array_rdumpgrid;
 double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
+<<<<<<< HEAD
 int read_M1, read_2T, read_Pnum, read_Res;
+=======
+int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_neutrinos;
+>>>>>>> origin/danat_neutrinos_debug
 int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -798,6 +808,10 @@ int N1_GPU_offset[NB];
 int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
 int max_blocks;
+<<<<<<< HEAD
+=======
+int communicator_set;
+>>>>>>> origin/danat_neutrinos_debug
 float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
 
 //MPI Variables
@@ -810,3 +824,13 @@ MPI_Request req_block[NB_LOCAL][1], req_block_reduced[NB_LOCAL][1], req_block_rd
 MPI_Request request_timelevel[NB];
 MPI_Request req_local1[N_LEVELS_3D][NB_1*NB_3 * 64], req_local2[N_LEVELS_3D][NB_1*NB_3 * 64];
 int send_tag1[N_LEVELS_3D][MY_MAX(NB, 60000)], send_tag2[N_LEVELS_3D][MY_MAX(NB, 60000)];
+
+#if(NEUTRINOS_M1)
+double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+
+double* nulib_table[NB_LOCAL];
+double* GPU_nulib_table[NB_LOCAL];
+#endif

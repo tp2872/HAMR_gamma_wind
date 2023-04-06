@@ -30,9 +30,6 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 
 	//Set initial values and error before attempting implicit solver
 	implicit_rad_solve_init(pb_i, U_n_temp, U_i_temp, U_ft, geom, dU, Dt, &error_t, cell_size
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
 		#if(TWO_T)
 		, fel
 		#endif
@@ -47,11 +44,7 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 		}
 	}
 	else {
-		if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-		);
+		if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//As final resort attempt subcycling
 		if (error_t > 1.e-7) {
@@ -332,9 +325,6 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
-					#if(DOHELM)
-					, gpu_eos_table
-					#endif
 					#if(TWO_T)
 					, gamma_g
 					#endif
@@ -367,9 +357,6 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 
 				//Calculate radiative (including coulomb) source term
 				source_rad(pb_new, geom, dU_new
-					#if(DOHELM)
-					, gpu_eos_table
-					#endif
 					#if(TWO_T)
 					, gamma_g
 					#endif
@@ -567,9 +554,6 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 		gamma_g = calc_gamma_gas_prim(pb_new);
 		#endif
 		mhd_calc(pb_new, 0, &q, &U_new[UU]
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
 			#if(TWO_T)
 			, gamma_g
 			#endif
@@ -603,9 +587,6 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 
 		//Get radiative source term
 		source_rad(pb_new, geom, dU_new
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
 			#if(TWO_T)
 			, gamma_g
 			#endif

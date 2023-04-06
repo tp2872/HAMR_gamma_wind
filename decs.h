@@ -42,6 +42,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 *********************************************************************************/
 #define restrict
+<<<<<<< HEAD
+=======
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+// for strrchr() in init.c
+#include <string.h>
+#include <time.h>
+#ifdef __unix__
+#include <sys/time.h>
+#endif
+#include <cuda.h>
+#include <cuda_runtime.h>
+#ifndef __APPLE__
+#include <omp.h>
+#endif
+#include "config.h"
+>>>>>>> origin/danat_neutrinos_debug
 
 /*************************************************************************
 GLOBAL ARRAY SECTION
@@ -326,6 +344,12 @@ extern double * Bufferdtij3[NB_LOCAL];
 extern int * Bufferpflag[NB_LOCAL];
 extern int * Bufferpflag_CART[NB_LOCAL];
 extern int * Bufferpflag_RAD[NB_LOCAL];
+extern int * Bufferpflag_NU[NB_LOCAL];
+#if (NEUTRINOS_DEBUG)
+extern double* Bufferallflags_NU[NB_LOCAL];
+extern double(*restrict allflags_NU[NB_LOCAL])[NU_SPECIES];
+extern double * allflags_NU_GPU[NB_LOCAL];
+#endif
 extern int * Bufferfailimage[NB_LOCAL];
 extern double * BufferKatm[NB_LOCAL];
 extern double * Buffersend1[NB_LOCAL];
@@ -759,8 +783,8 @@ extern double * BufferrecE3corn4_72[NB_LOCAL];
 extern double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-extern double * eos_table[1];
-extern double * GPU_eos_table[1];
+extern double * eos_table[NB_LOCAL];
+extern double * GPU_eos_table[NB_LOCAL];
 #endif
 
 /*************************************************************************
@@ -855,7 +879,11 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
+<<<<<<< HEAD
 extern int read_M1, read_2T, read_Pnum, read_Res;
+=======
+extern int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_neutrinos;
+>>>>>>> origin/danat_neutrinos_debug
 extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -873,6 +901,10 @@ extern int N1_GPU_offset[NB];
 extern int N2_GPU_offset[NB];
 extern int N3_GPU_offset[NB];
 extern int max_blocks;
+<<<<<<< HEAD
+=======
+extern int communicator_set;
+>>>>>>> origin/danat_neutrinos_debug
 extern float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
 
 /*************************************************************************
@@ -923,6 +955,9 @@ void E_average(void);
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom);
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double *restrict gamma);
 int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad);
+#if(NEUTRINOS_M1)
+int gamma_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_nu, int species);
+#endif
 void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon);
 void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
@@ -971,6 +1006,9 @@ void fixup_utoprim(double(*restrict pv[NB_LOCAL])[NPR], int n);
 void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon);
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
+#if(NEUTRINOS_M1)
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu, int species);
+#endif
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd
@@ -1039,6 +1077,9 @@ double calc_ufromsrho(double s, double rho, int type);
 //#endif
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
+#if (NEUTRINOS_M1)
+int Rtoprim_nu(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
+#endif
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
 void calc_Gcon(double* restrict ph, double Gcon[NDIM + P_NUM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
@@ -1093,7 +1134,13 @@ void GPU_fixup(int flag, int n, double Dt);
 void GPU_fixup_post(int n, double Dt);
 void GPU_cleanup_post(int n);
 void GPU_fixuputoprim(int flag, int n);
+<<<<<<< HEAD
 void GPU_fixuputoprim_rad(int flag, int n);
+=======
+#if (NEUTRINOS_M1)
+void GPU_fixuputoprim_nu(int flag, int n);
+#endif
+>>>>>>> origin/danat_neutrinos_debug
 void GPU_Utoprim_M1_0(int n, double Dt);
 void GPU_Utoprim_M1_1(int n, double Dt);
 void GPU_Utoprim_M1_2(int n, double Dt);
@@ -1403,19 +1450,98 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 
 //EOS related
 void eos_init(void);
-void eos_init_GPU(void);
+void eos_init_GPU(int n);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dpresdd, double* cs2);
-void eos_mode_rhou_entr(double den, double u_goal, double* entr);
-void eos_mode_rhou_pres (double den, double u_goal, double *pres);
-void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2);
-void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, double *dpdrho, double *dpde_d);
-void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
-void eos_mode_rhotemp_pres_min (double den, double *pres);
-void eos_mode_rhopres_u (double den, double p_goal, double *u);
-void eos_mode_rhou_temp (double den, double u_goal, double* temp);
+void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele
+	#if (DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
+void eos_mode_rhou_entr(double* prim, double* entr);
+void eos_mode_rhou_pres (double* prim, double *pres);
+void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2);
+void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrho, double *dpde_d);
+void eos_mode_rhow_pres_u (double* prim, double *pres, double *u);
+void eos_mode_rhotemp_pres_min (double den, double ye, double *pres);
+void eos_mode_rhopres_u (double* prim);
+void eos_mode_rhou_temp (double* prim, double* temp);
 
+// DITEMP: eos wrapper functions 
+#if (DOHELM_TEMPERATURE)
+void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_goal
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, double* u
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pres, double* u, double* cs2
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+// Rootfinding functions based on w and s (3x)
+void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, double* pres, double* u
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+// Floor
+void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double u, double* pres
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+#endif
+
+/*Neutrino function*/
+#if(NEUTRINOS_M1)
+void init_nulib_table(void);
+void interp_nulib_table(double rho, double Tgas, double ye, int species, double* nu_avg, double* kappa_A, double* kappa_S, double* nu_N);
+void nulib_init_GPU(int n);
+
+void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
+void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
+void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
+	#if(DONUCLEAR)
+	, double x_alpha, double x_atm
+	#endif
+);
+// Fermi integrals from Takahashi, El Eid & Hillebrandt '78
+double calc_fermiint2(double x);
+double calc_fermiint3(double x);
+
+<<<<<<< HEAD
 //Mass accretion rate related
 #if(CALC_MDOT)
 void set_mass_density_scale(double *mass_density_scale_cpu, double* magnetic_density_scale_cpu);
@@ -1443,3 +1569,20 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
+=======
+extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+
+extern double* nulib_table[NB_LOCAL];
+extern double* GPU_nulib_table[NB_LOCAL];
+#endif
+
+#if (DONUCLEAR)
+double get_xp(double ye, double x_alpha);
+double get_xn(double ye, double x_alpha);
+void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
+void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
+#endif
+>>>>>>> origin/danat_neutrinos_debug

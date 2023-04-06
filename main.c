@@ -29,26 +29,47 @@ int main(int argc, char *argv[])
 
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
+	#if (DOHELM)
+	eos_init();
+	//#if(GPU_ENABLED || GPU_DEBUG )
+	//eos_init_GPU(n_ord[n]);
+	//#endif
+	#endif
+
+	#if(NEUTRINOS_M1)
+	init_nulib_table();
+	//#if(GPU_ENABLED || GPU_DEBUG )
+	//nulib_init_GPU(n_ord[n]);
+	//#endif
+	#endif
 
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
     set_AMR();
 
+<<<<<<< HEAD
 	#if (DOHELM)
 	eos_init();
 		#if(GPU_ENABLED || GPU_DEBUG )
 		eos_init_GPU();
 		#endif
 	#endif
+=======
+>>>>>>> origin/danat_neutrinos_debug
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
+<<<<<<< HEAD
 		int n_old = n_active_total;
 		for (l = 0; l < N_LEVELS_3D + N_LEVELS_CART; l++) {
 			if(REFINE_GRB==0 || l==0) init();
+=======
+		for (l = 0; l < N_LEVELS_3D; l++) {
+			if(REFINE_GRB == 0 || l == 0) init();
+>>>>>>> origin/danat_neutrinos_debug
 			average_grid();
 			#if(N_LEVELS_3D>0)
 			check_refcrit();
@@ -57,6 +78,109 @@ int main(int argc, char *argv[])
 		}	
 		restart_write();
 		close_rdump();
+<<<<<<< HEAD
+=======
+	}
+
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres, bsq, esq,f, U[NPR], gamma, p_old[NPR];
+	int zz;
+	struct of_state_res q_res;
+	struct of_geom geom;
+	struct of_state q;
+	struct of_state_rad q_rad;
+	#if(RESISTIVE)
+	int ind0, k;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
+			for (zz = 0; zz < 1; zz++) {
+
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+
+				ind0 = index_3D(n_ord[n], i, j, z);
+				p[nl[n_ord[n]]][ind0][UU] = fabs(p[nl[n_ord[n]]][ind0][UU]);
+				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+				bsq = dot(q_res.bcon, q_res.bcov);
+				esq = dot(q_res.econ, q_res.ecov);
+				if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+					double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3], E_D[3];
+					struct of_state state;
+					get_geometry(n_ord[n], i, j, z, CENT, &geom);
+					get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
+					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+					gamma = alpha * state.ucon[0];
+					vd_guess[0] = state.ucov[1] / gamma;
+					vd_guess[1] = state.ucov[2] / gamma;
+					vd_guess[2] = state.ucov[3] / gamma;
+					B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+					//E_guess[0] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+			
+					lower_3(B_guess, geom.gcov, B_D);
+					//lower_3(E_guess, &geom, E_D);
+					int i1, j1, k1;
+					for (i1 = 0; i1 < 3; i1++) {
+						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
+						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
+						}
+					}
+					//p[nl[n_ord[n]]][ind0][B1] = 0.;
+					//p[nl[n_ord[n]]][ind0][B2] = 0.;
+					//p[nl[n_ord[n]]][ind0][B3] = 0.;
+					//p[nl[n_ord[n]]][ind0][E1] = 0.;
+					//p[nl[n_ord[n]]][ind0][E2] = 0.;
+					//p[nl[n_ord[n]]][ind0][E3] = 0.;
+					
+					//ps[nl[n_ord[n]]][ind0][1] = 0.;
+					//ps[nl[n_ord[n]]][ind0][2] = 0.;
+					//ps[nl[n_ord[n]]][ind0][3] = 0.;
+					//psh[nl[n_ord[n]]][ind0][1] = 0.;
+					//psh[nl[n_ord[n]]][ind0][2] = 0.;
+					//psh[nl[n_ord[n]]][ind0][3] = 0.;
+
+					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+
+
+					//Reset variables
+					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
+
+					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1*(ETA<0.000000000000001));
+
+					if (pflag[nl[n_ord[n]]][ind0] != 0) {
+						get_state_res(p_old, &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+
+
+						get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+						
+						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f ", 10000. * U[UU]);
+						
+						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
+						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
+
+
+					}
+				}
+			}
+		}
+>>>>>>> origin/danat_neutrinos_debug
 	}
 
 	/* do initial diagnostics */
@@ -69,9 +193,19 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
+<<<<<<< HEAD
 	DTl = 100.0;
 	DTd = 10;
 	DTd_reduced = 5000.0;
+=======
+#if (WHICHPROBLEM == RAD_PULSE)
+	DTd = 10.;
+#else 
+	DTd = 50.;// 0.1;
+#endif
+	DTl = 2.*DTd;
+	DTd_reduced = 50.0;
+>>>>>>> origin/danat_neutrinos_debug
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
 	tlog = t + DTl;
@@ -142,7 +276,11 @@ int main(int argc, char *argv[])
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+<<<<<<< HEAD
 			diag(DUMP_OUT) ;
+=======
+			diag(DUMP_OUT);
+>>>>>>> origin/danat_neutrinos_debug
 			close_dump();
 			close_gdump();
 			tdump += DTd;
@@ -191,7 +329,7 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	diag(DUMP_OUT);
-	diag(FINAL_OUT) ;
+	diag(FINAL_OUT);
 
 	/*Close GPU*/
 	for (n = 0; n < n_active; n++){
@@ -272,6 +410,7 @@ void MPI_initialize(int argc, char *argv[])
 		#endif
 
 	}
+<<<<<<< HEAD
 
 	#if(GPU_ENABLED)
 	if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
@@ -284,6 +423,8 @@ void MPI_initialize(int argc, char *argv[])
 	//Killswitch
 	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
 	if (numtasks > 100) exit(0);
+=======
+>>>>>>> origin/danat_neutrinos_debug
 }
 
 int index_3D(int n, int i, int j, int z)
@@ -475,6 +616,7 @@ double get_wall_time(){
 	#endif
 }
 
+<<<<<<< HEAD
 //Runs checks on input
 void check_input() {
 	
@@ -488,17 +630,32 @@ void check_input() {
 	//You can only select on version
 	if (VARGAMMA + FIXEDGAMMA + CONSTANTGAMMA != 1) {
 		if (rank == 0) fprintf(stderr, "Init error 2");
+=======
+
+//Runs checks on input
+void check_input() {
+
+	//Select a grid that is compatible with DEREFINE_POLE
+	if (DEREFINE_POLE && (NB_2 == 3 || NB_2 == 6 || NB_2 == 12 || NB_2 == 24 || NB_2 == 48 || NB_2 == 96)) {}
+	else if (DEREFINE_POLE) {
+		fprintf(stderr, "Init error 1");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 
 	//NB_3 has to be even in 3D
 	if (NB_3 % 2 == 0 || (NB_3 * BS_3 == 1)) {}
 	else {
+<<<<<<< HEAD
 		if (rank == 0) fprintf(stderr, "Init error 3");
+=======
+		fprintf(stderr, "Init error 3");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 
 	//Don't use block sizes this small in any case
+<<<<<<< HEAD
 	if ((BS_3 < 8 && NB_3 * BS_3 > 1)|| BS_2 < 8 || BS_1 < 8) {
 		if (rank == 0) fprintf(stderr, "Init error 4");
 		exit(0);
@@ -512,17 +669,37 @@ void check_input() {
 	//You can't run on CPU and GPU
 	if (GPU_ENABLED + CPU_OPENMP > 1) {
 		if (rank == 0) fprintf(stderr, "Init error 6");
+=======
+	if ((BS_3 < 8 && NB_3 * BS_3 > 1) || BS_2 < 8 || BS_1 < 8) {
+		fprintf(stderr, "Init error 4");
+		//exit(0);
+	}
+
+	if (((BS_3 % 2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {
+		fprintf(stderr, "Init error 5");
+		exit(0);
+	}
+
+	//You can't run on CPU and GPU
+	if (GPU_ENABLED + CPU_OPENMP > 1) {
+		fprintf(stderr, "Init error 6");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 
 	//Photon number evolution needs M1
 	if (P_NUM && !RAD_M1) {
+<<<<<<< HEAD
 		if (rank == 0) fprintf(stderr, "Init error 7");
+=======
+		fprintf(stderr, "Init error 7");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 
 	//These features are not supported anymore
 	if (FULL_ENTROPY || !DOKTOT) {
+<<<<<<< HEAD
 		if (rank == 0) fprintf(stderr, "Init error 8");
 		//exit(0);
 	}
@@ -540,6 +717,21 @@ void check_input() {
 	//Don't use block sizes this small on GPU
 	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
 		if (rank == 0) fprintf(stderr, "You are choosing the resolution per block too small! Do this only for debugging!");
+=======
+		fprintf(stderr, "Init error 8");
+		exit(0);
+	}
+
+	//PPM not implemented in CPU version
+	if (CPU_OPENMP && PPM) {
+		fprintf(stderr, "PPM not suppoerted in CPU version");
+		exit(0);
+	}
+
+	//Don't use block sizes this small on GPU
+	if ((BS_3 < 16 && NB_3 * BS_3 > 1) || BS_2 < 16 || BS_1 < 16) {
+		fprintf(stderr, "You are choosing the resolution per block too small! Do this only for debugging!");
+>>>>>>> origin/danat_neutrinos_debug
 		//exit(0);
 	}
 
@@ -561,13 +753,21 @@ void check_input() {
 
 	//You cannot have more than 9 3D refinement levels
 	if (N_LEVELS_3D > 9) {
+<<<<<<< HEAD
 		if (rank == 0) fprintf(stderr, "N_LEVELS_3D needs to be smaller than 10");
+=======
+		fprintf(stderr, "N_LEVELS_3D needs to be smaller than 6");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 
 	//You cannot have more than 5 external derefinement refinement levels
 	if (N_LEVELS_1D > 9) {
+<<<<<<< HEAD
 		if (rank == 0) fprintf(stderr, "N_LEVELS_1D needs to be smaller than 10");
+=======
+		fprintf(stderr, "N_LEVELS_1D needs to be smaller than 6");
+>>>>>>> origin/danat_neutrinos_debug
 		exit(0);
 	}
 }

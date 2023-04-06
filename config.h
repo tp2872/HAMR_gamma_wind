@@ -15,13 +15,22 @@ Physical Parameters section
 #define ENT_WAVE 11
 #define TRUNC_PROBLEM 12
 #define POSTMERGER_PROBLEM 13
+<<<<<<< HEAD
 #define COLLAPSAR 14
 #define NSM 15
 #define BLAST_WAVE 16
 #define SHOCK_TUBE 17
 #define SPHERICAL_PROBLEM 18
+=======
+#define RAD_PULSE 14
+#define COLLAPSAR 15
+>>>>>>> origin/danat_neutrinos_debug
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
+
+#define READBINARY (0)
+// DIMARK: rad.pulse kappa_es
+#define KAPPARADPULSE (10.)
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -54,12 +63,28 @@ Physical Parameters section
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
 
+<<<<<<< HEAD
+=======
+#define TASK_BASED (0)
+
+>>>>>>> origin/danat_neutrinos_debug
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
+<<<<<<< HEAD
 #define GAMMA	(13./9.)
 #define BH_SPIN (0.9375)
+=======
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.86)
+#define R_BONDI (1e2)
+#define R_CIRC (3e1)
+#define BETA (1e2)
+
+/*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
+#define NSY (0)
+>>>>>>> origin/danat_neutrinos_debug
 
 /*Select grid outer radius*/
 #define ROUT (1000.0)
@@ -84,19 +109,82 @@ Physical Parameters section
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
+// Postmerger problem, ICs from SpEC
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (1)
+// Collapsar problem
+#define COLLAPSAR_GR1D (0)
+
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
-#define KTOT_FACTOR (1e-10)
-#define EOS_BISECTION_THRESHOLD (1e6)
+#define DOHELM (1)
+#if (WHICHPROBLEM == COLLAPSAR)
+#define DOHELM_LOWTEMP (1)
+#else
+#define DOHELM_LOWTEMP (0)
+#endif
+
+#define NEUTRINOS_M1 (1)
+#define NU_EXPLICIT (0)
+#define NU_COOLING (1)
+#define NU_SUBCYCLING (0)
+#define NU_DEBUG (1)
+#define NEUTRINOS_DEBUG (0)
+#define NEUTRINOS_DEBUG_NFLAGS (0)
+#define DUMP_EACH_STEP (0)
+#define ZERO_TAU_MODE (0)
+#define DANAT_GDET_INTERP (1)
+#define NU_INNER_STOP (1)
+#define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
+#define NU_PREDICTOR (0)
+#define NU_KEEP_COEFF_CONST (1)
+#define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
+#define NULIB_YE_CORRECTION (1)
+// Whether electron fraction is evolved
+#if (NEUTRINOS_M1)
+#define DO_YE (1)
+#define DONUCLEAR (0)
+#else 
+#define DO_YE (1)
+#define DONUCLEAR (0)
+#endif
+
+
+// Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
+#if (DOHELM)
+#if (NEUTRINOS_M1)
+#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+#else
+#define DOHELM_TEMPERATURE (1) 
+#endif
+#else
+#define DOHELM_TEMPERATURE (0) 
+#endif
+
+#define USE_3D_INV (0)
+
+#define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
+#define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
+#define inversion_w_edits   (1)
+#define enable_input_check  (0)
+#define revert_gamma        (1)
+#define eos_nr_debug (0)
+#define HELMEOS_INPUT_CHECK (1)
+
+// subcycling testing
+#define RADM1_SUBCYCLING (0)
+
+#define EOS_BISECTION (0)
+
+#define low_rho_correction (0) // Leave it at 0, breaks 2d inversion
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
 #if (DOHELM)
 // Danat: otherwise EOS fails, since the densities are too low outside the torus
-    #define RHOMIN (1.e-14)     
-    #define UUMIN (1.e-16)      
+    #define RHOMIN      (1.e-14)    
+    #define UUMIN       (1.e-16)     
     #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT (1.e-20) 
+    #define UUMINLIMIT  (1.e-20) 
 #else
     #define RHOMIN      (1.e-26)
     #define UUMIN       (1.e-27)
@@ -104,15 +192,24 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
+    //#define RHOMIN	(1.e-7)
+    //#define UUMIN	(1.e-9)
+    //#define RHOMINLIMIT (1.e-20)
+    //#define UUMINLIMIT  (1.e-20)
     #define RHOMIN    (1.e-14)
     #define UUMIN    (1.e-16)
     #define RHOMINLIMIT (1.e-30)
     #define UUMINLIMIT  (1.e-30)
 #else
-    #define RHOMIN	(1.e-7)
-    #define UUMIN	(1.e-9)
-    #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT  (1.e-20)
+    #define RHOMIN    (1.e-14) 
+    #define UUMIN    (1.e-16)
+    #define RHOMINLIMIT (1.e-30)
+    #define UUMINLIMIT  (1.e-30)
+
+    //#define RHOMIN	(1.e-7)
+    //#define UUMIN	(1.e-9)
+    //#define RHOMINLIMIT (1.e-20)
+    //#define UUMINLIMIT  (1.e-20)
 #endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
@@ -123,6 +220,9 @@ Physical Parameters section
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
 #define GAMMAMAX_RAD (50.)
+#if (NEUTRINOS_M1)
+#define GAMMAMAX_NU (50.)
+#endif
 
 /*Max value of electron temperature in Kelvin*/
 #define TMAX (1.e15)
@@ -156,7 +256,11 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Memory of each GPU in GB*/
+<<<<<<< HEAD
 #define GPU_MEM (40.0)
+=======
+#define GPU_MEM (80.0)
+>>>>>>> origin/danat_neutrinos_debug
 
 /*Memory of the node*/
 #define CPU_MEM (80.0)
@@ -174,6 +278,7 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
+<<<<<<< HEAD
 #define NB_1 4
 #define NB_2 4
 #define NB_3 4
@@ -182,9 +287,19 @@ Numerical Parameters section
 #define BS_1 20
 #define BS_2 20
 #define BS_3 20
+=======
+#define NB_1 6
+#define NB_2 2
+#define NB_3 2
+
+/*Set block size in each dimension*/
+#define BS_1 56
+#define BS_2 48
+#define BS_3 48
+>>>>>>> origin/danat_neutrinos_debug
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (1)
@@ -215,11 +330,17 @@ Numerical Parameters section
 /*If you want to call multiple blocks from multiple threads. Will not *allways* improve performance and SLOWS down performance of workstation, so not recommended for non-cluster use!*/
 #define GPU_OPENMP 0
 
+/*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
+#define NORMALIZE_DIVB 1
+
+/*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
+#define SMALL_DIVB 1.e-300
+
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -262,10 +383,17 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
+<<<<<<< HEAD
 #define TREF 200.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
+=======
+#define TREF 50.0
+
+/*Select the courant factor for the timestep*/
+#define COUR (0.5)
+>>>>>>> origin/danat_neutrinos_debug
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -388,7 +516,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (2)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
+#define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
+#define NDIAG (3) // number of diagnostic variables
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
@@ -399,8 +529,35 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (0)
 
+<<<<<<< HEAD
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
+=======
+#define NU_SPECIES (3)       /* number of species evolved */
+
+/* number of Nulib table entries for each variable */
+#define NULIB_RHO   (70) // (50)
+#define NULIB_TEMP  (60) // (40)
+#define NULIB_YE    (50) // (30)
+
+/* Nulib table variable bounds  */
+#define nulib_dhi (14.0) // (15.5)
+#define nulib_dlo (8.0) // (6.0)
+#define nulib_thi (13.0)
+#define nulib_tlo (9.763594473254775)
+#define nulib_yhi (0.55)
+#define nulib_ylo (0.01)
+
+#define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
+#define nulib_yehi_threshold (nulib_yhi - (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
+
+/* Nulib table coefficients mnemonics */
+#define NULIB_VARS (4)
+#define NU_EMISSIVITY (1)
+#define NU_ABSORPTION (2)
+#define NU_SCATTERING (3)
+#define NU_EMISSIVITY_N (4)
+>>>>>>> origin/danat_neutrinos_debug
 
 /*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
 #define COOL_STOP (0)
@@ -454,7 +611,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
+#if (RADM1_SUBCYCLING)
 #define DO_IMEX (0)
+#else 
+#define DO_IMEX (0) // as ML said: disable IMEX for now; source terms might be broken 
+#endif 
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)
@@ -479,7 +640,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // CGS constants needed for radiation
 #define ARAD (7.5657e-15) /*Radiation density constant*/
 #define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
-#define ME_CGS (9.1094e-28) /*Mass hydrogen molecule*/
+#define ME_CGS (9.1094e-28) /*Mass of electron*/
 #define MMW (1.69) /*Mean molecular weight*/
 #define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
 #define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
@@ -489,7 +650,29 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
+<<<<<<< HEAD
 #define M_SGRA_SOLAR (10.0) /* Solar masses */
+=======
+#if (RADM1_SUBCYCLING)
+#define M_SGRA_SOLAR (0.1) /* Solar masses */
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#define M_SGRA_SOLAR (3.795) /* Solar masses */
+#else
+#define M_SGRA_SOLAR (8.07) /* Solar masses */
+#endif
+#else
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define M_SGRA_SOLAR (2.5) /* Solar masses */
+#else
+#define M_SGRA_SOLAR (4.0) /* Solar masses */
+#endif
+#else 
+#define M_SGRA_SOLAR (3.0) /* Solar masses */
+#endif
+#endif
+>>>>>>> origin/danat_neutrinos_debug
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
@@ -499,17 +682,44 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MU_G (4.0/(6*X_AB+Y_AB+2.0))
 #define BASIC (0)
 #define TYPE2 (1)
+#define TYPE3 (2)
 #define IONS (0)
 #define ELECTRONS (1)
+
+// Constants needed for neutrinos
+#define MP_CGS (1.6726231e-24)
+#define MN_CGS (1.6749286e-24)
 
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
+<<<<<<< HEAD
 #define MASS_DENSITY_SCALE (3.1)
 //#define MASS_DENSITY_SCALE (0.1*0.02*5e-9*3.1)
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
+=======
+#if (RADM1_SUBCYCLING)
+#define MASS_DENSITY_SCALE (0.0000001)
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+#else
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#endif
+#else
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
+#endif
+>>>>>>> origin/danat_neutrinos_debug
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
@@ -540,6 +750,16 @@ MNEMONICS SECTION
 #define ENTRE (8+DOKTOT+RAD_M1*4+RESISTIVE*3)
 #define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
 #define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
+#define YE (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1)
+#define XALPHA  (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+0)
+#define XATM    (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+1)
+#define UU_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2)
+#define U1_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+1)
+#define U2_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+2)
+#define U3_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+3)
+#define NUMBER_NU (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2+P_NUM*1+DO_YE*1+DONUCLEAR*2+4)
+#define NPR_NU (5)
+#define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2    
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -775,7 +995,10 @@ MNEMONICS SECTION
 #define AMR_TAG3 180
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
+<<<<<<< HEAD
 #define AMR_CARTFLAG 183
+=======
+>>>>>>> origin/danat_neutrinos_debug
 
 //Same as above but for old datasets used in grid_read function
 #define READ_AMR_COORD1 (0)
@@ -820,6 +1043,13 @@ Variable Inversion Section
 #define NEWT_DIM_2 2
 #define NEWT_DIM_1 1
 
+// Section with DONUCLEAR constants
+#define x_atm_cutoff (0.5)
+#define tgas_cutoff (1e10)
+#define Qalpha (28.3 * 1.60217733e-6)
+#define amu (1.6605402e-24)
+#define m_alpha (4.0 * amu)
+
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
@@ -827,11 +1057,15 @@ Section with EOS constants
 #define EOSJMAX (201)   
 // Log10 of EOS quantity limits
 #define eos_tlo (3.0)   
-#define eos_dlo (-12.0) 
 #define eos_thi (13.0)
+#define eos_dlo (-12.0) 
 #define eos_dhi (15.0)
 // EOS quantity limits
+#if (DOHELM_LOWTEMP)
+#define eos_temp_low (1e-10)
+#else
 #define eos_temp_low (1e3)
+#endif
 #define eos_temp_up (1e13)
 #define eos_dens_low (1e-12)
 #define eos_dens_up (1e15)
@@ -860,7 +1094,8 @@ Section with EOS constants
 #define avo (6.0221367e23)
 #define kerg (1.380658e-16)
 #define kev (8.617385e-5)
-#define amu (1.6605402e-24)
+#define k2mev (8.617385e-11)
+#define mev2k (1.160445e10)
 #define avoinv (1.0e0 / avo)
 #define kergavo (kerg * avo)
 #define c_light (2.99792458e10)
@@ -873,7 +1108,7 @@ Section with EOS constants
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
 
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#define Mbh_cgs (8.07 * 1.99e33)
+#define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)
 #else
 #define Mbh_cgs (3 * 1.99e33)
 #endif 
@@ -894,6 +1129,7 @@ Section with EOS constants
 #define conv_pres_CGS2CODE (1.0 / PRESSURE_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
 #define conv_ener_CODE2CGS (c_light * c_light)
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
+#define conv_entr_CODE2CGS (kergavo)
 #define conv_entr_CGS2CODE (1.0 / kergavo)
 
 //For the uniform background coulomb correction
@@ -907,10 +1143,6 @@ Section with EOS constants
 #define eos_c2 (0.288675e0)
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
-
-//For the nuclear physics: alpha particles
-#define Qalpha (4.5334641147464686e-5)
-#define Qa (28.3 * 1.60217733e-6)
 
 // ***********Beginning of statement function declarations **********
 // quintic hermite polynomial statement functions
@@ -965,9 +1197,10 @@ Section with derived quantities
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
 #define NPR_PH     (1)        /* Number density of photons*/
+//#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH+DO_YE*1+DONUCLEAR*2+NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -975,7 +1208,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+2*DONUCLEAR+(5+1)*NEUTRINOS_M1*NU_SPECIES)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)
@@ -1054,8 +1287,11 @@ Section with derived quantities
 #if (N_LEVELS_1D==0)
 #if(DEREFINE_POLE)
 #define NB (NB_1*NB_3*(1*FACTOR1+2*FACTOR2))
+<<<<<<< HEAD
 #elif(GRID_CARTESIAN)
 #define NB (NB_1*NB_2*NB_3*(N_LEVELS_CART+1)*FACTOR1)
+=======
+>>>>>>> origin/danat_neutrinos_debug
 #else
 #define NB (NB_1*NB_2*NB_3*FACTOR1)
 #endif
@@ -1137,6 +1373,7 @@ Section with derived quantities
 #define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
 #define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
 #endif
+<<<<<<< HEAD
 
 /*HIP related stuff*/
 #if(SHIP)
@@ -1162,3 +1399,5 @@ Section with derived quantities
 #define gpuEvent_t cudaEvent_t
 #define gpuSharedMemBankSizeEightByte cudaSharedMemBankSizeEightByte
 #endif
+=======
+>>>>>>> origin/danat_neutrinos_debug

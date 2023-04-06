@@ -92,7 +92,7 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     
     #if DOHELM
     // Helmholtz EOS
-    eos_mode_rhou_pres (r, u, &P);
+    eos_mode_rhou_pres (pr, &P);
 	#elif(TWO_T)
     // Ideal gas EOS
 	P = (gamma_g - 1.) * u;
@@ -500,9 +500,14 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	);
 
 	#if (DOHELM)
+<<<<<<< HEAD
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+=======
+	eos_mode_rhou_temp(ph, &Te);
+	arad = ARAD / (ENERGY_DENSITY_SCALE);
+>>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -563,9 +568,14 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#endif
 
 	#if (DOHELM)
+<<<<<<< HEAD
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+=======
+	eos_mode_rhou_temp(ph, &Te);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+>>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -582,7 +592,14 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
+<<<<<<< HEAD
 	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
+=======
+	#if(WHICHPROBLEM == RAD_PULSE)
+	kappa_abs = 0.;
+	#endif
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+>>>>>>> origin/danat_neutrinos_debug
 }
 
 //Calculate total emmission opacity
@@ -605,9 +622,14 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#endif
 
 	#if (DOHELM)
+<<<<<<< HEAD
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+=======
+	eos_mode_rhou_temp(ph, &Te);
+	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+>>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -624,7 +646,14 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
+<<<<<<< HEAD
 	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
+=======
+	#if(WHICHPROBLEM == RAD_PULSE)
+	kappa_abs = 0.;
+	#endif
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+>>>>>>> origin/danat_neutrinos_debug
 }
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph
@@ -640,9 +669,14 @@ double calc_kappa_es(double * restrict ph
 	#endif
 
 	#if (DOHELM)
+<<<<<<< HEAD
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
+=======
+	eos_mode_rhou_temp(ph, &Te);
+	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+>>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -650,8 +684,17 @@ double calc_kappa_es(double * restrict ph
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Te / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
 
+	#if(WHICHPROBLEM == RAD_PULSE)
+	kappa_es = KAPPARADPULSE;
+	return(kappa_es);
+	#else 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;
+<<<<<<< HEAD
 	return(kappa_es * (ph[RHO] * mass_density_scale) * R_G_CGS);
+=======
+	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	#endif
+>>>>>>> origin/danat_neutrinos_debug
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
@@ -747,6 +790,51 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 	return;
 }
 
+#if (NEUTRINOS_M1)
+void ucon_calc_nu(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_nu, int species)
+{
+	double alpha, gamma_nu;
+	double beta[NDIM];
+	int j;
+
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	#pragma ivdep
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+
+	if (gamma_calc_nu(pr, geom, &gamma_nu, species)) {
+		fflush(stderr);
+		fprintf(stderr, "\nucon_calc_nu(): gamma_nu failure \n");
+		fflush(stderr);
+		fail(FAIL_GAMMA);
+	}
+
+	ucon_nu[0] = gamma_nu / alpha;
+	#pragma ivdep
+	SLOOPA ucon_nu[j] = pr[index_nu(U1_NU, species) + j - 1] - gamma_nu*beta[j] / alpha;
+
+	return;
+}
+
+int gamma_calc_nu(double* restrict pr, struct of_geom* restrict geom, double* restrict gamma_nu, int species)
+{
+	double qsq;
+	qsq = geom->gcov[1][1] * pr[index_nu(U1_NU, species)] * pr[index_nu(U1_NU, species)] + geom->gcov[2][2] * pr[index_nu(U2_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[3][3] * pr[index_nu(U3_NU, species)] * pr[index_nu(U3_NU, species)] + 2. * (geom->gcov[1][2] * pr[index_nu(U1_NU, species)] * pr[index_nu(U2_NU, species)] + geom->gcov[1][3] * pr[index_nu(U1_NU, species)] * pr[index_nu(U3_NU, species)] + geom->gcov[2][3] * pr[index_nu(U2_NU, species)] * pr[index_nu(U3_NU, species)]);
+	if (qsq < 0.) {
+		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
+			fprintf(stderr, "gamma_calc_nu():  failed: qsq = %28.18e \n", qsq);
+			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[index_nu(U1_NU, species)], pr[index_nu(U2_NU, species)], pr[index_nu(U3_NU, species)]);
+			*gamma_nu = 1.;
+			return (1);
+		}
+		else qsq = 1.E-10; // set floor
+	}
+
+	*gamma_nu = sqrt(1. + qsq);
+
+	return(0);
+}
+#endif
+
 /* find gamma-factor wrt normal observer */
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
@@ -824,7 +912,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     #if DOHELM
     // Helmholtz EOS
     double xpres;
-    eos_mode_rhou_pres_cs2 (pr[RHO], pr[UU], &xpres, &cs2);
+    eos_mode_rhou_pres_cs2 (pr, &xpres, &cs2);
     va2 = bsq/(bsq + pr[RHO] + pr[UU] + xpres);
     #else
     // Ideal gas EOS

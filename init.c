@@ -14,7 +14,7 @@
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
-void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz);
 void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -44,6 +44,7 @@ void init_torus_grb();
 void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
+<<<<<<< HEAD
 void init_sndwave();
 void init_entwave();
 void init_postmerger();
@@ -51,6 +52,14 @@ void init_blastwave();
 void init_shocktube();
 void set_mag_spherical();
 void init_torus_spherical();
+=======
+void init_rad_pres(double pi[NPR]);
+void init_neutrinos(double ph[NPR]);
+void init_nuclear(double ph[NPR]);
+void init_sndwave();
+void init_entwave();
+void init_radpulse();
+>>>>>>> origin/danat_neutrinos_debug
 
 double global_kappa, aphipow;
 
@@ -69,18 +78,27 @@ typedef struct {
   int nvars, nx, ny, nz; //resolution
 } extent;
 
+typedef struct {
+	double xmin, xmax; //array extent
+	int nvars, nx; //resolution
+} extent1d;
+
 
 void init()
 {
-	void init_bondi(void);
 	void init_torus(void);
 	void init_torus_grb();
 	void init_disruption(void);
 	void init_monopole(double Rout_val);
 	void init_thindisk();
+<<<<<<< HEAD
 	void init_truncdisk();
 	void init_collapsar();
 	void init_NSM();
+=======
+	void init_postmerger();
+	void init_collapsar();
+>>>>>>> origin/danat_neutrinos_debug
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -110,12 +128,16 @@ void init()
 			break;
 		case BONDI_PROBLEM_1D:
 		case BONDI_PROBLEM_2D:
+<<<<<<< HEAD
 			init_bondi();
 			break;
+=======
+>>>>>>> origin/danat_neutrinos_debug
 		case SOUND_WAVE:
 			init_sndwave();
 			break;
 		case ENT_WAVE:
+<<<<<<< HEAD
 			init_entwave();
 			break;
 		case TRUNC_PROBLEM:
@@ -132,7 +154,16 @@ void init()
 		case SHOCK_TUBE:
 			init_shocktube();
 			break;
+=======
+		init_entwave();
 		break;
+		case RAD_PULSE:
+		init_radpulse();
+>>>>>>> origin/danat_neutrinos_debug
+		break;
+		case COLLAPSAR:
+			init_collapsar();
+			break;
 	}
 
 	int n;
@@ -142,6 +173,7 @@ void init()
 	#endif
 }
 
+<<<<<<< HEAD
 void init_bondi()
 {
 	int i, j, z, n;
@@ -243,12 +275,46 @@ void init_bondi()
 		}
 	}
 
+=======
+void init_radpulse()
+{
+	int i, j, k, z, n;
+	double x, y, zz, sth, cth;
+	double ur, uh, up, u, rho;
+	double X[NDIM];
+	struct of_geom geom;
+
+	double sigma = 1.54e-54; // 8.77e-12 * 0.25 * C_CGS * (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	double T0 = 1e6;
+	double myrho = 1.;
+	double xc = 0.;
+	double yc = 0.;
+	double zc = 0.;
+	double w = 5.;
+	double T_rad;
+	double tau = 0.;
+	double taumax = 0.;
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	lim = MC;
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+
+	t = 0.; 
+
+	/* output choices */
+	tf = 1000.;
+>>>>>>> origin/danat_neutrinos_debug
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
 	dump_cnt_reduced = 0;
 	image_cnt = 0;
 	rdump_cnt = 0;
+<<<<<<< HEAD
 
 	#if(!NSY)
 	tilt = (TILT_ANGLE) / 180. * M_PI;
@@ -445,6 +511,86 @@ void init_bondi()
 }
 
 void init_blastwave()
+=======
+	defcon = 1.;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &x, &y, &zz);
+			//applying the perturbations
+			//T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc) + (zz - zc) * (zz - zc)) / (w * w)));
+			//T_rad = T0 * (100. * exp(- ((x - xc) * (x - xc)) / (w * w)));
+			T_rad = T0 * (1. + 100. * exp(-((x - xc) * (x - xc)) / (w * w)));
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myrho * T0 / (GAMMA - 1.);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+
+#if(RAD_M1)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 4. * sigma * pow(T_rad, 4.0);
+			//fprintf(stderr, "%e\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = 0.;
+#endif
+		}
+	}
+
+	double cell_size, kappa_es, kappa_abs;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//Calculate optical depth of one cell
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#if(D3>1)
+			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+			#else
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			#endif
+			//Calculate radiation temperature in rest frame of fluid
+			struct of_state q;
+			struct of_state_rad q_rad;
+			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
+			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov);
+			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+			double gamma_g = GAMMA;
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			tau = (kappa_es + kappa_abs) * cell_size;
+			if (tau > taumax) {
+				taumax = tau;
+			}
+		}
+	}
+
+	fprintf(stderr, "sigma=%e, taumax=%e\n", sigma, taumax);
+
+	/* enforce boundary conditions */
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+	bound_prim(p, 1);
+}
+
+void init_entwave()
+>>>>>>> origin/danat_neutrinos_debug
 {
 	int n, i, j, z, k;
 	double xx, yy, zz, r, th, phi, dist, X[NDIM];
@@ -1603,7 +1749,7 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
-	set_mag();
+	//set_mag();
 
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
@@ -1635,6 +1781,7 @@ void init_torus()
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
+<<<<<<< HEAD
 	a = 0.9375;  
 	rin = 20.;
 	rmax = 41.;
@@ -1642,6 +1789,15 @@ void init_torus()
 	kappa = 1.e-3 ;
 	beta = 100. ;
 	#if(RAD_M1 && HIGH_MDOT)
+=======
+	a = BH_SPIN;
+	rin = 6.;
+	rmax = 12.;
+	l = lfish_calc(rmax) ;
+	kappa = 1.e-3 ;
+	beta = BETA ;
+	#if(RAD_M1)
+>>>>>>> origin/danat_neutrinos_debug
 	gam_local = 4. / 3.;
 	#else
 	gam_local = GAMMA;
@@ -1679,8 +1835,9 @@ void init_torus()
 	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
+	double Tnu;
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es, Tnu) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X,&r,&th, &phi) ;
@@ -1740,22 +1897,40 @@ void init_torus()
 				rho = 1.e-7*RHOMIN ;
 				u = 1.e-7*UUMIN ;
 
+<<<<<<< HEAD
 				ur = 0. ;
 				uh = 0. ;
 				up = 0. ;
+=======
+				ur = 0.;
+				uh = 0.;
+				up = 0.;
+>>>>>>> origin/danat_neutrinos_debug
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+<<<<<<< HEAD
 			
+=======
+
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
+				#endif
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				#endif			
+>>>>>>> origin/danat_neutrinos_debug
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
 			 * so it needs to be transformed at the end */
 			else { 
 				hm1 = exp(lnh) - 1. ;
+<<<<<<< HEAD
 				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),1./(gam_local - 1.)) ;
 				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
 				ur = 0. ;
@@ -2033,6 +2208,13 @@ void init_collapsar(void)
 			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
 			elliptical_coord(X_cart, pos_new, &r, eccentricity);
 			#endif
+=======
+				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),
+							1./(gam_local - 1.)) ;
+				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
+				ur = 0. ;
+				uh = 0. ;
+>>>>>>> origin/danat_neutrinos_debug
 
 			sth = sin(th);
 			cth = cos(th);
@@ -2080,8 +2262,13 @@ void init_collapsar(void)
 					#pragma omp critical
 					rhomax = rho;
 				}
+<<<<<<< HEAD
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
 				if (u > umax && r > rin) {
+=======
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u *(1. + 4.e-2 * (ranc(0) - 0.5));
+				if(u > umax && r > rin){
+>>>>>>> origin/danat_neutrinos_debug
 					#pragma omp critical
 					umax = u;
 				}
@@ -2124,10 +2311,44 @@ void init_collapsar(void)
 				// convert from 4-vel to 3-vel
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 				#endif
+
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.15;
+				#endif
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				#endif
 			}
+<<<<<<< HEAD
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+=======
+
+			// Setting temperature given u
+			#if (DOHELM_TEMPERATURE == 2)
+			eos_mode_rhou_temp_init(rho, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], u);
+			#endif
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
+
+			// initialize neutrinos
+			#if (0)
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-15;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U2_NU, sp)] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U3_NU, sp)] = up;
+
+				Tnu = pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][NUMBER_NU] = 1e-30;
+			}
+			#endif
+>>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	a = temp;
@@ -2138,6 +2359,7 @@ void init_collapsar(void)
 	// Share umax among MPI processes
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
+<<<<<<< HEAD
 
 	// Normalize the densities so that max(rho) = 1
 	if (rank == 0) {
@@ -2161,6 +2383,81 @@ void init_collapsar(void)
 		}
 	*/
 	for (n = 0; n < n_active; n++) {
+=======
+  
+	/* Normalize the densities so that max(rho) = 1 */
+	if (rank == 0){
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
+
+	//double torus_mass = 0.;
+	for (n = 0; n < n_active; n++){
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z) shared(rhomax)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			//torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
+			#if(RAD_M1)
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+
+			//Calculate optical depth of one cell
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#if(D3>1)
+			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+			#else
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			#endif
+			//Calculate radiation temperature in rest frame of fluid
+			struct of_state q;
+			struct of_state_rad q_rad;
+			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
+
+			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov);
+			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+			double gamma_g = GAMMA;
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			tau = (kappa_es + kappa_abs) * cell_size;
+			if (tau > taumax) {
+				#pragma omp critical
+				taumax = tau;
+			}
+			#endif
+		}
+	}
+
+	//if (rank == 0) {
+		//fprintf(stderr, "torus mass: %g\n", torus_mass);
+	//}
+
+	umax /= rhomax ;
+	rhomax = 1. ;
+
+	//Calculate maximum optical depth in once cell
+	#if (MPI_enable)
+	#if(RAD_M1)
+	MPI_Allreduce(MPI_IN_PLACE, &taumax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+	#endif
+
+	#if(RAD_M1)
+	//Print maximum optical depth in grid
+	if (rank == 0) {
+		fprintf(stderr, "taumax: %g\n", taumax);
+	}
+	#endif
+
+	for (n = 0; n < n_active; n++){
+>>>>>>> origin/danat_neutrinos_debug
 		fixup(p, n_ord[n]);
 	}
 
@@ -2173,6 +2470,7 @@ void init_collapsar(void)
 	calc_source();
 	#endif
 
+<<<<<<< HEAD
 	bound_prim(p, 1);
 
 }
@@ -2202,6 +2500,68 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		game = (10.0 + 20.0 * pe_new / pi[RHO] * MU_E * MASS_RATIO) / (6.0 + 15.0 * pe_new / pi[RHO] * MU_E * MASS_RATIO);
 		gami = (10.0 + 20.0 * pi_new / pi[RHO] * MU_I) / (6.0 + 15.0 * pi_new / pi[RHO] * MU_I);
 		#endif
+=======
+	#if (DOHELM)
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam_local - 1.);
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	
+	#if (DOHELM_TEMPERATURE)
+	// Set temperatures given u:
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);
+		}
+	}
+	#endif
+	#endif
+
+	/* Initialize neutrinos */
+	#if(NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+
+	#if(0)
+	double ucon_nu[NDIM], ucov_nu[NDIM], ucon[NDIM], ener_nu_avg;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+				ucon_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon);
+				ucon_calc_nu(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, ucon_nu, sp);
+				lower(ucon_nu, &geom, ucov_nu);
+
+				ener_nu_avg = -p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] * (4. / 3. * ucon_nu[0] * (ucov_nu[0] * ucon[0] + ucov_nu[1] * ucon[1] + ucov_nu[2] * ucon[2] + ucov_nu[3] * ucon[3]) + 1. / 3. * ucon[0]) / (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(NUMBER_NU, sp)] * ucon_nu[0]);
+
+				calc_neutrino_temperature(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], ener_nu_avg, &Tnu, sp);
+				if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] > 1e-3) fprintf(stderr, "\n\tinit.c:[sp=%d](r, t, y = %e %e %e) <e> = %e, Tnu = %e", sp, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], ener_nu_avg, Tnu);
+			}
+		}
+	}
+	#endif
+	/* initialize the entropies for two temperature fluids (electrons and ions) */
+	#if(TWO_T)
+	double delta, u_e, u_i, bsq;
+>>>>>>> origin/danat_neutrinos_debug
 
 		//Calculate ue and ui
 		ue = pe_new / (game - 1.0);
@@ -2329,6 +2689,7 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 }
 #endif
 
+<<<<<<< HEAD
 void init_rad_pres(double pi[NPR]) {
 	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
 	int keep_iterating=1, i, n_iter=0;
@@ -2359,6 +2720,567 @@ void init_rad_pres(double pi[NPR]) {
 	while (keep_iterating) {
 		//Calculate gradient dPdT
 		dPdT = pi[RHO] + 4. / 3.*arad*pow(T_new, 3.);
+=======
+#undef dd
+#define dd(ii,ivar) icdata[ivar*nx+ii]
+>>>>>>> origin/danat_neutrinos_debug
+
+void init_collapsar(void)
+{
+	int interpolate_gr1d_prims(double r, double th, double ph, extent1d ext, double* data, double* p);
+	char* read_first_line(char* s, size_t size, FILE * fp);
+	char* read_last_line(char* s, size_t size, FILE * fp);
+	int i, j, z, n;
+	double r, th, phi, sth, cth;
+	double ur, uh, up, u, rho;
+	double bl_gcov[NDIM][NDIM];
+	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+	double rhor, M_STAR, M_BH, Rs, alphap, betap, rho0, R_STARcm, Omega0, Omega0_limit, r_rc, t_rc, m_rc, r_hole;
+	struct of_geom geom;
+
+	/* for disk interior */
+	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
+	double l, rin, lnh, expm2chi, up1;
+	double tilt, eccentricity;
+	double kappa, hm1;
+
+	/*For MPI*/
+	double inmsg;
+
+	// for magnetic field
+	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
+	double rhofactor = 1e3;
+	// star parameters
+	M_STAR = 14; // Stellar mass
+	R_STARcm = 4e10; // Star radius
+	M_BH = 4; // Stellar mass
+	r_rc = M_BH * 1.5e5;
+	//r_rc = R_G_CGS;
+	m_rc = M_BH * 2e33;
+	Rs = R_STARcm / r_rc; // stellar radius in code units
+	alphap = 1.5; // inner density profile power-law
+	betap = 3; // outer density profile power-law
+	rho0 = 0.3; // density normalization for alphap = 1
+	Omega0 = 5;
+	Omega0_limit = 1e-3;
+	r_hole = 10;
+
+<<<<<<< HEAD
+	pgas = pi[RHO] * T_new;
+	pi[UU] = pgas / (GAMMA - 1.); //note that based on EOS energy should be divided between electrons and ions
+	pi[UU_RAD] = arad * pow(T_new, 4.);
+	#else
+	pi[UU_RAD] = pi[UU]*0.001;
+	#endif
+
+	//Set photon number based on Boltzman distribution
+	#if(P_NUM)
+	T_new = pow(pi[UU_RAD] * energy_density_scale / ARAD, 0.25);
+	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+	#endif
+
+	pi[U1_RAD] = pi[U1];
+	pi[U2_RAD] = pi[U2];
+	pi[U3_RAD] = pi[U3];
+}
+=======
+	double temp = a;
+	a = 0.8;
+	rin = 6.0;
+	rmax = 1e4;
+	l = lfish_calc(rmax);
+	kappa = 1.e-3;
+	beta = 100.;
+	
+	int res;
+	#if (COLLAPSAR_GR1D)
+	FILE* fp1;
+	int ind;
+	int nitems_read, nitems_expected;
+	# define MAXLEN (1024)
+	int nvars, nx, ny, nz;
+	double* icdata;
+	extent1d ext;
+
+	char fname1[] = "GR1D_star.dat";
+
+	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], * ptr1;
+	size_t memsize, nitems, nread;
+	double prim[NPR];
+	int k, ii, jj, kk;
+
+	ext.nvars = 6;
+
+	for (ind = 0; ind < numtasks; ind++) {
+		if (ind == rank) {
+			fp1 = fopen(fname1, "rb");
+			if (NULL == fp1 && 0 == rank) {
+				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
+				exit(1234);
+			}
+			ext.nx = 1003;
+
+			read_last_line(last_line, MAXLEN, fp1);
+			sscanf(last_line, "%lf %*lf %*lf %*lf %*lf", &ext.xmax);
+			rewind(fp1);
+>>>>>>> origin/danat_neutrinos_debug
+
+			read_first_line(first_line, MAXLEN, fp1);
+			sscanf(first_line, "%lf %*lf %*lf %*lf %*lf", &ext.xmin);
+
+			if (0 == rank) {
+				fprintf(stderr, "[%d] reading IC block: resolution (%dx%d), extent (%g,%g), files %s...", rank, ext.nvars, ext.nx, ext.xmin, ext.xmax, fname1);
+				fflush(stderr);
+			}
+
+			nx = ext.nx;
+			nvars = ext.nvars;
+			nitems = (size_t)nvars * nx;
+			memsize = sizeof(double) * nitems;
+			icdata = malloc(memsize);
+
+			if (NULL == icdata) {
+				fprintf(stderr, "[%5d] could not allocate memory of size %ld\n", rank, memsize);
+				fclose(fp1);
+				exit(1235);
+			}
+
+			for (ii = 0; ii < nx; ii++) {
+
+				//first file, containing grid and data information
+				ptr1 = fgets(buf1, MAXLEN, fp1);
+				if (NULL == ptr1) break;
+
+				dd(ii, 0) = (double)ii;
+
+				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf \n", &dd(ii, 1), &dd(ii, 2), &dd(ii, 3), &dd(ii, 4), &dd(ii, 5));
+
+				nitems_expected = 5;
+				if (nitems_expected != nitems_read) break;
+			}
+
+			if (nitems_expected != nitems_read || ferror(fp1) || (NULL == ptr1 && !feof(fp1))) {
+				fprintf(stderr, "[%5d] Error reading from file(s)\n", rank);
+			}
+			fclose(fp1); fp1 = NULL;
+			
+
+			if (0 == rank) {
+				fprintf(stderr, " done\n");
+				fflush(stderr);
+			}
+			//now icdata contains the IC information
+		}
+	}
+
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	#endif
+	
+	coord(0, 5, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	if (rank == 0) {
+		fprintf(stderr, "r[5]: %g\n", r);
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
+			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+		}
+		else {
+			fprintf(stderr, "\n");
+		}
+	}
+
+	// output choices
+	tf = 200000000.0;
+
+	// start diagnostic counters
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+
+	rhomax = 0.;
+	umax = 0.;
+	#if(!NSY)
+	tilt = (TILT_ANGLE) / 180. * M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180. * M_PI;
+	#endif
+	eccentricity = 0;
+
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, res) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa,hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
+			#if (TILTED)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
+			#endif
+
+			#if(ELLIPTICAL)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			elliptical_coord(X_cart, pos_new, &r, eccentricity);
+			#endif
+
+			sth = sin(th);
+			cth = cos(th);
+
+			#if (COLLAPSAR_GR1D)
+			res = interpolate_gr1d_prims(r, th, phi, ext, icdata, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+
+			if (res) {
+				//|| p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * MASS_DENSITY_SCALE > 1e13) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1e-7 * RHOMIN;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e-7 * UUMIN;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
+				#endif
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 1.0;
+				#endif
+			}
+			else {
+				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				#endif
+			}
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] > rhomax) {
+				#pragma omp critical
+				rhomax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+			}
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && r > rin) {
+				#pragma omp critical
+				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			#else
+			ur = 0.;
+			uh = 0.;
+			up = 0.;
+			if (r > Rs) {
+				rho = 1e-20; // ISM density
+				u = rho / 1e6; //u = 1e-3*pow(rho,gam)/(gam - 1.) ;
+
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+			}
+			else if (r < 2) {
+				rho = rho0 * pow(r_hole, -alphap) * r / r_hole;
+				//rho = rho0 * pow(r_hole, -alphap);
+				u = 1e-6 * rho / r;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+			}
+			else {
+				if (r < r_hole) {
+					rho = rho0 * pow(r_hole, -alphap) * r / r_hole;
+					u = 1e-6 * rho / r;
+					/* p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
+					p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;*/
+				}
+				else {
+					rho = rho0 * pow(r, -alphap) * pow((Rs - r) / Rs, betap);
+					u = 1e-6 * rho / r;
+					//u = 0.5 * rho / (r * (gam - 1.)) * M_BH * M_BH / M_STAR;
+				}
+				//u = 1e-3*pow(rho,gam)/(gam - 1.) ;
+				//u = 1/(gam-1)*3.14*pow(rho0,2)/pow(Rs,3) * (1/(12*pow(r*Rs,3)) * (3*pow(r,7)-28*pow(r,6)*Rs+126*pow(r,5)*Rs*Rs-420*pow(r,4)*pow(Rs,3)+252*r*r*pow(Rs,5)-42*r*pow(Rs,6)+4*pow(Rs,7)) - 35*Rs*log(r)); // Newtonian hydrostatic eq.
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				if (rho > rhomax) {
+					#pragma omp critical
+					rhomax = rho;
+				}
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
+				if (u > umax && r > rin) {
+					#pragma omp critical
+					umax = u;
+				}
+				//up = Omega0/(1+pow(r/A_rot,2))/3e10; // angular velocity
+				//if (Omega0/pow(r*sin(th),2) > Omega0_limit) {
+				if (Omega0 / pow(r, 2) > Omega0_limit) {
+					up = Omega0_limit;
+				}
+				else {
+					//up = Omega0/pow(r*sin(th),2);
+					up = Omega0 / pow(r, 2);
+				}
+				#if (TILTED)
+				V[1] = ur;
+				V[2] = uh;
+				V[3] = up;
+				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#elif(ELLIPTICAL)
+				V_old[1] = ur;
+				V_old[2] = uh;
+				V_old[3] = up;
+				elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V_new[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V_new[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V_new[3];
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
+
+				// convert from 4-vel to 3-vel
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				#endif
+			}
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			#if (DO_YE)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
+			#endif
+			#endif
+		}
+	}
+	a = temp;
+	#if (MPI_enable)
+	// Share rhomax among MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
+	// Share umax among MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+
+	// Normalize the densities so that max(rho) = 1
+	if (rank == 0) {
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
+	//ZSLOOP(0,N1-1,0,N2-1) {
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			#if (COLLAPSAR_GR1D == 0)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhofactor * rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhofactor * rhomax;
+			#endif
+		}
+	}
+	umax /= rhomax;
+	rhomax = 1.;
+	/*        for (n = 0; n < n_active; n++) ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[ \
+		n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+		  dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+		}
+	*/
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+
+	bound_prim(p, 1);
+
+	//set_mag();
+
+
+	#if (DOHELM)
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			#if (1)
+			//#if (COLLAPSAR_GR1D)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#endif
+		}
+	}
+
+	//for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	#if (DOHELM_TEMPERATURE)
+	// Set temperatures given u:
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			#if (0)
+			//#if (COLLAPSAR_GR1D == 0)
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e-6;
+			#else
+			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e3;
+			#endif
+		}
+	}
+	#endif
+	#endif
+
+	#if(NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+
+	sourceflag = 0.;
+	#if(ELLIPTICAL2)
+	calc_source();
+	#endif
+
+	bound_prim(p, 1);
+
+<<<<<<< HEAD
+      nx = ext.nx;
+      ny = ext.ny;
+      nz = ext.nz;
+      nvars = ext.nvars;
+      nitems = (size_t)nvars*nx*ny*nz;
+	  memsize = sizeof(double) * nitems;
+      icdata = (double *)malloc(memsize);
+      if(NULL == icdata) {
+        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+        fclose(fp1);
+        fclose(fp2);
+        exit(1235);
+      }
+      //read in the data block from file
+=======
+}
+
+void init_neutrinos(double ph[NPR]) {
+#if (NEUTRINOS_M1)
+	double F2, F3, mu_nu, mu_p, mu_n, mu_e;
+	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_e
+		#if (DONUCLEAR)
+		, ph[XALPHA], ph[XATM]
+		#endif
+	);
+	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
+	mu_nu = mu_p + mu_e - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
+	double T_nu;
+	for (int sp = 0; sp < NU_SPECIES; sp++) {
+		if (sp == 0) {
+			F2 = calc_fermiint2(mu_nu);
+			F3 = calc_fermiint3(mu_nu);
+		}
+		else if (sp == 1) {
+			F2 = calc_fermiint2(-mu_nu);
+			F3 = calc_fermiint3(-mu_nu);
+		}
+		else if (sp == 2) {
+			F2 = calc_fermiint2(0.0);
+			F3 = calc_fermiint3(0.0);
+		}
+
+		//if (ph[RHO] > pow(10., nulib_dlo) || ph[YE] < nulib_yhi || ph[YE] > nulib_ylo) {
+		//	// Energy density
+		//	ph[index_nu(UU_NU, sp)] = 8. * M_PI * pow(BOLTZ_CGS * ph[UU], 4.) / pow(PLANCK_CGS * C_CGS, 3.) * F3 / (ENERGY_DENSITY_SCALE);
+		//	ph[index_nu(UU_NU, sp)] = MY_MAX(ph[index_nu(UU_NU, sp)], 1e-30);
+		//
+		//	// Number density
+		//	ph[index_nu(NUMBER_NU, sp)] = 8. * M_PI * pow(BOLTZ_CGS * ph[UU], 3.) / pow(PLANCK_CGS * C_CGS, 3.) * F2 / MASS_DENSITY_SCALE;
+		//	ph[index_nu(NUMBER_NU, sp)] = MY_MAX(ph[index_nu(NUMBER_NU, sp)], 1e-30);
+		//}
+		//else {
+		ph[index_nu(UU_NU, sp)] = 1e-30;
+		T_nu = pow(ph[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		ph[index_nu(NUMBER_NU, sp)] = ph[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_nu); //1e-30;
+		//}
+
+		ph[index_nu(U1_NU, sp)] = ph[U1];
+		ph[index_nu(U2_NU, sp)] = ph[U2];
+		ph[index_nu(U3_NU, sp)] = ph[U3];
+	}
+
+#endif
+}
+
+void init_nuclear(double ph[NPR]) {
+#if (DONUCLEAR)
+	#if (DOHELM_TEMPERATURE != 1)
+	fprintf(stderr, "Won't work without Tgas as a primitive variable! Exiting...");
+	exit(1);
+	#endif
+
+	double x_n, x_p;
+	// Compute abundances 
+	if (ph[XATM] < x_atm_cutoff && ph[UU] > tgas_cutoff) {
+		ph[XATM] = 0.0;
+		nse_abundances(ph[RHO] * MASS_DENSITY_SCALE, ph[UU], ph[YE], &x_n, &x_p, &ph[XALPHA]);
+	}
+	else {
+		x_n = get_xn(ph[YE], ph[XALPHA]);
+		x_p = get_xp(ph[YE], ph[XALPHA]);
+		// normalize
+		double x_sum = x_n + x_p + ph[XALPHA] + ph[XATM];
+		if (x_sum > 1.0) {
+			ph[XALPHA] = ph[XALPHA] / x_sum;
+			ph[XATM] = ph[XATM] / x_sum;
+		}
+	}
+
+	fprintf(stderr, "\t\n xn, xp, xa, xatm, ye = %e %e %e %e %e", x_n, x_p, ph[XALPHA], ph[XATM], ph[YE]);
+
+	// Check if the abundances are out of bounds
+	ph[XALPHA] = MY_MIN(1.0, ph[XALPHA]);
+	ph[XATM] = MY_MIN(1.0, ph[XATM]);
+
+	ph[XALPHA] = MY_MAX(1e-10, ph[XALPHA]);
+	ph[XATM] = MY_MAX(1e-10, ph[XATM]);
+
+	return;
+#endif
+}
+
+void init_rad_pres(double pi[NPR]) {
+	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
+	int keep_iterating, i, n_iter;
+
+	keep_iterating = 1;
+	n_iter = 0;
+	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
+	T_new = T_old;
+	ptot = (GAMMA - 1.)*pi[UU];
+
+	while (keep_iterating) {
+		//Calculate gradient dPdT
+		dPdT = pi[RHO] + 4. / 3.*arad*pow(T_new, 3.);
 
 		/* Make the newton step: */
 		T_old = T_new;
@@ -2380,25 +3302,25 @@ void init_rad_pres(double pi[NPR]) {
 		n_iter++;
 	} 
 
-	pgas = pi[RHO] * T_new;
-	pi[UU] = pgas / (GAMMA - 1.); //note that based on EOS energy should be divided between electrons and ions
-	pi[UU_RAD] = arad * pow(T_new, 4.);
-	#else
-	pi[UU_RAD] = pi[UU]*0.001;
-	#endif
+	if (n_iter == MAX_NEWT_ITER*5) {
+		//pi[UU_RAD] = 0.;
+	}
+	else {
+		pgas = pi[RHO] * T_new;
+		pi[UU] = pgas / (GAMMA - 1.);
+		pi[UU_RAD] = arad*pow(T_new,4.);
+	}
 
-	//Set photon number based on Boltzman distribution
 	#if(P_NUM)
-	T_new = pow(pi[UU_RAD] * energy_density_scale / ARAD, 0.25);
+	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
-
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
 }
 
-
+#undef dd
 #define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 #define VARI 0
 #define VARJ 1
@@ -2416,473 +3338,460 @@ void init_rad_pres(double pi[NPR]) {
 #define VARVUPHI 13
 #define NVARS 14
 
-void init_postmerger()
-{
-  int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
-  char* read_first_line(char *s, size_t size, FILE *fp);
-  char* read_last_line(char *s, size_t size, FILE *fp);
-  int i,j,z,n ;
-  extent ext;
-  double r,th,phi,sth,cth ;
-  double ur,uh,up,u,rho ;
-  double bl_gcov[NDIM][NDIM];
-  double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
-  double tilt, eccentricity;
-  struct of_geom geom ;
+void init_postmerger() {
+	int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p, double* udphi, double* mudt);
+	char* read_first_line(char *s, size_t size, FILE *fp);
+	char* read_last_line(char *s, size_t size, FILE *fp);
+	int i,j,z,n ;
+	extent ext;
+	double r,th,phi,sth,cth ;
+	double ur,uh,up,u,rho ;
+	double bl_gcov[NDIM][NDIM];
+	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+	double tilt, eccentricity;
+	struct of_geom geom ;
 
-  /* for disk interior */
-  double l,rin,lnh,expm2chi,up1 ;
-  double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
-  double kappa,hm1 ;
+	/* for disk interior */
+	double l,rin,lnh,expm2chi,up1 ;
+	double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
+	double kappa,hm1 ;
 
-  /*For MPI*/
-  double inmsg;
+	/*For MPI*/
+	double inmsg;
 
-  /* for magnetic field */
-  double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-  double lfish_calc(double rmax) ;
+	/* for magnetic field */
+	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
+	double lfish_calc(double rmax) ;
 
-  /* for ICs */
-  double r_unit = 8.07; //conversion factor = (Mbh/Msun)
-  FILE *fp1, *fp2;
-  int ind;
-  int nitems_read, nitems_expected;
-# define MAXLEN (1024)
-  int nvars, nx, ny, nz;
-  int res;
-  double *icdata;
+	/* for ICs */
+	double r_unit = M_SGRA_SOLAR; //conversion factor = (Mbh/Msun)
 
-#if (READBINARY)
-  char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";
-  int mult = 4;
-#else
-  char fname1[] = "PointsToInterpolateHAMR.dat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
+	FILE *fp1, *fp2;
+	int ind;
+	int nitems_read, nitems_expected;
+	# define MAXLEN (1024)
+	int nvars, nx, ny, nz;
+	int res;
+	double *icdata;
 
-  // In case you want to read the whole ICs table -- set all of them to 1.
-  // Initial resolution is 512 x 256 x 128
-  int stride1 = 4;
-  int stride2 = 2; 
-  int stride3 = 1;
-#endif
-  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
-  size_t memsize, nitems, nread;
-  double prim[NPR];
-  int k, ii, jj, kk;
-  double udphi;
+	#if (BHNSQ2)
+	#if (BHNSQ2_1)
+	char fname1[] = "spec_ic_1.dat";
+	#else
+	char fname1[] = "InterpolatedDataBHNSQ2.dat";
+	#endif
+	#else
+	char fname1[] = "PointsToInterpolateHAMR.dat";
+	char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
+	#endif
 
-  // for reading in binary
-  double *temp_array_grid, *temp_array_prims;
-  int file_size_grid, file_size_prims, num_var, index_grid_final;
-  size_t double_size = sizeof(double);
-  size_t len_grid, len_prims;
+	// In case you want to read the whole ICs table -- set all of them to 1.
+	// Initial resolution is 512 x 256 x 128
+	int stride1 = 1;
+	int stride2 = 1; 
+	int stride3 = 1;
 
+	char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
+	size_t memsize, nitems, nread;
+	double prim[NPR];
+	int k, ii, jj, kk;
+	double udphi, mudt;
+>>>>>>> origin/danat_neutrinos_debug
 
-  /* disk parameters (use fishbone.m to select new solutions) */
-  a = BH_SPIN ;
-  beta = 10. ;
+	/* disk parameters (use fishbone.m to select new solutions) */
+	a = BH_SPIN ;
+	beta = BETA;
 
-  coord(0,5, 0, 0, CENT, X);
-  bl_coord(X, &r, &th, &phi);
-  if (rank == 0) {
-    fprintf(stderr, "r[5]: %g\n", r);
-    fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
-    if (r > 1. + sqrt(1. - a*a)) {
-      fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
-    }
-    else {
-      fprintf(stderr, "\n");
-    }
-  }
+	coord(0, 5, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	
+	if (rank == 0) {
+		fprintf(stderr, "r[5]: %g\n", r);
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
+			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+		}
+		else {
+			fprintf(stderr, "\n");
+		}
+	}
 
-  /* output choices */
-  tf = 200000000.0 ;
-  // DTd = 25.0;  /* dumping frequency, in units of M */
-  // DTl = 50.0;  /* logfile frequency, in units of M */
-  // DTi = 100.0;   /* image file frequ., in units of M */
-  // DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
+	/* output choices */
+	tf = 200000000.0 ;
 
-  /* start diagnostic counters */
-  dump_cnt = 0 ;
-  image_cnt = 0 ;
-  rdump_cnt = 0 ;
+	/* start diagnostic counters */
+	dump_cnt = 0 ;
+	image_cnt = 0 ;
+	rdump_cnt = 0 ;
 
-  ext.nvars = NVARS;
-  //read ICs from file
-  //for this, loop over all MPI processes
-  //and let them read the IC data from file, one by one
+	ext.nvars = NVARS;
+	//read ICs from file
+	//for this, loop over all MPI processes
+	//and let them read the IC data from file, one by one
 
-#if (READBINARY)
-  for (ind=0; ind<numtasks; ind++) {
-    if (ind == rank) {
-      fp1 = fopen(fname1, "rb");
-      if (NULL == fp1 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
-        exit(1234);
-      }
-      fp2 = fopen(fname2, "rb");
-      if (NULL == fp2 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
-        fclose(fp1);
-        exit(1234);
-      }
+	for (ind = 0; ind < numtasks; ind++) {
+		if (ind == rank) {
+			fp1 = fopen(fname1, "rb");
+			if (NULL == fp1 && 0 == rank) {
+				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
+				exit(1234);
+			}
+			#if (BHNSQ2)
+			#if (BHNSQ2_1)
+			ext.nx = 384;
+			ext.ny = 96;
+			ext.nz = 96;
+			#else
+			ext.nx = 384;
+			ext.ny = 96;
+			ext.nz = 96;
+			#endif
+			read_last_line(last_line, MAXLEN, fp1);
+			sscanf(last_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmax, &ext.ymax, &ext.zmax);
+			rewind(fp1);
 
-      // reading the first file:
-      // a) allocation of memory for the array
-      // b) reading the array into the memory
-      fseek(fp1, 0L, SEEK_END);
-      file_size_grid = ftell(fp1);
-      num_var = 6;
-      len_grid = file_size_grid/double_size;
-      index_grid_final = len_grid/num_var;
+			read_first_line(first_line, MAXLEN, fp1);
+			sscanf(first_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmin, &ext.ymin, &ext.zmin);
+			#if (!BHNSQ2_1)
+			ext.xmin /= r_unit;
+			ext.xmax /= r_unit;
+			#endif
+			if (0 == rank) {
+				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1);
+				fflush(stderr);
+			}
 
-      // reading the second file:
-      fseek(fp2, 0L, SEEK_END);
-      file_size_prims = ftell(fp2);
-      len_prims = file_size_prims/double_size;
+			#if (BHNSQ2_1)
+			nx = 384;
+			ny = 96;
+			nz = 96;
+			#else
+			nx = 384;
+			ny = 96;
+			nz = 96;
+			#endif
+			nvars = ext.nvars;
+			nitems = (size_t)nvars * nx * ny * nz;
+			memsize = sizeof(double) * nitems;
+			icdata = malloc(memsize);
 
-      memsize = file_size_grid+file_size_prims;
-      icdata = (double *) malloc(memsize);
-      if(NULL == icdata) {
-        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-        fclose(fp1);
-        fclose(fp2);
-        exit(1235);
-      }
+			if (NULL == icdata) {
+				fprintf(stderr, "[%5d] could not allocate memory of size %ld\n", rank, memsize);
+				fclose(fp1);
+				#if (!BHNSQ2)
+				fclose(fp2);
+				#endif
+				exit(1235);
+			}
+			//read in the data block from file
+			#else
+			fp2 = fopen(fname2, "rb");
+			if (NULL == fp2 && 0 == rank) {
+				fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
+				fclose(fp1);
+				exit(1234);
+			}
+			read_last_line(last_line, MAXLEN, fp1);
+			sscanf(last_line, "%d %d %d %lf %lf %lf ", &ext.nx, &ext.ny, &ext.nz, &ext.xmax, &ext.ymax, &ext.zmax);
 
-      fseek(fp1, 0L, SEEK_SET);
-      fread(&icdata[0], double_size, len_grid, fp1);
+			//rewind the file to the beginning for subsequent reading
+			rewind(fp1);
 
-      fseek(fp2, 0L, SEEK_SET);
-      fread(&icdata[len_grid], double_size, len_prims, fp2);
+			//skip comment lines in the first file and read in the first non-comment line
+			read_first_line(first_line, MAXLEN, fp1);
+			sscanf(first_line, "%*d %*d %*d %lf %lf %lf ", &ext.xmin, &ext.ymin, &ext.zmin);
+			//read_first_line leaves file at the start of the first non-comment line
 
-      ext.nx = (int)icdata[1*index_grid_final-1];
-      ext.ny = (int)icdata[2*index_grid_final-1];
-      ext.nz = (int)icdata[3*index_grid_final-1];
-      ext.xmin = icdata[3*index_grid_final];
-      ext.xmax = icdata[4*index_grid_final-1];
-      ext.ymin = icdata[4*index_grid_final];
-      ext.ymax = icdata[5*index_grid_final-1];
-      ext.zmin = icdata[5*index_grid_final];
-      ext.zmax = icdata[6*index_grid_final-1];
+			//skip comment lines in the second file
+			read_first_line(first_line, MAXLEN, fp2);
+			//read_first_line leaves file at the start of the first non-comment line
 
-      ext.nx = ext.nx/mult + 1;
-      ext.ny = ext.ny/mult + 1;
-      ext.nz = ext.nz/mult + 1;
+			//account for coordinates counted off from zero
+			ext.nx += 1;
+			ext.ny += 1;
+			ext.nz += 1;
+			
+			ext.xmin/=r_unit;
+			ext.xmax/=r_unit;
 
-      ext.xmin/=r_unit;
-      ext.xmax/=r_unit;
+			if (0 == rank) {
+				fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...", rank, ext.nvars, ext.nx, ext.ny, ext.nz, ext.xmin, ext.xmax, ext.ymin, ext.ymax, ext.zmin, ext.zmax, fname1, fname2);
+				fflush(stderr);
+			}
+			ext.nx = ext.nx / stride1;
+			ext.ny = ext.ny / stride2;
+			ext.nz = ext.nz / stride3;
 
-      int ix;
-      for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
-        icdata[ix] /= r_unit;
-      }
+			nx = ext.nx;
+			ny = ext.ny;
+			nz = ext.nz;
+			nvars = ext.nvars;
+			nitems = (size_t) nvars * nx * ny * nz;
+			memsize = sizeof(double) * nitems;
+			icdata = malloc(memsize);
 
-      if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
-                rank,
-                ext.nvars, ext.nx, ext.ny, ext.nz,
-                ext.xmin, ext.xmax,
-                ext.ymin, ext.ymax,
-                ext.zmin, ext.zmax,
-                fname1, fname2);
-        fflush(stderr);
-      }
+			if(NULL == icdata) {
+				fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+				fclose(fp1);
+				#if (!BHNSQ2)
+				fclose(fp2);
+				#endif
+				exit(1235);
+			}
+			//read in the data block from file
+			#endif
 
+			#if (BHNSQ2)
+			for (ii = 0; ii < nx; ii++) for (jj = 0; jj < ny; jj++) for (kk = 0; kk < nz; kk++) {
+				//fprintf(stderr, "[%d] blah %d %d %d\n", rank, ii, jj, kk);
 
-      nx = ext.nx;
-      ny = ext.ny;
-      nz = ext.nz;
-      nvars = ext.nvars;
-      nitems = (size_t)nvars*nx*ny*nz;
+				//first file, containing grid and data information
+				ptr1 = fgets(buf1, MAXLEN, fp1);
+				if (NULL == ptr1) break;
 
-      /*
-      memsize = double_size*nitems;
+				dd(ii, jj, kk, VARI) = (double)ii;
+				dd(ii, jj, kk, VARJ) = (double)jj;
+				dd(ii, jj, kk, VARK) = (double)kk;
 
-      if (memsize == file_size_grid+file_size_prims) {
-        fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
-      }
-      else {
-        fprintf(stderr, "memory allocation size DOES NOT match the size of the input files ... Exiting ... \n");
-        exit(1234);
-      }
-      */
+				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI), &dd(ii, jj, kk, VARRHO), &dd(ii, jj, kk, VARP), &dd(ii, jj, kk, VARYE), &dd(ii, jj, kk, VARMUDT), &dd(ii, jj, kk, VARUDPHI), &dd(ii, jj, kk, VARVUR), &dd(ii, jj, kk, VARVUTHETA), &dd(ii, jj, kk, VARVUPHI));
+				#if (!BHNSQ2_1)
+				dd(ii, jj, kk, VARR) /= r_unit;
+				#endif
+				//dd(ii, jj, kk, VARUDPHI) /= r_unit;
 
-      if(ferror(fp1) || ferror(fp2) ||
-         (!feof(fp1)) ||
-         (!feof(fp2)) ) {
-        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
-      }
-      fclose(fp1); fp1 = NULL;
-      fclose(fp2); fp2 = NULL;
+				nitems_expected = 11;
+				if (nitems_expected != nitems_read) break;
+			} 
 
-      if (0 == rank) {
-        fprintf(stderr, " done\n");
-        fflush(stderr);
-      }
-      //now icdata contains the IC information
-    }
-  }
+			if (nitems_expected != nitems_read || ferror(fp1) || (NULL == ptr1 && !feof(fp1))) {
+				fprintf(stderr, "[%5d] Error reading from file(s)\n", rank);
+			}
+			fclose(fp1); fp1 = NULL;
+			#else 
+			do {
+				//first file, containing grid information
+				ptr1 = fgets(buf1, MAXLEN, fp1);
+				if(NULL == ptr1) break;
 
-#else
-  for (ind=0; ind<numtasks; ind++) {
-    if (ind == rank) {
-      fp1 = fopen(fname1, "rb");
-      if (NULL == fp1 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
-        exit(1234);
-      }
-      fp2 = fopen(fname2, "rb");
-      if (NULL == fp2 && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
-        fclose(fp1);
-        exit(1234);
-      }
-      read_last_line(last_line, MAXLEN, fp1);
-      sscanf(last_line, "%d %d %d %lf %lf %lf ",
-             &ext.nx, &ext.ny, &ext.nz,
-             &ext.xmax, &ext.ymax, &ext.zmax);
+				//second file, containing data information
+				ptr2 = fgets(buf2, MAXLEN, fp2);
+				if (NULL == ptr2) break;
 
-      //rewind the file to the beginning for subsequent reading
-      rewind(fp1);
+				nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
+				nitems_expected = 3;
+				if(nitems_expected != nitems_read) break;
 
-      //skip comment lines in the first file and read in the first non-comment line
-      read_first_line(first_line, MAXLEN, fp1);
-      sscanf(first_line, "%*d %*d %*d %lf %lf %lf ",
-             &ext.xmin, &ext.ymin, &ext.zmin);
-      //read_first_line leaves file at the start of the first non-comment line
-
-      //skip comment lines in the second file
-      read_first_line(first_line, MAXLEN, fp2);
-      //read_first_line leaves file at the start of the first non-comment line
-
-      //account for coordinates counted off from zero
-      ext.nx += 1;
-      ext.ny += 1;
-      ext.nz += 1;
-
-      ext.xmin/=r_unit;
-      ext.xmax/=r_unit;
-
-      if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
-                rank,
-                ext.nvars, ext.nx, ext.ny, ext.nz,
-                ext.xmin, ext.xmax,
-                ext.ymin, ext.ymax,
-                ext.zmin, ext.zmax,
-                fname1, fname2);
-        fflush(stderr);
-      }
-
-	  ext.nx = ext.nx / stride1;
-	  ext.ny = ext.ny / stride2;
-	  ext.nz = ext.nz / stride3;
-
-      nx = ext.nx;
-      ny = ext.ny;
-      nz = ext.nz;
-      nvars = ext.nvars;
-      nitems = (size_t)nvars*nx*ny*nz;
-	  memsize = sizeof(double) * nitems;
-      icdata = (double *)malloc(memsize);
-      if(NULL == icdata) {
-        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-        fclose(fp1);
-        fclose(fp2);
-        exit(1235);
-      }
-      //read in the data block from file
-
-      do{
-        //first file, containing grid information
-        ptr1 = fgets(buf1, MAXLEN, fp1);
-        if(NULL == ptr1) break;
-
-		//second file, containing data information
-		ptr2 = fgets(buf2, MAXLEN, fp2);
-		if (NULL == ptr2) break;
-
-        nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
-        nitems_expected = 3;
-        if(nitems_expected != nitems_read) break;
-
-		if (ii % stride1 != 0 || jj % stride2 != 0 || kk % stride3 != 0) 
-			continue;
+				if (ii % stride1 != 0 || jj % stride2 != 0 || kk % stride3 != 0) continue;
         
-		ii = ii / stride1;
-		jj = jj / stride2;
-		kk = kk / stride3;
+				ii = ii / stride1;
+				jj = jj / stride2;
+				kk = kk / stride3;
 
-		dd(ii,jj,kk,VARI) = (double)ii;
-        dd(ii,jj,kk,VARJ) = (double)jj;
-        dd(ii,jj,kk,VARK) = (double)kk;
+				dd(ii, jj, kk, VARI) = (double) ii;
+				dd(ii, jj, kk, VARJ) = (double) jj;
+				dd(ii, jj, kk, VARK) = (double) kk;
 
-        nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n",
-               &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
-        dd(ii,jj,kk,VARR) /= r_unit;
-        nitems_expected = 3;
-        if(nitems_expected != nitems_read) break;
+				nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI));
+				dd(ii, jj, kk, VARR) /= r_unit;
+				nitems_expected = 3;
+				if(nitems_expected != nitems_read) break;
 
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n",
-                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
-        nitems_expected = 8;
-        if(nitems_expected != nitems_read) break;
+				nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
+				dd(ii, jj, kk, VARUDPHI) /= r_unit;
+				nitems_expected = 8;
+				if(nitems_expected != nitems_read) break;
 
-      }
-      while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
+			} while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
 
-      if( nitems_expected != nitems_read ||
-         ferror(fp1) || ferror(fp2) ||
-         (NULL == ptr1 && !feof(fp1)) ||
-         (NULL == ptr2 && !feof(fp2)) ) {
-        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
-      }
-      fclose(fp1); fp1 = NULL;
-      fclose(fp2); fp2 = NULL;
+			if( nitems_expected != nitems_read || ferror(fp1) || ferror(fp2) || (NULL == ptr1 && !feof(fp1)) || (NULL == ptr2 && !feof(fp2)) ) {
+				fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
+			}
+			fclose(fp1); fp1 = NULL;
+			fclose(fp2); fp2 = NULL;
+			#endif
 
-      if (0 == rank) {
-        fprintf(stderr, " done\n");
-        fflush(stderr);
-      }
-      //now icdata contains the IC information
-    }
-  }
-#endif
+			if (0 == rank) {
+				fprintf(stderr, " done\n");
+				fflush(stderr);
+			}
+		//now icdata contains the IC information
+		}
+	}
 
-#if (MPI_enable)
-  MPI_Barrier(mpi_cartcomm);
-#endif
-  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
-  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	//vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+	//ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+	//mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 
-  rhomax = 0. ;
-  umax = 0. ;
-#if(!NSY)
-  tilt = (TILT_ANGLE) / 180.*M_PI;
-#else
-  tilt = -(TILT_ANGLE) / 180.*M_PI;
-#endif
-  eccentricity = 0.0;
-  for (n = 0; n < n_active; n++){
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi);
-      pos_new[1] = r;
-      pos_new[2] = th;
-      pos_new[3] = phi;
+	rhomax = 0.;
+	umax = 0.;
 
-      sth = sin(th) ;
-      cth = cos(th) ;
+	#if(!NSY)
+	tilt = (TILT_ANGLE) / 180.*M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180.*M_PI;
+	#endif
 
-      prim[RHO] = dd(i,j,z,VARRHO);
-      prim[UU] = dd(i,j,z,VARP); prim[UU] /= (gam - 1);
-      prim[U1] = dd(i,j,z,VARVUR);
-      prim[U2] = dd(i,j,z,VARVUTHETA);
-      prim[U3] = dd(i,j,z,VARVUPHI);
-      udphi = dd(i,j,z,VARUDPHI)/r_unit;
+	eccentricity = 0.0;
+	double Tnu;
+	double ucon[NDIM], utcon[NDIM];
+	for (n = 0; n < n_active; n++){
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, mudt, prim)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
 
-      res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
+			sth = sin(th) ;
+			cth = cos(th) ;
+						
+			/*prim[RHO] = dd(i, j, z, VARRHO);
+			prim[UU] = dd(i, j, z, VARP) / (gam - 1);
+			prim[U1] = dd(i, j, z, VARVUR);
+			prim[U2] = dd(i, j, z, VARVUTHETA);
+			prim[U3] = dd(i, j, z, VARVUPHI);
+			#if (DO_YE)
+			prim[YE] = dd(i, j, z, VARYE);
+			#endif
+			udphi = dd(i, j, z, VARUDPHI) / r_unit;
+			*/
+			res = interpolate_spec_prims(r, th, phi, ext, icdata, prim, &udphi, &mudt);
+			if (res || prim[RHO] < 1e-13) {
+				prim[RHO] = 1e-7 * RHOMIN;
+				prim[UU] = 1e-7 * UUMIN;
+				prim[U1] = 0.0;
+				prim[U2] = 0.0;
+				prim[U3] = 0.0;
 
-      /* regions outside stream */
+				#if (DO_YE)
+				prim[YE] = 1.0;
+				#endif
+				#if (DONUCLEAR)
+				prim[XALPHA] = 0.0;
+				prim[XATM] = 1.0;
+				#endif
+			}
+			else {
+				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
+				utilde_to_ucon(prim, udphi, mudt, n_ord[n], i, j, z);
+				#if (DONUCLEAR)
+				prim[XALPHA] = 0.0;
+				prim[XATM] = 0.0;
+				#endif
+			}
 
+			prim[B1] = 0.;
+			prim[B2] = 0.;
+			prim[B3] = 0.;
 
-      if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
-        rho = 1.e-30/(r*r);
-        u = 1.e-31/(r*r*r*r);
+			// initialize neutrinos
+			#if (NEUTRINOS_M1)
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+				prim[index_nu(UU_NU, sp)] = 1e-30;
+				prim[index_nu(U1_NU, sp)] = prim[U1];
+				prim[index_nu(U2_NU, sp)] = prim[U2];
+				prim[index_nu(U3_NU, sp)] = prim[U3];
 
-        ur = 0. ;
-        uh = 0. ;
-        up = 0. ;
+				Tnu = pow(prim[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+				prim[index_nu(NUMBER_NU, sp)] = prim[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+				//prim[index_nu(NUMBER_NU, sp)] = 1e-30;
+			}
+			#endif
 
-        prim[RHO] = rho;
-        prim[UU] = u;
-        prim[U1] = ur;
-        prim[U2] = uh;
-        prim[U3] = up;
-      }
-      if(1) {
-        /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-        //vconbl_to_utcon(prim, n_ord[n], i, j, z);
-        utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
-      }
-      //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
-      prim[B1] = 0.;
-      prim[B2] = 0.;
-      prim[B3] = 0.;
-      //copy back to full prim array
-      PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
-      if(prim[RHO]>rhomax) {
-        rhomax = prim[RHO];
-      }
-    }
-  }
-  if(icdata) {
-    free(icdata);
-    icdata = NULL;
-  }
-#if (MPI_enable)
-  /*Share rhomax among MPI processes*/
-  MPI_Barrier(mpi_cartcomm);
-  MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+			//copy back to full prim array
+			PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
 
-  /*Share umax among MPI processes*/
-  MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  MPI_Barrier(mpi_cartcomm);
-#endif
+			if(prim[RHO] > rhomax) {
+				#pragma omp critical
+				rhomax = prim[RHO];
+			}
+		}
+	}
 
-  /* Normalize the densities so that max(rho) = 1 */
-  if (rank == 0){
-    fprintf(stderr, "rhomax: %g\n", rhomax);
-  }
-  //ZSLOOP(0,N1-1,0,N2-1) {
-  //for (n = 0; n < n_active; n++){
-  //  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-  //  }
-  //}
-  // umax /= rhomax ;
-  // rhomax = 1. ;
-  for (n = 0; n < n_active; n++){
-    fixup(p, n_ord[n]);
-  }
-  bound_prim(p,1);
+	if (icdata) {
+		free(icdata);
+		icdata = NULL;
+	}
 
-  //set_mag();
+	#if (MPI_enable)
+	/*Share rhomax among MPI processes*/
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
 
-  sourceflag=0.;
-#if(ELLIPTICAL2)
-  calc_source();
-#endif
+	/* Normalize the densities so that max(rho) = 1 */
+	if (rank == 0){
+		fprintf(stderr, "rhomax: %g\n", rhomax);
+	}
 
-#if DOHELM
-  // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-  double den, ener, pres;
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
+		}
+	}
+	rhomax = 1.;
 
-  for (n = 0; n < n_active; n++) {
-	  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-		  den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-		  ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-		  pres = ener * (gam - 1.0);
-		  coord(n_ord[n], i, j, z, CENT, X);
-		  bl_coord(X, &r, &th, &phi);
-		  eos_mode_rhopres_u(den, pres, &ener);
-		  p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
-	  }
-  }
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	
+	bound_prim(p, 1);
 
-  for (n = 0; n < n_active; n++) {
-	  fixup(p, n_ord[n]);
-  }
-  bound_prim(p, 1);
-#endif
+	set_mag();
 
-// #if (GPU_ENABLED)
-//   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
-// #endif
+	sourceflag=0.;
+	#if(ELLIPTICAL2)
+	calc_source();
+	#endif
+
+	#if DOHELM
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	for (n = 0; n < n_active; n++) {
+		//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+
+	// Apply the floors
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	#if (DOHELM_TEMPERATURE)
+	// Set temperatures given u:
+	for (n = 0; n < n_active; n++) {
+		//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], 
+				#if (DO_YE)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], 
+				#else 
+				1.0,
+				#endif
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
+				#if (DONUCLEAR)
+				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				#endif
+			);
+		}
+	}
+
+	#if (NEUTRINOS_M1)
+	for (n = 0; n < n_active; n++) {
+	//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] < 1.0)
+				init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+	#endif
+
+	bound_prim(p, 1);
+	#endif
 }
 
 //returns the pointer to the first non-comment line in the file fp
@@ -2933,7 +3842,7 @@ char* read_last_line(char *s, size_t size, FILE *fp)
   }
   last_line = last_newline+1;
 
-  if(0 == strlen(last_line)) {
+  if((int) strlen(last_line) == 0) {
     *last_newline = '\0';
     /* and find the last newline character (there must be one, right?) */
     last_newline = strrchr(s, '\n');
@@ -3153,7 +4062,7 @@ void init_disruption()
 	#endif
 }
 
-int interpolate_spec_prims(double r, double th, double ph, extent ext, double* data, double* p)
+int interpolate_spec_prims(double r, double th, double ph, extent ext, double* data, double* p, double* udphi, double* mudt)
 {
 	int interpolate_spec_var(double r, double th, double ph, extent ext, double* data, int ivar, double* val);
 	double vx, vy, vz, poten, x, y, z, R;
@@ -3165,8 +4074,11 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 	res = interpolate_spec_var(r, th, ph, ext, data, VARRHO, &p[RHO]);
 	//note that this is pressure, not internal energy
 	res += interpolate_spec_var(r, th, ph, ext, data, VARP, &p[UU]); p[UU] /= (gam - 1);
-	//not yet ready for it
-	//res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+	#if(DO_YE)
+	res += interpolate_spec_var(r, th, ph, ext, data, VARYE, &p[YE]);
+	#endif
+	res += interpolate_spec_var(r, th, ph, ext, data, VARUDPHI, udphi);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARMUDT, mudt);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUR, &p[U1]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUTHETA, &p[U2]);
 	res += interpolate_spec_var(r, th, ph, ext, data, VARVUPHI, &p[U3]);
@@ -3178,96 +4090,156 @@ int interpolate_spec_prims(double r, double th, double ph, extent ext, double* d
 	return(res);
 }
 
+int interpolate_gr1d_prims(double r, double th, double ph, extent1d ext, double* data, double* p)
+{
+	int interpolate_gr1d_var(double r, double th, double ph, extent1d ext, double* data, int ivar, double* val);
+	int res;
+
+	res = interpolate_gr1d_var(r, th, ph, ext, data, 2, &p[RHO]);
+	res += interpolate_gr1d_var(r, th, ph, ext, data, 3, &p[UU]); 
+	p[UU] /= (gam - 1);
+	#if(DO_YE)
+	res += interpolate_gr1d_var(r,th,ph,ext,data,4,&p[YE]);
+	#endif
+	//res += interpolate_gr1d_var(r, th, ph, ext, data,5,&p[U1]);
+
+	p[U1] = 0.;
+	p[U2] = 0.;
+	p[U3] = 0.;
+	p[B1] = 0.;
+	p[B2] = 0.;
+	p[B3] = 0.;
+
+	return(res);
+}
+
 int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
-  int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
-  double vx, vy, vz, poten, x, y, z, R;
-  double bl_gcov[NDIM][NDIM];
-  int res;
-  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
-  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
-  if(res) return(res);
-  res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
-  res = interpolate_var(r,th,ph,ext,data,5,&vx);
-  res = interpolate_var(r,th,ph,ext,data,6,&vy);
-  res = interpolate_var(r,th,ph,ext,data,7,&vz);
-  res = interpolate_var(r,th,ph,ext,data,8,&poten);
-  double x1, y1, z1;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  R = sqrt(x*x+y*y);
-  //Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
- // bl_gcov_func(r, th, bl_gcov);
+	int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
+	double vx, vy, vz, poten, x, y, z, R;
+	double bl_gcov[NDIM][NDIM];
+	int res;
+	//vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+	//ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+	res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
+	if(res) return(res);
+	res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
+	res = interpolate_var(r,th,ph,ext,data,5,&vx);
+	res = interpolate_var(r,th,ph,ext,data,6,&vy);
+	res = interpolate_var(r,th,ph,ext,data,7,&vz);
+	res = interpolate_var(r,th,ph,ext,data,8,&poten);
+	
+	double x1, y1, z1;
+	x = r*sin(th)*cos(ph);
+	y = r*sin(th)*sin(ph);
+	z = r*cos(th);
+	R = sqrt(x*x+y*y);
+	//Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
+	// bl_gcov_func(r, th, bl_gcov);
 
-  if (vx*vx + vy*vy + vz*vz>1.0){
-	  poten = vx*vx + vy*vy + vz*vz;
-	  vx /= poten;
-	  vy /= poten;
-	  vz /= poten;
-  }
-  p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
-  p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
-  p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
-  p[UU] = p[UU]*p[RHO];
+	if (vx*vx + vy*vy + vz*vz>1.0){
+		poten = vx*vx + vy*vy + vz*vz;
+		vx /= poten;
+		vy /= poten;
+		vz /= poten;
+	}
+	p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
+	p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
+	p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
+	p[UU] = p[UU]*p[RHO];
 
-//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
- // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
- /// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
+	//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
+	// p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
+	/// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
 
  
-  p[B1] = 0.;
-  p[B2] = 0.;
-  p[B3] = 0.;
+	p[B1] = 0.;
+	p[B2] = 0.;
+	p[B3] = 0.;
 
-  return(0);
+	return(0);
 }
+
+//define compact form for array indexing
+#define d(ii) data[ivar*nx+ii]
+
+int interpolate_gr1d_var(double r, double th, double ph, extent1d ext, double* data, int ivar, double* val)
+{
+	double x, dx;
+	double i, di;
+	int i0, i1, nx;
+	double c;
+
+	nx = ext.nx;
+	x = log(r);
+	
+	// find value of r from input file
+	i0 = 0;
+	while (r > data[1 * nx + i0] && i0 < nx) {
+		i0++;
+	}
+	i0--;
+	i1 = i0 + 1;
+
+	if (i1 >= nx) {
+		return(1);
+	}
+
+	dx = log(data[1 * nx + i1]) - log(data[1 * nx + i0]);
+	di = (x - log(data[1 * nx + i0])) / dx;
+	
+	c = log(d(i0))* (1 - di) + log(d(i1)) * di;
+	if (isnan(c))  return(1);
+	*val = exp(c);
+	return(0);
+}
+//undefine array shortcut to avoid name conflicts
+#undef d
 
 //define compact form for array indexing
 #define d(ii,jj,kk) data[((ivar*nx+ii)*ny+jj)*nz+kk]
 
 int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
 {
-  double x, y, z, dx, dy, dz;
-  double i, j, k, di, dj, dk;
-  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
-  double c00, c01, c10, c11, c0, c1, c;
+	double x, y, z, dx, dy, dz;
+	double i, j, k, di, dj, dk;
+	int i0, j0, k0, i1, j1, k1, nx, ny, nz;
+	double c00, c01, c10, c11, c0, c1, c;
 
-  nx = ext.nx;
-  ny = ext.ny;
-  nz = ext.nz;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  dx = (ext.xmax-ext.xmin)/(nx-1);
-  dy = (ext.ymax-ext.ymin)/(ny-1);
-  dz = (ext.zmax-ext.zmin)/(nz-1);
-  i = (x-ext.xmin)/dx;
-  j = (y-ext.ymin)/dy;
-  k = (z-ext.zmin)/dz;
-  i0 = floor(i);
-  j0 = floor(j);
-  k0 = floor(k);
-  i1 = (int)ceil(i);
-  j1 = (int)ceil(j);
-  k1 = (int)ceil(k);
-  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
-    return(1);
-  }
-  di = i - floor(i);
-  dj = j - floor(j);
-  dk = k - floor(k);
-  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
-  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
-  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
-  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
-  c0 = c00*(1-dj) + c10*dj;
-  c1 = c01*(1-dj) + c11*dj;
-  c = c0*(1-dk) + c1*dk;
-  if (isnan(c))  return(1);
-  *val = c;
-  return(0);
+	nx = ext.nx;
+	ny = ext.ny;
+	nz = ext.nz;
+	x = r * sin(th)*cos(ph);
+	y = r * sin(th)*sin(ph);
+	z = r * cos(th);
+	dx = (ext.xmax-ext.xmin)/(nx-1);
+	dy = (ext.ymax-ext.ymin)/(ny-1);
+	dz = (ext.zmax-ext.zmin)/(nz-1);
+	i = (x-ext.xmin)/dx;
+	j = (y-ext.ymin)/dy;
+	k = (z-ext.zmin)/dz;
+	i0 = floor(i);
+	j0 = floor(j);
+	k0 = floor(k);
+	i1 = (int)ceil(i);
+	j1 = (int)ceil(j);
+	k1 = (int)ceil(k);
+	if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
+		return(1);
+	}
+	di = i - floor(i);
+	dj = j - floor(j);
+	dk = k - floor(k);
+	c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
+	c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
+	c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
+	c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
+	c0 = c00*(1-dj) + c10*dj;
+	c1 = c01*(1-dj) + c11*dj;
+	c = c0*(1-dk) + c1*dk;
+	if (isnan(c))  return(1);
+	*val = c;
+	return(0);
   
 }
 //undefine array shortcut to avoid name conflicts
@@ -3294,14 +4266,18 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	nx = ext.nx;
 	ny = ext.ny;
 	nz = ext.nz;
+
+	// Find the index in R such that r > R
 	for (i0 = j0 = k0 = 0; i0 < nx; i0++) {
 		if (dd(i0, j0, k0, VARR) > r) break;
 	}
 	i0--;
 	if (i0 < 0 || i0 >= nx - 1) return(1);
+
 	di = log2(r / dd(i0, j0, k0, VARR)) / log2(dd(i0 + 1, j0, k0, VARR) / dd(i0, j0, k0, VARR));
 	i = i0 + di;
 
+	// Find the index in TH such that th > TH 
 	for (j0 = 0; j0 < ny; j0++) {
 		th1 = dd(i0, j0, k0, VARTHETA) * (1 - di) + dd(i0 + 1, j0, k0, VARTHETA) * di;
 		if (th1 > th) break;
@@ -3321,8 +4297,9 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	}
 	j = j0 + dj;
 
+	// Index in phi
 	dz = (ext.zmax - ext.zmin) / (nz - 1);
-	k = (ph - ext.zmin) / dz - 0.5;
+	k = (ph - ext.zmin) / dz;// -0.5;
 
 	i1 = (int)ceil(i);
 	j1 = (int)ceil(j);
@@ -3334,6 +4311,17 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	dk = k - floor(k);
 	if (k0 == -1) k0 = nz - 1;
 	if (k1 == nz) k1 = 0;
+
+	c =	d(i0, j0, k0) * (1. - di) * (1. - dj) * (1. - dk) +
+		d(i0, j0, k1) * (1. - di) * (1. - dj) * (dk) +
+		d(i0, j1, k0) * (1. - di) * (dj) * (1. - dk) +
+		d(i0, j1, k1) * (1. - di) * (dj) * (dk) +
+		d(i1, j0, k0) * (di) * (1. - dj) * (1. - dk) +
+		d(i1, j0, k1) * (di) * (1. - dj) * (dk) +
+		d(i1, j1, k0) * (di) * (dj) * (1. - dk) +
+		d(i1, j1, k1) * (di) * (dj) * (dk);
+
+	/*
 	c00 = d(i0, j0, k0) * (1 - di) + d(i1, j0, k0) * di;
 	c01 = d(i0, j0, k1) * (1 - di) + d(i1, j0, k1) * di;
 	c10 = d(i0, j1, k0) * (1 - di) + d(i1, j1, k0) * di;
@@ -3341,10 +4329,10 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	c0 = c00 * (1 - dj) + c10 * dj;
 	c1 = c01 * (1 - dj) + c11 * dj;
 	c = c0 * (1 - dk) + c1 * dk;
+	*/
 	if (isnan(c))  return(1);
 	*val = c;
 	return(0);
-
 }
 //undefine array shortcut to avoid name conflicts
 #undef d
@@ -3353,7 +4341,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 100.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = BETA, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	struct of_state state;
@@ -3368,18 +4356,31 @@ void set_mag(void){
 	double Bfactor = 300; //1e13 G for alpha = 1
 	double M_STAR = 14;
 	double R_STARcm = 4e10;
+<<<<<<< HEAD
 	double r_rc = 0.3 * M_STAR * 1.5e5;
+=======
+	double M_BH = 4;
+	double r_rc = M_BH * 1.5e5;
+	//double r_rc = R_G_CGS;
+>>>>>>> origin/danat_neutrinos_debug
 	double Rs = R_STARcm / r_rc;
 	double Fe_core = 1e8 / r_rc;
 	double r_hole = 10;
 	double fr;
 	beta = 100.0 / (3.6 * Bfactor * Bfactor);
+<<<<<<< HEAD
 	#endif
 
 	#if(WHICHPROBLEM==BONDI_PROBLEM_2D)
 	beta = BETA;
 	double rin = R_BONDI;
 	double rout = 1e6;
+=======
+	if (numtasks > 100) exit(0);
+	#endif
+	#if(WHICHPROBLEM==TRUNC_PROBLEM)
+	tilt = 0.;
+>>>>>>> origin/danat_neutrinos_debug
 	#endif
 
 	do{
@@ -3421,10 +4422,17 @@ void set_mag(void){
 			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
+<<<<<<< HEAD
 			#elif(WHICHPROBLEM==BONDI_PROBLEM_2D)
 			if (r >= rin) q = (r * r - rin * rin) * (sin(th) * sin(th));
 			else q = 0.;
 			#elif(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+=======
+			#elif(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+			#if(COLLAPSAR_GR1D)
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
+			#else
+>>>>>>> origin/danat_neutrinos_debug
 			if (r < 1.5 * r_hole) {
 				q = r * r * 1e-20 * pow(sin(th), 2);//1 - pow((r-Fe_core)/(Rs-Fe_core),2);
 				//q = pow(sin(th),2)*(pow(r_hole,2)/pow(Fe_core,3)-1/Rs)*pow(r/r_hole,2);
@@ -3432,9 +4440,16 @@ void set_mag(void){
 			else {
 				if (r < Rs) {
 					fr = 1 - pow((r - Fe_core) / (Rs - Fe_core), 2);
+<<<<<<< HEAD
 					// q = pow(sin(th),2)*(pow(sqrt(pow(r,2)-pow(r_hole,2)),2)/(pow(sqrt(pow(r,2)-pow(r_hole,2)),3)+pow(Fe_core,3))-pow(Rs,2)/(pow(Rs,3)+pow(Fe_core,3)));
 					q = pow(sin(th), 2) * (pow(r, 2) / (pow(r, 2) + pow(Fe_core, 2)) - pow(r / Rs, 3)); //Fe core profile   
 
+=======
+					 //q = pow(sin(th),2)*(pow(sqrt(pow(r,2)-pow(r_hole,2)),2)/(pow(sqrt(pow(r,2)-pow(r_hole,2)),3)+pow(Fe_core,3))-pow(Rs,2)/(pow(Rs,3)+pow(Fe_core,3)));
+					q = pow(sin(th), 2) * (pow(r, 2) / (pow(r, 2) + pow(Fe_core, 2)) - pow(r / Rs, 3)); //Fe core profile   
+					//fr = (r * r) / (r * r * r + pow(Fe_core, 3.)) - (Rs * Rs) / (pow(Rs, 3.) + pow(Fe_core, 3.));
+					//q = pow(sin(th), 2.) * fr;
+>>>>>>> origin/danat_neutrinos_debug
 				}
 				else {
 					fr = 0;
@@ -3442,17 +4457,26 @@ void set_mag(void){
 				}
 				// q = fr*pow(sin(th),2)/r; //Komissarov's profile
 			}
+<<<<<<< HEAD
 			#else
 		//	q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+=======
 			#endif
-			if (q > 0.){		
+			#else
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.02; //SANE
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+>>>>>>> origin/danat_neutrinos_debug
+			#endif
+			if (q > 0.){	
 				#if(WHICHPROBLEM==THIN_PROBLEM)
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q * pow(r, 2.0); //MAD
 				#endif
 			}
 			else{
@@ -3594,6 +4618,7 @@ void set_mag(void){
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
+<<<<<<< HEAD
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
 
 			#if(TWO_T)
@@ -3602,10 +4627,20 @@ void set_mag(void){
 				#else
 				gamma_g = GAMMA;
 				#endif			
+=======
+			
+			/* Since bsq_calc returns 2 times the magnetic pressure, 0.5 should be in the  denominator*/
+			//beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+			beta_ij = (gam - 1.0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / (0.5 * bsq_ij);
+
+			#if(TWO_T)
+			gamma_g = GAMMA;// calc_gamma_gas_prim(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+>>>>>>> origin/danat_neutrinos_debug
 			#else
 			gamma_g = GAMMA;
 			#endif
 
+<<<<<<< HEAD
 			#if(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
 			coord(n_ord[n], i - 2, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
@@ -3623,6 +4658,8 @@ void set_mag(void){
 			}
 			#endif
 
+=======
+>>>>>>> origin/danat_neutrinos_debug
 			#if(RAD_M1)
 			if (((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
@@ -3985,9 +5022,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 /* This function takes Utilde 3-velocity and
  * transforms it into 4-velocity in modified Kerr-Schild coordinates
  */
-void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
+void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz)
 {
-  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM];
+  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM], ucon[NDIM], ucov[NDIM];
   double AA, BB, CC, discr, udphi_new, err, err_tol;
   double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
@@ -4009,33 +5046,6 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   vtcon[2] = pr[U2];
   vtcon[3] = pr[U3];
 
-  //compute u^t corresponding to the new v^i
-  //ut_calc_3vel(vcon, &geom, &ut);
-
-  //for(k = 0; k < NDIM; k++) {
-  //  ucon[k] = ut * vcon[k];
-  //}
-  /* now we've got ucon in BL coords */
-  //old[1] = ucon[1];
-  //old[2] = ucon[2];
-  //old[3] = ucon[3];
-
-#if(USEKS)
-  //already in KS coordinates; no transformation needed
-#else
-  /* transform to Kerr-Schild */
-  /* make transform matrix */
-  DLOOP trans[j][k] = 0.;
-  DLOOPA trans[j][j] = 1.;
-  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
-  trans[3][1] = a / (r*r - 2.*r + a*a);
-  /* transform ucon */
-  DLOOPA tmp[j] = 0.;
-  DLOOP tmp[j] += trans[j][k] * ucon[k];
-  DLOOPA ucon[j] = tmp[j];
-  /* now we've got ucon in KS coords */
-#endif
-
   /* Jacobian transformation from spherical to cartesian coords */
   dxdr_sph_to_cart(r, th, phi, dxdr);
   invert_matrix(dxdr, drdx);
@@ -4045,6 +5055,7 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
 
+  #if (!BHNSQ2_1)
   // converts the input Utilde^{x,y,z} to Utilde^{r,th,phi}
   utcon[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -4053,6 +5064,57 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
       utcon[i] += drdx[i][j] * vtcon[j];
     }
   }
+  #else
+  utcon[0] = 0.0;
+  utcon[1] = vtcon[1];
+  utcon[2] = vtcon[2];
+  utcon[3] = vtcon[3];
+  #endif
+
+#if(USEKS)
+  //already in KS coordinates; no transformation needed
+#else
+  /* transform to Kerr-Schild */
+  /* make transform matrix */
+  DLOOP trans[j][k] = 0.;
+  DLOOPA trans[j][j] = 1.;
+  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
+  trans[1][0] = trans[0][1];
+  trans[3][1] = a / (r*r - 2.*r + a*a);
+  trans[1][3] = trans[3][1];
+  DLOOPA tmp[j] = utcon[j];
+  utcon[0] = 0.0;
+	for (i = 1; i < NDIM; i++) {
+		utcon[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			utcon[i] += trans[i][j] * tmp[j];
+		}
+	}
+
+#endif
+
+	#if (0)
+	// 1. Find u^t from SpEC velocities
+	double vconp[NDIM], ucon[NDIM], ucov[NDIM];
+	pr[U1] = utcon[1];
+	pr[U2] = utcon[2];
+	pr[U3] = utcon[3];
+	ucon_calc(pr, &geom, ucon);
+
+	// 2. Find ucon1 and ucon3 given mudt and udphi from SpEC
+	double b1 = udphi - geom.gcov[3][0] * ucon[0];
+	double b2 = -mudt - geom.gcov[0][0] * ucon[0];
+	double detA = geom.gcov[3][1] * geom.gcov[0][3] - geom.gcov[0][1] * geom.gcov[3][3];
+	ucon[1] = (geom.gcov[0][3] * b1 - geom.gcov[3][3] * b2) / detA;
+	ucon[3] = (-geom.gcov[0][1] * b1 + geom.gcov[3][1] * b2) / detA;
+
+	// 3. Compute ucon2 from ucon0, ucon1 and ucon3 from u^2 = -1
+	ucon[2] = (- 1.0 - geom.gcov[0][0] * ucon[0] * ucon[0] - geom.gcov[1][1] * ucon[1] * ucon[1] - geom.gcov[3][3] * ucon[3] * ucon[3] - 2.0 * geom.gcov[0][1] * ucon[0] * ucon[1] - 2.0 * geom.gcov[0][3] * ucon[0] * ucon[3] - 2.0 * geom.gcov[1][3] * ucon[1] * ucon[3]) /(geom.gcov[2][2]);
+	ucon[2] = sqrt(ucon[2]);
+	//ucon[2] = 0.0;
+	// 4. Convert ucon to u^tilde
+	ucon_to_utcon(ucon, &geom, utcon);
+	#endif
 
   // converts Utilde^{r,th,phi} from the previous loop into Utilde^{x1,x2,x3}
   utconp[0] = 0.0;
@@ -4063,15 +5125,18 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     }
   }
 
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
 
   // This calculates Utilde^{phi} given u_{phi}. Iterations are required because the relation between them is not linear.
 
-  get_geometry(n,ii, jj,zz, CENT, &geom);
 
 // Commented out this part of the code that modifies utconp by matching udphi's
-
+#if (0)
   max_iter = 50;
   err_tol = 1.0E-4;
   for (i = 0; i < max_iter; i++) {
@@ -4081,14 +5146,12 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     if (err <= err_tol) break;
     udphi = udphi_new;
   }
-
-  //ucon_to_utcon(uconp, &geom, utconp);
-
+  
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
-  gamma_calc(pr, &geom, &gamma);
-  //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
+#endif
+
   /* done! */
 }
 

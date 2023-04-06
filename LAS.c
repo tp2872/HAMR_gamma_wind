@@ -116,7 +116,10 @@ void set_timelevel(int tag){
 				}
 			}
 		}
+<<<<<<< HEAD
 		#endif		
+=======
+>>>>>>> origin/danat_neutrinos_debug
 		free(min_j);
 	}
 	else {

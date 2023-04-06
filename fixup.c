@@ -26,7 +26,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
 	double f,gamma, bsq;
 	double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
-	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut, u;
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 	int m;
 	int k, flag, dofloor=0;
@@ -57,17 +57,40 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	bsq = bsq_calc(pv, &geom);
 	#endif
 
+	#if (DOHELM)
+	double xP;
+	#if (DOHELM_TEMPERATURE == 2)
+	// Making sure that temperature is not below the threshold of the table
+	if (pv[UU] < eos_temp_low) pv[UU] = eos_temp_low;
+	eos_mode_rhotemp_pres_u(pv[RHO], pv[UU], &xP, &u);
+	double prefloor_u = u;
+	#else 
+	u = pv[UU];
+	#endif
+	#else
+	u = pv[UU];
+	#endif
+
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 	#if(RAD_M1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (pv[UU] + pv[UU_RAD]) / (UORHOMAX);
+	if (rhoflr < (u + pv[UU_RAD]) / UORHOMAX)  rhoflr = (u + pv[UU_RAD]) / (UORHOMAX);
+	#elif(NEUTRINOS_M1)
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	#if (NU_SPECIES > 1)
+	if (rhoflr < (u + pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)]) / UORHOMAX)  rhoflr = (u + pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)]) / (UORHOMAX);
+	#else
+	if (rhoflr < (u + pv[UU_NU]) / UORHOMAX)  rhoflr = (u + pv[UU_NU]) / (UORHOMAX); // DINU: 3 species
+	#endif
 	#else
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-	if (rhoflr < pv[UU] / UORHOMAX) rhoflr = pv[UU] / (UORHOMAX);
+	if (rhoflr < u / UORHOMAX) rhoflr = u / (UORHOMAX);
 	#endif
+	//printf("floors: %e %e\n", rhoflr, uuflr);
 	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
 	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+	//printf("2 floors: %e %e\n", rhoflr, uuflr);
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	for (k = 0; k < NPR_U; k++) pv_prefloor[k] = pv[k];
@@ -83,19 +106,54 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	//Internal energy floor
 	#if(RAD_M1)
-	if (pv[UU] + pv[UU_RAD] < uuflr) {
-		pv[UU] = uuflr - pv[UU_RAD];
+	if (u + pv[UU_RAD] < uuflr) {
+		u = uuflr - pv[UU_RAD];
 		dofloor = 1;
 	}
+<<<<<<< HEAD
 	if (pv[UU] < 0.0001 * uuflr) {
 		pv[UU] = 0.0001 * uuflr;
 		dofloor = 1;
 	}
+=======
+	#elif(NEUTRINOS_M1)
+	#if (NU_SPECIES > 1)
+	if (u + pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)] < uuflr) {
+		u = uuflr - (pv[UU_NU] + pv[index_nu(UU_NU, 1)] + pv[index_nu(UU_NU, 2)]);
+>>>>>>> origin/danat_neutrinos_debug
 	#else
-	if (pv[UU] < uuflr) {
-		pv[UU] = uuflr;
+	if (u + pv[UU_NU] < uuflr) {
+		u = uuflr - pv[UU_NU];
+	#endif
+		#if (!(DOHELM_TEMPERATURE == 2))
+		pv[UU] = u;
+		#endif
 		dofloor = 1;
 	}
+
+	#else
+	if (u < uuflr) {
+		u = uuflr;
+		#if (!(DOHELM_TEMPERATURE == 2))
+		pv[UU] = u;
+		#endif
+		dofloor = 1;
+	}
+	#endif
+	//printf("3 floors: %e %e\n", rhoflr, uuflr);
+
+	// Floor on Ye
+	#if (DO_YE)
+	pv[YE] = MY_MAX(nulib_ylo, pv[YE]);
+	pv[YE] = MY_MIN(1.0, pv[YE]);
+	#endif
+	
+	#if (DONUCLEAR)
+	pv[XALPHA] = MY_MAX(1e-10, pv[XALPHA]);
+	pv[XALPHA] = MY_MIN(1.0, pv[XALPHA]);
+	
+	pv[XATM] = MY_MAX(1e-10, pv[XATM]);
+	pv[XATM] = MY_MIN(1.0, pv[XATM]);
 	#endif
 
 	//Floor on radiation internal energy
@@ -110,6 +168,22 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[PHOTON] = pv[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
 	}
+	#endif
+	
+	#if(NEUTRINOS_M1)
+	double Tnu;
+	for (int sp = 0; sp < NU_SPECIES; sp++)
+	{
+		if (pv[index_nu(UU_NU, sp)] < pow(10., -30.)) {
+			pv[index_nu(UU_NU, sp)] = pow(10., -30.);
+
+			//Floor on photon number+
+			//pv[NUMBER_NU] = 1e-30;
+			Tnu = pow(pv[index_nu(UU_NU, sp)] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+			pv[index_nu(NUMBER_NU, sp)] = pv[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
+		}
+	}
+
 	#endif
 
 	//Divide internal energy inject between electrons and ions 1:1
@@ -198,7 +272,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	#if(DRIFT_FLOOR)
-	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
+	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], u) - 1.) > 0.) {
 		#if(RESISTIVE)
 		get_state_res(pv_prefloor, &geom, &q);
 		#else
@@ -236,13 +310,19 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy before the floors
 		#if (DOHELM)
-		double xP;
-		eos_mode_rhou_pres(pv_prefloor[RHO], pv_prefloor[UU], &xP);
+		#if (DOHELM_TEMPERATURE == 2)
+		wold = pv_prefloor[RHO] + prefloor_u + xP;
+		#else 
+		eos_mode_rhou_pres(pv_prefloor, &xP);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
+<<<<<<< HEAD
 		#elif(TWO_T)
 		double gamma_g;
 		gamma_g = calc_gamma_gas_prim(pv_prefloor);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * gamma_g;
+=======
+		#endif
+>>>>>>> origin/danat_neutrinos_debug
 		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
 		#endif
@@ -252,11 +332,21 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy after the floors
 		#if (DOHELM)
+<<<<<<< HEAD
 		eos_mode_rhou_pres(pv[RHO], pv[UU], &xP);
 		wnew = pv[RHO] + pv[UU] + xP;
 		#elif(TWO_T)
 		gamma_g = calc_gamma_gas_prim(pv);
 		wnew = pv[RHO] + pv[UU] * gamma_g;
+=======
+		#if (DOHELM_TEMPERATURE == 2)
+		eos_mode_rhotemp_u_pres_floor(pv[RHO], &pv[UU], u, &xP);
+		wnew = pv[RHO] + u + xP;
+		#else 
+		eos_mode_rhou_pres(pv, &xP);
+		wnew = pv[RHO] + u + xP;
+		#endif
+>>>>>>> origin/danat_neutrinos_debug
 		#else
 		wnew = pv[RHO] + pv[UU] * GAMMA;
 		#endif
@@ -291,24 +381,45 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
+<<<<<<< HEAD
 	/*#if DOKTOT
+=======
+	if (dofloor) {
+		#if(TWO_T)
+			#if(FIXEDGAMMA)
+				#if(FULL_ENTROPY)
+				pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
+				pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+				#else
+				pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
+				pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+				#endif
+			#else
+
+
+			#endif
+		#endif
+	}
+
+	#if DOKTOT
+>>>>>>> origin/danat_neutrinos_debug
 	#if (DOHELM)
 	double xentr;
-	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
-	pv[KTOT] = xentr;
-	//DIMARK: pv[KTOT] = exp(KTOT_FACTOR * xentr);
-	#else 
-	// DIMARK: entropy test
-	double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
-	pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
-	//pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+	#if (DOHELM_TEMPERATURE == 2)
+	eos_mode_rhotemp_entr(pv[RHO], pv[UU], &xentr);
+	#else
+	eos_mode_rhou_entr(pv, &xentr);
 	#endif
-	#endif*/
+	pv[KTOT] = xentr;
+	#else 
 	#if(FULL_ENTROPY)
 	pv[KTOT] = 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
 	#else
 	pv[KTOT] = (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 	#endif
+	#endif
+	#endif
+	
 
 	/* limit gamma wrt normal observer */
 	if(gamma_calc(pv,&geom,&gamma) ) { 
