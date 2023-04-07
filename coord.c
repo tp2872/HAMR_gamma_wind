@@ -289,28 +289,20 @@ double thetaofx2(double x2, double ror0nu)
 /* some grid location, dxs */
 void set_points(int n)
 {
-<<<<<<< HEAD
 	#if(CARTESIAN || CARTESIAN_GR)
-	#if(WHICHPROBLEM==SHOCK_TUBE)
-	dx[nl[n]][1] = 2.2 / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
-	dx[nl[n]][2] = 2.2 / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
-	dx[nl[n]][3] = 2.2 / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
-	#else
-	dx[nl[n]][1] = 2 * Rout / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
-	dx[nl[n]][2] = 2 * Rout / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
-	dx[nl[n]][3] = 2 * Rout / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
-=======
-	#if(CARTESIAN)
-	#if (WHICHPROBLEM == RAD_PULSE)
-	dx[nl[n]][1] = 100. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
-	dx[nl[n]][2] = 100. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
-	dx[nl[n]][3] = 100. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
-	#else
-	dx[nl[n]][1] = 1. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
-	dx[nl[n]][2] = 1. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
-	dx[nl[n]][3] = 1. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
->>>>>>> origin/danat_neutrinos_debug
-	#endif
+		#if(WHICHPROBLEM==SHOCK_TUBE)
+		dx[nl[n]][1] = 2.2 / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
+		dx[nl[n]][2] = 2.2 / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		dx[nl[n]][3] = 2.2 / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+		#elif(WHICHPROBLEM==SHOCK_TUBE)
+		dx[nl[n]][1] = 100. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
+		dx[nl[n]][2] = 100. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		dx[nl[n]][3] = 100. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+		#else
+		dx[nl[n]][1] = 2 * Rout / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
+		dx[nl[n]][2] = 2 * Rout / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		dx[nl[n]][3] = 2 * Rout / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+		#endif
 	#else
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	if(Rout<=RTRANS){
@@ -327,13 +319,8 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-<<<<<<< HEAD
-	Rin = 0.9*(1. + sqrt(1. - a * a));
+	Rin = 0.5 * (1. + sqrt(1. - a * a)); 	
 	Rout = ROUT;
-=======
-	//Rin = 1.44; Rout = 1e6;
-	Rin = 0.5 * (1. + sqrt(1. - a * a)); Rout = 1e4;
->>>>>>> origin/danat_neutrinos_debug
 	lim = MC;
 	failed = 0;
 	cour = COUR;
@@ -342,28 +329,20 @@ void set_gridparam(void) {
 	R0 = 0.0;
 	gam = GAMMA;
 
-<<<<<<< HEAD
 	#if(CARTESIAN || CARTESIAN_GR)
-	#if(WHICHPROBLEM==SHOCK_TUBE)
-	startx[1] = -1.1;
-	startx[2] = -1.1;
-	startx[3] = -1.1;
-	#else
-	startx[1] = -Rout;
-	startx[2] = -Rout;
-	startx[3] = -Rout;
-=======
-	#if(CARTESIAN)
-	#if (WHICHPROBLEM == RAD_PULSE)
-	startx[1] = -50.;
-	startx[2] = -50.;
-	startx[3] = -50.;
-	#else
-	startx[1] = 0.;
-	startx[2] = 0.;
-	startx[3] = 0.;
->>>>>>> origin/danat_neutrinos_debug
-	#endif
+		#if(WHICHPROBLEM==SHOCK_TUBE)
+		startx[1] = -1.1;
+		startx[2] = -1.1;
+		startx[3] = -1.1;
+		#elif(WHICHPROBLEM==RAD_PULSE)
+		startx[1] = -50.;
+		startx[2] = -50.;
+		startx[3] = -50.;
+		#else
+		startx[1] = -Rout;
+		startx[2] = -Rout;
+		startx[3] = -Rout;
+		#endif
 	#else
 	if (N2 != 1) {
 		//2D problem, use full pi-wedge in theta

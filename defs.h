@@ -786,11 +786,7 @@ int *array_gdumpgrid, *array_rdumpgrid;
 double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-<<<<<<< HEAD
-int read_M1, read_2T, read_Pnum, read_Res;
-=======
 int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_neutrinos;
->>>>>>> origin/danat_neutrinos_debug
 int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -808,10 +804,7 @@ int N1_GPU_offset[NB];
 int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
 int max_blocks;
-<<<<<<< HEAD
-=======
 int communicator_set;
->>>>>>> origin/danat_neutrinos_debug
 float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
 
 //MPI Variables

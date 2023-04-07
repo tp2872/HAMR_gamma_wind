@@ -361,11 +361,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	int n_rec2 = n;
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	int update_staggered = ((nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1) || nstep == -1);
-<<<<<<< HEAD
 	if (gpu == 1){
-=======
-	 if (gpu == 1){
->>>>>>> origin/danat_neutrinos_debug
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n][AMR_TIMELEVEL] - 1)){
 			if (block[n][AMR_NODE] == block[n_rec][AMR_NODE]) gpuStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[0], 0);
@@ -439,11 +435,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	int n_rec2 = n;
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	int update_staggered = ((nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1) || nstep == -1);
-<<<<<<< HEAD
 	if (gpu == 1){
-=======
-	 if (gpu == 1){
->>>>>>> origin/danat_neutrinos_debug
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(j2 - j1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n][AMR_TIMELEVEL] - 1)){

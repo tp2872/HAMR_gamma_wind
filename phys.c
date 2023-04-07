@@ -500,14 +500,9 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	);
 
 	#if (DOHELM)
-<<<<<<< HEAD
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
-=======
-	eos_mode_rhou_temp(ph, &Te);
-	arad = ARAD / (ENERGY_DENSITY_SCALE);
->>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -568,14 +563,10 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#endif
 
 	#if (DOHELM)
-<<<<<<< HEAD
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);	
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
-=======
-	eos_mode_rhou_temp(ph, &Te);
-	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
->>>>>>> origin/danat_neutrinos_debug
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -592,14 +583,10 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-<<<<<<< HEAD
-	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
-=======
 	#if(WHICHPROBLEM == RAD_PULSE)
 	kappa_abs = 0.;
 	#endif
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
->>>>>>> origin/danat_neutrinos_debug
+	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -622,14 +609,10 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#endif
 
 	#if (DOHELM)
-<<<<<<< HEAD
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	#elif(TWO_T)
-	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
-=======
 	eos_mode_rhou_temp(ph, &Te);
 	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
->>>>>>> origin/danat_neutrinos_debug
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);ssx
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -646,15 +629,12 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-<<<<<<< HEAD
-	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
-=======
 	#if(WHICHPROBLEM == RAD_PULSE)
 	kappa_abs = 0.;
 	#endif
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
->>>>>>> origin/danat_neutrinos_debug
+	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
+
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph
 	#if(TWO_T)
@@ -669,14 +649,10 @@ double calc_kappa_es(double * restrict ph
 	#endif
 
 	#if (DOHELM)
-<<<<<<< HEAD
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	#elif(TWO_T)
-	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
-=======
 	eos_mode_rhou_temp(ph, &Te);
 	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
->>>>>>> origin/danat_neutrinos_debug
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -689,12 +665,8 @@ double calc_kappa_es(double * restrict ph
 	return(kappa_es);
 	#else 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;
-<<<<<<< HEAD
 	return(kappa_es * (ph[RHO] * mass_density_scale) * R_G_CGS);
-=======
-	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 	#endif
->>>>>>> origin/danat_neutrinos_debug
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */

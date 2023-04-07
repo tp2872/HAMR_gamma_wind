@@ -879,11 +879,7 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-<<<<<<< HEAD
-extern int read_M1, read_2T, read_Pnum, read_Res;
-=======
 extern int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_neutrinos;
->>>>>>> origin/danat_neutrinos_debug
 extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -901,10 +897,7 @@ extern int N1_GPU_offset[NB];
 extern int N2_GPU_offset[NB];
 extern int N3_GPU_offset[NB];
 extern int max_blocks;
-<<<<<<< HEAD
-=======
 extern int communicator_set;
->>>>>>> origin/danat_neutrinos_debug
 extern float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
 
 /*************************************************************************
@@ -1134,13 +1127,10 @@ void GPU_fixup(int flag, int n, double Dt);
 void GPU_fixup_post(int n, double Dt);
 void GPU_cleanup_post(int n);
 void GPU_fixuputoprim(int flag, int n);
-<<<<<<< HEAD
 void GPU_fixuputoprim_rad(int flag, int n);
-=======
 #if (NEUTRINOS_M1)
 void GPU_fixuputoprim_nu(int flag, int n);
 #endif
->>>>>>> origin/danat_neutrinos_debug
 void GPU_Utoprim_M1_0(int n, double Dt);
 void GPU_Utoprim_M1_1(int n, double Dt);
 void GPU_Utoprim_M1_2(int n, double Dt);
@@ -1541,7 +1531,6 @@ void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 double calc_fermiint2(double x);
 double calc_fermiint3(double x);
 
-<<<<<<< HEAD
 //Mass accretion rate related
 #if(CALC_MDOT)
 void set_mass_density_scale(double *mass_density_scale_cpu, double* magnetic_density_scale_cpu);
@@ -1569,7 +1558,8 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
-=======
+
+//Neutrino opacity table related arrays
 extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
@@ -1585,4 +1575,3 @@ double get_xn(double ye, double x_alpha);
 void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
 void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
 #endif
->>>>>>> origin/danat_neutrinos_debug

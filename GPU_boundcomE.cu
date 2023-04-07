@@ -7,7 +7,6 @@ extern "C" {
 void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
-<<<<<<< HEAD
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1)*(z2 - z1);
@@ -17,26 +16,12 @@ void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			#elif(SCUDA)
 			packsend1E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 			#endif
-
 			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
 				gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 			}
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsend1E: %d \n", status);
-=======
-	if (gpu == 1) {
-		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) * (z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (j2 - j1) * (z2 - z1);
-		if (nstep != -100) {
-			packsend1E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsend1E: %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -71,7 +56,6 @@ void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
-<<<<<<< HEAD
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(z2 - z1);
@@ -88,19 +72,6 @@ void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsend2E: %d \n", status);
-=======
-	if (gpu == 1) {
-		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) * (z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (i2 - i1) * (z2 - z1);
-		if (nstep != -100) {
-			packsend2E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsend2E: %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -135,7 +106,7 @@ void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, gpuEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
-<<<<<<< HEAD
+
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(j2 - j1);
@@ -151,19 +122,6 @@ void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsend3E: %d \n", status);
-=======
-	if (gpu == 1) {
-		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) * (j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (i2 - i1) * (j2 - j1);
-		if (nstep != -100) {
-			packsend3E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsend3E: %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -205,7 +163,6 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendEaverage1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 			#elif(SCUDA)
@@ -217,17 +174,14 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			}
 		}
 		else{
-=======
-			packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-		}
-		else {
->>>>>>> origin/danat_neutrinos_debug
 			#if(AVG_EMF)
-			packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
-			packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#if(SHIP)
+				hipLaunchKernelGGL(packsendEaverage1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+				hipLaunchKernelGGL(packsendEaverage1, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#elif(SCUDA)
+				packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+				packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#endif
 			#endif
 		}
 		//gpuDeviceSynchronize();
@@ -280,7 +234,6 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendEaverage2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 			#elif(SCUDA)
@@ -290,24 +243,17 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
 				gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 			}
-=======
-			packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-		}
-		else {
-			#if(AVG_EMF)
-			packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
-			packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
-			#endif
->>>>>>> origin/danat_neutrinos_debug
 		}
 		else{
-			#if(AVG_EMF)
+		#if(AVG_EMF)
+			#if(SHIP)
+			hipLaunchKernelGGL(packsendEaverage2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+			hipLaunchKernelGGL(packsendEaverage2, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+			#elif(SCUDA)
 			packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
 			packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
 			#endif
+		#endif
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -352,7 +298,6 @@ void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendEaverage3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 			#elif(SCUDA)
@@ -364,17 +309,14 @@ void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			}
 		}
 		else{
-=======
-			packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
-			}
-		}
-		else {
->>>>>>> origin/danat_neutrinos_debug
 			#if(AVG_EMF)
-			packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
-			packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#if(SHIP)
+				hipLaunchKernelGGL(packsendEaverage3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+				hipLaunchKernelGGL(packsendEaverage3, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#elif(SCUDA)
+				packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1, ref_2, ref_3);
+				packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, -2, work_size, ref_1, ref_2, ref_3);
+				#endif
 			#endif
 		}
 		//gpuDeviceSynchronize();
@@ -783,7 +725,6 @@ void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *s
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE1corn, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 			#elif(SCUDA)
@@ -796,15 +737,6 @@ void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *s
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsendE1corn %d \n", status);
-=======
-			packsendE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsendE1corn %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -833,7 +765,6 @@ void pack_send_E2_corn(int n, int n_rec, int i, int j1, int j2, int z, double *s
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE2corn, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 			#elif(SCUDA)
@@ -845,15 +776,6 @@ void pack_send_E2_corn(int n, int n_rec, int i, int j1, int j2, int z, double *s
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsendE2corn %d \n", status);
-=======
-			packsendE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsendE2corn %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -882,7 +804,6 @@ void pack_send_E3_corn(int n, int n_rec, int i, int j, int z1, int z2, double *s
 		int nr_workgroups_bound = (int)ceil((double)((z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (z2 - z1);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE3corn, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 			#elif(SCUDA)
@@ -895,15 +816,6 @@ void pack_send_E3_corn(int n, int n_rec, int i, int j, int z1, int z2, double *s
 			//gpuDeviceSynchronize();
 			status = gpuGetLastError();
 			if (status != gpuSuccess) fprintf(stderr, "Error packsendE3corn %d \n", status);
-=======
-			packsendE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-			//cudaDeviceSynchronize();
-			status = cudaGetLastError();
-			if (status != cudaSuccess) fprintf(stderr, "Error packsendE3corn %d \n", status);
->>>>>>> origin/danat_neutrinos_debug
 		}
 	}
 	else{
@@ -933,7 +845,6 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE1corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1);
 			#elif(SCUDA)
@@ -950,15 +861,6 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 			#elif(SCUDA)
 			packsendE1corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1);
 			#endif
-=======
-			packsendE1corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-		}
-		else {
-			packsendE1corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_1);
->>>>>>> origin/danat_neutrinos_debug
 		}
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
@@ -993,7 +895,6 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE2corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_2);
 			#elif(SCUDA)
@@ -1003,15 +904,6 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
 				gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
 			}
-=======
-			packsendE2corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_2);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-		}
-		else {
-			packsendE2corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_2);
->>>>>>> origin/danat_neutrinos_debug
 		}
 		else {
 			#if(SHIP)
@@ -1053,7 +945,6 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 		int nr_workgroups_bound = (int)ceil((double)((z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (z2 - z1) / (1 + ref_3);
 		if (nstep != -100) {
-<<<<<<< HEAD
 			#if(SHIP)
 			hipLaunchKernelGGL(packsendE3corncourse, nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]], i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_3);
 			#elif(SCUDA)
@@ -1063,15 +954,6 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
 				gpuEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
 			}
-=======
-			packsendE3corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_3);
-			if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]) {
-				cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);;
-			}
-		}
-		else {
-			packsendE3corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, -1, work_size, ref_3);
->>>>>>> origin/danat_neutrinos_debug
 		}
 		else {
 			#if(SHIP)

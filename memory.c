@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 #include "include.h"
-=======
->>>>>>> origin/danat_neutrinos_debug
 #include "decs_MPI.h"
 
 //Wrapper for calculation of GPU memory
@@ -55,17 +52,10 @@ void set_arrays(int n)
 	#if(DUMP_SMALL)
 	array_reduced[nl[n]] = (float *)malloc(NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
 	array_gdump1_reduced[nl[n]] = (double *)malloc(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
-<<<<<<< HEAD
 	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * (!NSY + NSY * BS_3 / REDUCE_FACTOR3) * sizeof(double));
 	#endif
 	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
 	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1 * BS_2 * (!NSY + NSY * BS_3) * sizeof(double));
-=======
-	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
-	#endif
-	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
-	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1*BS_2 * sizeof(double));
->>>>>>> origin/danat_neutrinos_debug
 	array_rdump[nl[n]] = (double *)malloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	array_diag[nl[n]] = (float *)malloc(4 * BS_1*BS_2*BS_3 * sizeof(float));
 	Katm[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * sizeof(double));
@@ -96,12 +86,9 @@ void set_arrays(int n)
 	#if(RAD_M1)
 	pflag_rad[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
-<<<<<<< HEAD
 	#if(CARTESIAN_GR)
 	pflag_cart[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
-=======
->>>>>>> origin/danat_neutrinos_debug
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
@@ -109,12 +96,9 @@ void set_arrays(int n)
 	E_corn[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
 	failimage[nl[n]] = (int(*)[NFAIL])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int[NFAIL]));
-<<<<<<< HEAD
-=======
 	#if (NEUTRINOS_DEBUG)
 	allflags_NU[nl[n]] = (double(*)[NU_SPECIES])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NU_SPECIES]));
 	#endif
->>>>>>> origin/danat_neutrinos_debug
 	#if(!NSY)
 	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NDIM][NDIM][NDIM]));
 	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
@@ -712,12 +696,9 @@ void free_arrays(int n){
 	#if(RAD_M1)
 	free(pflag_rad[nl[n]]);
 	#endif
-<<<<<<< HEAD
 	#if(CARTESIAN_GR)
 	free(pflag_cart[nl[n]]);
 	#endif
-=======
->>>>>>> origin/danat_neutrinos_debug
 	free(U[nl[n]]);
 	free(dq[nl[n]]);
 	free(F1[nl[n]]);
@@ -731,12 +712,9 @@ void free_arrays(int n){
 	free(E_corn[nl[n]]);
 	#endif
 	free(failimage[nl[n]]);
-<<<<<<< HEAD
-=======
 	#if (NEUTRINOS_DEBUG)
 	free(allflags_NU[nl[n]]);
 	#endif
->>>>>>> origin/danat_neutrinos_debug
 	free(conn[nl[n]]);
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
@@ -1155,13 +1133,8 @@ void calc_mem_cpu(int n)
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG*10 * sizeof(double));
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NDIM*10 * sizeof(double));
 	#if(FRAME_TRANSFORM)
-<<<<<<< HEAD
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
-=======
-	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
-	mem +=((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NSOLVER * NDIM * NDIM * sizeof(double));
->>>>>>> origin/danat_neutrinos_debug
 	#endif
 	mem +=(((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*NPG * sizeof(double));
 	#else
@@ -2651,7 +2624,6 @@ double calc_mem_gpu(int n){
 	return mem;
 }
 
-<<<<<<< HEAD
 //Flag cells that need inflow boundary conditions in Cartesian mesh
 void set_pflag_cart(int n) {
 	int i, j, z;
@@ -2734,139 +2706,3 @@ void set_pflag_cart(int n) {
 		*/
 	}
 }
-=======
->>>>>>> origin/danat_neutrinos_debug
-//Trash functions
-/*
-// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-double den, ener, pres, bsq, esq, f, U[NPR], gamma, p_old[NPR];
-int zz;
-struct of_state_res q_res;
-struct of_geom geom;
-struct of_state q;
-struct of_state_rad q_rad;
-#if(RESISTIVE)
-int ind0, k;
-for (n = 0; n < n_active; n++) {
-	ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
-		for (zz = 0; zz < 1; zz++) {
-
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-
-			ind0 = index_3D(n_ord[n], i, j, z);
-			p[nl[n_ord[n]]][ind0][UU] = fabs(p[nl[n_ord[n]]][ind0][UU]);
-			get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-			primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
-			bsq = dot(q_res.bcon, q_res.bcov);
-			esq = dot(q_res.econ, q_res.ecov);
-			if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
-				double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3], E_D[3];
-				struct of_state state;
-				get_geometry(n_ord[n], i, j, z, CENT, &geom);
-				get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
-				alpha = 1.0 / sqrt(-geom.gcon[0][0]);
-				sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
-				gamma = alpha * state.ucon[0];
-				vd_guess[0] = state.ucov[1] / gamma;
-				vd_guess[1] = state.ucov[2] / gamma;
-				vd_guess[2] = state.ucov[3] / gamma;
-				B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-				B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-				B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-				//E_guess[0] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-				//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-				//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-
-				lower_3(B_guess, geom.gcov, B_D);
-				//lower_3(E_guess, &geom, E_D);
-				int i1, j1, k1;
-				for (i1 = 0; i1 < 3; i1++) {
-					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
-					for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
-						if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
-						//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
-					}
-				}
-				//p[nl[n_ord[n]]][ind0][B1] = 0.;
-				//p[nl[n_ord[n]]][ind0][B2] = 0.;
-				//p[nl[n_ord[n]]][ind0][B3] = 0.;
-				//p[nl[n_ord[n]]][ind0][E1] = 0.;
-				//p[nl[n_ord[n]]][ind0][E2] = 0.;
-				//p[nl[n_ord[n]]][ind0][E3] = 0.;
-
-				//ps[nl[n_ord[n]]][ind0][1] = 0.;
-				//ps[nl[n_ord[n]]][ind0][2] = 0.;
-				//ps[nl[n_ord[n]]][ind0][3] = 0.;
-				//psh[nl[n_ord[n]]][ind0][1] = 0.;
-				//psh[nl[n_ord[n]]][ind0][2] = 0.;
-				//psh[nl[n_ord[n]]][ind0][3] = 0.;
-
-				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
-
-
-				//Reset variables
-				PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
-
-				PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
-				pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1 * (ETA < 0.000000000000001));
-
-				if (pflag[nl[n_ord[n]]][ind0] != 0) {
-					get_state_res(p_old, &geom, &q_res);
-					bsq = dot(q_res.bcon, q_res.bcov);
-					esq = dot(q_res.econ, q_res.ecov);
-					fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
-
-					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-					bsq = dot(q_res.bcon, q_res.bcov);
-					esq = dot(q_res.econ, q_res.ecov);
-					fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n", zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
-
-					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 2, &geom, U);
-					fprintf(stderr, "F[2][B3]: %f ", 10000. * U[UU]);
-
-					get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
-					primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 2, &geom, U);
-					fprintf(stderr, "F[2][B3]: %f \n", 10000. * U[UU]);
-
-
-				}
-			}
-		}
-	}
-}
-#endif
-#if(RAD_M1)
-int ind0, k;
-for (n = 0; n < n_active; n++) {
-	ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
-		for (zz = 0; zz < 1; zz++) {
-			ind0 = index_3D(n_ord[n], i, j, z);
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			get_state(p[nl[n_ord[n]]][ind0], &geom, &q);
-			get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-			primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U, GAMMA);
-
-			//Reset variables
-			PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
-
-			//Invert
-			pflag[nl[n_ord[n]]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
-
-			//Print
-			if (fabs(p_old[UU_RAD] - p[nl[n_ord[n]]][ind0][UU_RAD])/(p_old[UU_RAD] + p[nl[n_ord[n]]][ind0][UU_RAD])>pow(10.,-12.)) {
-				fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), fabs(q_rad.ucon[0]));
-				get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-				fprintf(stderr, "uu_new (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p[nl[n_ord[n]]][ind0][UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
-			}
-		}
-	}
-}
-#endif
-<<<<<<< HEAD
-*/
-
-=======
-*/
->>>>>>> origin/danat_neutrinos_debug

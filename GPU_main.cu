@@ -1702,13 +1702,12 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	if (flag == 1){
 		if (dir == 1){
 			#if(FRAME_TRANSFORM)
-<<<<<<< HEAD
 				#if(SHIP)
 				hipLaunchKernelGGL(fluxcalc2D_FT, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -1716,16 +1715,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
-=======
-			fluxcalc2D_FT << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
-				BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
-				dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
-				#if (DOHELM) 
-				, GPU_eos_table[block[n][AMR_NODE]]
->>>>>>> origin/danat_neutrinos_debug
 				#endif
 			#else
 <<<<<<< HEAD
@@ -3538,16 +3530,11 @@ void GPU_read(int n)
 	gpuMemcpyAsync(psh_1[nl[n]], Bufferpsh_1[nl[n]], (int)(3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif
 	#endif
-<<<<<<< HEAD
-	gpuMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
-	gpuDeviceSynchronize();
-=======
-	cudaMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#if (NEUTRINOS_DEBUG)
-	cudaMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif
-	cudaDeviceSynchronize();
->>>>>>> origin/danat_neutrinos_debug
+	gpuDeviceSynchronize();
 
 	if (n == n_ord[0]) {
 		for (k = 0; k < NFAIL; k++) failimage_counter[k] = 0;
@@ -3624,32 +3611,19 @@ void GPU_finish(int n, int force_delete)
 
 	status += gpuFreeHost(p_1[nl[n]]);
 	#if(STAGGERED)
-<<<<<<< HEAD
 	status += gpuFreeHost(ps_1[nl[n]]);
 	status += gpuFreeHost(psh_1[nl[n]]);
 	#endif
 	status += gpuFreeHost(ph_1[nl[n]]);
 	status += gpuFreeHost(failimage_GPU[nl[n]]);
+	#if(NEUTRINOS_DEBUG)
+	gpuFreeHost(allflags_NU_GPU[nl[n]]);
+	#endif
 	status += gpuFreeHost(radius_GPU[nl[n]]);
 	status += gpuFreeHost(dq_1[nl[n]]);
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
 	status += gpuFreeHost(gcon_GPU[nl[n]]);
 	status += gpuFreeHost(conn_GPU[nl[n]]);
-=======
-	cudaFreeHost(ps_1[nl[n]]);
-	cudaFreeHost(psh_1[nl[n]]);
-	#endif
-	cudaFreeHost(ph_1[nl[n]]);
-	//cudaFreeHost(pflag_GPU[nl[n]]);
-	cudaFreeHost(failimage_GPU[nl[n]]);
-	#if(NEUTRINOS_DEBUG)
-	cudaFreeHost(allflags_NU_GPU[nl[n]]);
-	#endif
-	cudaFreeHost(dq_1[nl[n]]);
-	cudaFreeHost(gcov_GPU[nl[n]]);
-	cudaFreeHost(gcon_GPU[nl[n]]);
-	cudaFreeHost(conn_GPU[nl[n]]);
->>>>>>> origin/danat_neutrinos_debug
 	#if(FRAME_TRANSFORM)
 	status += gpuFreeHost(Mud_GPU[nl[n]]);
 	status += gpuFreeHost(Mud_inv_GPU[nl[n]]);
@@ -3680,15 +3654,9 @@ void GPU_finish(int n, int force_delete)
 	status += gpuFree(BufferdU_RAD0[nl[n]]);
 	status += gpuFree(BufferdU_RAD1[nl[n]]);
 	#endif
-<<<<<<< HEAD
-	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T)
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T || NEUTRINOS_M1)
 	status += gpuFree(Bufferstorage2[nl[n]]);
 	status += gpuFree(Bufferstorage3[nl[n]]);
-=======
-	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE || TWO_T || NEUTRINOS_M1)
-	status += cudaFree(Bufferstorage2[nl[n]]);
-	status += cudaFree(Bufferstorage3[nl[n]]);
->>>>>>> origin/danat_neutrinos_debug
 	#endif
 	status += gpuFree(Bufferp_1[nl[n]]);
 	status += gpuFree(Bufferph_1[nl[n]]);
@@ -3703,25 +3671,17 @@ void GPU_finish(int n, int force_delete)
 	#if(CARTESIAN_GR)
 	status += gpuFree(Bufferpflag_CART[nl[n]]);
 	#endif
-<<<<<<< HEAD
+	#if(NEUTRINOS_M1)
+	status += gpuFree(Bufferpflag_NU[nl[n]]);
+	#if (NEUTRINOS_DEBUG)
+	status += gpuFree(Bufferallflags_NU[nl[n]]);
+	#endif
+	#endif
 	status += gpuFree(Bufferfailimage[nl[n]]);
 	//status += gpuFree(BufferdU[nl[n]]);
 	status += gpuFree(Buffergcov[nl[n]]);
 	status += gpuFree(Buffergcon[nl[n]]);
 	status += gpuFree(Bufferconn[nl[n]]);
-=======
-	#if(NEUTRINOS_M1)
-	status += cudaFree(Bufferpflag_NU[nl[n]]);
-	#if (NEUTRINOS_DEBUG)
-	status += cudaFree(Bufferallflags_NU[nl[n]]);
-	#endif
-	#endif
-	status += cudaFree(Bufferfailimage[nl[n]]);
-	//status += cudaFree(BufferdU[nl[n]]);
-	status += cudaFree(Buffergcov[nl[n]]);
-	status += cudaFree(Buffergcon[nl[n]]);
-	status += cudaFree(Bufferconn[nl[n]]);
->>>>>>> origin/danat_neutrinos_debug
 	#if(FRAME_TRANSFORM)
 	status += gpuFree(BufferMud[nl[n]]);
 	status += gpuFree(BufferMud_inv[nl[n]]);

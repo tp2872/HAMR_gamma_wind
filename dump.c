@@ -547,11 +547,7 @@ void gdump_grid_read(FILE* fp)
 	//Calculate NV_read
 	fseek(fp, 0, SEEK_SET);
 	fread(&NB_read, sizeof(int), 1, fp);
-<<<<<<< HEAD
 	NV_read = (filesize-int_size) / int_size / NB_read;
-=======
-	NV_read = (filesize - int_size) / int_size / NB_read;
->>>>>>> origin/danat_neutrinos_debug
 
 	//Exit if error during read
 	if (NV_read != NV) {
@@ -560,11 +556,7 @@ void gdump_grid_read(FILE* fp)
 	}
 
 	//Allocate memory for block read
-<<<<<<< HEAD
 	block_read = (int(*)[10])malloc((NB + 1)*sizeof(int[10]));
-=======
-	block_read = (int(*)[10])malloc((NB + 1) * sizeof(int[10]));
->>>>>>> origin/danat_neutrinos_debug
 
 	//Read in required variables
 	for (n_read = 0; n_read < NB; n_read++) {
@@ -601,19 +593,11 @@ void gdump_grid_read(FILE* fp)
 	}
 
 	for (n_read = 0; n_read < NB; n_read++) {
-<<<<<<< HEAD
 		if(active_block[n_read] == 1) {
 			//Find index in new grid
 			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
 			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
-			
-=======
-		if (active_block[n_read] == 1) {
-			//Find index in new grid
-			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
-			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
 
->>>>>>> origin/danat_neutrinos_debug
 			//Activate block in new grid
 			block[n][AMR_ACTIVE] = 1;
 			block[n][AMR_NODE] = -1;
