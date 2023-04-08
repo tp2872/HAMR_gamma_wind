@@ -13455,7 +13455,207 @@ __device__ int invert_3DU_entropy(double D, double sigma, double etares, double 
 
     return retval;
 }
+__global__ void consttransport2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
+    const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2
+#if(CALC_MDOT)
+    , double magnetic_density_scale
+#endif
+#if(CARTESIAN_GR)
+    , int* pflag_cart
+#endif
+)
+{
+    int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+    int isize, icurr, jcurr, zcurr, k = 0;
+    isize = (BS_3 + D3) * (BS_2 + D2);
+    zcurr = (global_id % (isize)) % (BS_3 + D3);
+    jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
+    icurr = (global_id - (jcurr * (BS_3 + D3) + zcurr)) / (isize);
+    zcurr += (N3G)*D3;
+    jcurr += (N2G)*D2;
+    icurr += (N1G)*D1;
+    if (global_id < (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) k = 1;
+    isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+    global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+    int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+    int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+    int jsize = BS_3 + 2 * N3G;
+#if(CALC_MDOT)
+    double factor = 1.0 / magnetic_density_scale;
+#else
+    double factor = 1.0;
+#endif
 
+    if (k == 1) {
+#if(RESISTIVE || CARTESIAN)
+        double dE_LEFT_13_1 = 0.0;
+        double dE_LEFT_13_2 = 0.0;
+        double dE_RIGHT_13_1 = 0.0;
+        double dE_RIGHT_13_2 = 0.0;
+        double dE_LEFT_12_1 = 0.0;
+        double dE_LEFT_12_2 = 0.0;
+        double dE_RIGHT_12_1 = 0.0;
+        double dE_RIGHT_12_2 = 0.0;
+        double dE_LEFT_21_1 = 0.0;
+        double dE_LEFT_21_2 = 0.0;
+        double dE_RIGHT_21_1 = 0.0;
+        double dE_RIGHT_21_2 = 0.0;
+        double dE_LEFT_23_1 = 0.0;
+        double dE_LEFT_23_2 = 0.0;
+        double dE_RIGHT_23_1 = 0.0;
+        double dE_RIGHT_23_2 = 0.0;
+        double dE_LEFT_31_1 = 0.0;
+        double dE_LEFT_31_2 = 0.0;
+        double dE_RIGHT_31_1 = 0.0;
+        double dE_RIGHT_31_2 = 0.0;
+        double dE_LEFT_32_1 = 0.0;
+        double dE_LEFT_32_2 = 0.0;
+        double dE_RIGHT_32_1 = 0.0;
+        double dE_RIGHT_32_2 = 0.0;
+#else
+        double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - factor * F3[B2 * (ksize)+global_id];
+        double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - factor * F3[B2 * (ksize)+global_id - jsize * D2];
+        double dE_RIGHT_13_1 = factor * F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+        double dE_RIGHT_13_2 = factor * F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+        double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + factor * F2[B3 * (ksize)+global_id];
+        double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + factor * F2[B3 * (ksize)+global_id - D3];
+        double dE_RIGHT_12_1 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_12_2 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+        double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - factor * F1[B3 * (ksize)+global_id];
+        double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - factor * F1[B3 * (ksize)+global_id - D3];
+        double dE_RIGHT_21_1 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_21_2 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+        double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + factor * F3[B1 * (ksize)+global_id];
+        double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + factor * F3[B1 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_23_1 = -factor * F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+        double dE_RIGHT_23_2 = -factor * F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+        double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + factor * F1[B2 * (ksize)+global_id];
+        double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + factor * F1[B2 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_31_1 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_31_2 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+        double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - factor * F2[B1 * (ksize)+global_id];
+        double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - factor * F2[B1 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_32_1 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_32_2 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+#endif
+
+        emf[1 * (ksize)+global_id] = 0.25 * ((-factor * F2[B3 * (ksize)+global_id] - (dE_LEFT_13_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_13_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+            + (-factor * F2[B3 * (ksize)+global_id - D3] + (dE_RIGHT_13_1 * (double)(F2[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2 * (double)(F2[RHO * (ksize)+global_id - D3] > 0.0))) +
+            +(factor * F3[B2 * (ksize)+global_id] - (dE_LEFT_12_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_12_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+            + (factor * F3[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_12_1 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_12_2 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+        emf[2 * (ksize)+global_id] = 0.25 * ((-factor * F3[B1 * (ksize)+global_id] - (dE_LEFT_21_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_21_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+            + (-factor * F3[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_21_1 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_21_2 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+            + (factor * F1[B3 * (ksize)+global_id] - (dE_LEFT_23_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_23_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+            + (factor * F1[B3 * (ksize)+global_id - D3] + (dE_RIGHT_23_1 * (double)(F1[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2 * (double)(F1[RHO * (ksize)+global_id - D3] > 0.0))));
+        emf[3 * (ksize)+global_id] = 0.25 * ((factor * F2[B1 * (ksize)+global_id] - (dE_LEFT_31_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_31_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+            + (factor * F2[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_31_1 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_31_2 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+            + (-factor * F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+            + (-factor * F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+
+        if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
+            emf[3 * (ksize)+global_id] = 0.;
+            emf[1 * (ksize)+global_id] = -0.5 * factor * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
+        }
+
+#if(CARTESIAN_GR)
+        /*if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize - D2 * jsize] == 1) {
+            emf[3 * (ksize)+global_id] = 0.;
+        }
+        if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D3] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize + D3] == 1) {
+            emf[2 * (ksize)+global_id] = 0.;
+        }
+        if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D3] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D2 * jsize + D3] == 1) {
+            emf[1 * (ksize)+global_id] = 0.;
+        }*/
+#endif
+    }
+}
+
+__global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
+    const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
+{
+    /*int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+    int isize, icurr, jcurr, zcurr, k = 0;
+    isize = (BS_3 + D3) * (BS_2 + D2);
+    zcurr = (global_id % (isize)) % (BS_3 + D3);
+    jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
+    icurr = (global_id - (jcurr * (BS_3 + D3) + zcurr)) / (isize);
+    zcurr += (N3G)*D3;
+    jcurr += (N2G)*D2;
+    icurr += (N1G)*D1;
+    if (global_id < (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) k = 1;
+    isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+    global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+    int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+    int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+    int jsize = BS_3 + 2 * N3G;
+    int zsize0 = 1, zsize1 = 1;
+    #if(N_LEVELS_1D_INT>0 && D3>0)
+    int zlevel0 = 0;
+    int zoffset0;
+    if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs((jcurr-D2) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+    if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN((jcurr - D2) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+    zsize0 = (int)(0.001 + pow(2.0, (double)zlevel0));
+    zoffset0 = (zcurr - N3G) % zsize0;
+    int zlevel1 = 0;
+    int zoffset1;
+    if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+    if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+    zsize1 = (int)(0.001 + pow(2.0, (double)zlevel1));
+    zoffset1 = (zcurr - N3G) % zsize1;
+    #endif
+
+    if (k == 1) {
+        double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
+        double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
+        double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id ] - E_cent[1 * (ksize)+global_id - D3 * zsize1];
+        double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id - jsize * D2] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3 * zsize0];
+        double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
+        double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3 * zsize1] + F2[B3 * (ksize)+global_id - D3 * zsize1];
+        double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id - D3 * zsize0] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3 * zsize0];
+        double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
+        double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
+        double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id - D3 * zsize1] - E_cent[2 * (ksize)+global_id - D1 * isize - D3*zsize1];
+        double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
+        double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D3 * zsize1];
+        double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id - isize * D1] - E_cent[2 * (ksize)+global_id - isize * D1 - D3 * zsize1];
+        double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
+        double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+        double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
+        double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
+        double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+        double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+
+        emf[1 * (ksize)+global_id] *= 0.5;
+        emf[2 * (ksize)+global_id] *= 0.5;
+        emf[3 * (ksize)+global_id] *= 0.5;
+
+        emf[1 * (ksize)+global_id] += 0.25 * 0.5 * ((-F2[B3 * (ksize)+global_id] - (dE_LEFT_13_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_13_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+            + (-F2[B3 * (ksize)+global_id - D3] + (dE_RIGHT_13_1 * (double)(F2[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2 * (double)(F2[RHO * (ksize)+global_id - D3] > 0.0))) +
+            +(F3[B2 * (ksize)+global_id] - (dE_LEFT_12_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_12_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+            + (F3[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_12_1 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_12_2 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+        emf[2 * (ksize)+global_id] += 0.25 * 0.5 * ((-F3[B1 * (ksize)+global_id] - (dE_LEFT_21_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_21_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+            + (-F3[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_21_1 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_21_2 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+            + (F1[B3 * (ksize)+global_id] - (dE_LEFT_23_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_23_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+            + (F1[B3 * (ksize)+global_id - D3] + (dE_RIGHT_23_1 * (double)(F1[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2 * (double)(F1[RHO * (ksize)+global_id - D3] > 0.0))));
+        emf[3 * (ksize)+global_id] += 0.25 * 0.5 * ((F2[B1 * (ksize)+global_id] - (dE_LEFT_31_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_31_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+            + (F2[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_31_1 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_31_2 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+            + (-F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+            + (-F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+
+        #if(!CARTESIAN)
+        if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
+            emf[3 * (ksize)+global_id] = 0.;
+            emf[1 * (ksize)+global_id] += - 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
+        }
+        #endif
+    }*/
+}
 //gives jacobian and residuals
 __device__ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
     double Enew[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
@@ -14236,7 +14436,6 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
     #endif
 =======
     max_row = 0;
->>>>>>> origin/danat_neutrinos_debug
 
     //Find the maximum elements per row so that we can pretend late we have unit-normalized each equation
 
@@ -14249,215 +14448,11 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
             absmax = MY_MAX(absmax, maxtemp);
         }
 
-<<<<<<< HEAD
-__global__ void consttransport2(double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
-	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2
-	#if(CALC_MDOT)
-	, double magnetic_density_scale
-	#endif
-	#if(CARTESIAN_GR)
-	, int* pflag_cart
-	#endif
-)
-{
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize, icurr, jcurr, zcurr, k=0;
-	isize = (BS_3 + D3)*(BS_2 + D2);
-	zcurr = (global_id % (isize)) % (BS_3 + D3);
-	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
-	icurr = (global_id - (jcurr*(BS_3 + D3) + zcurr)) / (isize);
-	zcurr += (N3G)*D3;
-	jcurr += (N2G)*D2;
-	icurr += (N1G)*D1;
-	if (global_id<(BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) k = 1;
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
-	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int jsize = BS_3 + 2 * N3G;
-	#if(CALC_MDOT)
-	double factor = 1.0 / magnetic_density_scale;
-	#else
-	double factor = 1.0;
-	#endif
-
-	if (k==1){
-		#if(RESISTIVE || CARTESIAN)
-		double dE_LEFT_13_1 = 0.0;
-		double dE_LEFT_13_2 = 0.0;
-		double dE_RIGHT_13_1 = 0.0;
-		double dE_RIGHT_13_2 = 0.0;
-		double dE_LEFT_12_1 = 0.0;
-		double dE_LEFT_12_2 = 0.0;
-		double dE_RIGHT_12_1 = 0.0;
-		double dE_RIGHT_12_2 = 0.0;
-		double dE_LEFT_21_1 = 0.0;
-		double dE_LEFT_21_2 = 0.0;
-		double dE_RIGHT_21_1 = 0.0;
-		double dE_RIGHT_21_2 = 0.0;
-		double dE_LEFT_23_1 = 0.0;
-		double dE_LEFT_23_2 = 0.0;
-		double dE_RIGHT_23_1 = 0.0;
-		double dE_RIGHT_23_2 = 0.0;
-		double dE_LEFT_31_1 = 0.0;
-		double dE_LEFT_31_2 = 0.0;
-		double dE_RIGHT_31_1 = 0.0;
-		double dE_RIGHT_31_2 = 0.0;
-		double dE_LEFT_32_1 = 0.0;
-		double dE_LEFT_32_2 = 0.0;
-		double dE_RIGHT_32_1 = 0.0;
-		double dE_RIGHT_32_2 = 0.0;
-		#else
-		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - factor * F3[B2 * (ksize)+global_id];
-		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - factor * F3[B2 * (ksize)+global_id - jsize * D2];
-		double dE_RIGHT_13_1 = factor * F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
-		double dE_RIGHT_13_2 = factor * F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
-		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + factor * F2[B3 * (ksize)+global_id];
-		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + factor * F2[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_12_1 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_12_2 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
-		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - factor * F1[B3 * (ksize)+global_id];
-		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - factor * F1[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_21_1 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
-		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + factor * F3[B1 * (ksize)+global_id];
-		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + factor * F3[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_23_1 = -factor * F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
-		double dE_RIGHT_23_2 = -factor * F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
-		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + factor * F1[B2 * (ksize)+global_id];
-		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + factor * F1[B2 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_31_1 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_31_2 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - factor * F2[B1 * (ksize)+global_id];
-		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - factor * F2[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_32_1 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_32_2 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		#endif
-
-		emf[1 * (ksize)+global_id] = 0.25*((-factor * F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
-			+(factor * F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*(ksize)+global_id - D2*jsize]>0.0))));
-		emf[2 * (ksize)+global_id] = 0.25*((-factor * F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (factor * F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*(ksize)+global_id - D3]>0.0))));
-		emf[3 * (ksize)+global_id] = 0.25*((factor * F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (-factor * F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*(ksize)+global_id - D2*jsize] >0.0))));
-
-		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
-			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = -0.5 * factor * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
-		}
-
-		#if(CARTESIAN_GR)
-		/*if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize - D2 * jsize] == 1) {
-			emf[3 * (ksize)+global_id] = 0.;
-		}
-		if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D3] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize + D3] == 1) {
-			emf[2 * (ksize)+global_id] = 0.;
-		}
-		if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D3] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D2 * jsize + D3] == 1) {
-			emf[1 * (ksize)+global_id] = 0.;
-		}*/
-		#endif
-	}
-}
-
-__global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
-	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
-{
-	/*int global_id = blockDim.x * blockIdx.x + threadIdx.x;
-	int isize, icurr, jcurr, zcurr, k = 0;
-	isize = (BS_3 + D3) * (BS_2 + D2);
-	zcurr = (global_id % (isize)) % (BS_3 + D3);
-	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
-	icurr = (global_id - (jcurr * (BS_3 + D3) + zcurr)) / (isize);
-	zcurr += (N3G)*D3;
-	jcurr += (N2G)*D2;
-	icurr += (N1G)*D1;
-	if (global_id < (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) k = 1;
-	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
-	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
-	int jsize = BS_3 + 2 * N3G;
-	int zsize0 = 1, zsize1 = 1;
-	#if(N_LEVELS_1D_INT>0 && D3>0)
-	int zlevel0 = 0;
-	int zoffset0;
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs((jcurr-D2) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN((jcurr - D2) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
-	zsize0 = (int)(0.001 + pow(2.0, (double)zlevel0));
-	zoffset0 = (zcurr - N3G) % zsize0;
-	int zlevel1 = 0;
-	int zoffset1;
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
-	zsize1 = (int)(0.001 + pow(2.0, (double)zlevel1));
-	zoffset1 = (zcurr - N3G) % zsize1;
-	#endif
-
-	if (k == 1) {
-		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
-		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
-		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id ] - E_cent[1 * (ksize)+global_id - D3 * zsize1];
-		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id - jsize * D2] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3 * zsize0];
-		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
-		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3 * zsize1] + F2[B3 * (ksize)+global_id - D3 * zsize1];
-		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id] - E_cent[1 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id - D3 * zsize0] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3 * zsize0];
-		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
-		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id - D3 * zsize1] - E_cent[2 * (ksize)+global_id - D1 * isize - D3*zsize1];
-		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
-		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D3 * zsize1];
-		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id - isize * D1] - E_cent[2 * (ksize)+global_id - isize * D1 - D3 * zsize1];
-		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
-		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
-		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		
-		emf[1 * (ksize)+global_id] *= 0.5;
-		emf[2 * (ksize)+global_id] *= 0.5;
-		emf[3 * (ksize)+global_id] *= 0.5;
-
-		emf[1 * (ksize)+global_id] += 0.25 * 0.5 * ((-F2[B3 * (ksize)+global_id] - (dE_LEFT_13_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_13_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
-			+ (-F2[B3 * (ksize)+global_id - D3] + (dE_RIGHT_13_1 * (double)(F2[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2 * (double)(F2[RHO * (ksize)+global_id - D3] > 0.0))) +
-			+(F3[B2 * (ksize)+global_id] - (dE_LEFT_12_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_12_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
-			+ (F3[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_12_1 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_12_2 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
-		emf[2 * (ksize)+global_id] += 0.25 * 0.5 * ((-F3[B1 * (ksize)+global_id] - (dE_LEFT_21_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_21_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
-			+ (-F3[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_21_1 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_21_2 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
-			+ (F1[B3 * (ksize)+global_id] - (dE_LEFT_23_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_23_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
-			+ (F1[B3 * (ksize)+global_id - D3] + (dE_RIGHT_23_1 * (double)(F1[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2 * (double)(F1[RHO * (ksize)+global_id - D3] > 0.0))));
-		emf[3 * (ksize)+global_id] += 0.25 * 0.5 * ((F2[B1 * (ksize)+global_id] - (dE_LEFT_31_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_31_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
-			+ (F2[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_31_1 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_31_2 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
-			+ (-F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
-			+ (-F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
-
-		#if(!CARTESIAN)
-		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
-			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] += - 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
-		}
-		#endif
-	}*/
-}
-=======
         //Make sure that there is at least one non-zero element in this row:
         if (absmax == 0.) return(1);
 
         row_norm[i] = 1. / absmax; //Set the row's normalization factor.
     }
->>>>>>> origin/danat_neutrinos_debug
 
     /* For each of the columns, starting from the left ... */
     for (j = 0; j < NDIM; j++) {
@@ -14471,7 +14466,470 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 
         absmax = 0.0;
 
-<<<<<<< HEAD
+        /* Calculate the Lower part of the matrix:  i <= j :   */
+        for (i = j; i < NDIM; i++) {
+            for (k = 0; k < j; k++) A[i][j] -= A[i][k] * A[k][j];
+
+            maxtemp = fabs(A[i][j]) * row_norm[i];
+
+            if (maxtemp >= absmax) {
+                absmax = maxtemp;
+                max_row = i;
+            }
+
+        }
+        if (max_row != j) {
+        
+            if ((j == (NDIM - 2)) && (A[j][j + 1] == 0.)) max_row = j;
+            else {
+                for (k = 0; k < NDIM; k++) {
+                    maxtemp = A[j][k];
+                    A[j][k] = A[max_row][k];
+                    A[max_row][k] = maxtemp;
+                }
+
+                row_norm[max_row] = row_norm[j];
+            }
+        }
+        permute[j] = max_row;
+        if (A[j][j] == 0.) A[j][j] = 1.e-30;
+        if (j != (NDIM - 1)) {
+            maxtemp = 1. / A[j][j];
+
+            for (i = (j + 1); i < NDIM; i++) A[i][j] *= maxtemp;
+        }
+    }
+
+    return(0);
+}
+
+//3D LU
+__device__ int LU_decompose_3D(double A[][3], int permute[])
+{
+    double row_norm[3];
+    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+    double  absmax, maxtemp, mintemp;
+
+    int i, j, k, max_row;
+    int n = 3;
+
+
+    max_row = 0;
+
+    /* Find the maximum elements per row so that we can pretend later
+       we have unit-normalized each equation: */
+
+    for (i = 0; i < n; i++) {
+        absmax = 0.;
+
+        for (j = 0; j < n; j++) {
+            maxtemp = fabs(A[i][j]);
+
+            if (maxtemp > absmax) {
+                absmax = maxtemp;
+            }
+        }
+
+        /* Make sure that there is at least one non-zero element in this row: */
+        if (absmax == 0.) {
+            //fprintf(stderr, "LU_decompose(): row-wise singular matrix!\n");
+            return(1);
+        }
+
+        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+    }
+
+
+    /* The following the calculates the matrix composed of the sum
+       of the lower (L) tridagonal matrix and the upper (U) tridagonal
+       matrix that, when multiplied, form the original maxtrix.
+       This is what we call the LU decomposition of the maxtrix.
+       It does this by a recursive procedure, starting from the
+       upper-left, proceding down the column, and then to the next
+       column to the right.  The decomposition can be done in place
+       since element {i,j} require only those elements with {<=i,<=j}
+       which have already been computed.
+       See pg. 43-46 of "Num. Rec." for a more thorough description.
+    */
+
+    /* For each of the columns, starting from the left ... */
+    for (j = 0; j < n; j++) {
+
+        /* For each of the rows starting from the top.... */
+
+        /* Calculate the Upper part of the matrix:  i < j :   */
+        for (i = 0; i < j; i++) {
+            for (k = 0; k < i; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+        }
+
+        absmax = 0.0;
+
+        /* Calculate the Lower part of the matrix:  i <= j :   */
+
+        for (i = j; i < n; i++) {
+
+            for (k = 0; k < j; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+
+            /* Find the maximum element in the column given the implicit
+           unit-normalization (represented by row_norm[i]) of each row:
+            */
+            maxtemp = fabs(A[i][j]) * row_norm[i];
+
+            if (maxtemp >= absmax) {
+                absmax = maxtemp;
+                max_row = i;
+            }
+
+        }
+
+        /* Swap the row with the largest element (of column j) with row_j.  absmax
+           This is the partial pivoting procedure that ensures we don't divide
+           by 0 (or a small number) when we solve the linear system.
+           Also, since the procedure starts from left-right/top-bottom,
+           the pivot values are chosen from a pool involving all the elements
+           of column_j  in rows beneath row_j.  This ensures that
+           a row  is not permuted twice, which would mess things up.
+        */
+        if (max_row != j) {
+
+            /* Don't swap if it will send a 0 to the last diagonal position.
+           Note that the last column cannot pivot with any other row,
+           so this is the last chance to ensure that the last two
+           columns have non-zero diagonal elements.
+             */
+
+            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+                max_row = j;
+            }
+            else {
+                for (k = 0; k < n; k++) {
+
+                    maxtemp = A[j][k];
+                    A[j][k] = A[max_row][k];
+                    A[max_row][k] = maxtemp;
+
+                }
+
+                /* Don't forget to swap the normalization factors, too...
+                   but we don't need the jth element any longer since we
+                   only look at rows beneath j from here on out.
+                */
+                row_norm[max_row] = row_norm[j];
+            }
+        }
+
+        /* Set the permutation record s.t. the j^th element equals the
+           index of the row swapped with the j^th row.  Note that since
+           this is being done in successive columns, the permutation
+           vector records the successive permutations and therefore
+           index of permute[] also indexes the chronology of the
+           permutations.  E.g. permute[2] = {2,1} is an identity
+           permutation, which cannot happen here though.
+        */
+
+        permute[j] = max_row;
+
+        if (A[j][j] == 0.) {
+            A[j][j] = absmin;
+        }
+
+
+        /* Normalize the columns of the Lower tridiagonal part by their respective
+           diagonal element.  This is not done in the Upper part because the
+           Lower part's diagonal elements were set to 1, which can be done w/o
+           any loss of generality.
+        */
+        if (j != (n - 1)) {
+            maxtemp = 1. / A[j][j];
+
+            for (i = (j + 1); i < n; i++) {
+                A[i][j] *= maxtemp;
+            }
+        }
+
+    }
+
+    return(0);
+
+    /* End of LU_decompose() */
+
+}
+
+//5D LU-decomposition
+__device__ int LU_decompose_5D(double A[][5], int permute[])
+{
+    double row_norm[5];
+    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+    double  absmax, maxtemp;
+    int i, j, k, max_row;
+    int n = 5;
+
+    max_row = 0;
+    for (i = 0; i < n; i++) {
+        absmax = 0.;
+
+        for (j = 0; j < n; j++) {
+
+            maxtemp = fabs(A[i][j]);
+            if (!isfinite((A[i][j]))) return(1);
+            absmax = MY_MAX(absmax, maxtemp);
+        }
+
+        if (absmax == 0.) {
+            return(1);
+        }
+
+        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+    }
+
+    for (j = 0; j < n; j++) {
+        for (i = 0; i < j; i++) {
+            for (k = 0; k < i; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+        }
+
+        absmax = 0.0;
+
+        for (i = j; i < n; i++) {
+            for (k = 0; k < j; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+
+            maxtemp = fabs(A[i][j]) * row_norm[i];
+
+            if (maxtemp >= absmax) {
+                absmax = maxtemp;
+                max_row = i;
+            }
+        }
+
+        if (max_row != j) {
+            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+                max_row = j;
+            }
+            else {
+                for (k = 0; k < n; k++) {
+
+                    maxtemp = A[j][k];
+                    A[j][k] = A[max_row][k];
+                    A[max_row][k] = maxtemp;
+
+                }
+                row_norm[max_row] = row_norm[j];
+            }
+        }
+
+        permute[j] = max_row;
+
+        if (A[j][j] == 0.) {
+            A[j][j] = absmin;
+        }
+
+        if (j != (n - 1)) {
+            maxtemp = 1. / A[j][j];
+
+            for (i = (j + 1); i < n; i++) {
+                A[i][j] *= maxtemp;
+            }
+        }
+
+    }
+
+    return(0);
+
+    /* End of LU_decompose() */
+}
+
+//6D LU-decomposition
+__device__ int LU_decompose_6D(double A[][6], int permute[])
+{
+    double row_norm[6];
+    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+    double  absmax, maxtemp;
+    int i, j, k, max_row;
+    int n = 6;
+
+    max_row = 0;
+    for (i = 0; i < n; i++) {
+        absmax = 0.;
+
+        for (j = 0; j < n; j++) {
+
+            maxtemp = fabs(A[i][j]);
+            if (!isfinite((A[i][j]))) return(1);
+            absmax = MY_MAX(absmax, maxtemp);
+        }
+
+        if (absmax == 0.) {
+            return(1);
+        }
+
+        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+    }
+
+    for (j = 0; j < n; j++) {
+        for (i = 0; i < j; i++) {
+            for (k = 0; k < i; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+        }
+
+        absmax = 0.0;
+
+        for (i = j; i < n; i++) {
+            for (k = 0; k < j; k++) {
+                A[i][j] -= A[i][k] * A[k][j];
+            }
+
+            maxtemp = fabs(A[i][j]) * row_norm[i];
+
+            if (maxtemp >= absmax) {
+                absmax = maxtemp;
+                max_row = i;
+            }
+        }
+
+        if (max_row != j) {
+            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+                max_row = j;
+            }
+            else {
+                for (k = 0; k < n; k++) {
+
+                    maxtemp = A[j][k];
+                    A[j][k] = A[max_row][k];
+                    A[max_row][k] = maxtemp;
+
+                }
+                row_norm[max_row] = row_norm[j];
+            }
+        }
+
+        permute[j] = max_row;
+
+        if (A[j][j] == 0.) {
+            A[j][j] = absmin;
+        }
+
+        if (j != (n - 1)) {
+            maxtemp = 1. / A[j][j];
+
+            for (i = (j + 1); i < n; i++) {
+                A[i][j] *= maxtemp;
+            }
+        }
+
+    }
+
+    return(0);
+
+    /* End of LU_decompose() */
+}
+
+__device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
+{
+    int i, j;
+    double tmpvar;
+
+    /* Perform the forward substitution using the LU matrix.
+    */
+    for (i = 0; i < NDIM; i++) {
+        tmpvar = B[permute[i]];
+        B[permute[i]] = B[i];
+        for (j = (i - 1); j >= 0; j--) {
+            tmpvar -= A[i][j] * B[j];
+        }
+        B[i] = tmpvar;
+    }
+
+    /* Perform the backward substitution using the LU matrix.
+    */
+    for (i = (NDIM - 1); i >= 0; i--) {
+        for (j = (i + 1); j < NDIM; j++) {
+            B[i] -= A[i][j] * B[j];
+        }
+        B[i] /= A[i][i];
+    }
+}
+
+
+//3D LU-Substitution
+__device__ void LU_substitution_3D(double A[][3], double B[], int permute[])
+{
+    int i, j;
+    int n = 3;
+    double tmpvar;
+
+    for (i = 0; i < n; i++) {
+        tmpvar = B[permute[i]];
+        B[permute[i]] = B[i];
+        for (j = (i - 1); j >= 0; j--) {
+            tmpvar -= A[i][j] * B[j];
+        }
+        B[i] = tmpvar;
+    }
+
+    for (i = (n - 1); i >= 0; i--) {
+        for (j = (i + 1); j < n; j++) {
+            B[i] -= A[i][j] * B[j];
+        }
+        B[i] /= A[i][i];
+    }
+}
+
+//5D LU-Substitution
+__device__ void LU_substitution_5D(double A[][5], double B[], int permute[])
+{
+    int i, j;
+    int n = 5;
+    double tmpvar;
+
+    for (i = 0; i < n; i++) {
+        tmpvar = B[permute[i]];
+        B[permute[i]] = B[i];
+        for (j = (i - 1); j >= 0; j--) {
+            tmpvar -= A[i][j] * B[j];
+        }
+        B[i] = tmpvar;
+    }
+
+    for (i = (n - 1); i >= 0; i--) {
+        for (j = (i + 1); j < n; j++) {
+            B[i] -= A[i][j] * B[j];
+        }
+        B[i] /= A[i][i];
+    }
+}
+
+//6D LU-Substitution
+__device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
+{
+    int i, j;
+    int n = 6;
+    double tmpvar;
+
+    for (i = 0; i < n; i++) {
+        tmpvar = B[permute[i]];
+        B[permute[i]] = B[i];
+        for (j = (i - 1); j >= 0; j--) {
+            tmpvar -= A[i][j] * B[j];
+        }
+        B[i] = tmpvar;
+    }
+
+    for (i = (n - 1); i >= 0; i--) {
+        for (j = (i + 1); j < n; j++) {
+            B[i] -= A[i][j] * B[j];
+        }
+        B[i] /= A[i][i];
+    }
+}
+
 __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
@@ -15309,36 +15767,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	}
 #endif
 }
-=======
-        /* Calculate the Lower part of the matrix:  i <= j :   */
-        for (i = j; i < NDIM; i++) {
-            for (k = 0; k < j; k++) A[i][j] -= A[i][k] * A[k][j];
 
-            maxtemp = fabs(A[i][j]) * row_norm[i];
-
-            if (maxtemp >= absmax) {
-                absmax = maxtemp;
-                max_row = i;
-            }
-
-        }
->>>>>>> origin/danat_neutrinos_debug
-
-        if (max_row != j) {
-        
-            if ((j == (NDIM - 2)) && (A[j][j + 1] == 0.)) max_row = j;
-            else {
-                for (k = 0; k < NDIM; k++) {
-                    maxtemp = A[j][k];
-                    A[j][k] = A[max_row][k];
-                    A[max_row][k] = maxtemp;
-                }
-
-                row_norm[max_row] = row_norm[j];
-            }
-        }
-
-<<<<<<< HEAD
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2
 	#if (DOHELM)
@@ -15591,13 +16020,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	}
 #endif
 }
-=======
-        permute[j] = max_row;
->>>>>>> origin/danat_neutrinos_debug
 
-        if (A[j][j] == 0.) A[j][j] = 1.e-30;
-
-<<<<<<< HEAD
 __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -16142,25 +16565,6 @@ __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ 
 	}
 }
 
-__global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
-=======
-        if (j != (NDIM - 1)) {
-            maxtemp = 1. / A[j][j];
-
-            for (i = (j + 1); i < NDIM; i++) A[i][j] *= maxtemp;
-        }
-    }
-
-    return(0);
-}
-
-//3D LU
-__device__ int LU_decompose_3D(double A[][3], int permute[])
->>>>>>> origin/danat_neutrinos_debug
-{
-    double row_norm[3];
-
-<<<<<<< HEAD
 __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_5, int NBR_6, double *  ps)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
@@ -16565,541 +16969,113 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		}
 	}
 }
-=======
-    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
->>>>>>> origin/danat_neutrinos_debug
 
-    double  absmax, maxtemp, mintemp;
+__device__ double calc_HLLD_pres(int dir, int* fail_HLLC, int* fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+    double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+    double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
+    double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
+    int keep_iterating = 1;
+    int n_iter = 0;
+    int GEN_1, GEN_2, GEN_3, UGEN_1, BGEN_1, BGEN_2, BGEN_3;
 
-    int i, j, k, max_row;
-    int n = 3;
-
-
-    max_row = 0;
-
-    /* Find the maximum elements per row so that we can pretend later
-       we have unit-normalized each equation: */
-
-    for (i = 0; i < n; i++) {
-        absmax = 0.;
-
-        for (j = 0; j < n; j++) {
-
-<<<<<<< HEAD
-__device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
-	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
-	double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
-	int keep_iterating = 1;
-	int n_iter = 0;
-	int GEN_1, GEN_2, GEN_3, UGEN_1, BGEN_1, BGEN_2, BGEN_3;
-
-	if (dir == 1) {
-		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
-		UGEN_1 = U1;
-		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
-	}
-	else if (dir == 2) {
-		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
-		UGEN_1 = U2; 
-		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
-	}
-	else if (dir == 3) {
-		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
-		UGEN_1 = U3;
-		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
-	}
-
-	/*Provide estimate for ptot from HLLC solver*/
-	//Calculate x-component 3-velocity
-	A = -F_HLL[1][UU] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
-	B = -F_HLL[1][UGEN_1] + F_HLL[0][UU] + (F_HLL[0][BGEN_2] * F_HLL[0][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[0][BGEN_3]) + (F_HLL[1][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[1][BGEN_3] * F_HLL[1][BGEN_3]);
-	C = F_HLL[0][UGEN_1] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
-	D = B*B - 4.*A*C;
-	vcon[GEN_1] = (-B - sqrt(MY_MAX(0.,D))) / (2.*A);
-
-	//Calculate other components 3-velocity
-	vcon[GEN_2] = (F_HLL[0][BGEN_2] * vcon[GEN_1] - F_HLL[1][BGEN_2]) / F_HLL[0][BGEN_1];
-	vcon[GEN_3] = (F_HLL[0][BGEN_3] * vcon[GEN_1] - F_HLL[1][BGEN_3]) / F_HLL[0][BGEN_1];
-
-	//Calculate lorentz factor
-	gammasq = 1. / (1. - (vcon[1] * vcon[1] + vcon[2] * vcon[2] + vcon[3] * vcon[3]));
-
-	//If vcon unphysical fail HLLC solver. Still try to obtain HLLD solution
-	if ((vcon[dir] < cmin_roe) || (vcon[dir] > cmax_roe) || !(fabs(vcon[dir]) > 0.)) fail_HLLC[0] = 1;
-
-	//Calculate total pressure ESTIMATE based on HLLC solver value: ptot=pgas+0.5*bsq
-	v_dot_B = (vcon[1] * F_HLL[0][B1] + vcon[2] * F_HLL[0][B2] + vcon[3] * F_HLL[0][B3]);
-	ptot_HLLC = -(-F_HLL[1][UU] - F_HLL[0][BGEN_1] * (v_dot_B))*vcon[dir] + F_HLL[1][UGEN_1] + pow(F_HLL[0][BGEN_1], 2.0) / gammasq;
-	ptot = ptot_HLLC;
-
-	//If ptot invalid, tell the code not to use the HLLC solver and revert to hydro estimate for HLLD solver
-	if (!(fabs(ptot) > 0.)) {
-		fail_HLLC[0] = 1;
-		A = 1.;
-		B = (-F_HLL[0][UU] - F_HLL[1][UGEN_1]);
-		C = -F_HLL[0][UGEN_1] * F_HLL[1][UU] + F_HLL[1][UGEN_1] * F_HLL[0][UU];
-		D = B*B - 4.*A*C;
-		ptot = (-B + sqrt(MY_MAX(0., D))) / (2.*A);
-		if (!(fabs(ptot) > 0.)) {
-			fail_HLLD[0] = 1;
-			return -10.;
-		}
-	}
-
-	//Newton Raphson loop to find pressure of intermediate states in HLLD solver
-	double error_1, error_2;
-	double ptot_old, de_dptot, d_ptot = 0.;
-	error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
-
-	while (keep_iterating) {
-		//Calculate error and error/d_ptot
-		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -10.)*fabs(ptot), cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
-
-		//Save old value of ptot
-		ptot_old = ptot;
-
-		//Make the newton step in log-space
-		//de_dptot = (error_2 - error_1) / (pow(10., -8.)*ptot);
-		//de_dlptot = de_dptot*ptot;
-		//dlptot = error_1 / de_dlptot;
-		//lptot = log(ptot_old) - dlptot;
-		//ptot = exp(lptot);
-		//d_ptot = ptot - ptot_old;
-
-		de_dptot = (error_2 - error_1) / (pow(10., -10.) * fabs(ptot ));
-		d_ptot = error_1 / de_dptot;
-		ptot = ptot - d_ptot;
-
-
-		if (ptot < 0.)ptot = 0.5 * fabs(ptot);
-
-		//Calculate updated value of ptot
-		error_2 = error_1;
-		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
-
-		if ((fabs(ptot-ptot_old) <= pow(10., -8.) * fabs(ptot+ptot_old)) || n_iter > 10) {
-			keep_iterating = 0;
-		}
-
-		n_iter++;
-	}
-
-	//If Newton-Raphson solver did not converge, reset ptot to ptot_HLLC and tag fail_HLLD
-	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -8.) * fabs(ptot+ptot_old)))) {
-		ptot = ptot_HLLC;
-		fail_HLLD[0] = 1;
-	}
-
-	return ptot;
-}
-=======
-            maxtemp = fabs(A[i][j]);
->>>>>>> origin/danat_neutrinos_debug
-
-            if (maxtemp > absmax) {
-                absmax = maxtemp;
-            }
-        }
-
-        /* Make sure that there is at least one non-zero element in this row: */
-        if (absmax == 0.) {
-            //fprintf(stderr, "LU_decompose(): row-wise singular matrix!\n");
-            return(1);
-        }
-
-        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+    if (dir == 1) {
+        GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+        UGEN_1 = U1;
+        BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+    }
+    else if (dir == 2) {
+        GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+        UGEN_1 = U2;
+        BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+    }
+    else if (dir == 3) {
+        GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+        UGEN_1 = U3;
+        BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
     }
 
+    /*Provide estimate for ptot from HLLC solver*/
+    //Calculate x-component 3-velocity
+    A = -F_HLL[1][UU] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+    B = -F_HLL[1][UGEN_1] + F_HLL[0][UU] + (F_HLL[0][BGEN_2] * F_HLL[0][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[0][BGEN_3]) + (F_HLL[1][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[1][BGEN_3] * F_HLL[1][BGEN_3]);
+    C = F_HLL[0][UGEN_1] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+    D = B * B - 4. * A * C;
+    vcon[GEN_1] = (-B - sqrt(MY_MAX(0., D))) / (2. * A);
 
-    /* The following the calculates the matrix composed of the sum
-       of the lower (L) tridagonal matrix and the upper (U) tridagonal
-       matrix that, when multiplied, form the original maxtrix.
-       This is what we call the LU decomposition of the maxtrix.
-       It does this by a recursive procedure, starting from the
-       upper-left, proceding down the column, and then to the next
-       column to the right.  The decomposition can be done in place
-       since element {i,j} require only those elements with {<=i,<=j}
-       which have already been computed.
-       See pg. 43-46 of "Num. Rec." for a more thorough description.
-    */
+    //Calculate other components 3-velocity
+    vcon[GEN_2] = (F_HLL[0][BGEN_2] * vcon[GEN_1] - F_HLL[1][BGEN_2]) / F_HLL[0][BGEN_1];
+    vcon[GEN_3] = (F_HLL[0][BGEN_3] * vcon[GEN_1] - F_HLL[1][BGEN_3]) / F_HLL[0][BGEN_1];
 
-    /* For each of the columns, starting from the left ... */
-    for (j = 0; j < n; j++) {
+    //Calculate lorentz factor
+    gammasq = 1. / (1. - (vcon[1] * vcon[1] + vcon[2] * vcon[2] + vcon[3] * vcon[3]));
 
-        /* For each of the rows starting from the top.... */
+    //If vcon unphysical fail HLLC solver. Still try to obtain HLLD solution
+    if ((vcon[dir] < cmin_roe) || (vcon[dir] > cmax_roe) || !(fabs(vcon[dir]) > 0.)) fail_HLLC[0] = 1;
 
-        /* Calculate the Upper part of the matrix:  i < j :   */
-        for (i = 0; i < j; i++) {
-            for (k = 0; k < i; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
+    //Calculate total pressure ESTIMATE based on HLLC solver value: ptot=pgas+0.5*bsq
+    v_dot_B = (vcon[1] * F_HLL[0][B1] + vcon[2] * F_HLL[0][B2] + vcon[3] * F_HLL[0][B3]);
+    ptot_HLLC = -(-F_HLL[1][UU] - F_HLL[0][BGEN_1] * (v_dot_B)) * vcon[dir] + F_HLL[1][UGEN_1] + pow(F_HLL[0][BGEN_1], 2.0) / gammasq;
+    ptot = ptot_HLLC;
+
+    //If ptot invalid, tell the code not to use the HLLC solver and revert to hydro estimate for HLLD solver
+    if (!(fabs(ptot) > 0.)) {
+        fail_HLLC[0] = 1;
+        A = 1.;
+        B = (-F_HLL[0][UU] - F_HLL[1][UGEN_1]);
+        C = -F_HLL[0][UGEN_1] * F_HLL[1][UU] + F_HLL[1][UGEN_1] * F_HLL[0][UU];
+        D = B * B - 4. * A * C;
+        ptot = (-B + sqrt(MY_MAX(0., D))) / (2. * A);
+        if (!(fabs(ptot) > 0.)) {
+            fail_HLLD[0] = 1;
+            return -10.;
         }
-
-        absmax = 0.0;
-
-        /* Calculate the Lower part of the matrix:  i <= j :   */
-
-        for (i = j; i < n; i++) {
-
-            for (k = 0; k < j; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
-
-            /* Find the maximum element in the column given the implicit
-           unit-normalization (represented by row_norm[i]) of each row:
-            */
-            maxtemp = fabs(A[i][j]) * row_norm[i];
-
-            if (maxtemp >= absmax) {
-                absmax = maxtemp;
-                max_row = i;
-            }
-
-        }
-
-        /* Swap the row with the largest element (of column j) with row_j.  absmax
-           This is the partial pivoting procedure that ensures we don't divide
-           by 0 (or a small number) when we solve the linear system.
-           Also, since the procedure starts from left-right/top-bottom,
-           the pivot values are chosen from a pool involving all the elements
-           of column_j  in rows beneath row_j.  This ensures that
-           a row  is not permuted twice, which would mess things up.
-        */
-        if (max_row != j) {
-
-            /* Don't swap if it will send a 0 to the last diagonal position.
-           Note that the last column cannot pivot with any other row,
-           so this is the last chance to ensure that the last two
-           columns have non-zero diagonal elements.
-             */
-
-            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
-                max_row = j;
-            }
-            else {
-                for (k = 0; k < n; k++) {
-
-                    maxtemp = A[j][k];
-                    A[j][k] = A[max_row][k];
-                    A[max_row][k] = maxtemp;
-
-                }
-
-                /* Don't forget to swap the normalization factors, too...
-                   but we don't need the jth element any longer since we
-                   only look at rows beneath j from here on out.
-                */
-                row_norm[max_row] = row_norm[j];
-            }
-        }
-
-        /* Set the permutation record s.t. the j^th element equals the
-           index of the row swapped with the j^th row.  Note that since
-           this is being done in successive columns, the permutation
-           vector records the successive permutations and therefore
-           index of permute[] also indexes the chronology of the
-           permutations.  E.g. permute[2] = {2,1} is an identity
-           permutation, which cannot happen here though.
-        */
-
-        permute[j] = max_row;
-
-        if (A[j][j] == 0.) {
-            A[j][j] = absmin;
-        }
-
-
-        /* Normalize the columns of the Lower tridiagonal part by their respective
-           diagonal element.  This is not done in the Upper part because the
-           Lower part's diagonal elements were set to 1, which can be done w/o
-           any loss of generality.
-        */
-        if (j != (n - 1)) {
-            maxtemp = 1. / A[j][j];
-
-            for (i = (j + 1); i < n; i++) {
-                A[i][j] *= maxtemp;
-            }
-        }
-
     }
 
-    return(0);
+    //Newton Raphson loop to find pressure of intermediate states in HLLD solver
+    double error_1, error_2;
+    double ptot_old, de_dptot, d_ptot = 0.;
+    error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
-    /* End of LU_decompose() */
+    while (keep_iterating) {
+        //Calculate error and error/d_ptot
+        error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -10.) * fabs(ptot), cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
-}
+        //Save old value of ptot
+        ptot_old = ptot;
 
-//5D LU-decomposition
-__device__ int LU_decompose_5D(double A[][5], int permute[])
-{
-    double row_norm[5];
-    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
-    double  absmax, maxtemp;
-    int i, j, k, max_row;
-    int n = 5;
+        //Make the newton step in log-space
+        //de_dptot = (error_2 - error_1) / (pow(10., -8.)*ptot);
+        //de_dlptot = de_dptot*ptot;
+        //dlptot = error_1 / de_dlptot;
+        //lptot = log(ptot_old) - dlptot;
+        //ptot = exp(lptot);
+        //d_ptot = ptot - ptot_old;
 
-    max_row = 0;
-    for (i = 0; i < n; i++) {
-        absmax = 0.;
+        de_dptot = (error_2 - error_1) / (pow(10., -10.) * fabs(ptot));
+        d_ptot = error_1 / de_dptot;
+        ptot = ptot - d_ptot;
 
-        for (j = 0; j < n; j++) {
 
-            maxtemp = fabs(A[i][j]);
-            if (!isfinite((A[i][j]))) return(1);
-            absmax = MY_MAX(absmax, maxtemp);
+        if (ptot < 0.)ptot = 0.5 * fabs(ptot);
+
+        //Calculate updated value of ptot
+        error_2 = error_1;
+        error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
+
+        if ((fabs(ptot - ptot_old) <= pow(10., -8.) * fabs(ptot + ptot_old)) || n_iter > 10) {
+            keep_iterating = 0;
         }
 
-        if (absmax == 0.) {
-            return(1);
-        }
-
-        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+        n_iter++;
     }
 
-    for (j = 0; j < n; j++) {
-        for (i = 0; i < j; i++) {
-            for (k = 0; k < i; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
-        }
-
-        absmax = 0.0;
-
-        for (i = j; i < n; i++) {
-            for (k = 0; k < j; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
-
-            maxtemp = fabs(A[i][j]) * row_norm[i];
-
-            if (maxtemp >= absmax) {
-                absmax = maxtemp;
-                max_row = i;
-            }
-        }
-
-        if (max_row != j) {
-            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
-                max_row = j;
-            }
-            else {
-                for (k = 0; k < n; k++) {
-
-                    maxtemp = A[j][k];
-                    A[j][k] = A[max_row][k];
-                    A[max_row][k] = maxtemp;
-
-                }
-                row_norm[max_row] = row_norm[j];
-            }
-        }
-
-        permute[j] = max_row;
-
-        if (A[j][j] == 0.) {
-            A[j][j] = absmin;
-        }
-
-        if (j != (n - 1)) {
-            maxtemp = 1. / A[j][j];
-
-            for (i = (j + 1); i < n; i++) {
-                A[i][j] *= maxtemp;
-            }
-        }
-
+    //If Newton-Raphson solver did not converge, reset ptot to ptot_HLLC and tag fail_HLLD
+    if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -8.) * fabs(ptot + ptot_old)))) {
+        ptot = ptot_HLLC;
+        fail_HLLD[0] = 1;
     }
 
-    return(0);
-
-    /* End of LU_decompose() */
-}
-
-//6D LU-decomposition
-__device__ int LU_decompose_6D(double A[][6], int permute[])
-{
-    double row_norm[6];
-    double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
-    double  absmax, maxtemp;
-    int i, j, k, max_row;
-    int n = 6;
-
-    max_row = 0;
-    for (i = 0; i < n; i++) {
-        absmax = 0.;
-
-        for (j = 0; j < n; j++) {
-
-            maxtemp = fabs(A[i][j]);
-            if (!isfinite((A[i][j]))) return(1);
-            absmax = MY_MAX(absmax, maxtemp);
-        }
-
-        if (absmax == 0.) {
-            return(1);
-        }
-
-        row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
-    }
-
-    for (j = 0; j < n; j++) {
-        for (i = 0; i < j; i++) {
-            for (k = 0; k < i; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
-        }
-
-        absmax = 0.0;
-
-        for (i = j; i < n; i++) {
-            for (k = 0; k < j; k++) {
-                A[i][j] -= A[i][k] * A[k][j];
-            }
-
-            maxtemp = fabs(A[i][j]) * row_norm[i];
-
-            if (maxtemp >= absmax) {
-                absmax = maxtemp;
-                max_row = i;
-            }
-        }
-
-        if (max_row != j) {
-            if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
-                max_row = j;
-            }
-            else {
-                for (k = 0; k < n; k++) {
-
-                    maxtemp = A[j][k];
-                    A[j][k] = A[max_row][k];
-                    A[max_row][k] = maxtemp;
-
-                }
-                row_norm[max_row] = row_norm[j];
-            }
-        }
-
-        permute[j] = max_row;
-
-        if (A[j][j] == 0.) {
-            A[j][j] = absmin;
-        }
-
-        if (j != (n - 1)) {
-            maxtemp = 1. / A[j][j];
-
-            for (i = (j + 1); i < n; i++) {
-                A[i][j] *= maxtemp;
-            }
-        }
-
-    }
-
-    return(0);
-
-    /* End of LU_decompose() */
-}
-
-__device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
-{
-    int i, j;
-    double tmpvar;
-
-    /* Perform the forward substitution using the LU matrix.
-    */
-    for (i = 0; i < NDIM; i++) {
-        tmpvar = B[permute[i]];
-        B[permute[i]] = B[i];
-        for (j = (i - 1); j >= 0; j--) {
-            tmpvar -= A[i][j] * B[j];
-        }
-        B[i] = tmpvar;
-    }
-
-    /* Perform the backward substitution using the LU matrix.
-    */
-    for (i = (NDIM - 1); i >= 0; i--) {
-        for (j = (i + 1); j < NDIM; j++) {
-            B[i] -= A[i][j] * B[j];
-        }
-        B[i] /= A[i][i];
-    }
-}
-
-
-//3D LU-Substitution
-__device__ void LU_substitution_3D(double A[][3], double B[], int permute[])
-{
-    int i, j;
-    int n = 3;
-    double tmpvar;
-
-    for (i = 0; i < n; i++) {
-        tmpvar = B[permute[i]];
-        B[permute[i]] = B[i];
-        for (j = (i - 1); j >= 0; j--) {
-            tmpvar -= A[i][j] * B[j];
-        }
-        B[i] = tmpvar;
-    }
-
-    for (i = (n - 1); i >= 0; i--) {
-        for (j = (i + 1); j < n; j++) {
-            B[i] -= A[i][j] * B[j];
-        }
-        B[i] /= A[i][i];
-    }
-}
-
-//5D LU-Substitution
-__device__ void LU_substitution_5D(double A[][5], double B[], int permute[])
-{
-    int i, j;
-    int n = 5;
-    double tmpvar;
-
-    for (i = 0; i < n; i++) {
-        tmpvar = B[permute[i]];
-        B[permute[i]] = B[i];
-        for (j = (i - 1); j >= 0; j--) {
-            tmpvar -= A[i][j] * B[j];
-        }
-        B[i] = tmpvar;
-    }
-
-    for (i = (n - 1); i >= 0; i--) {
-        for (j = (i + 1); j < n; j++) {
-            B[i] -= A[i][j] * B[j];
-        }
-        B[i] /= A[i][i];
-    }
-}
-
-//6D LU-Substitution
-__device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
-{
-    int i, j;
-    int n = 6;
-    double tmpvar;
-
-    for (i = 0; i < n; i++) {
-        tmpvar = B[permute[i]];
-        B[permute[i]] = B[i];
-        for (j = (i - 1); j >= 0; j--) {
-            tmpvar -= A[i][j] * B[j];
-        }
-        B[i] = tmpvar;
-    }
-
-    for (i = (n - 1); i >= 0; i--) {
-        for (j = (i + 1); j < n; j++) {
-            B[i] -= A[i][j] * B[j];
-        }
-        B[i] /= A[i][i];
-    }
+    return ptot;
 }
 
 //3D
@@ -29061,7 +29037,6 @@ __device__ void mhd_calc_res(double* pr, int dir, struct of_geom* geom, struct o
 
 /* add in geometrical and cooling source terms to equations of motion */
 __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double* q, double Dt, const  double* __restrict__ conn_GPU, struct of_state_res* q_res, double r) {
-<<<<<<< HEAD
 	double conn, mhd_res[NDIM][NDIM];
 	int k;
 	double alpha, beta[4], gamma;
@@ -29156,101 +29131,6 @@ __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcur
 	PLOOP dU[k] *= geom->g;
 }
 
-=======
-    double conn, mhd_res[NDIM][NDIM];
-    int k;
-    double alpha, beta[4], gamma;
-    #if(NSY)
-    int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-    int global_id = icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr;
-    #else
-    int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-    int global_id = icurr * (BS_2 + 2 * N2G) + jcurr;
-    #endif
-
-    mhd_calc_res(ph, 0, geom, q_res, mhd_res[0]);
-    mhd_calc_res(ph, 1, geom, q_res, mhd_res[1]);
-    mhd_calc_res(ph, 2, geom, q_res, mhd_res[2]);
-    mhd_calc_res(ph, 3, geom, q_res, mhd_res[3]);
-
-    /* contract mhd stress tensor with connection */
-    PLOOP dU[k] = 0.;
-
-    #pragma unroll 4
-    for (k = 0; k < NDIM; k++) {
-        #if(NSY)
-        dU[UU] += mhd_res[0][k] * conn_GPU[0 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[1][k] * conn_GPU[4 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U2] += mhd_res[2][k] * conn_GPU[7 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U3] += mhd_res[3][k] * conn_GPU[9 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        conn = conn_GPU[1 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[1][k] * conn;
-        dU[U1] += mhd_res[0][k] * conn;
-        conn = conn_GPU[2 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[2][k] * conn;
-        dU[U2] += mhd_res[0][k] * conn;
-        conn = conn_GPU[3 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[0][k] * conn;
-        conn = conn_GPU[5 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[2][k] * conn;
-        dU[U2] += mhd_res[1][k] * conn;
-        conn = conn_GPU[6 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[1][k] * conn;
-        conn = conn_GPU[8 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U2] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[2][k] * conn;
-        #else
-        dU[UU] += mhd_res[0][k] * conn_GPU[0 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[1][k] * conn_GPU[4 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U2] += mhd_res[2][k] * conn_GPU[7 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U3] += mhd_res[3][k] * conn_GPU[9 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        conn = conn_GPU[1 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[1][k] * conn;
-        dU[U1] += mhd_res[0][k] * conn;
-        conn = conn_GPU[2 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[2][k] * conn;
-        dU[U2] += mhd_res[0][k] * conn;
-        conn = conn_GPU[3 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[UU] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[0][k] * conn;
-        conn = conn_GPU[5 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[2][k] * conn;
-        dU[U2] += mhd_res[1][k] * conn;
-        conn = conn_GPU[6 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U1] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[1][k] * conn;
-        conn = conn_GPU[8 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
-        dU[U2] += mhd_res[3][k] * conn;
-        dU[U3] += mhd_res[2][k] * conn;
-        #endif
-    }
-
-    //Lapse in 3+1
-    alpha = 1.0 / sqrt(-geom->gcon[0]);
-
-    //Beta in 3+1
-    beta[1] = geom->gcon[1] * alpha * alpha;
-    beta[2] = geom->gcon[2] * alpha * alpha;
-    beta[3] = geom->gcon[3] * alpha * alpha;
-
-    //Calculate relative Lorentz factor
-    gamma = q_res->ucon[0] * alpha;
-
-    //Calculate explicit part of electric current J sourceterm
-    dU[E1] = -alpha * q[0] * ph[U1] / gamma + beta[1] * q[0];
-    dU[E2] = -alpha * q[0] * ph[U2] / gamma + beta[2] * q[0];
-    dU[E3] = -alpha * q[0] * ph[U3] / gamma + beta[3] * q[0];
-
-    //Add cooling term if needed
-    #if (COOL_DISK)
-    //misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
-    #endif
-
-    PLOOP dU[k] *= geom->g;
-}
-
 //returns b^2 (i.e., twice magnetic pressure)
 __device__ double bsq_calc_res(double* pr, struct of_geom* geom)
 {
@@ -29263,7 +29143,6 @@ __device__ double bsq_calc_res(double* pr, struct of_geom* geom)
     return(dot(bcon, bcov));
 }
 
->>>>>>> origin/danat_neutrinos_debug
 //find ucon, ucov, bcon, bcov from primitive variables */
 __device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res
 	#if(CALC_MDOT)
@@ -29271,7 +29150,6 @@ __device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_
 	#endif
 )
 {
-<<<<<<< HEAD
 	#if(RESISTIVE)
 	//get ucon
 	ucon_calc(pr, geom, q_res->ucon);
@@ -29293,21 +29171,6 @@ __device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_
 	econ_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->econ);
 	lower(q_res->econ, geom->gcov, q_res->ecov);
 	#endif
-=======
-    #if(RESISTIVE)
-    //get ucon
-    ucon_calc(pr, geom, q_res->ucon);
-    lower(q_res->ucon, geom->gcov, q_res->ucov);
-
-    //get bcon
-    bcon_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->bcon);
-    lower(q_res->bcon, geom->gcov, q_res->bcov);
-
-    //get econ
-    econ_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->econ);
-    lower(q_res->econ, geom->gcov, q_res->ecov);
-    #endif
->>>>>>> origin/danat_neutrinos_debug
 }
 
 //Calculate wavespeed assuming it is c

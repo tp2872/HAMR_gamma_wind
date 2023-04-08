@@ -2378,7 +2378,7 @@ void init_torus()
 	}
 	#endif
 
-		for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
