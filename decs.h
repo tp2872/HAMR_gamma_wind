@@ -42,24 +42,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 *********************************************************************************/
 #define restrict
-<<<<<<< HEAD
-=======
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-// for strrchr() in init.c
-#include <string.h>
-#include <time.h>
-#ifdef __unix__
-#include <sys/time.h>
-#endif
-#include <cuda.h>
-#include <cuda_runtime.h>
-#ifndef __APPLE__
-#include <omp.h>
-#endif
-#include "config.h"
->>>>>>> origin/danat_neutrinos_debug
 
 /*************************************************************************
 GLOBAL ARRAY SECTION

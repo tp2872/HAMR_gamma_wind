@@ -54,7 +54,6 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, double *  prim
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
 __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim, double *  receive, double *  temp1, double *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
-
 __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int POLE_1, int POLE_2);
 __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int POLE_1, int POLE_2);
 __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
@@ -63,57 +62,12 @@ __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  
 	#endif
 	#if(NEUTRINOS_M1)
 	, const double* __restrict__ gpu_nulib_table
-	#endif
-);
-__global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
-<<<<<<< HEAD
-	const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag, const  double* __restrict__ gpu_eos_table);
-__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_2, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2, double y_max,
-	const  double* __restrict__ gpu_eos_table);
-__global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2,
-	const  double* __restrict__ gpu_eos_table);
-__global__ void Utoprim_M1_0(double* p_i, double* U_n, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2, const  double* __restrict__ gpu_eos_table);
-__global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, const double* __restrict__ U_n, double* dU_MHD1, const double* __restrict__ dU_RAD0, double* dU_RAD1, const  double* __restrict__  psh, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
-	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2, const  double* __restrict__ gpu_eos_table);
-__global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ dU_MHD1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
-	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2, const  double* __restrict__ gpu_eos_table);
-#else
-__global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
+	#endif	
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
-	const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag);
-__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_2, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2, double y_max
-	#if(RAD_M1)
-	, int *pflag_rad
-	#endif
-	#if(CALC_MDOT)
-	, double mass_density_scale, double magnetic_density_scale
-	#endif
-	#if(CARTESIAN_GR)
-	, int* pflag_cart
-	#endif
-);
-__global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2
-	#if(RAD_M1)
-	, int *pflag_rad
-	#endif
-	#if(CALC_MDOT)
-	, double mass_density_scale, double magnetic_density_scale
-	#endif
-	#if(CARTESIAN_GR)
-	, int* pflag_cart
-	#endif
-);
-__global__ void Utoprim_M1_0(double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
-	#if(CALC_MDOT)
-	, double mass_density_scale, double magnetic_density_scale
-	#endif
-	#if(CARTESIAN_GR)
-	, int* pflag_cart
-=======
 	const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
@@ -129,16 +83,39 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_
 	, double* allflags_nu
 	#endif
 	#endif
+	#if(RAD_M1)
+	, int *pflag_rad
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
+	#endif
 );
-__global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2
+__global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2	
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(RAD_M1)
+	, int *pflag_rad
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 );
 __global__ void Utoprim_M1_0(double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
->>>>>>> origin/danat_neutrinos_debug
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 );
 __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, double* U_1, const double* __restrict__ dU_RAD0, double* dU_RAD1, const  double* __restrict__  psh, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
@@ -146,33 +123,27 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
-<<<<<<< HEAD
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-);
-__global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, const double* __restrict__ U_1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
-	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
-	#if(CALC_MDOT)
-	, double mass_density_scale, double magnetic_density_scale
-#endif
-	#if(CARTESIAN_GR)
-	, int* pflag_cart
-	#endif
-);
-#endif
-=======
 );
 __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ U_0, const double* __restrict__ U_1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
 	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif	
+	#if(CALC_MDOT)
+	, double mass_density_scale, double magnetic_density_scale
+	#endif
+	#if(CARTESIAN_GR)
+	, int* pflag_cart
 	#endif
 );
->>>>>>> origin/danat_neutrinos_debug
+#endif
+
 __global__ void reconstruct_internal(double* p, double* ps, const  double* __restrict__ dq1, const  double* __restrict__ dq2, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
 __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
 __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
@@ -196,25 +167,19 @@ __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double
 __global__ void Utoprim0(void);
 __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn);
 __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage);
-<<<<<<< HEAD
 __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage);
-__global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps);
+__global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps
+	#if(DANAT_GDET_INTERP)	
+	, const double* __restrict__ radius
+	#endif
+);
 __global__ void boundprim2_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double* ps);
 __global__ void boundprim2_reflective(double* pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double* ps);
 __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 __global__ void boundprim3_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_5, int NBR_6, double* ps);
 __global__ void boundprim_cart(double* pv, double* ps, int* pflag_cart, int dir);
-=======
 #if (NEUTRINOS_M1)
 __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
 #endif
-__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps
-	#if(DANAT_GDET_INTERP)	
-	, const double* __restrict__ radius
-	#endif
-);
-__global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
-__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
->>>>>>> origin/danat_neutrinos_debug
 
 		
