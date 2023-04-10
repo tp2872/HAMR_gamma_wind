@@ -3422,7 +3422,7 @@ void rm_order2(void){
 }
 
 //Number of refinement levels before focusing on jet
-#define BASE_LEVELS (1)
+#define BASE_LEVELS (0)
 #define R0 (50.0)
 #define R1 (200.0)
 #define R2 (1000.0)

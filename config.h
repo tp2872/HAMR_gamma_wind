@@ -62,7 +62,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
@@ -244,7 +244,7 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
+#define NB_1 3
 #define NB_2 2
 #define NB_3 2
 
@@ -464,7 +464,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (2)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
@@ -475,7 +475,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -511,7 +511,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (0)
+#define COMPTON (1)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -523,7 +523,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.0001)
