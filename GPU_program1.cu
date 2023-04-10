@@ -749,6 +749,8 @@ __device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], d
 	, double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
 #endif
 );
+#endif
+
 
 //Moved up by Matthew
 __device__ void eos_NR_temp_guess(double rho, double u, double* temp);
@@ -8216,6 +8218,15 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(DOHELM_TEMPERATURE)
+		, &xtemp
+		#endif
+		#if(DO_YE)
+		, ye
+		#endif
+		#if(DONUCLEAR)
+		, x_alpha, x_atm
+		#endif
 		#if(TWO_T)
 		, S
 		, fel
@@ -8231,6 +8242,15 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 		W_new=W_of_vsq2(vsq_new, &p_new, &rho_new, &u_new, D, K_atm
 			#if(DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(DOHELM_TEMPERATURE)
+			, &xtemp
+			#endif
+			#if(DO_YE)
+			, ye
+			#endif
+			#if(DONUCLEAR)
+			, x_alpha, x_atm
 			#endif
 			#if(TWO_T)
 			, S
@@ -20791,7 +20811,7 @@ __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage)
 }
 #endif
 
-
+#if(NEUTRINOS_M1)
 // Predictor step
 __device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double* ener_nu_avg, double* eta, double* kappa_abs, double* kappa_s, double Dt);
 // Functions
@@ -21889,9 +21909,7 @@ __device__ void calc_source_numdens_nu(const double* __restrict__ gpu_eos_table,
 
     *source_nu_num = (eta_N - kappa_N * J / ener_nu_avg);
 }
-
 #endif
-
 
 __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const double gdet_B, const double gdet_ghost, double dr_over_r)
 {
@@ -22090,7 +22108,12 @@ __device__ int Utoprim_new_3D_T(double* U, double gcov[10], double gcon[10], dou
 
     double x_3d[3];
 
-    int safe_guess = get_safe_guess_NR_3D_T(x_3d, D, Bsq, Qdotn, ye
+    int safe_guess = get_safe_guess_NR_3D_T(x_3d, D, Bsq, Qdotn 
+		#if(DO_YE)
+		, ye
+		#else
+		, 1.0
+		#endif
         #if (DOHELM)
         , gpu_eos_table
         #endif

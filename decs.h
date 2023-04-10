@@ -1516,6 +1516,23 @@ void set_mass_density_scale(double *mass_density_scale_cpu, double* magnetic_den
 #endif
 double calc_Mdot(void);
 
+//Neutrino opacity table related arrays
+extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
+
+extern double* nulib_table[NB_LOCAL];
+extern double* GPU_nulib_table[NB_LOCAL];
+#endif
+
+#if (DONUCLEAR)
+double get_xp(double ye, double x_alpha);
+double get_xn(double ye, double x_alpha);
+void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
+void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
+#endif
+
 //HIP related functions
 gpuError_t gpuMalloc(void** ptr, size_t size);
 gpuError_t gpuMallocHost(void** ptr, size_t size);
@@ -1537,20 +1554,3 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
-
-//Neutrino opacity table related arrays
-extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
-extern double nu_kappa_abs[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
-extern double nu_kappa_scatt[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
-extern double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
-
-extern double* nulib_table[NB_LOCAL];
-extern double* GPU_nulib_table[NB_LOCAL];
-#endif
-
-#if (DONUCLEAR)
-double get_xp(double ye, double x_alpha);
-double get_xn(double ye, double x_alpha);
-void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
-void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
-#endif
