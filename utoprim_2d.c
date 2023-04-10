@@ -41,20 +41,18 @@ static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[N
 	#endif
 );
 static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *
-#if (DOHELM_TEMPERATURE)
+	#if (DOHELM_TEMPERATURE)
     , double*
-#endif
-), double tolerance
-#if (DOHELM_TEMPERATURE)
-    , double* temp_prev
-#endif
+	#endif
+), 
+	double tolerance
+	#if (DOHELM_TEMPERATURE)
+	, double* temp_prev
+	#endif
 );
 static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df
-#if (DOHELM_TEMPERATURE)
+	#if (DOHELM_TEMPERATURE)
     , double* temp_prev
-#endif
-	#if (DO_YE)
-	, double ye
 	#endif
 );
 
@@ -471,6 +469,7 @@ static int general_newton_raphson(double x[], void(*funcd) (double[], double[], 
 #if (DOHELM_TEMPERATURE)
                   , temp_prev
 #endif
+
                   );
 
 		//Save old values before calculating the new
@@ -539,11 +538,8 @@ n    = dimension of x[];
 *********************************************************************************/
 
 static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df
-#if (DOHELM_TEMPERATURE)
+	#if (DOHELM_TEMPERATURE)
     , double* temp_prev
-#endif
-	#if (DO_YE)
-	, double ye
 	#endif
 )
 {

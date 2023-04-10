@@ -1966,6 +1966,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
 					);
+				#endif
 			#endif
 		}
 	}
