@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -63,7 +63,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
-#define BH_SPIN (0.86)
+#define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -71,7 +71,7 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (100.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -89,21 +89,21 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 // Postmerger problem, ICs from SpEC
-#define BHNSQ2 (1)
-#define BHNSQ2_1 (1)
+#define BHNSQ2 (0)
+#define BHNSQ2_1 (0)
 
 // Collapsar problem
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (0)
@@ -112,7 +112,7 @@ Physical Parameters section
 #define NEUTRINOS_DEBUG_NFLAGS (0)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
-#define DANAT_GDET_INTERP (1)
+#define DANAT_GDET_INTERP (0)
 #define NU_INNER_STOP (1)
 #define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
 #define NU_PREDICTOR (0)
@@ -125,7 +125,7 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #define DONUCLEAR (0)
 #endif
 
@@ -286,7 +286,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 1
+#define NORMALIZE_DIVB 0
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300
@@ -341,7 +341,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.5)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -464,7 +464,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (2)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (1)
+#define DUMP_DIAG (0)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
@@ -605,16 +605,14 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
     #else
     #define M_SGRA_SOLAR (8.07) /* Solar masses */
     #endif
-#else
-    #if (WHICHPROBLEM == COLLAPSAR)
-        #if (COLLAPSAR_GR1D)
-        #define M_SGRA_SOLAR (2.5) /* Solar masses */
-        #else
-        #define M_SGRA_SOLAR (4.0) /* Solar masses */
-        #endif
-    #else 
-        #define M_SGRA_SOLAR (10.0) /* Solar masses */
+#elif (WHICHPROBLEM == COLLAPSAR)
+    #if (COLLAPSAR_GR1D)
+    #define M_SGRA_SOLAR (2.5) /* Solar masses */
+    #else
+    #define M_SGRA_SOLAR (4.0) /* Solar masses */
     #endif
+#else 
+    #define M_SGRA_SOLAR (10.0) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -641,24 +639,28 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
-#if (RADM1_SUBCYCLING)
-#define MASS_DENSITY_SCALE (0.0000001)
-#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#if (BHNSQ2)
-#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+#if(NEUTRINOS_M1)
+    #if (RADM1_SUBCYCLING)
+        #define MASS_DENSITY_SCALE (0.0000001)
+    #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+        #if (BHNSQ2)
+        #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+        #else
+        #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+        #endif
+    #else
+        #if (WHICHPROBLEM == COLLAPSAR)
+            #if (COLLAPSAR_GR1D)
+            #define MASS_DENSITY_SCALE (604401395800000.0)
+            #else
+            #define MASS_DENSITY_SCALE (244475423533.749)
+            #endif
+        #else
+        #define MASS_DENSITY_SCALE (1e12)
+        #endif
+    #endif
 #else
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
-#endif
-#else
-#if (WHICHPROBLEM == COLLAPSAR)
-#if (COLLAPSAR_GR1D)
-#define MASS_DENSITY_SCALE (604401395800000.0)
-#else
-#define MASS_DENSITY_SCALE (244475423533.749)
-#endif
-#else
-#define MASS_DENSITY_SCALE (1e12)
-#endif
+    #define MASS_DENSITY_SCALE (3.1)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
