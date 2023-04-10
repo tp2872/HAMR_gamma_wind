@@ -2817,7 +2817,7 @@ void init_rad_pres(double pi[NPR]) {
 	#endif
 
 	#if(HIGH_MDOT)
-	if (!read_M1) {
+	if (read_M1) {
 		T_old = (GAMMA - 1.) * pi[UU] / pi[RHO];
 		T_new = T_old;
 		ptot = (GAMMA - 1.) * pi[UU];

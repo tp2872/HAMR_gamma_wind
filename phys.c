@@ -605,7 +605,7 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	eos_mode_rhou_temp(ph, &Te);
 	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
-	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);ssx
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MU_G * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
