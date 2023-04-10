@@ -109,7 +109,6 @@ __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, 
 	return;
 }
 
-
 __device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, double * mhd_rad){
 	int j;
 	/* single row of mhd stress tensor, first index up, second index down */
@@ -360,9 +359,6 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		#endif
 	#endif
 }
-
-
-
 
 //Calculate radiative wave velocity
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx

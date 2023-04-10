@@ -137,6 +137,7 @@ void alloc_bounds_CPU(int n){
 	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
 	ref1_1s = REF_1; ref1_3s = REF_1;
 	ref3_1s = REF_3; ref3_3s = REF_3;
+	ref3_2s = REF_3; ref3_4s = REF_3;
 
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
 		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
