@@ -610,6 +610,7 @@ __device__ void eos_mode_rhotemp_entr(const  double* __restrict__ gpu_eos_table,
     , double x_alpha, double x_atm
 #endif
 );
+
 // Rootfinding functions based on w and s (3x)
 __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict__ gpu_eos_table, double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d
 #if (DONUCLEAR)
@@ -689,6 +690,69 @@ __device__ double bessk0(double x);
 __device__ double bessk1(double x);
 __device__ double bessk(int n, double x);
 
+#if(NEUTRINOS_M1) // DINU: 3 species
+// Declarations 
+__device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table
+#if (NU_INNER_STOP)
+	, double radius
+#endif
+#if(NEUTRINOS_DEBUG)
+	, double* error_nu0, double* error_nu1, double* error_nu2
+#endif
+);
+__device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table
+#if(NEUTRINOS_DEBUG)
+	, double* error_nu0, double* error_nu1, double* error_nu2
+#endif
+#if (NU_INNER_STOP)
+	, double radius
+#endif
+);
+__device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* ncon, double ncov0, double* U_old, double* U_new, double Dt, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, int species
+#if (NU_KEEP_COEFF_CONST)
+	, double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
+#endif
+);
+__device__ int calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double* U_old, double* U_new, int species, double y_max, double* error_tmp);
+__device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double Ncon0_i, double* Ncon0_f, double Dt, int species);
+
+// Neutrino functions declarations
+__device__ int Rtoprim_nu(double* U, struct of_geom* geom, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
+__device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
+__device__ void Rtoprim_nu_number(double UN, struct of_geom* geom, double* prim, double* primN, int sp);
+__device__ void primtoflux_nu(double* pr, struct of_state_nu* q_nu, int dir, struct of_geom* geom, double* flux);
+__device__ void primtoflux_nu_number(double* ph, double* ucon, double* ucov, int dir, struct of_geom* geom, double* flux);
+__device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_nu, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table);
+__device__ void mhd_calc_nu(double* pr, int dir, struct of_state_nu* q_nu, double* mhd_nu, int species);
+__device__ void ucon_calc_nu(double* pr, struct of_geom* geom, double* ucon_nu, int species);
+__device__ int gamma_calc_nu(double* pr, struct of_geom* geom, double* gamma_nu, int species);
+__device__ void get_state_nu(double* pr, struct of_geom* geom, struct of_state_nu* q_nu, int species);
+__device__ void calc_source_numdens_nu(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double J, double ener_nu_avg, double* source_nu_num, int species);
+__device__ double calc_nu_kappa_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
+__device__ double calc_nu_kappa_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
+__device__ double calc_nu_kappa_scatt(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
+__device__ double calc_nu_number_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
+__device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
+__device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity);
+__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity);
+__device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_table, double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
+__device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
+
+// explicit part:
+__device__ void source_nu(double* ph, struct of_geom* geom, double* dU, double* U_i, double* U_f, double Dt, double y_max, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table
+#if (NU_KEEP_COEFF_CONST)
+	, double eta_0[NU_SPECIES], double kappa_abs0[NU_SPECIES], double kappa_s0[NU_SPECIES], double eta_N0[NU_SPECIES], double kappa_N0[NU_SPECIES]
+#endif
+);
+__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucon_nu[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, double* source_ye, int species
+#if (NU_KEEP_COEFF_CONST)
+	, double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
+#endif
+);
+
+//Moved up by Matthew
+__device__ void eos_NR_temp_guess(double rho, double u, double* temp);
+__device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const double gdet_B, const double gdet_ghost, double dr_over_r);
 
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 __device__ double calc_fermiint2(double x);
@@ -969,9 +1033,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#if(!TWO_T)
 		if (pflag){
 			pflag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
 			#if(TWO_T)
 			, fel
 			#endif
@@ -7991,6 +8052,16 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
 	#endif
+	#if(DOHELM_TEMPERATURE)
+    , double temp_guess
+    , double *temp_prev
+    #endif
+    #if (DO_YE)
+    , double ye
+    #endif
+    #if (DONUCLEAR)
+    , double x_alpha, double x_atm
+    #endif
 	#if(TWO_T)
 	, double* S
 	, double fel
@@ -8122,6 +8193,9 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 
 	// Calculate best value for W given current guess for vsq: 
 	#if(DOHELM)
+		#if(DOHELM_TEMPERATURE)
+		double xtemp = temp_guess;
+		#endif
     // Helmholtz EOS
     dWdvsq_calc2_helmholtz(gpu_eos_table, x[0], D, K_atm, &W, &dWdvsq
         #if(DOHELM_TEMPERATURE)
@@ -8136,7 +8210,6 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
         #endif
     );
     Wsq = W * W;
-    W3 = W * Wsq;
     #else
 	//Gamma EOS
 	W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm
@@ -8413,9 +8486,7 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
 }
 #endif
 
-
-
-___device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
     #if (DOHELM)
     , const  double* __restrict__ gpu_eos_table
     #endif
@@ -9327,10 +9398,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		B = sqrt(Bsq);
 
 		//enthalpy before the floors
-		#if (DOHELM)
-		double xP;
-		eos_mode_rhou_pres(gpu_eos_table, pf_prefloor[RHO], pf_prefloor[UU], &xP);
-		wold = pf_prefloor[RHO] + pf_prefloor[UU] + xP;
+        #if (DOHELM)
+			#if (DOHELM_TEMPERATURE)
+			wold = pf_prefloor[RHO] + prefloor_u + xP;
+			#else
+			eos_mode_rhou_pres(gpu_eos_table, pf_prefloor, &xP);
+			wold = pf_prefloor[RHO] + pf_prefloor[UU] + xP;
+			#endif
 		#elif(TWO_T)
 		double gamma_g;
 		gamma_g = calc_gamma_gas_prim(pf_prefloor);
@@ -9486,9 +9560,6 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			);
 			if (flag) {
 				flag = Utoprim_1dfix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC, 0
-					#if (DOHELM)
-					, gpu_eos_table
-					#endif
 					#if(TWO_T)
 					, 0.0
 					#endif
@@ -10469,9 +10540,7 @@ __device__ double calc_entropy(double* pr
 ) {
 	double entr;
 	#if(DOHELM)
-	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &entr);
-	entr = xentr;
-	//entr = exp(KTOT_FACTOR * entr);
+
 	#elif(TWO_T)
 		#if(0)
 		double Theta;
@@ -12226,7 +12295,7 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	/* MHD stress tensor, with first index up, second index down */
 
 	// EOS-specific calls:
- #if (DOHELM)
+	#if (0) //DIMARK Not working yet
     // 1. Helmholtz EOS
     #if (DOHELM_TEMPERATURE)
     eos_mode_rhotemp_pres_u(gpu_eos_table, pr[RHO], pr[UU],
@@ -12308,7 +12377,7 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	bsq = -bcon[0] * bcon[0] + bcon[1] * bcon[1] + bcon[2] * bcon[2] + bcon[3] * bcon[3];
 	
    // EOS-specific calls:
-    #if (DOHELM)
+    #if (0) //DIMARK: Not working yet
     // 1. Helmholtz EOS
     double xpres;
     #if (DOHELM_TEMPERATURE)
@@ -13605,9 +13674,6 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 				failimage[1 * (ksize)+global_id]++;
 				#if(!TWO_T)
 				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY
-					#if(DOHELM==10)
-					, gpu_eos_table
-					#endif
 					#if(TWO_T)
 					, fel
 					#endif
@@ -14025,9 +14091,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						failimage[1 * (ksize)+global_id]++;
 						#if(!DOHELM)
 						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
-						#if (DOHELM)
-						, gpu_eos_table
-						#endif
 						#if(TWO_T)
 						, fel
 						#endif
@@ -14302,9 +14365,6 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 					failimage[1 * (ksize)+global_id]++;
 					#if(!DOHELM)
 					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
-						#if (DOHELM)
-						, gpu_eos_table
-						#endif
 						#if(TWO_T)
 						, fel
 						#endif
@@ -14515,10 +14575,24 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
+	#if(DANAT_GDET_INTERP)	
+	struct of_geom geom1, geom2, geom3, geom5;
+	double dr_over_r = (radius[N1G] - radius[N1G - 1]) / radius[N1G];
+	#endif
 
 	// inner r boundary condition: u, gdet extrapolation
 	#if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
+		
+		#if(DANAT_GDET_INTERP)	
+		get_geometry(0, jcurr, zcurr, CENT, &geom1, gcov, gcon, gdet);
+		get_geometry(1, jcurr, zcurr, CENT, &geom2, gcov, gcon, gdet);
+		#if(N1G==3)
+		get_geometry(2, jcurr, zcurr, CENT, &geom3, gcov, gcon, gdet);
+		#endif
+		get_geometry(N1G, jcurr, zcurr, CENT, &geom5, gcov, gcon, gdet);
+		#endif
+
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
 			prim5[k] = pv[k*(ksize)+N1G*isize + global_id];
@@ -15038,6 +15112,7 @@ __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet,
             pv[index_nu(U3_NU, 1) * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
             pv[index_nu(U3_NU, 2) * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
             #endif
+			#endif
 			pv[B2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 			pv[B3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 			#if(RESISTIVE)
@@ -16089,297 +16164,6 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 // EOS function calls
 #if (DOHELM)
 
-#if (EOS_LINEAR)
-__device__ void interp_eostable_linear(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double* free, double* df_d, double* df_t, double* df_tt, double* df_dt, double* dpepdd, double* etaele) {
-	int iat, jat;
-	double xt, xd, mxt, mxd;
-	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
-
-	//  hash locate this temperature and density
-	jat = (int)((log10(btemp) - eos_tlo) * (double)(EOSJMAX - 1) / (eos_thi - eos_tlo)) + 1;
-	jat = MY_MAX(1, MY_MIN(jat, EOSJMAX - 1)) - 1;
-	iat = (int)((log10(din) - eos_dlo) * (double)(EOSIMAX - 1) / (eos_dhi - eos_dlo)) + 1;
-	iat = MY_MAX(1, MY_MIN(iat, EOSIMAX - 1)) - 1;
-
-	double tstp = (eos_thi - eos_tlo) / (double)(EOSJMAX - 1);
-	double dstp = (eos_dhi - eos_dlo) / (double)(EOSIMAX - 1);
-	double eos_t_jat = pow(10.0, (eos_tlo + jat * tstp));
-	double eos_d_iat = pow(10.0, (eos_dlo + iat * dstp));
-	double eos_dt_jat = pow(10.0, (eos_tlo + (jat + 1) * tstp)) - pow(10.0, (eos_tlo + jat * tstp));
-	double eos_dd_iat = pow(10.0, (eos_dlo + (iat + 1) * dstp)) - pow(10.0, (eos_dlo + iat * dstp));
-
-	//  various differences
-	xt = MY_MAX((btemp - eos_t_jat) / eos_dt_jat, 0.0); 
-	xd = MY_MAX((din - eos_d_iat) / eos_dd_iat, 0.0); 
-	mxt = 1.0 - xt;
-	mxd = 1.0 - xd;
-
-	// the free energy
-	*free = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	// derivative with respect to density
-	*df_d = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	// derivative with respect to temperature
-	*df_t = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	// second derivative with respect to temperature
-	*df_tt =	gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	//  second derivative with respect to temperature and density
-	*df_dt =	gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	// now get the pressure derivative with density, chemical potential, and
-	// electron positron number densities
-	// get the interpolation weight functions
-
-	//  pressure derivative with density
-	*dpepdd =	gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-
-	*dpepdd = MY_MAX(ye * (*dpepdd), 0.0);
-
-	//  electron chemical potential etaele
-	*etaele =	gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
-				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
-				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
-				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
-}
-
-#else
-
-__device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele) {
-    int iat, jat;
-    double fi[36];
-    double xt, xd, mxt, mxd;
-    double si0t, si1t, si2t, si0mt, si1mt, si2mt, si0d, si1d, si2d, si0md, si1md, si2md;
-    double dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt;
-	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
-
-	//  hash locate this temperature and density
-	jat = (int)((log10(btemp) - eos_tlo) * (double)(EOSJMAX - 1) / (eos_thi - eos_tlo)) + 1;
-	jat = MY_MAX(1, MY_MIN(jat, EOSJMAX - 1)) - 1;
-	iat = (int)((log10(din) - eos_dlo) * (double)(EOSIMAX - 1) / (eos_dhi - eos_dlo)) + 1;
-	iat = MY_MAX(1, MY_MIN(iat, EOSIMAX - 1)) - 1;
-
-    //  access the table locations only once
-    fi[0] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[1] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[2] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[3] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[4] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[5] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[6] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[7] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[8] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[9] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[10] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[11] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[12] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat) ];
-    fi[13] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[14] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[15] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[16] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[17] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[18] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[19] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[20] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[21] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[22] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[23] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[24] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[25] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[26] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[27] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[28] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[29] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[30] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[31] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-    fi[32] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
-    fi[33] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
-    fi[34] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
-    fi[35] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
-
-	double tstp = (eos_thi - eos_tlo) / (double)(EOSJMAX - 1);
-	double dstp = (eos_dhi - eos_dlo) / (double)(EOSIMAX - 1);
-    double eos_t_jat = pow (10.0, (eos_tlo + jat * tstp));
-    double eos_d_iat = pow (10.0, (eos_dlo + iat * dstp));
-    double eos_dt_jat = pow (10.0, (eos_tlo + (jat + 1) * tstp)) - pow (10.0, (eos_tlo + jat * tstp));
-    double eos_dd_iat = pow (10.0, (eos_dlo + (iat + 1) * dstp)) - pow (10.0, (eos_dlo + iat * dstp));
-
-    //  various differences
-    xt = MY_MAX((btemp - eos_t_jat) / eos_dt_jat, 0.0); // fix here
-    xd = MY_MAX((din - eos_d_iat) / eos_dd_iat, 0.0); // fix here
-    mxt = 1.0 - xt;
-    mxd = 1.0 - xd;
-
-    //  the density and temperature basis functions
-    si0t = psi0(xt);
-    si1t = psi1(xt)*eos_dt_jat; // fix here
-    si2t = psi2(xt)*eos_dt_jat * eos_dt_jat; // fix here
-
-    si0mt = psi0(mxt);
-    si1mt = -psi1(mxt)*eos_dt_jat; // fix here
-    si2mt = psi2(mxt)*eos_dt_jat * eos_dt_jat; // fix here
-
-    si0d = psi0(xd);
-    si1d = psi1(xd)*eos_dd_iat; // fix here
-    si2d = psi2(xd)*eos_dd_iat * eos_dd_iat; // fix here
-
-    si0md = psi0(mxd);
-    si1md = -psi1(mxd)*eos_dd_iat; // fix here
-    si2md = psi2(mxd)*eos_dd_iat * eos_dd_iat; // fix here
-
-    // the free energy
-    *free = h5(si0t, si1t, si2t, si0mt, si1mt, si2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
-
-    // the first derivatives of the basis functions
-    dsi0d = dpsi0(xd) / eos_dd_iat; // fix here
-    dsi1d = dpsi1(xd);
-    dsi2d = dpsi2(xd)*eos_dd_iat; // fix here
-
-    dsi0md = -dpsi0(mxd) / eos_dd_iat; // fix here
-    dsi1md = dpsi1(mxd);
-    dsi2md = -dpsi2(mxd)*eos_dd_iat; // fix here
-
-    // derivative with respect to density
-    *df_d = h5(si0t, si1t, si2t, si0mt, si1mt, si2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, fi);
-
-    // the first derivatives of the basis functions
-    dsi0t = dpsi0(xt) / eos_dt_jat; // fix here
-    dsi1t = dpsi1(xt);
-    dsi2t = dpsi2(xt)*eos_dt_jat; // fix here
-
-    dsi0mt = -dpsi0(mxt) / eos_dt_jat; // fix here
-    dsi1mt = dpsi1(mxt);
-    dsi2mt = -dpsi2(mxt)*eos_dt_jat; // fix here
-
-    // derivative with respect to temperature
-    *df_t = h5(dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
-
-    // the second derivatives of the basis functions
-    ddsi0t = ddpsi0(xt) / (eos_dt_jat * eos_dt_jat); // fix here
-    ddsi1t = ddpsi1(xt) / eos_dt_jat; // fix here
-    ddsi2t = ddpsi2(xt);
-    ddsi0mt = ddpsi0(mxt) / (eos_dt_jat * eos_dt_jat); // fix here
-    ddsi1mt = -ddpsi1(mxt) / eos_dt_jat; // fix here
-    ddsi2mt = ddpsi2(mxt);
-
-    // second derivative with respect to temperature
-    *df_tt = h5(ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
-
-    //  second derivative with respect to temperature and density
-    *df_dt = h5(dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, fi);
-
-    // now get the pressure derivative with density, chemical potential, and
-    // electron positron number densities
-    // get the interpolation weight functions
-    si0t = xpsi0(xt);
-    si1t = xpsi1(xt)*eos_dt_jat; // fix here
-
-    si0mt = xpsi0(mxt);
-    si1mt = -xpsi1(mxt)*eos_dt_jat; // fix here
-
-    si0d = xpsi0(xd);
-    si1d = xpsi1(xd)*eos_dd_iat; // fix here
-
-    si0md = xpsi0(mxd);
-    si1md = -xpsi1(mxd)*eos_dd_iat; // fix here
-
-    //  pressure derivative with density
-    *dpepdd =   gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
-                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
-                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
-                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
-
-                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
-                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
-                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
-                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
-
-                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
-                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
-                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
-                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
-
-                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
-                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
-                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
-                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
-
-    // h3dpd(iat,jat,
-    //      si0t,   si1t,   si0mt,   si1mt,
-    //      si0d,   si1d,   si0md,   si1md,
-    //      eos_dpdf, eos_dpdft, eos_dpdfd, eos_dpdfdt);
-
-    *dpepdd = MY_MAX(ye * (*dpepdd), 0.0);
-
-    //  electron chemical potential etaele
-    *etaele =   gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
-                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
-                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
-                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
-
-                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
-                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
-                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
-                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
-
-                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
-                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
-                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
-                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
-
-                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
-                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
-                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
-                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
-
-    // h3e(iat,jat,
-    //                si0t,   si1t,   si0mt,   si1mt,
-    //                si0d,   si1d,   si0md,   si1md);
-
-    //  electron + positron number densities
-    /*xnefer = eos_xf[(iat)*EOSJMAX + jat] * si0d*si0t + eos_xf[(iat + 1)*EOSJMAX + jat] * si0md*si0t
-     + eos_xf[(iat)*EOSJMAX + jat + 1] * si0d*si0mt + eos_xf[(iat + 1)*EOSJMAX + jat + 1] * si0md*si0mt
-     + eos_xft[(iat)*EOSJMAX + jat] * si0d*si1t + eos_xft[(iat + 1)*EOSJMAX + jat] * si0md*si1t
-     + eos_xft[(iat)*EOSJMAX + jat + 1] * si0d*si1mt + eos_xft[(iat + 1)*EOSJMAX + jat + 1] * si0md*si1mt
-     + eos_xfd[(iat)*EOSJMAX + jat] * si1d*si0t + eos_xfd[(iat + 1)*EOSJMAX + jat] * si1md*si0t
-     + eos_xfd[(iat)*EOSJMAX + jat + 1] * si1d*si0mt + eos_xfd[(iat + 1)*EOSJMAX + jat + 1] * si1md*si0mt
-     + eos_xfdt[(iat)*EOSJMAX + jat] * si1d*si1t + eos_xfdt[(iat + 1)*EOSJMAX + jat] * si1md*si1t
-     + eos_xfdt[(iat)*EOSJMAX + jat + 1] * si1d*si1mt + eos_xfdt[(iat + 1)*EOSJMAX + jat + 1] * si1md*si1mt;*/
-
-    // h3x(iat,jat,
-    //              si0t,   si1t,   si0mt,   si1mt,
-    //              si0d,   si1d,   si0md,   si1md);
-}
-#endif
-
 
 __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double* entr, double *dpresdt, double *denerdt, double *dentrdt, double *dpresdd, double *denerdd, double *cs2)
 {
@@ -16621,9 +16405,6 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 
     return;
 }
-
-__device__ void validate_T(double* temp);
-__device__ void eos_NR_temp_guess(double rho, double u, double* temp);
 
 __device__ void validate_T(double* temp) {
 	if (*temp < eos_temp_low) *temp = eos_temp_low;
@@ -17736,25 +17517,24 @@ __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* g
 
 	double w, bsq, eta;
 	// EOS-specific calls:
-	#if (DOHELM)
-	// 1. Helmholtz EOS
+	#if (0)//(DOHELM) DIMARK: not working yet!	// 1. Helmholtz EOS
 	double cs2_helm;
 	eos_mode_rhou_pres_cs2(gpu_eos_table, pr[RHO], pr[UU], &P, &cs2_helm);
 	w = pr[RHO] + pr[UU] + P;
 	#else
-	// 2. Ideal gas EOS
-	#if(AMD)
-	w = fma(GAMMA, pr[UU], pr[RHO]);
-	#else
-	w = pr[RHO] + GAMMA * pr[UU];
-	#endif
+		// 2. Ideal gas EOS
+		#if(AMD)
+		w = fma(GAMMA, pr[UU], pr[RHO]);
+		#else
+		w = pr[RHO] + GAMMA * pr[UU];
+		#endif
 	#endif
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
 
 	/* find fast magnetosonic speed */
 	// EOS-specific calls:
-	#if (DOHELM)
+	#if (0) //(DOHELM) DIMARK: not working yet!
 	// 1. Helmholtz EOS
 	// cs2 was already calculated above
 	cs2 = cs2_helm;
@@ -18633,43 +18413,6 @@ __device__ void nse_nucevol(double rho, double tgas, double ye, double* x_alpha,
 }
 
 #endif
-
-__device__ void eos_NR_temp_guess(double rho, double u, double* temp);
-
-__device__ void validate_T(double* temp) {
-    //#if (DOHELM_LOWTEMP)
-    //if (*temp < 1e-10) *temp = 1e-10;
-    //#else
-    if (*temp < eos_temp_low) *temp = eos_temp_low;
-    //#endif
-    if (*temp > eos_temp_up) *temp = eos_temp_up;
-    return;
-}
-
-__device__ int eos_check_input_u(double rho, double u) {
-    if (u <= 0.) return 1;
-    else return 0;
-}
-
-__device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
-    double gam = 5. / 3.;
-
-    if (u < 0. || rho < 0.) {
-        *temp = eos_temp_low;
-        return;
-    }
-
-    #if (RAD_M1)
-    //*temp = fabs(MMW * MH_CGS * (gam - 1.) * (u * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * rho * MASS_DENSITY_SCALE));
-    *temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
-    #else
-    *temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
-    //*temp = (GAMMA - 1.) * u / rho;
-    #endif
-
-    validate_T(temp);
-    return;
-}
 
 __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double* prim, double *pres) {
     #if (DOHELM_TEMPERATURE == 0)
@@ -21048,65 +20791,6 @@ __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage)
 }
 #endif
 
-#if(NEUTRINOS_M1) // DINU: 3 species
-// Declarations 
-__device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table
-#if (NU_INNER_STOP)
-    , double radius
-#endif
-    #if(NEUTRINOS_DEBUG)
-    , double* error_nu0, double* error_nu1, double* error_nu2
-    #endif
-);
-__device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U_f, double* U_prev, int* pflag, int* pflag_nu, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table
-    #if(NEUTRINOS_DEBUG)
-    , double* error_nu0, double* error_nu1, double* error_nu2
-    #endif
-    #if (NU_INNER_STOP)
-    , double radius
-    #endif
-);
-__device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* ncon, double ncov0, double* U_old, double* U_new, double Dt, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, int species
-    #if (NU_KEEP_COEFF_CONST)
-    , double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
-    #endif
-);
-__device__ int calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double* U_old, double* U_new, int species, double y_max, double* error_tmp);
-__device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double Ncon0_i, double* Ncon0_f, double Dt, int species);
-
-// Neutrino functions declarations
-__device__ int Rtoprim_nu(double* U, struct of_geom* geom, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
-__device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
-__device__ void Rtoprim_nu_number(double UN, struct of_geom* geom, double* prim, double* primN, int sp);
-__device__ void primtoflux_nu(double* pr, struct of_state_nu* q_nu, int dir, struct of_geom* geom, double* flux);
-__device__ void primtoflux_nu_number(double* ph, double* ucon, double* ucov, int dir, struct of_geom* geom, double* flux);
-__device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_nu, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table);
-__device__ void mhd_calc_nu(double* pr, int dir, struct of_state_nu* q_nu, double* mhd_nu, int species);
-__device__ void ucon_calc_nu(double* pr, struct of_geom* geom, double* ucon_nu, int species);
-__device__ int gamma_calc_nu(double* pr, struct of_geom* geom, double* gamma_nu, int species);
-__device__ void get_state_nu(double* pr, struct of_geom* geom, struct of_state_nu* q_nu, int species);
-__device__ void calc_source_numdens_nu(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double J, double ener_nu_avg, double* source_nu_num, int species);
-__device__ double calc_nu_kappa_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
-__device__ double calc_nu_kappa_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
-__device__ double calc_nu_kappa_scatt(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
-__device__ double calc_nu_number_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
-__device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
-__device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity);
-__device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity);
-__device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_table, double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
-__device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
-
-// explicit part:
-__device__ void source_nu(double* ph, struct of_geom* geom, double* dU, double *U_i, double *U_f, double Dt, double y_max, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table
-    #if (NU_KEEP_COEFF_CONST)
-    , double eta_0[NU_SPECIES], double kappa_abs0[NU_SPECIES], double kappa_s0[NU_SPECIES], double eta_N0[NU_SPECIES], double kappa_N0[NU_SPECIES]
-    #endif
-);
-__device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucon_nu[NDIM], double ucov[NDIM], double mhd_nu[NDIM][NDIM], double Ncon0, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table, double* source_number_nu, double *source_ye, int species
-    #if (NU_KEEP_COEFF_CONST)
-    , double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
-    #endif
-);
 
 // Predictor step
 __device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double* ener_nu_avg, double* eta, double* kappa_abs, double* kappa_s, double Dt);

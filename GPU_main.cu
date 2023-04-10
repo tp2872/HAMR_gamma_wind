@@ -1371,7 +1371,7 @@ void GPU_write(int n)
 	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 
-	# if(SPHERICAL|| SPHERICAL_GR)
+	#if(SPHERICAL|| SPHERICAL_GR)
 	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 		coord(n, i, 0, 0, CENT, X);
 		bl_coord(X, &r, &th, &phi);

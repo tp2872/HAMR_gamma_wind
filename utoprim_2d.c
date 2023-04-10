@@ -296,11 +296,10 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
 	retval = general_newton_raphson(x_2d, func_vsq, tolerance
-#if(DOHELM_TEMPERATURE)
-                                    , &prim[UU]
-#endif
-                                    );
-
+		#if(DOHELM_TEMPERATURE)
+        , &prim[UU]
+		#endif
+    );
 	W = x_2d[0];
 	vsq = x_2d[1];
 
