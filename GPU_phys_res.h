@@ -1,5 +1,4 @@
-
-
+#if(RESISTIVE)
 __device__ void primtoflux_res(double* pr, struct of_state_res* q_res, int dir, struct of_geom* geom, double* flux)
 {
 	#if(RESISTIVE)
@@ -494,3 +493,4 @@ __device__ double divE_calc(double* p, const  double* __restrict__ gdet, double 
 	return(0.0);
 	#endif
 }
+#endif

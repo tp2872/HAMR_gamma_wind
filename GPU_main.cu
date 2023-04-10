@@ -8,7 +8,7 @@ extern "C" {
 
 void GPU_init(void)
 {
-	int i,j,ranks_per_node;
+	int ranks_per_node;
 
 	//Do some checks first
 	if (N_GPU>numdevices){
@@ -20,6 +20,7 @@ void GPU_init(void)
 	ranks_per_node = numdevices / N_GPU;
 	gpu_offset = (rank % (ranks_per_node))*N_GPU;
 	#if(N_GPU>1)
+	int i, j;
 	for (i = gpu_offset; i < gpu_offset + N_GPU; i++){
 		gpuSetDevice(i);
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
@@ -2080,7 +2081,6 @@ void GPU_boundprim_cart(int dir, int flag, int n)
 void GPU_read(int n)
 {
 	int i, j, z, k;
-	int nr_workgroups_local[1];
 
 	//gpuDeviceSynchronize();
 	#if(N_GPU>1)
@@ -2088,6 +2088,8 @@ void GPU_read(int n)
 	#endif
 
 	#if(N_LEVELS_1D_INT>20)
+	int nr_workgroups_local[1];
+
 	/*Calculate gradients for reconstruction*/
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
 	#if(SHIP)

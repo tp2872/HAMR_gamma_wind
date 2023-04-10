@@ -1,3 +1,5 @@
+
+#if(FRAME_TRANSFORM)
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
 	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
 	#if(DOHELM)
@@ -1089,3 +1091,4 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 
 	return;
 }
+#endif

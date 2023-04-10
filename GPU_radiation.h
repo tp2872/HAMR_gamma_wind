@@ -184,7 +184,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
-	double kappa_abs, kappa_es, tau, norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
+	double norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
 	int k, pflag, do_entropy=0;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -1790,7 +1790,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol, dK_dS;
+	double T_GAS, norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0;
@@ -2414,7 +2414,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 	double T_GAS, norm, norm_S, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, count_increase = 0, count_increase_gas = 0, flag_rad =0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, count_increase = 0,  flag_rad =0;
 	#if(TWO_T)
 	double gamma_g, Theta_i, Theta_e;
 	#endif

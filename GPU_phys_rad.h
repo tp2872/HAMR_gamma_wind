@@ -10,7 +10,9 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 ) {
 	double Tr, u_dot_urad, u_dot_u, Ehat;
 	#if(!CALC_MDOT)
-	double mass_density_scale, magnetic_density_scale = MASS_DENSITY_SCALE;
+		#if(P_NUM)
+		double mass_density_scale = MASS_DENSITY_SCALE;
+		#endif
 	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;

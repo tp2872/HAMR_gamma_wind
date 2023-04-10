@@ -2483,7 +2483,6 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 
 // DITEMP: eos wrapper functions 
 #if (DOHELM_TEMPERATURE)
-
 __device__ void eos_mode_rhotemp_pres_u(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* pres, double* u
 #if (DONUCLEAR)
     , double x_alpha, double x_atm
