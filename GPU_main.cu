@@ -1314,7 +1314,7 @@ void eos_init_GPU(int n) {
 	int i, j;
 	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
 	#if(N_GPU>1)
-	gpuSetDevice(0);
+	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually

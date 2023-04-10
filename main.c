@@ -566,6 +566,16 @@ void check_input() {
 	}
 	#endif
 
+	#if(RAD_M1 && NEUTRINOS_M1)
+	if (rank == 0) fprintf(stderr, "You cannot have neutrinos and radiation M1 enabled! \n");
+	exit(0);
+	#endif
+
+	#if(DOHELM && TWO_T)
+	if (rank == 0) fprintf(stderr, "You cannot have 2T and Helmholtz EOS enabled! \n");
+	exit(0);
+	#endif
+
 	//You cannot have more than 9 3D refinement levels
 	if (N_LEVELS_3D > 9) {
 		if (rank == 0) fprintf(stderr, "N_LEVELS_3D needs to be smaller than 10");

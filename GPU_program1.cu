@@ -730,6 +730,11 @@ struct of_state_rad {
 	double ucov[NDIM];
 };
 
+struct of_state_nu {
+    double ucon[NDIM];
+    double ucov[NDIM];
+};
+
 #include <stdio.h>
 
 __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max

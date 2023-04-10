@@ -49,9 +49,6 @@ Physical Parameters section
 #define T_DOUBLE (1000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
-/*Normalize calculation of divB*/
-#define NORMALIZE_DIVB (0)
-
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
 

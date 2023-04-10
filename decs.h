@@ -939,7 +939,7 @@ void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G
 void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void step_ch(void);
-void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux
+void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux		
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -992,9 +992,6 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	#endif
 );
 double calc_entropy(double* pr
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif

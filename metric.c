@@ -300,14 +300,14 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][3] = 1.0;
 	#else
 	//Set Cartesian KS metric
-	double f, L[NDIM], x, y, z, R;
+	double f, L[NDIM], x, y, z;
 	x = X[1];
 	y = X[2];
 	z = X[3];
 	if (fabs(z) < 0.000001) z = 0.000001;
 
 	f = 2.0 * r * r * r / (r * r * r * r + a * a * z * z);
-	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, R, z, a);
+	if (!isfinite(f))fprintf(stderr, "Metric error2 %f %f %f %f \n", f, z, a);
 
 	L[0] = 1.0;
 	L[1] = (r * x + a * y) / (r * r + a * a);

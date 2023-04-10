@@ -53,9 +53,6 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	//Entropy advection
 	#if(DOKTOT)
 	flux[KTOT] = flux[RHO] * calc_entropy(pr
-		#if (DOHELM)
-		, gpu_eos_table
-		#endif
 		#if(TWO_T)
 		, gamma_g
 		#endif
@@ -112,17 +109,13 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 
 //Calculates gas entropy
 double calc_entropy(double* pr
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 ) {
 	double entr;
 	#if(DOHELM)
-	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &entr);
-	entr = xentr;
+	eos_mode_rhou_entr(pr, &entr);
 	//entr = exp(KTOT_FACTOR * entr);
 	#elif(TWO_T)
 		#if(0)
