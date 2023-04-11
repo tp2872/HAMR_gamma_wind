@@ -1,4 +1,11 @@
 // EOS function calls
+
+__device__ void validate_ye(double* ye) {
+    if (*ye < 0.0) *ye = 0.0;
+    if (*ye > 1.0) *ye = 1.0;
+    return;
+}
+
 #if (DOHELM)
 __device__ void validate_T(double* temp) {
 	if (*temp < eos_temp_low) *temp = eos_temp_low;
@@ -31,11 +38,6 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 }
 
 // EOS function calls
-__device__ void validate_ye(double* ye) {
-    if (*ye < 0.0) *ye = 0.0;
-    if (*ye > 1.0) *ye = 1.0;
-    return;
-}
 
 #if (EOS_LINEAR)
 __device__ void interp_eostable_linear(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double* free, double* df_d, double* df_t, double* df_tt, double* df_dt, double* dpepdd, double* etaele) {
