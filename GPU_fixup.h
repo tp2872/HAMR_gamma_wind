@@ -243,7 +243,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#elif(NEUTRINOS_M1)
         double U_0[NPR];
         PLOOP dU[k] = 0.;
-        double pf_old = pf[UU_NU];
 
         //Perform implicit solve
         double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
@@ -858,7 +857,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	struct of_state q;
 	#endif
 	#if(TWO_T)
-	double ue, ui, Theta, gam, C, dis;
+	double ue, ui, dis;
+		#if(VARGAMMA)
+		double Theta, gam, C;
+		#endif
 	#endif
 	int dofloor=0, flag = 0, m, k;
 

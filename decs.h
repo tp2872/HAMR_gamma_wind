@@ -905,7 +905,7 @@ void close_dump_reduced();
 void close_rdump();
 void close_gdump();
 void close_gdump_reduced();
-double get_wall_time();
+clock_t get_wall_time();
 void check_input();
 
 /** Evolution/physics functions **/
@@ -1554,3 +1554,83 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
+
+//Initial conditions related
+void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);
+void coord_transform(double* pr, int n, int ii, int jj, int zz);
+void vconbl_to_utcon(double* pr, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double* pr, double udphi, double mudt, int n, int ii, int jj, int zz);
+void udphi_to_utuphi(double* ucon, double udphi, double* udphi_new, struct of_geom* geom, double* utcon);
+void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
+void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);
+void coord_transform(double* pr, int n, int ii, int jj, int zz);
+void set_mag(void);
+void init_thindisk();
+double compute_Amax(double(*restrict A[NB])[NPR]);
+double compute_B_from_A(void);
+double normalize_B_by_maxima_ratio(double beta_target, double* norm_value);
+double normalize_B_by_beta(double beta_target, double rmax, double* norm_value);
+double rtbis(double(*func)(double, double*), double* parms, double x1, double x2, double xacc);
+double lfunc(double lin, double* parms);
+void compute_gu(double r, double th, double a, double* gutt, double* gutp, double* gupp);
+double thintorus_findl(double r, double th, double a, double c, double al);
+double compute_udt(double r, double th, double a, double l);
+double compute_omega(double r, double th, double a, double l);
+double compute_uuphi(double r, double th, double a, double l);
+double compute_l_from_omega(double r, double th, double a, double omega1);
+void getmax_densities(double(*restrict prim[NB])[NPR], double* rhomax, double* umax);
+double get_maxprimvalrpow(double(*restrict prim[NB])[NPR], double rpow, int m);
+int normalize_field_local_nodivb(double targbeta, double rhomax, double amax, double(*restrict prim[NB])[NPR], double(*restrict A[NB])[NPR], int dir);
+double compute_rat(double(*restrict prim[NB])[NPR], double(*restrict A[NB])[NPR], double rhomax, double amax, double targbeta, int loc, int n, int i, int j, int k);
+double compute_profile(double(*restrict prim[NB])[NPR], double amax, double aphipow, int loc, int n, int i, int j, int z);
+int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A[NB])[NPR]);
+void get_rho_u_floor(double r, double th, double phi, double* rho_floor, double* u_floor);
+void init_torus_grb();
+void set_mag_TDE(void);
+void set_uniform_Bphi(void);
+double lfish_calc(double r);
+void init_bondi();
+void init_sndwave();
+void init_entwave();
+void init_postmerger();
+void init_blastwave();
+void init_shocktube();
+void set_mag_spherical();
+void init_torus_spherical();
+void init_rad_pres(double pi[NPR]);
+void init_neutrinos(double ph[NPR]);
+void init_nuclear(double ph[NPR]);
+void init_sndwave();
+void init_entwave();
+void init_radpulse();
+void init_torus(void);
+void init_torus_grb();
+void init_disruption(void);
+void init_monopole(double Rout_val);
+void init_thindisk();
+void init_truncdisk();
+void init_collapsar();
+void init_NSM();
+void init_postmerger();
+
+extern double global_kappa, aphipow;
+
+#ifndef M_PI_2
+#define M_PI_2 (M_PI/2.)
+#endif
+#ifndef DBL_EPSILON
+#define DBL_EPSILON 2.2204460492503131E-16
+#endif
+#ifndef DBL_MAX
+#define DBL_MAX 1.7976931348623158e+308
+#endif
+
+typedef struct {
+	double xmin, xmax, ymin, ymax, zmin, zmax; //array extent
+	int nvars, nx, ny, nz; //resolution
+} extent;
+
+typedef struct {
+	double xmin, xmax; //array extent
+	int nvars, nx; //resolution
+} extent1d;

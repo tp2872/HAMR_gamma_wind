@@ -571,7 +571,6 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
 #endif
 );
 __device__ void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
-
 __device__ void eos_mode_rhou_pres(const  double* __restrict__ gpu_eos_table, double* prim, double* pres);
 __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double* prim, double* pres, double* cs2);
 __device__ void eos_mode_rhow_pres_dpdrho_dpde_d(const  double* __restrict__ gpu_eos_table, double* prim, double* pres, double* dpdrho, double* dpde_d);
@@ -670,7 +669,7 @@ __device__ double calc_delta(double* ph, double bsq);
 __device__ void heating(double* ph, struct of_state* q);
 __device__ double source_Coulomb(double* p
 	#if(CALC_MDOT)
-	, double mass_density_scale, double magnetic_density_scale
+	, double mass_density_scale
 	#endif
 );
 __device__ double calc_gamma_gas_conserved(double* S, double rho);

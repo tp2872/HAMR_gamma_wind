@@ -1,4 +1,5 @@
 
+#if(USE_3D_INV)
 // 3D inversion for tabulated EOS
 __device__ int Utoprim_3D_T(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
 #if (DOHELM)
@@ -514,3 +515,4 @@ __device__ void validate_x_3D_T(double x[3], double x0[3]) {
     validate_T(&x[2]);
     return;
 }
+#endif

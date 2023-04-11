@@ -51,9 +51,6 @@ void init()
 			break;
 		case TRUNC_PROBLEM:
 			init_truncdisk();
-		case NSM:
-			init_NSM();
-			break;
 		case BLAST_WAVE:
 			init_blastwave();
 			break;

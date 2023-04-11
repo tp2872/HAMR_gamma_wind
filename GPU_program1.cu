@@ -16,10 +16,10 @@
 #include "GPU_radiation_nu.h"
 
 //Include 2T functions
-#include "GPU_2T.h"
+#include "GPU_phys_2T.h"
 
 //Include Helmholtz functions
-#include "GPU_eos.h"
+#include "GPU_phys_eos.h"
 
 //Include matrix inversion functions
 #include "GPU_inv.h"
@@ -43,7 +43,7 @@
 #include "GPU_utoprim_2d.h"
 
 //Include physics functions
-#include "GPU_phys.h"
+#include "GPU_phys_mhd.h"
 
 //Include resistive physics functions
 #include "GPU_phys_res.h"
@@ -70,7 +70,7 @@
 #include "GPU_interp.h"
 
 //Include nuclear physics functions
-#include "GPU_nuclear.h"
+#include "GPU_phys_nuclear.h"
 
 //Include interpolation functions
 #include "GPU_const_trans.h"

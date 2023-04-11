@@ -469,16 +469,16 @@ void set_grid(int n)
 	/* done! */
 }
 
-double get_wall_time(){	
+clock_t get_wall_time(){	
 	#ifdef __unix__
 	struct timeval time;
 	if (gettimeofday(&time, NULL)){
 		//  Handle error
 		return 0;
 	}
-	return (double)time.tv_sec + (double)time.tv_usec * .000001;
+	return (clock_t)((double)time.tv_sec + (double)time.tv_usec * .000001);
 	#else
-	return clock() / CLOCKS_PER_SEC;
+	return (clock_t) clock() / CLOCKS_PER_SEC;
 	#endif
 }
 
@@ -574,6 +574,13 @@ void check_input() {
 	#if(DOHELM && TWO_T)
 	if (rank == 0) fprintf(stderr, "You cannot have 2T and Helmholtz EOS enabled! \n");
 	exit(0);
+	#endif
+
+	#if(USE_3D_INV)
+	if (!DOHELM || !DOHELM_TEMPERATURE) {
+		if (rank == 0) fprintf(stderr, "You cannot use 3D inversion without Helmholtz EOS enabled! \n");
+		exit(0);
+	}
 	#endif
 
 	//You cannot have more than 9 3D refinement levels

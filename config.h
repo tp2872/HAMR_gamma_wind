@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -62,8 +62,8 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.86)
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -71,7 +71,7 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (100.0)
+#define ROUT (10000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -89,11 +89,11 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 // Postmerger problem, ICs from SpEC
-#define BHNSQ2 (0)
-#define BHNSQ2_1 (0)
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (1)
 
 // Collapsar problem
-#define COLLAPSAR_GR1D (0)
+#define COLLAPSAR_GR1D (1)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (0)
@@ -244,7 +244,7 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
+#define NB_1 6
 #define NB_2 2
 #define NB_3 2
 
@@ -254,7 +254,7 @@ Numerical Parameters section
 #define BS_3 48
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (0)
@@ -286,7 +286,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 0
+#define NORMALIZE_DIVB 1
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300
@@ -475,7 +475,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CONSTANT_BC (0)
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
 #define HIGH_MDOT (1)
@@ -511,7 +511,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (1)
+#define COMPTON (0)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
@@ -523,7 +523,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Fractional floor on entropy*/
 #define FLOOR_ENTROPY (0.0001)

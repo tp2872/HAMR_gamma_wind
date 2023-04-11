@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #ifdef __unix__
 #include <sys/time.h>
 #endif

@@ -7,13 +7,7 @@ void rm_order2(void);
 void AMR_set_coord(void);
 
 //Number of refinement levels before focusing on jet
-#define BASE_LEVELS (1)
-#define R0 (50.0)
-#define R1 (200.0)
-#define R2 (1000.0)
-#define R3 (6000.0)
-#define R4 (25000.0)
-#define R5 (1000000.0)
+#define BASE_LEVELS (0)
 
 //Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
 #define HIGH_CUTOFF (1E-1)
@@ -3420,25 +3414,6 @@ void rm_order2(void){
 		}
 	}
 }
-
-//Number of refinement levels before focusing on jet
-#define BASE_LEVELS (0)
-#define R0 (50.0)
-#define R1 (200.0)
-#define R2 (1000.0)
-#define R3 (6000.0)
-#define R4 (25000.0)
-#define R5 (1000000.0)
-
-//Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
-#define HIGH_CUTOFF (1E-1)
-#define LOW_CUTOFF (1E-3)
-
-//Define the free-fall time for initial gap to close//
-#define t_ff (pow(R_BONDI,1.5))
-
-#define BLOCKS_PER_THETA_JET (1) //Minimum number of blocks per *half* opening angle of the jet
-#define BLOCKS_PER_THETA_COCCOON (1) //Minimum number of blocks per *half* opening angle of the coccoon
 
 //Calculate refinement criterion
 double calc_refcrit(int n){

@@ -1,4 +1,5 @@
 
+#if(RAD_M1)
 //Calculate radiation temperature in rest frame of fluid
 __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov[NDIM]
 	#if(P_NUM)
@@ -136,10 +137,6 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	#if(TWO_T)
 	double src_coulomb, dK_dS_i;
 	#endif
-	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
-	double magnetic_density_scale = MASS_DENSITY_SCALE;
-	#endif
 
 	PLOOP dU[k] = 0.;
 
@@ -243,7 +240,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 		dU[ENTRE] = -dK_dS * (Gcov[0] * q->ucon[0] + Gcov[1] * q->ucon[1] + Gcov[2] * q->ucon[2] + Gcov[3] * q->ucon[3]);
 		src_coulomb = source_Coulomb(ph
 			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
+			, mass_density_scale
 			#endif
 		);
 		dU[ENTRE] += dK_dS * src_coulomb;
@@ -277,15 +274,18 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	int i;
 	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], Tr, Te;
 	#if(P_NUM || COMPTON)
-	double exp_xi, kappa_abs_ph, kappa_emmit_ph;
-	double Ehat, Nhat, u_dot_urad, u_dot_u;
+	double Ehat, u_dot_urad, u_dot_u;
+	#endif
+	#if(P_NUM)
+	double exp_xi, Nhat, kappa_abs_ph, kappa_emmit_ph;
 	#endif
 	#if(COMPTON)
 	double G0, Theta_e, Theta_r;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
-	double magnetic_density_scale = MASS_DENSITY_SCALE;
+		#if(P_NUM)
+		double mass_density_scale = MASS_DENSITY_SCALE;
+		#endif
 	double energy_density_scale = MASS_DENSITY_SCALE*C_CGS*C_CGS;
 	#else
 	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
@@ -378,10 +378,6 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	#if(P_NUM)
 	double exp_xi, kappa_abs_ph;
-	#endif
-	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE;
-	double magnetic_density_scale = MASS_DENSITY_SCALE;
 	#endif
 
 	if (dir == 1) {
@@ -565,19 +561,21 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
-	double kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff_abs, kappa_ff_emmit, kappa_HOPAL, kappa_COPAL, kappa_fe, kappa_ff_unity, kappa_sy_abs, kappa_sy_emmit, kappa_dc,  ne, p_theta, scaling_factor;
-	double Ree, Rei, Theta_e, Theta_gamma, zeta, nu_mu, phi;
+	double kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff_abs, kappa_ff_emmit, kappa_sy_abs, kappa_sy_emmit, ne;
+	double Theta_e, nu_mu, phi;
+	#if(OP_EXTRA)
+	double zeta, Theta_gamma, Rei, Ree, scaling_factor, kappa_fe, kappa_COPAL, kappa_HOPAL;
+	double p_theta, kappa_dc, kappa_fe;
+	#endif
 	#if(P_NUM)
 	double one_exp_xi, a, b, c, d, e;
 	one_exp_xi = 1.0 - exp_xi;
 	#endif
 	#if(!CALC_MDOT)
-	double mass_density_scale = MASS_DENSITY_SCALE, magnetic_density_scale = MASS_DENSITY_SCALE;
+	double mass_density_scale = MASS_DENSITY_SCALE;
 	double magnetic_density_scale_2 = sqrt(MASS_DENSITY_SCALE) * C_CGS;
-	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;	
 	#else
 	double magnetic_density_scale_2 = sqrt(mass_density_scale) * C_CGS;
-	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
 	#endif
 
 	ne = ph[RHO] * mass_density_scale / (MU_E * MH_CGS);
@@ -1036,3 +1034,4 @@ __device__ int gamma_calc_rad(double *  pr, struct of_geom *  geom, double *  ga
 
 	return(0);
 }
+#endif

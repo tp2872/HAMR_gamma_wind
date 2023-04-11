@@ -537,7 +537,7 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	double gtmp;
 	gtmp = (1. - vsq);
 	rho[0] = D * sqrt(gtmp);
-	    #if(DOHELM)
+	#if(DOHELM)
     // 1. Helmholtz EOS
     double dpdrho, dudrho;
 		#if (DOHELM_TEMPERATURE)
@@ -560,7 +560,10 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 		#endif
 	#elif(TWO_T)
 		//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
-		double gamg, game, gami, pe, pi, T_e, T_i, T_g;
+		double game, gami, pe, pi, T_e, T_i;
+		#if(!CONSTANTGAMMA)
+		double gamg;
+		#endif
 
 		#if(CONSTANTGAMMA)
 		game = GAMMA;

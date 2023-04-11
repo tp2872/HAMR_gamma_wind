@@ -827,3 +827,5 @@ double nu_kappa_emiss_N[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
 double* nulib_table[NB_LOCAL];
 double* GPU_nulib_table[NB_LOCAL];
 #endif
+
+double global_kappa, aphipow;

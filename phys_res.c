@@ -1,14 +1,7 @@
 #include "include.h"
 #include "decs.h"
 
-/***********************************************************************************************/
-/***********************************************************************************************
-  primtoflux():
-  ---------
-   --  calculate fluxes in direction dir, 
-        
-***********************************************************************************************/
-
+#if(RESISTIVE)
 void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	#if(RESISTIVE)
@@ -479,3 +472,4 @@ double lvc3u(int i, int j, int k) {
 
 	return (lvc3u);
 }
+#endif

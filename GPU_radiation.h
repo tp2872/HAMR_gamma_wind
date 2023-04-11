@@ -1,4 +1,5 @@
 
+#if(RAD_M1)
 __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
@@ -15,11 +16,13 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 ) {
 	double error_t[2]; 
 	int k;
-	double delta_Ur, U_ft[NPR], pb_i[NPR], U_n_temp[NPR], U_i_temp[NPR], U_prev[NPR];
-	#if(!CALC_MDOT)
-	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
-	#else
-	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+	double  U_ft[NPR], pb_i[NPR], U_n_temp[NPR], U_i_temp[NPR], U_prev[NPR];
+	#if(P_NUM)	
+		#if(!CALC_MDOT)
+		double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+		#else
+		double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+		#endif
 	#endif
 
 	PLOOP{
@@ -184,7 +187,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
 ) {
-	double norm, bsq, Tr, Te, dK_dS, pb_old[NPR];
+	double norm, dK_dS;
 	int k, pflag, do_entropy=0;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -194,9 +197,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#if(P_NUM)
 	double exp_xi;
 	#endif
-
-	//Store old values
-	PLOOP pb_old[k] = pb[k];
 
 	//Set guess values for primitives after implicit step based on optical depth
 	#if(NEWMAN)
@@ -494,13 +494,18 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[1+TWO_T+P_NUM], dpb,  dEdpb_inv[1 + TWO_T + P_NUM][1 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
-	double T_GAS, dK_dS, norm, D;
+	double dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;	
 	#if(TWO_T)
 	int flag_floor_kappa;
-	double gamma_g, ue, ui, Theta_e, Theta_i;
+	double gamma_g, ue, ui;
+		#if(!CONSTANTGAMMA)
+		double Theta_e, Theta_i;
+		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set error to previous value
@@ -1104,13 +1109,18 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb,  dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
-	double T_GAS, dK_dS, norm, D;
+	double dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0, count_increase2 = 0;
 	#if(TWO_T)
 	int flag_floor_kappa;
-	double gamma_g, ue, ui, Theta_e, Theta_i;
+	double gamma_g, ue, ui;
+		#if(VARGAMMA)
+		double Theta_i, Theta_e;
+		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set error to previous value
@@ -1348,8 +1358,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dEdpb_inv[4][i - UU] = (E_new[4] - E_old[4]) / dpb;
 				#endif
 				#if(P_NUM)
-				T_GAS = 1.0;// (GAMMA - 1.)* pb_new[UU] / pb_new[RHO];
-				E_new[4 + TWO_T] = T_GAS  * (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
+				E_new[4 + TWO_T] = (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
 				dEdpb_inv[4 + TWO_T][i - UU] = (E_new[4 + TWO_T] - E_old[4 + TWO_T]) / dpb;
 				#endif
 				if (do_entropy == 1) {
@@ -1790,12 +1799,17 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, D, tol, dK_dS;
+	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad=0, count_increase = 0;
 	#if(TWO_T)
-	double gamma_g, Theta_i, Theta_e;
+	double gamma_g;
+		#if(VARGAMMA)
+		 double Theta_i, Theta_e;
+		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set error to 0
@@ -2411,12 +2425,17 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR],  pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol, dK_dS;
+	double  norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, count_increase = 0,  flag_rad =0;
 	#if(TWO_T)
-	double gamma_g, Theta_i, Theta_e;
+	double gamma_g;
+		#if(VARGAMMA)
+		 double Theta_i, Theta_e;
+		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set error to 0
@@ -3027,12 +3046,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], U_prev_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol, dK_dS;
+	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
 	#if(TWO_T)
-	double gamma_g, Theta_e, Theta_i;
+	double gamma_g;
+		#if(!CONSTANTGAMMA)
+		double Theta_e, Theta_i;
+		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set variables to previously iterated values
@@ -3627,12 +3651,15 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 #endif
 ) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
-	double T_GAS, norm, norm_S, D, tol, dK_dS;
+	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, flag, n_iter_jacob, count_increase = 0, count_increase_gas = 0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, flag, n_iter_jacob, count_increase = 0;
 	#if(TWO_T)
-	double gamma_g, Theta_e, Theta_i;
+	double gamma_g;
+		#if(!CONSTANTGAMMA)
+		double Theta_e, Theta_i;
+		#endif
 	#endif
 
 	//Set variables to previously iterated values
@@ -4265,11 +4292,11 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	int i, returnval = 0;
 	#if(P_NUM)
 	double Tr;
-	#endif
-	#if(!CALC_MDOT)
-	double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
-	#else
-	double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+		#if(!CALC_MDOT)
+		double energy_density_scale = MASS_DENSITY_SCALE * C_CGS * C_CGS;
+		#else
+		double energy_density_scale = mass_density_scale * C_CGS * C_CGS;
+		#endif
 	#endif
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
@@ -4394,3 +4421,4 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 	return(returnval);
 }
+#endif
