@@ -96,7 +96,7 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (1)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
@@ -125,7 +125,7 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (0)
+#define DO_YE (1)
 #define DONUCLEAR (0)
 #endif
 
@@ -249,9 +249,9 @@ Numerical Parameters section
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 56
-#define BS_2 48
-#define BS_3 48
+#define BS_1 48
+#define BS_2 32
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -286,7 +286,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 1
+#define NORMALIZE_DIVB 0
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300

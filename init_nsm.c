@@ -319,7 +319,7 @@ void init_postmerger() {
 	double Tnu;
 	double ucon[NDIM], utcon[NDIM];
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, mudt, prim)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z,k, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, mudt, prim)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
