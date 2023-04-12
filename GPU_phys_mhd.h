@@ -591,7 +591,21 @@ __device__ double calc_entropy(double* pr
 ) {
 	double entr;
 	#if(DOHELM)
-
+		#if(DOHELM_TEMPERATURE)
+		eos_mode_rhotemp_entr(gpu_eos_table, pr[RHO], pr[UU],
+			#if (DO_YE)
+			pr[YE],
+			#else 
+			1.0,
+			#endif
+			& entr
+			#if (DONUCLEAR)
+			, pr[XALPHA], pr[XATM]
+			#endif
+		);
+		#else
+			eos_mode_rhou_entr(gpu_eos_table, pr, &entr);
+		#endif
 	#elif(TWO_T)
 		#if(0)
 		double Theta;
@@ -622,7 +636,6 @@ __device__ double calc_entropy(double* pr
 	return entr;
 }
 
-
 __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q
 	#if(CALC_MDOT)
 	, double magnetic_density_scale
@@ -643,7 +656,6 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 	#endif
 	return;
 }
-
 
 /* find contravariant four-velocity */
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon)
@@ -741,24 +753,24 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
     #if (DOHELM)
     // 1. Helmholtz EOS
     double xpres;
-    #if (DOHELM_TEMPERATURE)
-    double u;
-    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
-        #if (DO_YE)
-        pr[YE],
-        #else 
-        1.0,
-        #endif
-        &xpres, &u, &cs2
-        #if (DONUCLEAR)
-        , pr[XALPHA], pr[XATM]
-        #endif
-    );
-    w = pr[RHO] + u + xpres;
-    #else
-    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &xpres, &cs2);
-    w = pr[RHO] + pr[UU] + xpres;
-    #endif
+		#if (DOHELM_TEMPERATURE)
+		double u;
+		eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+			#if (DO_YE)
+			pr[YE],
+			#else 
+			1.0,
+			#endif
+			&xpres, &u, &cs2
+			#if (DONUCLEAR)
+			, pr[XALPHA], pr[XATM]
+			#endif
+		);
+		w = pr[RHO] + u + xpres;
+		#else
+		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &xpres, &cs2);
+		w = pr[RHO] + pr[UU] + xpres;
+		#endif
     #else
     // 2. Ideal gas EOS
 	#if AMD

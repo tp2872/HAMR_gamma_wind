@@ -114,9 +114,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
             struct of_state_nu q_nu[NU_SPECIES];
             for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(pf, &geom, &q_nu[sp], sp);
             primtoflux_nu(pf, q_nu, 0, &geom, U);
-            #if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-            //primtoflux_nu_number(pf, q.ucon, q.ucov, 0, &geom, U);
-            #endif
+				#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
+				//primtoflux_nu_number(pf, q.ucon, q.ucov, 0, &geom, U);
+				#endif
             #endif
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++) {
@@ -346,7 +346,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						#endif
 						#if(TWO_T)
 						, fel
-					#endif
+						#endif
 					);
 					#endif
 				#endif
@@ -355,9 +355,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
-						, gpu_eos_table
-						#endif
-						#if (DOHELM)
 						, gpu_eos_table
 						#endif
 						#if(TWO_T)
