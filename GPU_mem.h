@@ -150,7 +150,7 @@ void set_arrays_GPU(int n, int device){
 	gpuMalloc((void**)&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	#endif
 	gpuMalloc((void**)&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	#if(DO_IMEX && RAD_M1)
+	#if(DO_IMEX && (RAD_M1 || NEUTRINOS_M1))
 	gpuMalloc((void**)&BufferU_n[nl[n]], NPR * ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferU_0[nl[n]], NPR * ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferU_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
