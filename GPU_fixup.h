@@ -424,7 +424,6 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 )
 {
-#if(DO_IMEX)
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
 	if (global_id < BS_2*BS_3){
@@ -672,7 +671,6 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 		}
 	}
-#endif
 }
 
 __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn)
@@ -834,7 +832,6 @@ __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage)
 		}
 	}
 }
-
 
 //Apply floors to a cell
 __device__ int fixup_cell(double* pf, double r, struct of_geom* geom

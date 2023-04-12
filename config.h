@@ -112,7 +112,7 @@ Physical Parameters section
 #define NEUTRINOS_DEBUG_NFLAGS (0)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
-#define DANAT_GDET_INTERP (0)
+#define DANAT_GDET_INTERP (1)
 #define NU_INNER_STOP (1)
 #define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
 #define NU_PREDICTOR (0)

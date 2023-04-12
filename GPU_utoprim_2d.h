@@ -420,12 +420,12 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
             #if (DO_YE)
             , ye
             #endif
+            #if(DONUCLEAR)
+            , x_alpha, x_atm
+            #endif
             #if(TWO_T)
             , S
             , fel
-            #endif
-            #if(DONUCLEAR)
-            , x_alpha, x_atm
             #endif
         );  /* returns with new dx, f, df */
 
