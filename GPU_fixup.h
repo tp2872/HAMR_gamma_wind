@@ -974,10 +974,18 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		}
 		#endif
 	#else
-	if (pf[UU] < uuflr) {
-		pf[UU] = uuflr;
-		dofloor = 1;
-	}
+		#if(DOHELM_TEMPERATURE)
+		if (u < uuflr) {
+			u = uuflr;
+			dofloor = 1;
+		}
+		#else
+		if (u < uuflr) {
+			pf[UU] = uuflr;
+			u = uuflr;
+			dofloor = 1;
+		}
+		#endif
 	#endif
 
 	//Floor on radiation energy density
