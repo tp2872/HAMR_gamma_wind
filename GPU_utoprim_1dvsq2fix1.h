@@ -192,6 +192,11 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 			, x_alpha, x_atm
 			#endif
 		);
+		#else
+		double prim_tmp[UU + 1];
+		prim_tmp[RHO] = rho0;
+		prim_tmp[UU] = K_atm;
+		eos_mode_rhos_upres(gpu_eos_table, prim_tmp, &p, &u, &dpdrho, &dudrho);
 		#endif
 	#elif(TWO_T)
 	double gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);

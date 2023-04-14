@@ -96,7 +96,7 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (1)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
@@ -134,7 +134,7 @@ Physical Parameters section
     #if (NEUTRINOS_M1)
     #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
-    #define DOHELM_TEMPERATURE (1) 
+    #define DOHELM_TEMPERATURE (0) 
     #endif
 #else
     #define DOHELM_TEMPERATURE (0) 
@@ -639,7 +639,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
-#if(NEUTRINOS_M1)
+#if(NEUTRINOS_M1 || DOHELM)
     #if (RADM1_SUBCYCLING)
         #define MASS_DENSITY_SCALE (0.0000001)
     #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)

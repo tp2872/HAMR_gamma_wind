@@ -37,8 +37,6 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	return;
 }
 
-// EOS function calls
-
 #if (EOS_LINEAR)
 __device__ void interp_eostable_linear(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double* free, double* df_d, double* df_t, double* df_tt, double* df_dt, double* dpepdd, double* etaele) {
     int iat, jat;

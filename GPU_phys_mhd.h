@@ -409,34 +409,35 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 ) {
 	int j, k;
 	double mhd[NDIM];
-	double P, w, bsq, eta, ptot;
+	double P, u, w, bsq, eta, ptot;
+	u = pr[UU];
 
 	/*Calculate misc quantities*/
     // EOS-specific calls:
     #if (DOHELM)
-    double cs2_helm;
-    #if (DOHELM_TEMPERATURE)
-    eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
-        #if (DO_YE)
-        pr[YE],
-        #else 
-        1.0,
-        #endif
-        &P, &(pr[UU]), &cs2_helm
-        #if (DONUCLEAR)
-        , pr[XALPHA], pr[XATM]
-        #endif
-    );
-    #else
-    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &P, &cs2_helm);
-    #endif
+		double cs2_helm;
+		#if (DOHELM_TEMPERATURE)
+		eos_mode_rhotemp_pres_u_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+			#if (DO_YE)
+			pr[YE],
+			#else 
+			1.0,
+			#endif
+			&P, &u, &cs2_helm
+			#if (DONUCLEAR)
+			, pr[XALPHA], pr[XATM]
+			#endif
+		);
+		#else
+		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &P, &cs2_helm);
+		#endif
     #elif(TWO_T)
-	P = (gamma_g - 1.) * pr[UU];
+	P = (gamma_g - 1.) * u;
     #else
-	P = (GAMMA - 1.) * pr[UU];
+	P = (GAMMA - 1.) * u;
     #endif
 
-	w = pr[RHO] + P + pr[UU];
+	w = pr[RHO] + P + u;
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
 	#if(AMD)

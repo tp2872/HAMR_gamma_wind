@@ -138,3 +138,10 @@ __device__ void nse_nucevol(double rho, double tgas, double ye, double* x_alpha,
     return;
 }
 #endif
+
+// EOS function calls
+__device__ void validate_ye(double* ye) {
+    if (*ye < 0.0) *ye = 0.0;
+    if (*ye > 1.0) *ye = 1.0;
+    return;
+}
