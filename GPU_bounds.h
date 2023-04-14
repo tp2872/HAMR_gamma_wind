@@ -321,8 +321,12 @@ __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ 
 			pv[U1 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[U1 * (ksize)+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			pv[U3 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[U3 * (ksize)+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 
-			#if DOKTOT
+			#if(DOKTOT)
 			pv[KTOT*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			#endif
+
+			#if(DO_YE)
+			pv[YE*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[YE*(ksize)+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
 
 			#if(TWO_T)
@@ -417,6 +421,10 @@ __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ 
 
 			#if DOKTOT
 			pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			#endif
+
+			#if(DO_YE)
+			pv[YE * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[YE * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			#endif
 
 			#if(TWO_T)
@@ -854,9 +862,11 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 	// Theta, phi velocity
 	pr_ghost[B2] = pr_B[B2] * (1. - dr_over_r);
 	pr_ghost[B3] = pr_B[B3] * (1. - dr_over_r);
-
+	#if(DO_YE)
 	pr_ghost[YE] = pr_B[YE] * gdet_B / gdet_ghost;
+	#endif
 
+	#if(NEUTRINOS_M1)
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
 		pr_ghost[index_nu(UU_NU, sp)] = pr_B[index_nu(UU_NU, sp)] * gdet_B / gdet_ghost;
 		pr_ghost[index_nu(U1_NU, sp)] = pr_B[index_nu(U1_NU, sp)] * (1. + dr_over_r);
@@ -864,6 +874,6 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 		pr_ghost[index_nu(U3_NU, sp)] = pr_B[index_nu(U3_NU, sp)] * (1. - dr_over_r);
 		pr_ghost[index_nu(NUMBER_NU, sp)] = pr_B[index_nu(NUMBER_NU, sp)] * gdet_B / gdet_ghost;
 	}
-
+	#endif
 #endif
 }
