@@ -1134,7 +1134,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#if (DOHELM_TEMPERATURE)
 			wold = pf_prefloor[RHO] + prefloor_u + xP;
 			#else
-			eos_mode_rhou_pres(gpu_eos_table, pf_prefloor, &xP);
+			eos_mode_rhou_pres(gpu_eos_table, pf_prefloor[RHO], pf_prefloor[UU]
+				#if (DO_YE)
+				, pf[YE]
+				#else
+				, 1.0
+				#endif
+				, &xP);
 			wold = pf_prefloor[RHO] + pf_prefloor[UU] + xP;
 			#endif
 		#elif(TWO_T)
@@ -1165,7 +1171,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			);
 			wnew = pf[RHO] + u + xP;
 			#else
-			eos_mode_rhou_pres(gpu_eos_table, pf, &xP);
+			eos_mode_rhou_pres(gpu_eos_table, pf[RHO], pf[UU]
+				#if (DO_YE)
+				, pf[YE]
+				#else
+				, 1.0
+				#endif
+				, &xP);
 			wnew = pf[RHO] + pf[UU] + xP;
 			#endif
 		#elif(TWO_T)

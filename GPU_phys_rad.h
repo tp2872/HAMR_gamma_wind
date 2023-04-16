@@ -181,7 +181,13 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, struct of_state
 	//Entropy source term
 	#if(DOKTOT)
 		#if (DOHELM)
-		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &dK_dS);
+		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU],
+			#if(DO_YE)
+			ph[YE],
+			#else
+			1.0,
+			#endif
+			&dK_dS);
 		#elif(TWO_T)
 			#if(0)
 			double Theta, C;
@@ -301,7 +307,13 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		#endif
 	);
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], 
+		#if(DO_YE)
+		ph[YE],
+		#else
+		1.0,
+		#endif
+		&Te);
 	#elif(TWO_T)
 	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
@@ -440,7 +452,13 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	);
 
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, pr[RHO], pr[UU], &Te);
+	eos_mode_rhou_temp(gpu_eos_table, pr[RHO], pr[UU], 
+		#if(DO_YE)
+		pr[YE],
+		#else
+		1.0,
+		#endif
+		&Te);
 	#elif(TWO_T)
 	Te = calc_Te(pr) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else

@@ -133,7 +133,6 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 
     // EOS-specific calls:
     #if (DOHELM)
-    double p_temp[UU + 1];
     // 1. Helmholtz EOS
     // -- to get min. pressure for a given density, set T = T_min
     double xpres;
@@ -193,8 +192,6 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
         // EOS-specific calls:
         #if (DOHELM)
         // 1. Helmholtz EOS
-        p_temp[RHO] = rho0;
-        p_temp[UU] = w - rho0;
         #if (DOHELM_TEMPERATURE)
         eos_mode_rhotemp_w_pres_u(gpu_eos_table, rho0, &prim[UU], 
             #if(DO_YE)
@@ -208,7 +205,13 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
             #endif
         );
         #else
-        eos_mode_rhow_pres_u(gpu_eos_table, p_temp, &xpres, &u);
+        eos_mode_rhow_pres_u(gpu_eos_table, rho0, w-rho0, 
+            #if (DO_YE)
+			ye,
+			#else 
+			1.0,
+			#endif
+            &xpres, &u);
         #endif
         #else
             // Ideal gas EOS
@@ -284,9 +287,13 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
             #endif
         );
         #else
-        p_temp[RHO] = rho0;
-        p_temp[UU] = w - rho0;
-        eos_mode_rhow_pres_u (gpu_eos_table, prim, &p_new, &u);
+        eos_mode_rhow_pres_u (gpu_eos_table, rho0, w-rho0, 
+            #if (DO_YE)
+			ye,
+			#else 
+			1.0,
+			#endif
+            &p_new, &u);
         #endif
         #else
             #if(TWO_T)

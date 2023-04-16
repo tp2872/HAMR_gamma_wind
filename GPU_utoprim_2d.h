@@ -178,7 +178,6 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // EOS-specific calls:
     #if (DOHELM)
     // 1. Helmholtz EOS
-    prim[RHO] = rho0;
     #if (DOHELM_TEMPERATURE)
     eos_mode_rhotemp_pres_u(gpu_eos_table, rho0, prim[UU],
         #if (DO_YE)
@@ -192,7 +191,13 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
         #endif
     );
     #else
-    eos_mode_rhou_pres (gpu_eos_table, prim, &p);
+    eos_mode_rhou_pres (gpu_eos_table, rho0, u
+        #if (DO_YE)
+		, ye
+		#else
+		, 1.0
+		#endif
+        , &p);
     #endif
     #elif(TWO_T)
     gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);
@@ -271,7 +276,6 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // EOS-specific calls:
     #if (DOHELM)
 		// 1. Helmholtz EOS
-		prim[RHO] = rho0;
 		#if (DOHELM_TEMPERATURE)
 		eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &prim[UU],
 			#if (DO_YE)
@@ -285,8 +289,13 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 			#endif
 		);
 		#else
-		prim[UU] = w - rho0;
-		eos_mode_rhow_pres_u (gpu_eos_table, prim, &p, &u);
+		eos_mode_rhow_pres_u (gpu_eos_table, rho0, w-rho0, 
+            #if (DO_YE)
+			ye,
+			#else 
+			1.0,
+			#endif
+            &p, &u);
 		#endif
     #elif(TWO_T)
     gamma_g = set_S_w(S, rho0, w
@@ -339,7 +348,6 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
         prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / W);
     }
     #endif
-
     /* done! */
     return(retval);
 }
@@ -518,10 +526,13 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 			#endif
 		);
 		#else
-		double prim[UU + 1];
-		prim[RHO] = rho;
-		prim[UU] = (x[0]*gtmp) - rho;
-		eos_mode_rhow_pres_dpdrho_dpde_d(gpu_eos_table, prim, &p_tmp, &dpdrho, &dpde_d);
+		eos_mode_rhow_pres_dpdrho_dpde_d(gpu_eos_table, rho, (x[0] * gtmp) - rho, 
+            #if (DO_YE)
+			ye,
+			#else
+			1.0, 
+			#endif
+            &p_tmp, &dpdrho, &dpde_d);
 		#endif
 		#if (inversion_w_edits)
 		// Danat: edit (DIMARK)

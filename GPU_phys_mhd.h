@@ -65,7 +65,13 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
         #endif
     );
     #else
-    eos_mode_rhou_pres(gpu_eos_table, ph, &P);
+    eos_mode_rhou_pres(gpu_eos_table, ph[RHO], ph[UU]
+		#if (DO_YE)
+		, ph[YE]
+		#else
+		, 1.0
+		#endif
+		, &P);
     #endif
     #elif(TWO_T)
     P = (gamma_g - 1.) * ph[UU];
@@ -381,7 +387,13 @@ __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mh
 			#endif
 		);
 		#else
-		eos_mode_rhou_pres (gpu_eos_table, pr, &P);
+		eos_mode_rhou_pres (gpu_eos_table, r, u
+			#if (DO_YE)
+			, pr[YE]
+			#else
+			, 1.0
+			#endif
+			, &P);
 		#endif
     #elif(TWO_T)
 	P = (gamma_g - 1.) * u;
@@ -429,7 +441,13 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 			#endif
 		);
 		#else
-		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &P, &cs2_helm);
+		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+			#if (DO_YE)
+			pr[YE], 
+			#else
+			1.0,
+			#endif
+			&P, &cs2_helm);
 		#endif
     #elif(TWO_T)
 	P = (gamma_g - 1.) * u;
@@ -599,13 +617,19 @@ __device__ double calc_entropy(double* pr
 			#else 
 			1.0,
 			#endif
-			& entr
+			&entr
 			#if (DONUCLEAR)
 			, pr[XALPHA], pr[XATM]
 			#endif
 		);
 		#else
-			eos_mode_rhou_entr(gpu_eos_table, pr, &entr);
+			eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU],
+				#if (DO_YE)
+				pr[YE],
+				#else 
+				1.0,
+				#endif
+				&entr);
 		#endif
 	#elif(TWO_T)
 		#if(0)
@@ -769,7 +793,13 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
 		);
 		w = pr[RHO] + u + xpres;
 		#else
-		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &xpres, &cs2);
+		eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+			#if (DO_YE)
+			pr[YE], 
+			#else
+			1.0,
+			#endif	
+			&xpres, &cs2);
 		w = pr[RHO] + pr[UU] + xpres;
 		#endif
     #else
