@@ -134,7 +134,7 @@ Physical Parameters section
     #if (NEUTRINOS_M1)
     #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
-    #define DOHELM_TEMPERATURE (1) 
+    #define DOHELM_TEMPERATURE (0) 
     #endif
 #else
     #define DOHELM_TEMPERATURE (0) 
@@ -639,6 +639,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
+<<<<<<< HEAD
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
@@ -647,6 +648,28 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #else
 #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
 #endif
+=======
+#if(NEUTRINOS_M1 || DOHELM)
+    #if (RADM1_SUBCYCLING)
+        #define MASS_DENSITY_SCALE (0.0000001)
+    #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+        #if (BHNSQ2)
+        #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+        #else
+        #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+        #endif
+    #else
+        #if (WHICHPROBLEM == COLLAPSAR)
+            #if (COLLAPSAR_GR1D)
+            #define MASS_DENSITY_SCALE (604401395800000.0)
+            #else
+            #define MASS_DENSITY_SCALE (244475423533.749)
+            #endif
+        #else
+        #define MASS_DENSITY_SCALE (1e12)
+        #endif
+    #endif
+>>>>>>> origin/RHAMR_CUDA_HIP_danat
 #else
 #if (WHICHPROBLEM == COLLAPSAR)
 #if (COLLAPSAR_GR1D)

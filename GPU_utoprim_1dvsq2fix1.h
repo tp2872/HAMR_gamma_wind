@@ -192,6 +192,14 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 			, x_alpha, x_atm
 			#endif
 		);
+		#else
+		eos_mode_rhos_upres(gpu_eos_table, rho0, K_atm,
+			#if (DO_YE)
+			ye, 
+			#else
+			1.0,
+			#endif
+			&p, &u, &dpdrho, &dudrho);
 		#endif
 	#elif(TWO_T)
 	double gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);
@@ -553,10 +561,13 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 			#endif
 		);
 		#else
-		double prim_tmp[UU + 1];
-		prim_tmp[RHO] = *rho;
-		prim_tmp[UU] = K_atm;
-		eos_mode_rhos_upres(gpu_eos_table, prim_tmp, p, u, &dpdrho, &dudrho);
+		eos_mode_rhos_upres(gpu_eos_table, *rho, K_atm, 
+			#if (DO_YE)
+			ye, 
+			#else
+			1.0,
+			#endif
+			p, u, &dpdrho, &dudrho);
 		#endif
 	#elif(TWO_T)
 		//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
@@ -743,10 +754,13 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
         #endif
     );
     #else
-    double prim_tmp[UU + 1];
-    prim_tmp[RHO] = D * sqrt(gtmp);
-    prim_tmp[UU] = K_atm;
-    eos_mode_rhos_upres(gpu_eos_table, prim_tmp, &p, &u, &dpdrho, &dudrho);
+    eos_mode_rhos_upres(gpu_eos_table, D * sqrt(gtmp), K_atm,
+		#if (DO_YE)
+		ye, 
+		#else
+		1.0,
+		#endif
+		&p, &u, &dpdrho, &dudrho);
     #endif
 
     *W = (D * sqrt(gtmp) + u + p) / gtmp;

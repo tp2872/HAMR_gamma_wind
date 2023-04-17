@@ -571,14 +571,14 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
 #endif
 );
 __device__ void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
-__device__ void eos_mode_rhou_pres(const  double* __restrict__ gpu_eos_table, double* prim, double* pres);
-__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double* prim, double* pres, double* cs2);
-__device__ void eos_mode_rhow_pres_dpdrho_dpde_d(const  double* __restrict__ gpu_eos_table, double* prim, double* pres, double* dpdrho, double* dpde_d);
-__device__ void eos_mode_rhow_pres_u(const  double* __restrict__ gpu_eos_table, double* prim, double* pres, double* u);
-__device__ void eos_mode_rhotemp_pres_min(const  double* __restrict__ gpu_eos_table, double den, double ye, double* pres);
-__device__ void eos_mode_rhos_upres(const  double* __restrict__ gpu_eos_table, double *prim, double* pres, double* u, double* dpdrho, double* dudrho); // DI_helmT
-__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double* prim, double* entr);
-__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double* prim, double* temp);
+__device__ void eos_mode_rhou_pres(const  double* __restrict__ gpu_eos_table, double rho, double u_goal, double ye, double* pres);
+__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double rho, double u_goal, double ye, double* pres, double* cs2);
+__device__ void eos_mode_rhow_pres_dpdrho_dpde_d(const  double* __restrict__ gpu_eos_table, double rho, double w_goal, double ye, double* pres, double* dpdrho, double* dpde_d);
+__device__ void eos_mode_rhow_pres_u(const  double* __restrict__ gpu_eos_table, double rho, double w_goal, double ye, double* pres, double* u);
+__device__ void eos_mode_rhotemp_pres_min(const  double* __restrict__ gpu_eos_table, double rho, double ye, double* pres);
+__device__ void eos_mode_rhos_upres(const  double* __restrict__ gpu_eos_table, double rho, double s_goal, double ye, double* pres, double* u, double* dpdrho, double* dudrho);
+__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double rho, double u_goal, double ye, double* entr);
+__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double rho, double u_goal, double ye, double* temp);
 
 // DITEMP: eos wrapper functions 
 #if (DOHELM_TEMPERATURE)

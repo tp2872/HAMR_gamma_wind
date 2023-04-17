@@ -1,4 +1,11 @@
 // EOS function calls
+
+__device__ void validate_ye(double* ye) {
+    if (*ye < 0.0) *ye = 0.0;
+    if (*ye > 1.0) *ye = 1.0;
+    return;
+}
+
 #if (DOHELM)
 __device__ void validate_T(double* temp) {
 	if (*temp < eos_temp_low) *temp = eos_temp_low;
@@ -673,15 +680,8 @@ __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_der
 }
 
 
-__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double* prim, double *pres) {
+__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double ye, double *pres) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
-    double u_goal = prim[UU];
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:
@@ -781,15 +781,8 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
     #endif
 }
 
-__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double* prim, double *pres, double *cs2) {
+__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double ye, double *pres, double *cs2) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
-    double u_goal = prim[UU];
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:
@@ -890,17 +883,11 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
     #endif
 }
 
-__device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double* prim, double *pres, double *dpdrho, double *dpde_d) {
+__device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double ye, double *pres, double *dpdrho, double *dpde_d) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
     double deni = 1.0 / den;
-    // prim[UU] is w - rho for this function only
-    double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
+    // w_goal is w - rho
+    double xenth = w_goal * deni; // Helmholtz EOS takes non-relativistic enthalpy
     // check if the input is valid:
     #if (enable_input_check)
     if (prim[UU] < 0.0) {
@@ -913,7 +900,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
  
     // initial guess : temperature
     double temp_ini_guess;
-    eos_NR_temp_guess(den, prim[UU], &temp_ini_guess);
+    eos_NR_temp_guess(den, w_goal, &temp_ini_guess);
         
     double temp_new, temp_old;
     double dpdt, dedt, dhdt;
@@ -998,7 +985,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 
     #if (revert_gamma)
     if (error_h > EOS_TOL) {
-        *pres = (GAMMA - 1.0) * (prim[UU]) / (GAMMA);
+        *pres = (GAMMA - 1.0) * w_goal / (GAMMA);
         *dpdrho = 0.0;
         *dpde_d = (GAMMA - 1.0);
         error_h = 10.0 * EOS_TOL;
@@ -1011,18 +998,12 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     #endif
 }
 
-__device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double* prim, double *pres, double *u) {
+__device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double ye, double *pres, double *u) {
     #if (DOHELM_TEMPERATURE == 0)
     // implementation in Newman-Hamlin inversion
-    double den = prim[RHO];
     double deni = 1.0 / den;
-    // prim[UU] is w - rho for this function only
-    double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
+    // w_goal is w - rho
+    double xenth = w_goal * deni; // Helmholtz EOS takes non-relativistic enthalpy
     // check if the input is valid:
     #if (enable_input_check)
     if (prim[UU] < 0.0) {
@@ -1034,7 +1015,7 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
 
     // initial guess : temperature
     double temp_ini_guess;
-    eos_NR_temp_guess(den, prim[UU], &temp_ini_guess);
+    eos_NR_temp_guess(den, w_goal, &temp_ini_guess);
     
     double temp_new, temp_old;
     double dhdtemp;
@@ -1117,7 +1098,7 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
 
     #if (revert_gamma)
     if (error_h > EOS_TOL) {
-        *u = (prim[UU]) / GAMMA;
+        *u = (w_goal) / GAMMA;
         *pres = *u * (GAMMA - 1.);
         error_h = 10.0 * EOS_TOL;
     }
@@ -1151,17 +1132,9 @@ __device__ void get_sackur_tetrode_entropy(double den, double temp, double abar,
 }
 
 // Entropy inversion
-__device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, double *prim, double *pres, double* u, double *dpdrho, double *dudrho) {
+__device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, double den, double entr_goal, double ye, double *pres, double* u, double *dpdrho, double *dudrho) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
     double deni = 1.0 / den;
-    // prim[UU] is K_atm for this function only
-    double entr_goal = prim[UU];
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
     // check if the input is valid:
     #if (enable_input_check)
     /*if (prim[UU] < 0.0) {
@@ -1269,15 +1242,8 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 }
 
 
-__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double* prim, double* entr) {
+__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double ye, double* entr) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
-    double u_goal = prim[UU];
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:
@@ -1381,15 +1347,8 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
     #endif
 }
 
-__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double* prim, double* temp) {
+__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double ye, double* temp) {
     #if (DOHELM_TEMPERATURE == 0)
-    double den = prim[RHO];
-    double u_goal = prim[UU];
-    #if (DO_YE)
-    double ye = prim[YE];
-    #else 
-    double ye = 1.0;
-    #endif
     double ener_goal = u_goal / den;
     
     // check if the input is valid:

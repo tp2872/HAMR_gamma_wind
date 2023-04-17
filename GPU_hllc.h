@@ -930,7 +930,13 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
         #endif
     );
     #else
-    eos_mode_rhou_pres(gpu_eos_table, pr, &P);
+    eos_mode_rhou_pres(gpu_eos_table, pr[RHO], pr[UU], 
+		#if (DO_YE)
+        pr[YE],
+        #else 
+        1.0,
+        #endif
+		&P);
     #endif
     w = pr[RHO] + u + P;
     #else
@@ -968,7 +974,13 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 				#endif
 			);
 			#else
-			eos_mode_rhou_entr(gpu_eos_table, pr, &xentr);
+			eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU],
+				#if (DO_YE)
+				pr[YE],
+				#else 
+				1.0,
+				#endif
+				&xentr);
 			#endif
 		flux[KTOT] = flux[RHO] * xentr;
 		#else 
@@ -1015,7 +1027,13 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
     );
     w = pr[RHO] + u + xpres;
     #else
-    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr, &xpres, &cs2);
+    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], 
+		#if (DO_YE)
+        pr[YE],
+        #else 
+        1.0,
+        #endif
+		&xpres, &cs2);
     w = pr[RHO] + pr[UU] + xpres;
     #endif
     #else
