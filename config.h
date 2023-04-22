@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -71,7 +71,7 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (1000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -96,7 +96,7 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (1)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
@@ -132,7 +132,7 @@ Physical Parameters section
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
     #if (NEUTRINOS_M1)
-    #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+    #define DOHELM_TEMPERATURE (0) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
     #define DOHELM_TEMPERATURE (0) 
     #endif
@@ -244,14 +244,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
-#define NB_2 2
+#define NB_1 1
+#define NB_2 1
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 32
-#define BS_3 32
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -295,7 +295,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -308,16 +308,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (1600)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -639,16 +639,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
-<<<<<<< HEAD
-#if (RADM1_SUBCYCLING)
-#define MASS_DENSITY_SCALE (0.0000001)
-#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-#if (BHNSQ2)
-#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
-#else
-#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
-#endif
-=======
+
 #if(NEUTRINOS_M1 || DOHELM)
     #if (RADM1_SUBCYCLING)
         #define MASS_DENSITY_SCALE (0.0000001)
@@ -669,7 +660,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
         #define MASS_DENSITY_SCALE (1e12)
         #endif
     #endif
->>>>>>> origin/RHAMR_CUDA_HIP_danat
 #else
 #if (WHICHPROBLEM == COLLAPSAR)
 #if (COLLAPSAR_GR1D)

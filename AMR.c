@@ -2398,8 +2398,12 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 				prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + i % (1 + ref_1)) * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + j % (1 + ref_2)) * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + z % (1 + ref_3)) * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 			}
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO]);
-			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU]);
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU]);		
 
+
+			#if(DO_YE)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][YE] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][YE]);
+			#endif
 			#if(TWO_T)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE]);
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI]);
@@ -3761,7 +3765,7 @@ double calc_refcrit(int n){
 					ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 				}
 				//Do not derefine base grid
-				if ((block[n][AMR_LEVEL1] == BASE_LEVELS)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+				if (block[n][AMR_LEVEL1] == BASE_LEVELS) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 			}
 			else {
 				ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);

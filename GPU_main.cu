@@ -2136,9 +2136,9 @@ void GPU_read(int n)
 	gpuMemcpyAsync(psh_1[nl[n]], Bufferpsh_1[nl[n]], (int)(3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif
 	#endif
-	gpuMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#if (NEUTRINOS_DEBUG)
-	gpuMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(allflags_NU_GPU[nl[n]], Bufferallflags_NU[nl[n]], (double)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif
 	gpuDeviceSynchronize();
 
