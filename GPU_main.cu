@@ -81,7 +81,7 @@ double check = 1.0;
 #if(DOHELM)
 void eos_init_GPU(int n) {
 	int i, j;
-	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
+	int eos_offset = LOCAL_WORK_SIZE - (21 * EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
@@ -89,8 +89,8 @@ void eos_init_GPU(int n) {
 	cudaSetDevice(n);
 
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
-	gpuMallocHost((void**)&eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
-	gpuMalloc((void**)&GPU_eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
+	gpuMallocHost((void**)&eos_table[n], (EOSIMAX * EOSJMAX * 21 + gpu_offset) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	gpuMalloc((void**)&GPU_eos_table[n], (EOSIMAX * EOSJMAX * 21 + gpu_offset) * sizeof(double)); // same here regarding the OFFSET
 
 	// Check for errors: EOS array allocation
 	status = gpuGetLastError();
@@ -100,36 +100,36 @@ void eos_init_GPU(int n) {
 	// fill in the host array
 	for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++) {
 		// helmholtz free energy table (total: 9 items)
-		eos_table[n][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
-		eos_table[n][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
-		eos_table[n][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
-		eos_table[n][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
-		eos_table[n][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
-		eos_table[n][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
-		eos_table[n][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
-		eos_table[n][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
-		eos_table[n][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
+		eos_table[n][0 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_f[i * EOSJMAX + j];
+		eos_table[n][1 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fd[i * EOSJMAX + j];
+		eos_table[n][2 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_ft[i * EOSJMAX + j];
+		eos_table[n][3 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fdd[i * EOSJMAX + j];
+		eos_table[n][4 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_ftt[i * EOSJMAX + j];
+		eos_table[n][5 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fdt[i * EOSJMAX + j];
+		eos_table[n][6 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fddt[i * EOSJMAX + j];
+		eos_table[n][7 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fdtt[i * EOSJMAX + j];
+		eos_table[n][8 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_fddtt[i * EOSJMAX + j];
 
 		// pressure derivative with density table (total: 4 items)
-		eos_table[n][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
-		eos_table[n][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
-		eos_table[n][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
-		eos_table[n][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
+		eos_table[n][9 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_dpdf[i * EOSJMAX + j];
+		eos_table[n][10 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_dpdfd[i * EOSJMAX + j];
+		eos_table[n][11 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_dpdft[i * EOSJMAX + j];
+		eos_table[n][12 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_dpdfdt[i * EOSJMAX + j];
 
 		// electron chemical potential table (total: 4 items)
-		eos_table[n][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
-		eos_table[n][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
-		eos_table[n][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
-		eos_table[n][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
+		eos_table[n][13 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_ef[i * EOSJMAX + j];
+		eos_table[n][14 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_efd[i * EOSJMAX + j];
+		eos_table[n][15 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_eft[i * EOSJMAX + j];
+		eos_table[n][16 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_efdt[i * EOSJMAX + j];
 
 		// number denisty table (total: 4 items)
-		eos_table[n][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
-		eos_table[n][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
-		eos_table[n][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
-		eos_table[n][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
+		eos_table[n][17 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_xf[i * EOSJMAX + j];
+		eos_table[n][18 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_xfd[i * EOSJMAX + j];
+		eos_table[n][19 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_xft[i * EOSJMAX + j];
+		eos_table[n][20 * (EOSIMAX * EOSJMAX) + i * EOSJMAX + j + eos_offset] = eos_xfdt[i * EOSJMAX + j];
 	}
 
-	gpuMemcpy(GPU_eos_table[n], eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), gpuMemcpyHostToDevice);
+	gpuMemcpy(GPU_eos_table[n], eos_table[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double), gpuMemcpyHostToDevice);
 	gpuDeviceSynchronize();
 	status = gpuGetLastError();
 	if (gpuSuccess != status) fprintf(stderr, "Error in eos_init_GPU: %d\n", status);
