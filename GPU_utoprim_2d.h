@@ -53,7 +53,6 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
         #endif
         #if (DO_YE)
         , ye_new
-        //, prim[YE]
         #endif
 		#if(DONUCLEAR)
         , prim[XALPHA], prim[XATM]
@@ -171,7 +170,9 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // Always calculate rho from D and gamma so that using D in EOS remains consistent
     //   i.e. you don't get positive values for dP/d(vsq) .
     rho0 = D / gamma;
-    #if (!DOHELM_TEMPERATURE)
+    #if (DOHELM_TEMPERATURE)
+    double xTgas = prim[UU];
+    #else
     u = prim[UU];
     #endif
 
@@ -179,7 +180,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     #if (DOHELM)
     // 1. Helmholtz EOS
     #if (DOHELM_TEMPERATURE)
-    eos_mode_rhotemp_pres_u(gpu_eos_table, rho0, prim[UU],
+    eos_mode_rhotemp_pres_u(gpu_eos_table, rho0, xTgas,
         #if (DO_YE)
         ye, 
         #else 
@@ -230,8 +231,8 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
         , gpu_eos_table
         #endif
         #if(DOHELM_TEMPERATURE)
-        , prim[UU]
-        , &prim[UU]
+        //, prim[UU]
+        , &xTgas
         #endif
         #if (DO_YE)
         , ye
@@ -277,7 +278,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     #if (DOHELM)
 		// 1. Helmholtz EOS
 		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &prim[UU],
+		eos_mode_rhotemp_w_pres_u (gpu_eos_table, rho0, &xTgas,
 			#if (DO_YE)
 			ye,
 			#else 
@@ -330,7 +331,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 
     prim[RHO] = rho0;
     #if (DOHELM_TEMPERATURE)
-    // prim[UU] = MY_MAX(prim[UU], eos_temp_low);
+    prim[UU] = xTgas;
     #else
     prim[UU] = u;
     #endif
@@ -387,7 +388,7 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if (DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double *temp_prev
     #endif
     #if (DO_YE)
@@ -416,13 +417,20 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
 
     //Start the Newton-Raphson iterations
     keep_iterating = 1;
+
+    #if (DOHELM_TEMPERATURE)
+    //double xTgas_ini = *temp_prev;
+    #endif
     while (keep_iterating) {
+        #if (DOHELM_TEMPERATURE)
+        //*temp_prev = xTgas_ini;
+        #endif
         func_vsq(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D
             #if (DOHELM)
             , gpu_eos_table
             #endif
             #if (DOHELM_TEMPERATURE)
-            , temp_guess
+            //, temp_guess
             , temp_prev
             #endif
             #if (DO_YE)
@@ -484,7 +492,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if (DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double* temp_prev
     #endif
     #if (DO_YE)
@@ -513,8 +521,10 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
     double rho = D * sqrt(gtmp);
     double dpdrho, dpde_d;
 		#if (DOHELM_TEMPERATURE)
-		double xtemp = temp_guess;
-		eos_mode_rhotemp_w_pres_dpdrho_dpde_d(gpu_eos_table, rho, &xtemp,
+		//double xtemp = temp_guess;
+		eos_mode_rhotemp_w_pres_dpdrho_dpde_d(gpu_eos_table, rho 
+            , temp_prev,
+            //, &xtemp,
 			#if (DO_YE)
 			ye,
 			#else

@@ -137,7 +137,7 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
     // -- to get min. pressure for a given density, set T = T_min
     double xpres;
     #if (DOHELM_TEMPERATURE)
-    eos_mode_rhotemp_pres(gpu_eos_table, prim[RHO], pow(10., eos_tlo),
+    eos_mode_rhotemp_pres(gpu_eos_table, prim[RHO], eos_temp_low,
         #if(DO_YE)
         ye,
         #else

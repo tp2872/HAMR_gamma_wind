@@ -134,7 +134,7 @@ Physical Parameters section
     #if (NEUTRINOS_M1)
     #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
-    #define DOHELM_TEMPERATURE (0) 
+    #define DOHELM_TEMPERATURE (1) 
     #endif
 #else
     #define DOHELM_TEMPERATURE (0) 
@@ -1045,6 +1045,7 @@ Section with EOS constants
 #define asoli3 (asol / 3.0e0)
 #define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+#define selecon ((2.0e0 * M_PI * 0.000548 * amu * kerg) / (h_planck * h_planck))
 
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)

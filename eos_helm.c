@@ -472,6 +472,9 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
     
+    int LOWDENS_CORR = 0;
+    if (den < eos_dens_low) LOWDENS_CORR = 1;
+
     double deni = 1.0 / den;
     double tempi = 1.0 / btemp;
 
@@ -516,6 +519,15 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     double kt = kerg * btemp;
     double din = ye * den;
     double kavoy = kergavo * ytot1;
+    double xni = avo * ytot1 * den;
+    pion = xni * kt;
+    #if (DONUCLEAR)
+    eion = 1.5 * pion * deni - 0.25 * Qalpha * avo * x_alpha_tmp;
+    //if (eion < 0.0) fprintf(stderr, "\n\t [eoshelm, eion negative %g]: %g, %g, %g (%e %e %e, xatm: %e, ytot1: %e)\n", eion, 1.5 * pion * deni, 0.25 * Qalpha * avo * x_alpha_tmp, x_alpha_tmp, den, btemp, ye, x_atm_tmp, ytot1);
+    #else
+    eion = 1.5 * pion * deni;
+    #endif
+    sion = kavoy * (2.5 + log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5)));
 
     //Look up the desired quantities in the eos table
     double free, df_d, df_t, df_dd, df_tt, df_dt;
@@ -552,20 +564,11 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, etaele);
 
     // the desired electron-positron thermodynamic quantities
-    pele = din * din * df_d;
-    sele = -df_t * ye;
-    eele = ye * free + btemp * sele;
+    pele = din * din * df_d * (LOWDENS_CORR == 0) + pion * ye * (LOWDENS_CORR == 1);
+    sele = -df_t * ye * (LOWDENS_CORR == 0) + ye * kavoy * (2.5 + log(pow(abar, 2.5) * deni * avoinv * pow(selecon * btemp, 1.5))) * (LOWDENS_CORR == 1);
+    eele = (ye * free + btemp * sele) * (LOWDENS_CORR == 0) + eion * ye * (LOWDENS_CORR == 1);
     #endif
 
-    double xni = avo * ytot1 * den;
-    pion = xni * kt;
-    #if (DONUCLEAR)
-    eion = 1.5 * pion * deni - 0.25 * Qalpha * avo * x_alpha_tmp;
-    //if (eion < 0.0) fprintf(stderr, "\n\t [eoshelm, eion negative %g]: %g, %g, %g (%e %e %e, xatm: %e, ytot1: %e)\n", eion, 1.5 * pion * deni, 0.25 * Qalpha * avo * x_alpha_tmp, x_alpha_tmp, den, btemp, ye, x_atm_tmp, ytot1);
-    #else
-    eion = 1.5 * pion * deni;
-    #endif
-    sion = kavoy * (2.5 + log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5)));
 
     // uniform background corrections & only the needed parts for speed
     // plasg is the plasma coupling parameter
@@ -677,8 +680,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         *dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * eos_coulombMult; // pressure derivative vs density
         *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * eos_coulombMult; // pressure derivative vs temperature
 #else
-        *dpresdd = dpraddd + dpiondd + dpepdd; // pressure derivative vs density
-        *dpresdt = dpraddt + dpiondt + dpepdt; // pressure derivative vs temperature
+        *dpresdd = dpraddd + dpiondd * (1. + LOWDENS_CORR * ye) + dpepdd * (LOWDENS_CORR == 0); // pressure derivative vs density
+        *dpresdt = dpraddt + dpiondt * (1. + LOWDENS_CORR * ye) + dpepdt * (LOWDENS_CORR == 0); // pressure derivative vs temperature
 #endif
         // Calculate energy derivatives
         #if (DONUCLEAR)
@@ -718,8 +721,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         *denerdd = deraddd + deiondd + deepdd + decouldd * eos_coulombMult;  // energy derivative vs density
         *denerdt = deraddt + deiondt + deepdt + decouldt * eos_coulombMult; // energy derivative vs temperature
 #else 
-        *denerdd = deraddd + deiondd + deepdd;  // energy derivative vs density
-        *denerdt = deraddt + deiondt + deepdt; // energy derivative vs temperature
+        *denerdd = deraddd + deiondd * (1. + LOWDENS_CORR * ye) + deepdd * (LOWDENS_CORR == 0);  // energy derivative vs density
+        *denerdt = deraddt + deiondt * (1. + LOWDENS_CORR * ye) + deepdt * (LOWDENS_CORR == 0); // energy derivative vs temperature
 #endif
 
         // Calculate entropy derivatives
@@ -753,7 +756,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         *dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * eos_coulombMult; // entropy derivative vs density and time
 #else
         //dentrdd = dsraddd + dsiondd + dsepdd; // entropy derivative vs density and density
-        *dentrdt = dsraddt + dsiondt + dsepdt; // entropy derivative vs density and time
+        *dentrdt = dsraddt + dsiondt * (1. + LOWDENS_CORR * ye) + dsepdt * (LOWDENS_CORR == 0); // entropy derivative vs density and time
 #endif 
         // calculate relativistic soundspeeds
         double chit, z;

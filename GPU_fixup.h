@@ -361,15 +361,13 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						, fel
 						#endif
 					);
-					if (pflag[global_id] && !TWO_T) {
+					if (pflag[global_id] && !TWO_T && !DOHELM) {
 						failimage[1 * (ksize)+global_id]++;
-						#if(!DOHELM)
 						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(TWO_T)
 						, fel
 						#endif
 						);
-						#endif
 						if (pflag[global_id]){
 							pflag[0] = global_id;
 							failimage[2 * (ksize)+global_id]++;
@@ -953,12 +951,12 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//Internal energy floor
 	#if(RAD_M1)
-	if (pf[UU] + pf[UU_RAD] < uuflr) {
+	if (u + pf[UU_RAD] < uuflr) {
 		pf[UU] = uuflr - pf[UU_RAD];
 		dofloor = 1;
 	}
-	if (pf[UU] < 0.0001*uuflr) {
-		pf[UU] = 0.0001 * uuflr;
+	if (u < 0.0001*uuflr) {
+		u = 0.0001 * uuflr;
 		dofloor = 1;
 	}
 	#elif(NEUTRINOS_M1)
@@ -1104,7 +1102,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#endif
 
 	#if(DRIFT_FLOOR)
-	trans = 10. * bsq / MY_MIN(pf[RHO], pf[UU]) - 1.;
+	trans = 10. * bsq / MY_MIN(pf[RHO], u) - 1.;
 	if (dofloor && (trans) > 0.) {
 		if (trans > 1.) trans = 1.;
 		betapar = -q.bcon[0] / ((bsq + SMALL) * q.ucon[0]);
@@ -1303,11 +1301,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 				#endif	
 			);
 			if (flag) {
+				#if (!DOHELM)
 				flag = Utoprim_1dfix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC, 0
 					#if(TWO_T)
 					, 0.0
 					#endif
 				);
+				#endif
 			}
 			#endif	
 		}

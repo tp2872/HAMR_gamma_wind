@@ -181,7 +181,8 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
     // 1. Helmholtz EOS
     double dpdrho, dudrho;
 		#if (DOHELM_TEMPERATURE)
-		eos_mode_rhotemp_s_pres_u(gpu_eos_table, rho0, &prim[UU],
+		double xTgas = prim[UU];
+		eos_mode_rhotemp_s_pres_u(gpu_eos_table, rho0, &xTgas,
 			#if (DO_YE)
 			ye, 
 			#else
@@ -220,8 +221,8 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
         , gpu_eos_table
         #endif
         #if(DOHELM_TEMPERATURE)
-        , prim[UU]
-        , &prim[UU]
+        //, prim[UU]
+        , &xTgas
         #endif
         #if (DO_YE)
         , ye
@@ -254,7 +255,7 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
         , gpu_eos_table
         #endif
         #if(DOHELM_TEMPERATURE)
-        , &prim[UU]
+        , &xTgas
         #endif
         #if(DO_YE)
         , ye
@@ -285,7 +286,9 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	}
 
 	prim[RHO] = rho0;
-    #if (!DOHELM_TEMPERATURE)
+    #if (DOHELM_TEMPERATURE)
+    prim[UU] = xTgas;
+	#else
     prim[UU] = u;
     #endif
 
@@ -308,7 +311,7 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	, const double* __restrict__ gpu_eos_table
 	#endif
 	#if(DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double *temp_prev
     #endif
     #if (DO_YE)
@@ -341,13 +344,19 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 
 	//Start the Newton-Raphson iterations
 	keep_iterating = 1;
+	#if (DOHELM_TEMPERATURE)
+    //double xTgas_ini = *temp_prev;
+    #endif
 	while (keep_iterating) {
+		#if (DOHELM_TEMPERATURE)
+        //*temp_prev = xTgas_ini;
+        #endif
 		func_1d_gnr2(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm
             #if(DOHELM)
             , gpu_eos_table
             #endif
             #if(DOHELM_TEMPERATURE)
-            , temp_guess
+            //, temp_guess
             , temp_prev
             #endif
             #if (DO_YE)
@@ -429,7 +438,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
     , const double* __restrict__ gpu_eos_table
     #endif
     #if(DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double *temp_prev
     #endif
     #if (DO_YE)
@@ -449,13 +458,13 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	// Calculate best value for W given current guess for vsq: 
 	#if(DOHELM)
 		#if(DOHELM_TEMPERATURE)
-		double xtemp = temp_guess;
+		//double xtemp = temp_guess;
 		#endif
     // Helmholtz EOS
     dWdvsq_calc2_helmholtz(gpu_eos_table, x[0], D, K_atm, &W, &dWdvsq
         #if(DOHELM_TEMPERATURE)
-        //, temp_prev
-        , &xtemp
+        , temp_prev
+        //, &xtemp
         #endif
         #if (DO_YE)
         , ye
