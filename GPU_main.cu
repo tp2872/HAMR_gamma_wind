@@ -26,12 +26,12 @@ void GPU_init(void)
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
 			if (i!=j) gpuDeviceEnablePeerAccess(j, 0);
 		}
-		#if (DOHELM)
-		eos_init_GPU(i + rank / ranks_per_node);
-		#endif
-		#if(NEUTRINOS_M1)
-		nulib_init_GPU(i + rank / ranks_per_node);
-		#endif
+		//#if (DOHELM)
+		//eos_init_GPU(i + rank / ranks_per_node);
+		//#endif
+		//#if(NEUTRINOS_M1)
+		//nulib_init_GPU(i + rank / ranks_per_node);
+		//#endif
 	}
 	#endif
 
@@ -85,10 +85,12 @@ void eos_init_GPU(int n) {
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
+	
+	cudaSetDevice(n);
 
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
-	gpuMallocHost((void**)&eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
-	gpuMalloc((void**)&GPU_eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
+	gpuMallocHost((void**)&eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	gpuMalloc((void**)&GPU_eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
 
 	// Check for errors: EOS array allocation
 	status = gpuGetLastError();
@@ -98,37 +100,39 @@ void eos_init_GPU(int n) {
 	// fill in the host array
 	for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++) {
 		// helmholtz free energy table (total: 9 items)
-		eos_table[0][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
-		eos_table[0][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
-		eos_table[0][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
-		eos_table[0][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
-		eos_table[0][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
-		eos_table[0][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
-		eos_table[0][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
-		eos_table[0][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
-		eos_table[0][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
+		eos_table[n][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
+		eos_table[n][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
+		eos_table[n][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
+		eos_table[n][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
+		eos_table[n][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
+		eos_table[n][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
+		eos_table[n][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
+		eos_table[n][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
+		eos_table[n][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
 
 		// pressure derivative with density table (total: 4 items)
-		eos_table[0][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
-		eos_table[0][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
-		eos_table[0][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
-		eos_table[0][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
+		eos_table[n][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
+		eos_table[n][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
+		eos_table[n][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
+		eos_table[n][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
 
 		// electron chemical potential table (total: 4 items)
-		eos_table[0][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
-		eos_table[0][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
-		eos_table[0][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
-		eos_table[0][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
+		eos_table[n][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
+		eos_table[n][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
+		eos_table[n][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
+		eos_table[n][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
 
 		// number denisty table (total: 4 items)
-		eos_table[0][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
-		eos_table[0][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
-		eos_table[0][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
-		eos_table[0][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
+		eos_table[n][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
+		eos_table[n][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
+		eos_table[n][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
+		eos_table[n][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
 	}
 
-	gpuMemcpy(GPU_eos_table[0], eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), gpuMemcpyHostToDevice);
+	gpuMemcpy(GPU_eos_table[n], eos_table[n], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), gpuMemcpyHostToDevice);
 	gpuDeviceSynchronize();
+	status = gpuGetLastError();
+	if (gpuSuccess != status) fprintf(stderr, "Error in eos_init_GPU: %d\n", status);
 }
 #endif
 
@@ -440,7 +444,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -448,7 +452,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -458,7 +462,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -472,7 +476,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -491,7 +495,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -499,7 +503,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -509,7 +513,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2, 
 					dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -523,7 +527,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					lim, dir, cour, dtij2_GPU[nl[n]], POLE_1, POLE_2, 
 					dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -542,7 +546,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -550,7 +554,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -560,7 +564,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -574,7 +578,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -595,7 +599,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -603,7 +607,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -613,7 +617,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -627,7 +631,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,  cour, dtij1_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][1],block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -646,7 +650,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -654,7 +658,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -664,7 +668,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -678,7 +682,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir,  cour, dtij2_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][2], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -697,7 +701,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#elif(SCUDA)
@@ -705,7 +709,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					BufferMud[nl[n]], BufferMud_inv[nl[n]], lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					 dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					);
 				#endif
@@ -715,7 +719,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					  dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -729,7 +733,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					 lim, dir, cour, dtij3_GPU[nl[n]], POLE_1, POLE_2,
 					  dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, flag
 					#if (DOHELM) 
-					, GPU_eos_table[0]
+					, GPU_eos_table[block[n][AMR_NODE]]
 					#endif
 					#if(NEUTRINOS_M1)
 					, GPU_nulib_table[0]
@@ -1296,7 +1300,7 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 	#if(SHIP)
 	hipLaunchKernelGGL(Utoprim_M1_0, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1308,7 +1312,7 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 	#elif(SCUDA)
 	Utoprim_M1_0 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1336,7 +1340,7 @@ void GPU_Utoprim_M1_1(int n, double Dt)
 	hipLaunchKernelGGL(Utoprim_M1_1, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1349,7 +1353,7 @@ void GPU_Utoprim_M1_1(int n, double Dt)
 	Utoprim_M1_1 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1376,7 +1380,7 @@ void GPU_Utoprim_M1_2(int n, double Dt)
 	hipLaunchKernelGGL(Utoprim_M1_2, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1389,7 +1393,7 @@ void GPU_Utoprim_M1_2(int n, double Dt)
 	Utoprim_M1_2 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(CALC_MDOT)
 		, mass_density_scale_cpu, magnetic_density_scale_cpu
@@ -1420,7 +1424,7 @@ void GPU_fixup(int flag, int n, double Dt)
 		hipLaunchKernelGGL(fixup, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
@@ -1442,7 +1446,7 @@ void GPU_fixup(int flag, int n, double Dt)
 		fixup << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
@@ -1467,7 +1471,7 @@ void GPU_fixup(int flag, int n, double Dt)
 		hipLaunchKernelGGL(fixup, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
@@ -1489,7 +1493,7 @@ void GPU_fixup(int flag, int n, double Dt)
 		fixup << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max
 			#if (DOHELM) 
-			, GPU_eos_table[0]
+			, GPU_eos_table[block[n][AMR_NODE]]
 			#endif
 			#if (NEUTRINOS_M1) 
 			, GPU_nulib_table[0], Bufferpflag_NU[nl[n]]
@@ -1623,7 +1627,7 @@ void GPU_fixup_post(int n, double Dt)
 	hipLaunchKernelGGL(fixup_post, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, 1, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(RAD_M1)
 		, Bufferpflag_RAD[nl[n]]
@@ -1639,7 +1643,7 @@ void GPU_fixup_post(int n, double Dt)
 		fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, 1, POLE_1, POLE_2
 		#if (DOHELM) 
-		, GPU_eos_table[0]
+		, GPU_eos_table[block[n][AMR_NODE]]
 		#endif
 		#if(RAD_M1)
 		, Bufferpflag_RAD[nl[n]]

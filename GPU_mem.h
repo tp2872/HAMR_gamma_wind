@@ -5,7 +5,8 @@ int gpuFree(void* devPtr, int trash1, int trash2);
 
 
 //Wrapper for allocation of boundary cells
-#if(GPU_DIRECT)
+//#if(GPU_DIRECT)
+#if(1)
 int gpuAlloc(double** ptr, size_t size, int val);
 
 int gpuAlloc(double** ptr, size_t size, int val3) {

@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	#if (DOHELM)
 	eos_init();
 		#if(GPU_ENABLED || GPU_DEBUG )
-		eos_init_GPU(0);
+		eos_init_GPU(rank%numdevices);
 		#endif
 	#endif
 

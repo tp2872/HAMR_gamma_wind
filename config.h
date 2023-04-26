@@ -341,7 +341,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.9)
+#define COUR (0.5)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
