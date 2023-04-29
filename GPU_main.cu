@@ -89,8 +89,9 @@ void eos_init_GPU(int n) {
 	cudaSetDevice(n);
 
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
-	gpuMallocHost((void**)&eos_table[n], (EOSIMAX * EOSJMAX * 21 + gpu_offset) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
-	gpuMalloc((void**)&GPU_eos_table[n], (EOSIMAX * EOSJMAX * 21 + gpu_offset) * sizeof(double)); // same here regarding the OFFSET
+	gpuMallocHost((void**)&eos_table[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	gpuMallocHost((void**)&eos_table1[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	gpuMalloc((void**)&GPU_eos_table[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double)); // same here regarding the OFFSET
 
 	// Check for errors: EOS array allocation
 	status = gpuGetLastError();
@@ -131,6 +132,8 @@ void eos_init_GPU(int n) {
 
 	gpuMemcpy(GPU_eos_table[n], eos_table[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double), gpuMemcpyHostToDevice);
 	gpuDeviceSynchronize();
+	gpuMemcpy(eos_table1[n], GPU_eos_table[n], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double), gpuMemcpyDeviceToHost);
+	fprintf(stderr, "\n\t[rank:%d] T1: %e, T: %e\n", rank, eos_table1[1000], eos_table[1000]);
 	status = gpuGetLastError();
 	if (gpuSuccess != status) fprintf(stderr, "Error in eos_init_GPU: %d\n", status);
 }
