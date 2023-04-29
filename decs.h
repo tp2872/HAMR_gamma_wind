@@ -767,6 +767,7 @@ extern double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
 extern double * eos_table[NB_LOCAL];
+extern double * eos_table1[NB_LOCAL];
 extern double * GPU_eos_table[NB_LOCAL];
 #endif
 

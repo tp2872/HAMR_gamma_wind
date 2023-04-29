@@ -723,6 +723,7 @@ double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
 double * eos_table[NB_LOCAL];
+double * eos_table1[NB_LOCAL];
 double * GPU_eos_table[NB_LOCAL];
 #endif
 
