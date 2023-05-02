@@ -28,7 +28,7 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if (DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double* temp_prev
     #endif
     #if (DO_YE)
@@ -47,7 +47,7 @@ __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], dou
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if (DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double* temp_prev
     #endif
     #if (DO_YE)
@@ -107,7 +107,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if(DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double* temp_prev
     #endif
     #if (DO_YE)
@@ -126,7 +126,7 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
     , const  double* __restrict__ gpu_eos_table
     #endif
     #if(DOHELM_TEMPERATURE)
-    , double temp_guess
+    //, double temp_guess
     , double* temp_prev
     #endif
     #if (DO_YE)
