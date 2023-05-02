@@ -71,7 +71,7 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (1000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -125,16 +125,16 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #define DONUCLEAR (0)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
     #if (NEUTRINOS_M1)
-    #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+    #define DOHELM_TEMPERATURE (0) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
-    #define DOHELM_TEMPERATURE (1) 
+    #define DOHELM_TEMPERATURE (0) 
     #endif
 #else
     #define DOHELM_TEMPERATURE (0) 
@@ -244,14 +244,14 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 1
+#define NB_1 1
+#define NB_2 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
-#define BS_3 1
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -308,16 +308,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (160)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -341,7 +341,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.5)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -639,6 +639,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
+
 #if(NEUTRINOS_M1 || DOHELM)
     #if (RADM1_SUBCYCLING)
         #define MASS_DENSITY_SCALE (0.0000001)
@@ -660,7 +661,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
         #endif
     #endif
 #else
-    #define MASS_DENSITY_SCALE (3.1)
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
@@ -1045,7 +1054,6 @@ Section with EOS constants
 #define asoli3 (asol / 3.0e0)
 #define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
-#define selecon ((2.0e0 * M_PI * 0.000548 * amu * kerg) / (h_planck * h_planck))
 
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)
