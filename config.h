@@ -125,7 +125,7 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
+#define DO_YE (0)
 #define DONUCLEAR (0)
 #endif
 
@@ -317,7 +317,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (1600)
+#define DUMPFACTOR (160)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

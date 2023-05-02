@@ -19,7 +19,7 @@ all: $(EXE)
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o const_trans.o const_trans_res.o diag.o dump.o eos_helm.o fixup.o \
-GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o GPU_program1.o GPU_program2.o GPU_main.o \
+GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o GPU_program1.o GPU_program2.o GPU_main.o\
 hllc.o LAS.o init_collapsar.o init_mag.o init_misc.o init_nsm.o init_tde.o \
 init_tests.o init_thindisk.o init_torus.o init_torus_grb.o init_torus_spherical.o \
 interp.o lu.o main.o memory.o metric.o phys_2T.o phys_mhd.o phys_neutrinos.o \

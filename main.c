@@ -1,8 +1,9 @@
 #include "include.h"
 #include "decs_MPI.h"
 #include "defs.h"
+#if(SCUDA)
 #include "cudaProfiler.h"
-
+#endif
 
 /*****************************************************************/
 /*****************************************************************
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 100.0;
-	DTd = 10;
+	DTd = 100;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -282,16 +283,21 @@ void MPI_initialize(int argc, char *argv[])
 	}
 
 	#if(GPU_ENABLED)
-	if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
-	if (rank % numdevices != local_rank % numdevices) {
-		fprintf(stderr, "Error in initializing GPUs with MPI! \n");
-		exit(0);
-	}
+		#if(SCUDA)
+		if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
+		if (rank % numdevices != local_rank % numdevices) {
+			fprintf(stderr, "Error in initializing GPUs with MPI! \n");
+			exit(0);
+		}
+		#else
+		gpuGetDeviceCount(&numdevices);
+		gpuSetDevice(rank%numdevices);
+		#endif
 	#endif
 
 	//Killswitch
 	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
-	if (numtasks > 100) exit(0);
+	if (numtasks > 000) exit(0);
 }
 
 int index_3D(int n, int i, int j, int z)
