@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
 			#endif
 			if (n_old == n_active_total) break;
 		}	
-		restart_write();
-		close_rdump();
+		//restart_write();
+		//close_rdump();
 	}
 
 	/* do initial diagnostics */
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
+	DTl = 1000.0;
 	DTd = 100;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
@@ -297,7 +297,7 @@ void MPI_initialize(int argc, char *argv[])
 
 	//Killswitch
 	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
-	if (numtasks > 000) exit(0);
+	if (numtasks > 100) exit(0);
 }
 
 int index_3D(int n, int i, int j, int z)
