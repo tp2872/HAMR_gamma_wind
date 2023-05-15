@@ -103,14 +103,14 @@ void set_timelevel(int tag){
 			}
 			//#pragma omp parallel for schedule(static,1) private(i)
 			for (i = 0; i < ni; i++) {
-				if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1) {
+				if (block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1) {
 					min_j[i] = 10000;
-					if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 3) {
+					if (block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, 0)][AMR_POLE] == 3) {
 						for (z = 0; z < nz; z++) {
-							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
+							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
 						}
 						for (z = 0; z < nz; z++) {
-							block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
+							block[AMR_coord_linear2(l, NB_2 * pow(1 + REF_2, l) - 1, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
 						}
 					}
 				}
