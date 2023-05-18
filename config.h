@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -56,7 +56,7 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (0)
+#define REFINE_GRB (1)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
@@ -71,11 +71,11 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (1000.0)
+#define ROUT (10000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -244,17 +244,17 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 6
+#define NB_2 2
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 48
+#define BS_2 32
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (0)
@@ -295,7 +295,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -308,10 +308,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 1
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
@@ -378,7 +378,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
