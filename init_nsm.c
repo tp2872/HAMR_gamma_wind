@@ -319,16 +319,20 @@ void init_postmerger() {
 	double Tnu;
 	double ucon[NDIM], utcon[NDIM];
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z,k, Tnu, res) firstprivate(r,th,phi,sth,cth, X, tilt, pos_new, udphi, mudt, prim)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z,k, Tnu, res) firstprivate(r,th,phi,sth,cth, X, X_cart, V, V_old, V_new, tilt, pos_new, udphi, mudt, prim, geom)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			pos_new[1] = r;
 			pos_new[2] = th;
 			pos_new[3] = phi;
-
-			sth = sin(th) ;
-			cth = cos(th) ;
+			#if (TILTED)
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
+			#endif
+			sth = sin(th);
+			cth = cos(th);
 						
 			/*prim[RHO] = dd(i, j, z, VARRHO);
 			prim[UU] = dd(i, j, z, VARP) / (gam - 1);
@@ -358,7 +362,7 @@ void init_postmerger() {
 			}
 			else {
 				/* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-				utilde_to_ucon(prim, udphi, mudt, n_ord[n], i, j, z);
+				utilde_to_ucon(prim, udphi, mudt, n_ord[n], i, j, z, tilt);
 				#if (DONUCLEAR)
 				prim[XALPHA] = 0.0;
 				prim[XATM] = 0.0;
