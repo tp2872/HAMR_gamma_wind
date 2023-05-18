@@ -1560,7 +1560,7 @@ gpuError_t gpuDeviceSetSharedMemConfig(int kind);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);
 void coord_transform(double* pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double* pr, int n, int ii, int jj, int zz);
-void utilde_to_ucon(double* pr, double udphi, double mudt, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double* pr, double udphi, double mudt, int n, int ii, int jj, int zz, double tilt);
 void udphi_to_utuphi(double* ucon, double udphi, double* udphi_new, struct of_geom* geom, double* utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);

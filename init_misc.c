@@ -161,9 +161,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 /* This function takes Utilde 3-velocity and
  * transforms it into 4-velocity in modified Kerr-Schild coordinates
  */
-void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz)
+void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj, int zz, double tilt)
 {
-  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM], ucon[NDIM], ucov[NDIM];
+  double X[NDIM], r, th, phi, pos_new[NDIM], X_cart[NDIM], vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM], ucon[NDIM], ucov[NDIM];
   double AA, BB, CC, discr, udphi_new, err, err_tol;
   double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
@@ -173,6 +173,16 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
 
   coord(n, ii, jj, zz, CENT, X);
   bl_coord(X, &r, &th, &phi);
+
+  pos_new[1] = r;
+  pos_new[2] = th;
+  pos_new[3] = phi;
+  #if (TILTED)
+  sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+  rotate_coord(X_cart, -tilt);
+  cart_to_sph(X_cart, &r, &th, &phi);
+  #endif
+
 #if(USEKS)
   ksgset(n, ii, jj, &geom);
 #else
@@ -185,9 +195,9 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   vtcon[2] = pr[U2];
   vtcon[3] = pr[U3];
 
-  /* Jacobian transformation from spherical to cartesian coords */
-  dxdr_sph_to_cart(r, th, phi, dxdr);
-  invert_matrix(dxdr, drdx);
+  #if (TILTED)
+  rotate_vector(vtcon, pos_new, &r, &th, &phi, tilt);
+  #endif
 
   /* transform to KS' coords */
   dxdxp_func(X, dxdxp);
@@ -195,6 +205,9 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   invert_matrix(dxdxp, dxpdx);
 
   #if (!BHNSQ2_1)
+  /* Jacobian transformation from spherical to cartesian coords */
+  dxdr_sph_to_cart(r, th, phi, dxdr);
+  invert_matrix(dxdr, drdx);
   // converts the input Utilde^{x,y,z} to Utilde^{r,th,phi}
   utcon[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -385,7 +398,11 @@ void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, 
 		pos_new_tmp[i] = pos_new[i];
 	}
 
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	kerr_gcov_func(*r, *th, bl_gcov);
+	#else
 	bl_gcov_func(*r, *th, bl_gcov);
+	#endif
 
 	V_tmp[1] *= sqrt(bl_gcov[1][1]);
 	V_tmp[2] *= sqrt(bl_gcov[2][2]);
@@ -398,7 +415,12 @@ void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, 
 
 	rotate_coord(X_tmp, tilt);
 
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+	#else
 	bl_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+	#endif
+
 	//gdet2 = gdet_func(bl_gcov);
 	V[0] = V_tmp[0];
 	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcov[1][1]);
