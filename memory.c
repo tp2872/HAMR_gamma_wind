@@ -5,10 +5,8 @@
 #if(GPU_DIRECT)
 #define gpuMem(val1,val2, val3) (double)(val2*(val3==1))
 #else
-#define gpuMem(val1,val2, val3) (double)(val2)
+#define gpuMem(val1,val2, val3) (double)(0.0)
 #endif
-
-#define GPU_SET (1)
 
 /*****************************************************************/
 /*****************************************************************

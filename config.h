@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -34,13 +34,13 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Set Cartesian GR grid for test problems*/
-#define CARTESIAN_GR (0)
+#define CARTESIAN_GR (1)
 
 /*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
 
 /*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
-#define SPHERICAL_GR (1)
+#define SPHERICAL_GR (0)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
@@ -56,14 +56,14 @@ Physical Parameters section
 #define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
-#define REFINE_GRB (1)
+#define REFINE_GRB (0)
 
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
-#define BH_SPIN (0.86)
+#define GAMMA	(13./9.)
+#define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -71,7 +71,7 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (1250.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
@@ -225,6 +225,9 @@ Numerical Parameters section
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
 
+/*Set to high value to circumvent cross-GPU GPU_DIRECT*/
+#define GPU_SET (10000)
+
 /*Memory of each GPU in GB*/
 #define GPU_MEM (40.0)
 
@@ -244,23 +247,23 @@ Numerical Parameters section
 #define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
-#define NB_2 2
-#define NB_3 2
+#define NB_1 4
+#define NB_2 4
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 32
-#define BS_3 32
+#define BS_1 16
+#define BS_2 16
+#define BS_3 16
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (0)
+#define GRID_CARTESIAN (1)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (0)
+#define N_LEVELS_CART (9)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -295,7 +298,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -308,16 +311,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (160)
+#define DUMPFACTOR (80)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -423,7 +426,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if(SPHERICAL || SPHERICAL_GR)
 #define COORDSINGFIX 1
 #else
-#define COORDSINGFIX 1
+#define COORDSINGFIX 0
 #endif
 
 // whether to move polar axis to a bit larger theta

@@ -13,7 +13,7 @@ void set_mag(void){
 	struct of_state state;
 	double gamma_g;
 
-	#if(!NSY)
+	#if(!NSY || CARTESIAN_GR)
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
@@ -117,8 +117,8 @@ void set_mag(void){
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
-				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
 				#endif
 			}
 			else{
@@ -136,15 +136,12 @@ void set_mag(void){
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
-					//fprintf(stderr, "Error 1: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
-					//fprintf(stderr, "Error 2: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
-					//fprintf(stderr, "Error 3: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				#endif
 			}

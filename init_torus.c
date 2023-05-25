@@ -97,8 +97,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 6.;
-	rmax = 12.;
+	rin = 20.;
+	rmax = 41.;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = BETA ;
@@ -134,7 +134,7 @@ void init_torus()
 	rhomax = 0. ;
 	umax = 0. ;
 	taumax = 0.;
-	#if(!NSY)
+	#if(!NSY || CARTESIAN_GR)
 	tilt = (TILT_ANGLE)/180.*M_PI;
 	#else
 	tilt = -(TILT_ANGLE) / 180.*M_PI;
@@ -253,7 +253,6 @@ void init_torus()
 				V[1] = ur;
 				V[2] = uh;
 				V[3] = up;
-				//th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
 				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V[1];
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V[2];

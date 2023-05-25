@@ -1,9 +1,6 @@
 
 int gpuFree(void* devPtr, int trash1, int trash2);
 
-#define GPU_SET (10000)
-
-
 //Wrapper for allocation of boundary cells
 #if(GPU_DIRECT)
 int gpuAlloc(double** ptr, size_t size, int val);
@@ -18,9 +15,12 @@ int gpuAlloc(double** ptr, size_t size, int val3) {
 	}
 	return error;
 }
-
 #else
-#define gpuAlloc(val1,val2, val3) gpuMallocHost((void**)val1,val2,0)
+int gpuAlloc(double** ptr, size_t size, int val3) {
+	int error;
+	error = gpuMallocHost((void**)ptr, size);
+	return error;
+}
 #endif
 
 //Wrapper for calculation of GPU memory

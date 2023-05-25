@@ -121,7 +121,7 @@ void init_bondi()
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
 			//get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			blgset(n_ord[n], i, j, &geom);
+			blgset(n_ord[n], i, j, z, &geom);
 
 
 			//////// Tilted corrections /////////

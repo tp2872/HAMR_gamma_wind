@@ -319,7 +319,7 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = 0.5 * (1. + sqrt(1. - a * a)); 	
+	Rin = 0.85 * (1. + sqrt(1. - a * a)); 	
 	Rout = ROUT;
 	lim = MC;
 	failed = 0;
@@ -330,6 +330,8 @@ void set_gridparam(void) {
 	gam = GAMMA;
 
 	#if(CARTESIAN || CARTESIAN_GR)
+		//Leave Rin to this value for CKS coordinates
+		Rin = 0.5 * (1. + sqrt(1. - a * a));
 		#if(WHICHPROBLEM==SHOCK_TUBE)
 		startx[1] = -1.1;
 		startx[2] = -1.1;

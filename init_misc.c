@@ -17,7 +17,7 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 
 	coord(n, ii, jj, zz, CENT, X);
 	bl_coord(X, &r, &th, &phi);
-	blgset(n, ii, jj, &geom);
+	blgset(n, ii, jj, zz, &geom);
 
 	ucon[1] = pr[U1];
 	ucon[2] = pr[U2];
@@ -98,9 +98,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   coord(n, ii, jj, zz, CENT, X);
   bl_coord(X, &r, &th, &phi);
 #if(USEKS)
-  ksgset(n, ii, jj, &geom);
+  ksgset(n, ii, jj, zz, &geom);
 #else
-  blgset(n, ii, jj, &geom);
+  blgset(n, ii, jj, zz, &geom);
 #endif
 
   vcon[0] = 1.0;
@@ -184,9 +184,9 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   #endif
 
 #if(USEKS)
-  ksgset(n, ii, jj, &geom);
+  ksgset(n, ii, jj, zz, &geom);
 #else
-  blgset(n, ii, jj, &geom);
+  blgset(n, ii, jj, zz, &geom);
 #endif
 
   // By definition, U^t tilde = 0
@@ -390,48 +390,163 @@ void cart_to_sph(double X[NDIM], double *r, double *th, double *phi){
 
 /*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
 void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
-	double bl_gcov[NDIM][NDIM], gdet1, gdet2;
-	double V_tmp[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
-	int i;
-	for (i = 1; i < NDIM; i++){
+	#if(0)
+		double bl_gcov[NDIM][NDIM], gdet1, gdet2;
+		double V_tmp[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
+		int i;
+		for (i = 1; i < NDIM; i++){
+			V_tmp[i] = V[i];
+			pos_new_tmp[i] = pos_new[i];
+		}
+
+		#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+		kerr_gcov_func(*r, *th, bl_gcov);
+		#else
+		bl_gcov_func(*r, *th, bl_gcov);
+		#endif
+
+		V_tmp[1] *= sqrt(bl_gcov[1][1]);
+		V_tmp[2] *= sqrt(bl_gcov[2][2]);
+		V_tmp[3] *= sqrt(bl_gcov[3][3]);
+		//V_tmp[3] = sqrt(bl_gcov[3][3] * V_tmp[3] * V_tmp[3]+2.*bl_gcov[0][3] * V_tmp[0] * V_tmp[3]);
+
+		X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
+		X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
+		X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
+
+		rotate_coord(X_tmp, tilt);
+
+		#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+		kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+		#else
+		bl_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+		#endif
+
+		//gdet2 = gdet_func(bl_gcov);
+		V[0] = V_tmp[0];
+		V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcov[1][1]);
+		V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcov[2][2]);
+		V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcov[3][3]);
+		//V[3] = (-bl_gcov[0][3] * V[0] + V[3] / fabs(V[3])*sqrt(pow(bl_gcov[0][3] * V[0], 2.) + bl_gcov[3][3]*pow(V[3],2.))) / bl_gcov[3][3];
+	#else
+	double dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM], Vp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], V_tmp[NDIM], V_new[NDIM];
+	int i, j;
+
+	for (i = 1; i < NDIM; i++) {
 		V_tmp[i] = V[i];
-		pos_new_tmp[i] = pos_new[i];
 	}
 
-	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-	kerr_gcov_func(*r, *th, bl_gcov);
-	#else
-	bl_gcov_func(*r, *th, bl_gcov);
+	//compute Jacobian nt->t (dt/dnt)
+	dxdxt[0][0] = 1.;
+	dxdxt[0][1] = 0.;
+	dxdxt[0][2] = 0.;
+	dxdxt[0][3] = 0.;
+	dxdxt[1][0] = 0.;
+	dxdxt[1][1] = cos(tilt);
+	dxdxt[1][2] = 0.;
+	dxdxt[1][3] = sin(tilt);
+	dxdxt[2][0] = 0.;
+	dxdxt[2][1] = 0.;
+	dxdxt[2][2] = 1.;
+	dxdxt[2][3] = 0.;
+	dxdxt[3][0] = 0.;
+	dxdxt[3][1] = -sin(tilt);
+	dxdxt[3][2] = 0.0;
+	dxdxt[3][3] = cos(tilt);
+	invert_matrix(dxdxt, dxtdx);
+
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th[0]) * cos(phi[0]);
+	dxdr[1][2] = r[0] * cos(th[0]) * cos(phi[0]);
+	dxdr[1][3] = -r[0] * sin(th[0]) * sin(phi[0]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th[0]) * sin(phi[0]);
+	dxdr[2][2] = r[0] * cos(th[0]) * sin(phi[0]);
+	dxdr[2][3] = r[0] * sin(th[0]) * cos(phi[0]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th[0]);
+	dxdr[3][2] = -r[0] * sin(th[0]);
+	dxdr[3][3] = 0.;
+
+	//convert from kerr schild to cartesian coordinates
+	for (i = 0; i < NDIM; i++) {
+		V[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V[i] += dxdr[i][j] * V_tmp[j];
+		}
+	}
+
+	//convert from cartesian to tilted cartesian coordinates
+	for (i = 0; i < NDIM; i++) {
+		V_tmp[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V_tmp[i] += dxdxt[i][j] * V[j];
+		}
+	}
+	
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	Vp[1] = r[0] * sin(th[0]) * cos(phi[0]);
+	Vp[2] = r[0] * sin(th[0]) * sin(phi[0]);
+	Vp[3] = r[0] * cos(th[0]);
+
+	V_new[1] = Vp[1] * cos(tilt) + Vp[3] * sin(tilt);
+	V_new[2] = Vp[2];
+	V_new[3] = -sin(tilt) * Vp[1] + cos(tilt) * Vp[3];
+	Vp[1] = sqrt(V_new[1] * V_new[1] + V_new[2] * V_new[2] + V_new[3] * V_new[3]);
+	Vp[2] = acos(V_new[3] / Vp[1]);
+	Vp[3] = atan2(V_new[2], V_new[1]);
+	//fprintf(stderr, "tilt: %f, r: %f/%f theta: %f/%f, phi: %f/%f \n", tilt, pos_new[1], Vp[1], pos_new[2], Vp[2], pos_new[3], Vp[3]);
+	if (Vp[2] < 0.0) Vp[2] *= -1;
+	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
+
+	#if(COORDSINGFIX)
+	if (fabs(Vp[2]) < SINGSMALL) {
+		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
+		if (Vp[2] < 0.0)  Vp[2] = -SINGSMALL;
+	}
+	if (fabs(M_PI - Vp[2]) < SINGSMALL) {
+		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
+		if (Vp[2] < M_PI)  Vp[2] = M_PI - SINGSMALL;
+	}
 	#endif
 
-	V_tmp[1] *= sqrt(bl_gcov[1][1]);
-	V_tmp[2] *= sqrt(bl_gcov[2][2]);
-	V_tmp[3] *= sqrt(bl_gcov[3][3]);
-	//V_tmp[3] = sqrt(bl_gcov[3][3] * V_tmp[3] * V_tmp[3]+2.*bl_gcov[0][3] * V_tmp[0] * V_tmp[3]);
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(Vp[2])*cos(Vp[3]);
+	dxdr[1][2] = r[0]*cos(Vp[2])*cos(Vp[3]);
+	dxdr[1][3] = -r[0]*sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][2] = r[0]*cos(Vp[2])*sin(Vp[3]);
+	dxdr[2][3] = r[0]*sin(Vp[2])*cos(Vp[3]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(Vp[2]);
+	dxdr[3][2] = -r[0]*sin(Vp[2]);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
 
-	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
-	X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
-	X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
-
-	rotate_coord(X_tmp, tilt);
-
-	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
-	#else
-	bl_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+	//convert back to tilted kerr-schild coordinates
+	for (i = 0; i < NDIM; i++) {
+		V[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V[i] += drdx[i][j] * V_tmp[j];
+		}
+	}
 	#endif
-
-	//gdet2 = gdet_func(bl_gcov);
-	V[0] = V_tmp[0];
-	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcov[1][1]);
-	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcov[2][2]);
-	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcov[3][3]);
-	//V[3] = (-bl_gcov[0][3] * V[0] + V[3] / fabs(V[3])*sqrt(pow(bl_gcov[0][3] * V[0], 2.) + bl_gcov[3][3]*pow(V[3],2.))) / bl_gcov[3][3];
 }
-
 
 /*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
+	#if(0)
 	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], bl_gcov1[NDIM][NDIM], bl_gcov2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
 	double V_tmp[NDIM], X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
 	double theta_solve, theta_old, derivative;
@@ -460,7 +575,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(*r, *th, bl_gcov);
 	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 0 %f %f\n", *r, *th);
-	dxdxp_func(X, dxdxp);
+	dxdxp_func2(X, dxdxp);
 	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 1 \n");
 
 	for (i = 0; i<NDIM; i++){
@@ -509,7 +624,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
 	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 2 \n");
 
-	dxdxp_func(X, dxdxp);
+	dxdxp_func2(X, dxdxp);
 	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 3 \n");
 
 	for (i = 0; i<NDIM; i++){
@@ -527,6 +642,120 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2]))/ sqrt(bl_gcon2[1][1]);
 	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2]))/ sqrt(bl_gcon2[2][2]);
 	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3]))/ sqrt(bl_gcon2[3][3]);
+	#else
+	double dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM], Vp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], V_tmp[NDIM], V_new[NDIM];
+	int i, j;
+
+	for (i = 1; i < NDIM; i++) {
+		V_tmp[i] = V[i];
+	}
+
+	//compute Jacobian nt->t (dt/dnt)
+	dxdxt[0][0] = 1.;
+	dxdxt[0][1] = 0.;
+	dxdxt[0][2] = 0.;
+	dxdxt[0][3] = 0.;
+	dxdxt[1][0] = 0.;
+	dxdxt[1][1] = cos(tilt);
+	dxdxt[1][2] = 0.;
+	dxdxt[1][3] = sin(tilt);
+	dxdxt[2][0] = 0.;
+	dxdxt[2][1] = 0.;
+	dxdxt[2][2] = 1.;
+	dxdxt[2][3] = 0.;
+	dxdxt[3][0] = 0.;
+	dxdxt[3][1] = -sin(tilt);
+	dxdxt[3][2] = 0.0;
+	dxdxt[3][3] = cos(tilt);
+	invert_matrix(dxdxt, dxtdx);
+
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th[0]) * cos(phi[0]);
+	dxdr[1][2] = r[0] * cos(th[0]) * cos(phi[0]);
+	dxdr[1][3] = -r[0] * sin(th[0]) * sin(phi[0]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th[0]) * sin(phi[0]);
+	dxdr[2][2] = r[0] * cos(th[0]) * sin(phi[0]);
+	dxdr[2][3] = r[0] * sin(th[0]) * cos(phi[0]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th[0]);
+	dxdr[3][2] = -r[0] * sin(th[0]);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//convert from kerr schild to cartesian coordinates
+	for (i = 0; i < NDIM; i++) {
+		V[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V[i] += drdx[j][i] * V_tmp[j];
+		}
+	}
+
+	//convert from cartesian to tilted cartesian coordinates
+	for (i = 0; i < NDIM; i++) {
+		V_tmp[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V_tmp[i] += dxtdx[j][i] * V[j];
+		}
+	}
+	
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	Vp[1] = r[0] * sin(th[0]) * cos(phi[0]);
+	Vp[2] = r[0] * sin(th[0]) * sin(phi[0]);
+	Vp[3] = r[0] * cos(th[0]);
+
+	V_new[1] = Vp[1] * cos(tilt) + Vp[3] * sin(tilt);
+	V_new[2] = Vp[2];
+	V_new[3] = -sin(tilt) * Vp[1] + cos(tilt) * Vp[3];
+	Vp[1] = sqrt(V_new[1] * V_new[1] + V_new[2] * V_new[2] + V_new[3] * V_new[3]);
+	Vp[2] = acos(V_new[3] / Vp[1]);
+	Vp[3] = atan2(V_new[2], V_new[1]);
+	//fprintf(stderr, "tilt: %f, r: %f/%f theta: %f/%f, phi: %f/%f \n", tilt, pos_new[1], Vp[1], pos_new[2], Vp[2], pos_new[3], Vp[3]);
+	if (Vp[2] < 0.0) Vp[2] *= -1;
+	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
+
+	#if(COORDSINGFIX)
+	if (fabs(Vp[2]) < SINGSMALL) {
+		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
+		if (Vp[2] < 0.0)  Vp[2] = -SINGSMALL;
+	}
+	if (fabs(M_PI - Vp[2]) < SINGSMALL) {
+		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
+		if (Vp[2] < M_PI)  Vp[2] = M_PI - SINGSMALL;
+	}
+	#endif
+
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(Vp[2])*cos(Vp[3]);
+	dxdr[1][2] = r[0]*cos(Vp[2])*cos(Vp[3]);
+	dxdr[1][3] = -r[0]*sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][2] = r[0]*cos(Vp[2])*sin(Vp[3]);
+	dxdr[2][3] = r[0]*sin(Vp[2])*cos(Vp[3]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(Vp[2]);
+	dxdr[3][2] = -r[0]*sin(Vp[2]);
+	dxdr[3][3] = 0.;
+
+	//convert back to tilted kerr-schild coordinates
+	for (i = 0; i < NDIM; i++) {
+		V[i] = 0;
+		for (j = 0; j < NDIM; j++) {
+			V[i] += dxdr[j][i] * V_tmp[j];
+		}
+	}
+	#endif
 }
 
 void elliptical_coord(double X_cart[NDIM], double pos_new[NDIM], double *r, double eccentricity){
