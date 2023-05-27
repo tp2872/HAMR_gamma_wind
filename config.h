@@ -229,10 +229,10 @@ Numerical Parameters section
 #define GPU_SET (10000)
 
 /*Memory of each GPU in GB*/
-#define GPU_MEM (40.0)
+#define GPU_MEM (10.0)
 
 /*Memory of the node*/
-#define CPU_MEM (80.0)
+#define CPU_MEM (40.0)
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -244,7 +244,7 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define NB_LOCAL (4000)
+#define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -462,9 +462,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Whether to output a reduced resolution file*/
 #define DUMP_SMALL (0)
-#define REDUCE_FACTOR1 (2)
-#define REDUCE_FACTOR2 (2)
-#define REDUCE_FACTOR3 (2)
+#define REDUCE_FACTOR1 (1)
+#define REDUCE_FACTOR2 (1)
+#define REDUCE_FACTOR3 (1)
 
 /*Whether to dump diag file*/
 #define DUMP_DIAG (1)
