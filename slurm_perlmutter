@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -A m2401_g
+#SBATCH -C gpu
+#SBATCH -q regular
+#SBATCH --mail-user=matthewliska92@gmail.com
+#SBATCH -t 00:30:00
+#SBATCH -n 4
+#SBATCH --ntasks-per-node=4
+#SBATCH -c 32
+#SBATCH --gpus-per-task=1
+#SBATCH --gpu-bind=single:1 
+
+module load PrgEnv-gnu
+module load cudatoolkit
+export CRAY_ACCEL_TARGET=nvidia80
+export MPICH_GPU_SUPPORT_ENABLED=1
+ulimit -s unlimited
+cd /pscratch/sd/m/matthewl/HAMR_HIP
+
+export SLURM_CPU_BIND="cores"
+srun -n4 ./harm
