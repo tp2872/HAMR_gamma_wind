@@ -668,13 +668,16 @@ void free_arrays(int n){
 			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
 		}
 	}
+	#if(MEM_CLEAN)
+	mem_spot[nl[n]] = -1;
+	#else
 	if (count_gpu < (max_blocks/numtasks) || count_node < max_blocks/numtasks){
 		mem_spot[nl[n]] = 0;
 		free_bound_cpu(n);
 		return;
 	}
 	else mem_spot[nl[n]] = -1;
-
+	#endif
 	free(p[nl[n]]);
 	free(ph[nl[n]]);
 	#if(LEER)

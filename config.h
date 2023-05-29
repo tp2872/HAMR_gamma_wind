@@ -231,6 +231,9 @@ Numerical Parameters section
 /*Memory of each GPU in GB*/
 #define GPU_MEM (10.0)
 
+/*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
+#define MEM_CLEAN (1)
+
 /*Memory of the node*/
 #define CPU_MEM (40.0)
 
