@@ -62,7 +62,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
@@ -467,13 +467,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ZIRI_DUMP 0
 
 /*Whether to output a reduced resolution file*/
-#define DUMP_SMALL (0)
-#define REDUCE_FACTOR1 (1)
-#define REDUCE_FACTOR2 (1)
-#define REDUCE_FACTOR3 (1)
+#define DUMP_SMALL (1)
+#define REDUCE_FACTOR1 (4)
+#define REDUCE_FACTOR2 (4)
+#define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (1)
+#define DUMP_DIAG (0)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
