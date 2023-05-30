@@ -17,11 +17,11 @@
 -*****************************************************************/
 int main(int argc, char *argv[])
 {
-	double tdump, tdump_reduced, tlog, dump_cnt0;
+	double tdump, tdump_reduced, tlog, dump_cnt0, runtime;
 	int nfailed = 0;
 	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
-	clock_t begin2;
+	clock_t begin2, begin_rdump, end_rdump;
 	nstep = 0;
 	defcon = 1.;
 
@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 10;
+	DTl = 1000.0;
+	DTd = 50;
 	DTd_reduced = 5000.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 	time_spent3 = 0.0;
 	begin1 = get_wall_time();
 	begin2 = begin1;
+	begin_rdump = begin1;
 
 	//cuProfilerStart();
 	while(t < tf) {
@@ -119,6 +120,9 @@ int main(int argc, char *argv[])
 		//Every swithchtime read out data from GPU and set boundary
 		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
 			end1 = get_wall_time();
+			end_rdump = end1;
+			runtime = (double)(end_rdump - begin_rdump);
+			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -143,9 +147,16 @@ int main(int argc, char *argv[])
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if ((t >= tlog || (end_rdump - begin_rdump)>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dump simultaneous with log
 			close_rdump();
+
+			//Calculate exit criterion
+			if (runtime > (RUNTIME * 3600.0)) {
+				if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
+				break;
+			}
+
 			tlog += DTl;
 		}
 

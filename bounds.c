@@ -743,18 +743,18 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G - 1) {
 		if (pflag_cart[nl[n]][index_3D(n, i, j, z)] == 1) {
-			PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = 0.0;
+			for (k = 0; k <= U3; k++)  prim[nl[n]][index_3D(n, i, j, z)][k] = 0.0;
 			prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHOMIN;
 			prim[nl[n]][index_3D(n, i, j, z)][UU] = UUMIN;
 
 			if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-				ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
 			}
 			if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
-				ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
 			}
 			if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-				ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
 			}					
 		}
 	}

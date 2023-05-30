@@ -783,6 +783,7 @@ extern double cour;
 extern double dV, dx[NB_LOCAL][NPR], startx[NPR];
 extern double dt, bdt[NB_LOCAL][4];
 extern int NODE_global[NB];
+extern double gpu_mem;
 extern double t, tf;
 extern int nstep;
 extern double sourceflag, period_max;
@@ -1555,6 +1556,7 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
+gpuError_t gpuMemGetInfo(size_t* free, size_t* total);
 
 //Initial conditions related
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);

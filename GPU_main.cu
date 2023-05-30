@@ -15,6 +15,9 @@ void GPU_init(void)
 		fprintf(stderr, "N_GPU is bigger than the number of devices! \n");
 		exit(0);
 	}
+	size_t mem_int, mem_tot;
+	cudaMemGetInfo(&mem_int, &mem_tot);
+	gpu_mem = mem_tot / (1.e9);
 
 	//Enable peer access
 	ranks_per_node = numdevices / N_GPU;

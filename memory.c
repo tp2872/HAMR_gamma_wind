@@ -671,7 +671,7 @@ void free_arrays(int n){
 	#if(MEM_CLEAN)
 	mem_spot[nl[n]] = -1;
 	#else
-	if (count_gpu < (max_blocks/numtasks) || count_node < max_blocks/numtasks){
+	if (count_gpu < 0.8*(max_blocks/numtasks) || count_node < 0.8(max_blocks/numtasks)){
 		mem_spot[nl[n]] = 0;
 		free_bound_cpu(n);
 		return;
@@ -1538,7 +1538,7 @@ double calc_mem_gpu(int n){
 	#if(CARTESIAN || CARTESIAN_GR)
 	mem += ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double);
 	#else
-	mem += (BS_1 + 2 * N1G)*sizeof(double));
+	mem += (BS_1 + 2 * N1G)*sizeof(double);
 	#endif
 	mem += NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double);
 	#if(DO_IMEX && (RAD_M1 || NEUTRINOS_M1))
@@ -2623,18 +2623,7 @@ void set_pflag_cart(int n) {
 	offset3 = 1.2 / delta_x3;
 
 	block[n][AMR_CARTFLAG] = 0;
-	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {
-		/*if ((i < NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 + offset1) && (i >= NB_1 * BS_1 * pow(2, block[n][AMR_LEVEL1]) / 2 - offset1)
-			&& (j < NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 + offset2) && (j >= NB_2 * BS_2 * pow(2, block[n][AMR_LEVEL2]) / 2 - offset2)
-			&& (z < NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 + offset3) && (z >= NB_3 * BS_3 * pow(2, block[n][AMR_LEVEL3]) / 2 - offset3)) {
-			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
-			block[n][AMR_CARTFLAG] = 1;
-		}
-		else {
-			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
-		}*/
-
-		
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {	
 		//Calculate coordiante
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
@@ -2650,38 +2639,5 @@ void set_pflag_cart(int n) {
 		else {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
 		}
-		
-		/*
-		//Calculate coordiante
-		coord(n, i, j, z, CENT, X);
-		bl_coord(X, &r, &th, &phi);
-
-		//Calculate rmin
-		rmin = 0.8 * (1. + sqrt(1. - a * a));
-
-		//Flag cells that are smaller than rmin
-		if (0) {
-			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
-			block[n][AMR_CARTFLAG] = 1;
-		}
-		else {
-			coord(n, (NB_1 * BS_1) * pow(1 + REF_1, block[n][AMR_LEVEL1]) / 2, (NB_2 * BS_2) * pow(1 + REF_2, block[n][AMR_LEVEL2]) / 2, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			if (r < rmin) {
-				coord(n, i, j, (NB_3 * BS_3) * pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2, CENT, X);
-				bl_coord(X, &r, &th, &phi);
-				if (r < rmin) {
-					pflag_cart[nl[n]][index_3D(n, i, j, z)] = 1;
-					block[n][AMR_CARTFLAG] = 1;
-				}
-				else {
-					pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
-				}
-			}
-			else {
-				pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
-			}
-		}
-		*/
 	}
 }

@@ -34,13 +34,13 @@ Physical Parameters section
 #define CARTESIAN (0)
 
 /*Set Cartesian GR grid for test problems*/
-#define CARTESIAN_GR (1)
+#define CARTESIAN_GR (0)
 
 /*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
 #define SPHERICAL (0)
 
 /*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
-#define SPHERICAL_GR (0)
+#define SPHERICAL_GR (1)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
@@ -53,7 +53,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (0)
+#define REFINE_THIN (1)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -71,19 +71,19 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (1250.0)
+#define ROUT (100000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (0)
-#define H_OVER_R (0.1)
+#define COOL_DISK (1)
+#define H_OVER_R (0.03)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -228,8 +228,11 @@ Numerical Parameters section
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
 #define GPU_SET (10000)
 
-/*Memory of each GPU in GB*/
-#define GPU_MEM (10.0)
+/*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
+#define GPU_MEM (40.0)
+
+/*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
+#define CUDA_MEMCALC (1)
 
 /*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
 #define MEM_CLEAN (1)
@@ -250,23 +253,23 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 35
+#define NB_2 12
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 64
-#define BS_3 64
+#define BS_1 48
+#define BS_2 48
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 4
 
 /*Use nested Cartesian grid*/
-#define GRID_CARTESIAN (1)
+#define GRID_CARTESIAN (0)
 
 /*Set the number of *extra* base layers in Cartesian grid*/
-#define N_LEVELS_CART (9)
+#define N_LEVELS_CART (0)
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -384,7 +387,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2

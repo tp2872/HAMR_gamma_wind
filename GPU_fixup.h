@@ -66,7 +66,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 
 	#if(CARTESIAN_GR)
-	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
+	//if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k == 1) {

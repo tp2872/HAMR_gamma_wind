@@ -1637,11 +1637,21 @@ void set_AMR(void){
 	#if(GPU_ENABLED)
 	//Calculate memory consumption on each GPU
 	double total_mem = 0.;
+
+	#if(CUDA_MEMCALC)
+	size_t mem_int, mem_tot;
+	double mem;
+	gpuMemGetInfo(&mem_int, &mem_tot);
+	mem = (double)(mem_tot - mem_int) / pow(10., 9.);
+	total_mem += mem;
+	#else
 	for (n = 0; n < n_active_total; n++) {
 		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
 	}
+	#endif
+	
 	double mem_per_block = total_mem / n_active_total;
-	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
+	max_blocks = (int)(n_active_total + (numtasks * gpu_mem - total_mem) / mem_per_block);
 
 	if (max_blocks < n_active_total) {
 		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
@@ -1981,17 +1991,26 @@ void balance_load(void){
 	double min_mem = 0.;
 	double total_mem = 0.;
 	double mem = 0.;
+	#if(CUDA_MEMCALC)
+	size_t mem_int, mem_tot;
+	gpuMemGetInfo(&mem_int, &mem_tot);
+	mem = (double)(mem_tot - mem_int) / pow(10., 9.);
+	max_mem += mem;
+	min_mem += mem;
+	total_mem += mem;
+	#else
 	for (n = 0; n < n_active; n++) {
 		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
 		max_mem += mem;
 		min_mem += mem;
 		total_mem += mem;
 	}
+	#endif
 	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	double mem_per_block = total_mem / n_active_total;
-	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
+	max_blocks = (int)(n_active_total + (gpu_mem * numtasks - total_mem) / mem_per_block);
 
 	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
 	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
@@ -2106,7 +2125,7 @@ void activate_blocks(void){
 		}
 	}	
 	#endif
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, int z2){
@@ -2725,7 +2744,7 @@ void pre_refine(void){
 
 	gpu = 0;
 	rc = 0;
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send1(psh, n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_rec1(n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send2(psh, n_ord[n1]);
@@ -2934,7 +2953,7 @@ void post_refine(void){
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG)
 	//GPU_boundprim(1);
-	MPI_Barrier(mpi_cartcomm);
+	//MPI_Barrier(mpi_cartcomm);
 	#endif
 }
 
@@ -3670,47 +3689,42 @@ double calc_refcrit(int n){
 			}*/
 		}
 	}
-	#elif(REFINE_THIN && !REF_3)
+	#elif(REFINE_THIN)
 	if (block[n][AMR_NODE] == rank) {
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-
-			if (r > 5.0 && t>500.0) {
-				get_geometry(n, i, j, z, CENT, &geom);
-				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-
-				//Calculate target vs real scaleheight
-				double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
-				#if(TWO_T)
-				double gamma_g = calc_gamma_gas_prim(p[nl[n]][index_3D(n, i, j, z)]);
-				#else
-				double gamma_g = GAMMA;
-				#endif
-				double ptot = ((gamma_g - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU] + (1.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD]);
-				double cs = sqrt(2.0 / M_PI * ptot / (gamma_g * p[nl[n]][index_3D(n, i, j, z)][UU] + (4.0 / 3.0) * p[nl[n]][index_3D(n, i, j, z)][UU_RAD] + rho));
-				double v_kepler = r / (pow(r, 3. / 2.) + BH_SPIN);
-				double scaleheight = cs / v_kepler;
-				double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
-
-				//Only refine if number of cells is insufficient
-				//if ((cells_per_scaleheight < 12) && (rho > 0.02)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				//else if ((cells_per_scaleheight < 30) && (rho > 0.01)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-				if (rho * r > 1.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (rho* r > 0.66) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-
-				//Don't refine too close to BH
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 0) && (block[n][AMR_COORD1] <= 0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 1) && (block[n][AMR_COORD1] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2) && (block[n][AMR_COORD1] <= 6)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 3) && (block[n][AMR_COORD1] <= 14)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 4) && (block[n][AMR_COORD1] <= 30)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-
-				//Don't refine too close to pole
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] <= 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-				if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_COORD2] >= NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 3)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+			get_geometry(n, i, j, z, CENT, &geom);
+			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+			double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			#if(RAD_M1)
+			double ptot = ((GAMMA - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU]) + (1./3.*p[nl[n]][index_3D(n, i, j, z)][UU_RAD]) + 0.5 * bsq;
+			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + (4. / 3. * p[nl[n]][index_3D(n, i, j, z)][UU_RAD]) + bsq + rho));
+			#else
+			double ptot = ((GAMMA - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU]) + 0.5 * bsq;
+			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + bsq + rho));
+			#endif
+			double v_kepler = r / (pow(r, 1.5) + a);
+			double scaleheight = cs / v_kepler;
+			double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
+			if (cells_per_scaleheight < 10.0 && rho>0.001 && bsq/rho<1.0 && r<150.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+			else if(cells_per_scaleheight >= 10.0 && cells_per_scaleheight < 30.0 && rho>0.0001 && bsq / rho < 2.0 && r<150.0) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			
+			/*val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
+			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 			}
+			else if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 2) {
+				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			else {
+				if (val > 0.01 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			}
+			*/
 		}
 	}
 	#elif(WHICHPROBLEM==DISRUPTION_PROBLEM)
@@ -3794,39 +3808,7 @@ double calc_refcrit(int n){
 		}
 	}
 	#else
-	if (block[n][AMR_NODE] == rank){
-		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi, geom, q, bsq)
-		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
-			coord(n, i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			get_geometry(n, i, j, z, CENT, &geom);
-			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-			bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-			double rho = p[nl[n]][index_3D(n, i, j, z)][RHO];
-			double ptot = ((GAMMA - 1.) * p[nl[n]][index_3D(n, i, j, z)][UU]);
-			double cs = sqrt(2.0 / M_PI * ptot / (GAMMA * p[nl[n]][index_3D(n, i, j, z)][UU] + rho));
-			double v_kepler = r / (pow(r, 1.5) + a);
-			double scaleheight = cs / v_kepler;
-			double val;
-			//#pragma omp critical
-			//{
-			val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
-			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {
-				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			else if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 2) {
-				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			else {
-				if (val > 0.01 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			
-			//if ((ref_val > REFINEMENT_CUTOFF) && (block[n][AMR_LEVEL1] == 2)) ref_val = 0.51 * REFINEMENT_CUTOFF;
-		}
-	}
+	ref_val = 0.0;
 	#endif
 	return ref_val;
 }

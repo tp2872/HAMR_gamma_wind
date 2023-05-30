@@ -739,6 +739,7 @@ double cour;
 double dV, dx[NB_LOCAL][NPR], startx[NPR];
 double dt, bdt[NB_LOCAL][4];
 int NODE_global[NB];
+double gpu_mem;
 double t, tf;
 int nstep;
 double sourceflag, period_max;

@@ -718,17 +718,17 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
 
 	if (k==1 && pflag_cart[global_id] == 1) {
-		PLOOP pv[k * ksize + global_id] = 0.0;
+		for (k = 0; k <= U3; k++) pv[k * ksize + global_id] = 0.0;
 		pv[RHO * ksize + global_id] = RHOMIN;
 		pv[UU * ksize + global_id] = UUMIN;
 		if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-			ps[0 * ksize + global_id] = 0.0;
+			//ps[0 * ksize + global_id] = 0.0;
 		}
 		if (pflag_cart[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-			ps[1 * ksize + global_id] = 0.0;
+			//ps[1 * ksize + global_id] = 0.0;
 		}
 		if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-			ps[2 * ksize + global_id] = 0.0;
+			//ps[2 * ksize + global_id] = 0.0;
 		}
 	}
 }
