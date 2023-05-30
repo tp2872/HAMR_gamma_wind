@@ -3714,8 +3714,8 @@ double calc_refcrit(int n){
 			double v_kepler = r / (pow(r, 1.5) + a);
 			double scaleheight = cs / v_kepler;
 			double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
-			if (cells_per_scaleheight < 10.0 && rho>0.001 && bsq/rho<1.0 && r<150.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-			else if(cells_per_scaleheight >= 10.0 && cells_per_scaleheight < 30.0 && rho>0.0001 && bsq / rho < 2.0 && r<150.0) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			if (cells_per_scaleheight < 15.0 && rho>0.001 && bsq/rho<1.0 && r<150.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+			else if(cells_per_scaleheight >= 15.0 && cells_per_scaleheight < 45.0 && rho>0.0001 && bsq / rho < 2.0 && r<150.0) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 			
 			/*val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
 			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {

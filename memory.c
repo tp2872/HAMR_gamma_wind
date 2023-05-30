@@ -671,7 +671,7 @@ void free_arrays(int n){
 	#if(MEM_CLEAN)
 	mem_spot[nl[n]] = -1;
 	#else
-	if (count_gpu < 0.8*(max_blocks/numtasks) || count_node < 0.8(max_blocks/numtasks)){
+	if (count_gpu < 0.8*(max_blocks/numtasks) || count_node < 0.8*(max_blocks/numtasks)){
 		mem_spot[nl[n]] = 0;
 		free_bound_cpu(n);
 		return;

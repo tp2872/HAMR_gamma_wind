@@ -79,8 +79,8 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 1000.0;
-	DTd = 50;
-	DTd_reduced = 5000.0;
+	DTd = 25;
+	DTd_reduced = 100.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
 	tlog = t + DTl;
@@ -149,7 +149,9 @@ int main(int argc, char *argv[])
 		//Put out log file and rdump file
 		if ((t >= tlog || (end_rdump - begin_rdump)>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dump simultaneous with log
+			#if(!PARALLEL_IO)
 			close_rdump();
+			#endif
 
 			//Calculate exit criterion
 			if (runtime > (RUNTIME * 3600.0)) {
@@ -163,8 +165,10 @@ int main(int argc, char *argv[])
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT);
+			#if(!PARALLEL_IO)
 			close_dump();
 			close_gdump();
+			#endif
 			tdump += DTd;
 		}
 
@@ -172,8 +176,10 @@ int main(int argc, char *argv[])
 		#if(DUMP_SMALL)
 		if (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT_REDUCED);
+			#if(!PARALLEL_IO)
 			close_dump_reduced();
 			close_gdump_reduced();
+			#endif
 			tdump_reduced += DTd_reduced;
 		}
 		#endif
