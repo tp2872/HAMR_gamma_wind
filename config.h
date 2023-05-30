@@ -263,7 +263,7 @@ Numerical Parameters section
 #define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 5
+#define N_LEVELS_3D 4
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (0)
