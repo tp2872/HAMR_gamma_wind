@@ -62,7 +62,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(13./9.)
 #define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
@@ -226,7 +226,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
-#define GPU_SET (10000)
+#define GPU_SET (1)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
 #define GPU_MEM (40.0)
@@ -467,7 +467,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ZIRI_DUMP 0
 
 /*Whether to output a reduced resolution file*/
-#define DUMP_SMALL (1)
+#define DUMP_SMALL (0)
 #define REDUCE_FACTOR1 (4)
 #define REDUCE_FACTOR2 (4)
 #define REDUCE_FACTOR3 (4)

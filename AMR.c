@@ -1644,14 +1644,17 @@ void set_AMR(void){
 	gpuMemGetInfo(&mem_int, &mem_tot);
 	mem = (double)(mem_tot - mem_int) / pow(10., 9.);
 	total_mem += mem;
-	#else
-	for (n = 0; n < n_active_total; n++) {
-		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
-	}
-	#endif
-	
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (numtasks * gpu_mem - total_mem) / mem_per_block);
+	#else
+	for (n = 0; n < n_active; n++) {
+		total_mem += calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+	}
+	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	double mem_per_block = total_mem / n_active_total;
+	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
+	#endif
 
 	if (max_blocks < n_active_total) {
 		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
@@ -2010,8 +2013,11 @@ void balance_load(void){
 	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	double mem_per_block = total_mem / n_active_total;
+	#if(CUDA_MEMCALC)
 	max_blocks = (int)(n_active_total + (gpu_mem * numtasks - total_mem) / mem_per_block);
-
+	#else
+	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
+	#endif
 	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
 	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
 	#else

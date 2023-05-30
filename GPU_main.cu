@@ -16,7 +16,7 @@ void GPU_init(void)
 		exit(0);
 	}
 	size_t mem_int, mem_tot;
-	cudaMemGetInfo(&mem_int, &mem_tot);
+	gpuMemGetInfo(&mem_int, &mem_tot);
 	gpu_mem = mem_tot / (1.e9);
 
 	//Enable peer access
