@@ -1648,17 +1648,16 @@ void set_AMR(void){
 	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (numtasks * gpu_mem - total_mem) / mem_per_block);
 	#else
-	for (n = 0; n < n_active; n++) {
-		total_mem += calc_mem_gpu(n_ord[n]) / pow(10., 9.);
+	for (n = 0; n < n_active_total; n++) {
+		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
 	}
-	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (numtasks * GPU_MEM - total_mem) / mem_per_block);
 	#endif
 
 	if (max_blocks < n_active_total) {
-		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d Quiting! \n", max_blocks);
-		exit(0);
+		if (rank == 0 ) fprintf(stderr, "Too little GPU memory. Max_blocks: %d %d %f Quiting! \n", max_blocks, n_active, total_mem);
+		//exit(0);
 	}
 	#else
 	double total_mem = 0.;
@@ -2131,7 +2130,7 @@ void activate_blocks(void){
 		}
 	}	
 	#endif
-	//MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, int z2){
@@ -2750,7 +2749,7 @@ void pre_refine(void){
 
 	gpu = 0;
 	rc = 0;
-	//MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send1(psh, n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_rec1(n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send2(psh, n_ord[n1]);
@@ -2959,7 +2958,7 @@ void post_refine(void){
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG)
 	//GPU_boundprim(1);
-	//MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
 }
 

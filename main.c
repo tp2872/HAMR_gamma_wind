@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 			end1 = get_wall_time();
 			end_rdump = end1;
 			runtime = (double)(end_rdump - begin_rdump);
-			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
 
 		//Refine every TREF
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
