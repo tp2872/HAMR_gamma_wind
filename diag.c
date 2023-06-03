@@ -103,11 +103,6 @@ void diag(int call_code)
 			}
 			gdump_new_reduced();
 			dump_new_reduced();
-if (rank == 0) {
-				fprintf(stderr, "GDUMP_reduced started \n");
-				fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt_reduced);
-			}
-
 		}
 		#endif
 	}

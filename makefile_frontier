@@ -10,9 +10,9 @@ endif
 EXTRALIBS = -lm -fgpu-rdc --rocm-path=${ROCM_PATH} -L${ROCM_PATH}/lib -lamdhip64 -lstdc++
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = hipcc -fgpu-rdc --amdgpu-target=gfx90a -I${MPICH_DIR}/include -I${ROCM_PATH}/include -D__HIP_PLATFORM_AMD__ -fopenmp -O1 -c
+CUDA_COMPILE  = hipcc -fgpu-rdc --offload-arch=gfx90a -I${MPICH_DIR}/include -I${ROCM_PATH}/include -D__HIP_PLATFORM_AMD__ -fopenmp -O1 -c
 CC_LOAD     = $(CC) $(CCFLAGS)
-CUDA_LOAD  = hipcc -v -fgpu-rdc --amdgpu-target=gfx90a -L${MPICH_DIR}/lib -lmpi -L${MPICH_DIR}/lib -lmpi ${CRAY_XPMEM_POST_LINK_OPTS} -lxpmem ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -fopenmp
+CUDA_LOAD  = hipcc -v -fgpu-rdc --offload-arch=gfx90a -L${MPICH_DIR}/lib -lmpi -L${MPICH_DIR}/lib -lmpi ${CRAY_XPMEM_POST_LINK_OPTS} -lxpmem ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -fopenmp
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 

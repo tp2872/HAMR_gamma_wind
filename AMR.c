@@ -6,18 +6,16 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 void rm_order2(void);
 void AMR_set_coord(void);
 
-//Number of refinement levels before focusing on jet
-#define BASE_LEVELS (0)
-
-//Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
-#define HIGH_CUTOFF (1E-1)
+//For REFINE_GRB
+#define BASE_LEVELS (0)//Number of refinement levels before focusing on jet
+#define HIGH_CUTOFF (1E-1) //Define the cutoff for entropy in jet (HIGH_CUTOFF) and the equivalent for the coccoon (LOW_CUTOFF)//
 #define LOW_CUTOFF (1E-3)
-
-//Define the free-fall time for initial gap to close//
-#define t_ff (pow(R_BONDI,1.5))
-
+#define t_ff (pow(R_BONDI,1.5)) //Define the free-fall time for initial gap to close//
 #define BLOCKS_PER_THETA_JET (1) //Minimum number of blocks per *half* opening angle of the jet
 #define BLOCKS_PER_THETA_COCCOON (1) //Minimum number of blocks per *half* opening angle of the coccoon
+
+//Define for REFINE_THIN the target number of cells per scaleheight
+#define CELLS_PER_SCALEHEIGHT (15.0)
 
 void test_AMR(void){
 }
@@ -1639,12 +1637,9 @@ void set_AMR(void){
 	double total_mem = 0.;
 
 	#if(CUDA_MEMCALC)
-	size_t mem_int, mem_tot;
-	double mem;
-	gpuMemGetInfo(&mem_int, &mem_tot);
-	mem = (double)(mem_tot - mem_int) / pow(10., 9.);
-	total_mem += mem;
-	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	for (n = 0; n < n_active_total; n++) {
+		total_mem += calc_mem_gpu(n_ord_total[n]) / pow(10., 9.);
+	}
 	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (numtasks * gpu_mem - total_mem) / mem_per_block);
 	#else
@@ -3695,6 +3690,7 @@ double calc_refcrit(int n){
 		}
 	}
 	#elif(REFINE_THIN)
+	//Loop over grid and determine cell-by-cell if to refine
 	if (block[n][AMR_NODE] == rank) {
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
@@ -3713,23 +3709,10 @@ double calc_refcrit(int n){
 			double v_kepler = r / (pow(r, 1.5) + a);
 			double scaleheight = cs / v_kepler;
 			double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
-			if (cells_per_scaleheight < 15.0 && rho>0.001 && bsq/rho<1.0 && r<400.0) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-			else if(cells_per_scaleheight >= 15.0 && cells_per_scaleheight < 45.0 && rho>0.0001 && bsq / rho < 2.0 && r<400.0) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			
-			/*val = (p[nl[n]][index_3D(n, i, j, z)][RHO] * (sqrt(r) * (r > 100.) + r * (pow(25. / r, 3.0)) * (r <= 100.)) * ((bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) < 1.0) * (scaleheight < 0.06));
-			if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 1) {
-				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			else if (block[n][AMR_LEVEL1] == N_LEVELS_3D - 2) {
-				if (val > REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			else {
-				if (val > 0.01 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-				else if (val > 0.01 * 0.51 * REFINEMENT_CUTOFF) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
-			}
-			*/
+
+			//Real refinement criterion
+			if ((cells_per_scaleheight < CELLS_PER_SCALEHEIGHT) && (rho>0.25*density_midplane[(int)(i/pow(1+REF_1,block[n][AMR_LEVEL1]))]) && (rho > 0.001) && (bsq / rho < 1.0) && (r < 400.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+			else if((cells_per_scaleheight >= CELLS_PER_SCALEHEIGHT) && (cells_per_scaleheight < 3.0*CELLS_PER_SCALEHEIGHT) && (rho > 0.05 * density_midplane[(int)(i / pow(1 + REF_1, block[n][AMR_LEVEL1]))]) && (rho>0.0001) && (bsq / rho < 2.0) && (r<400.0)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 		}
 	}
 	#elif(WHICHPROBLEM==DISRUPTION_PROBLEM)
@@ -3820,7 +3803,9 @@ double calc_refcrit(int n){
 
 //Send refinement criterion across cluster
 void synch_refcrit(void){
-	int n, task;
+	int n, task, i, j, stride=1000, n_stride;
+	int counter = 0, counter_old=0;
+	double ref_val_local[NB];
 
 	#if(REFINE_GRB)
 	//Calculate opening angle jet if REFINE_GRB is set
@@ -3828,16 +3813,82 @@ void synch_refcrit(void){
 	calc_opening_coccoon();
 	#endif
 
-	//Calculate and broadcast refinemetn criterion
-	for (n = 0; n < n_active_total; n++){
-			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
-			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+	#if(REFINE_THIN)
+	//Calculate midplane density
+	calc_density_midplane();
+	#endif
+
+	//Calculate refinement criterion
+	for (n = 0; n < n_active; n++) {
+		ref_val[n_ord[n]] = calc_refcrit(n_ord[n]);
 	}
 
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
+	//Number of strides in messages of stride 1000
+	n_stride = numtasks / stride + 1;
+
+	for (j = 0; j < n_stride; j++) {
+		//Transmit refinement criterion to all MPI ranks
+		for (i = j * stride; i < MY_MIN(j * stride + stride, numtasks); i++) {
+			if (rank == i) {
+				for (n = 0; n < n_active_node[i]; n++) {
+					ref_val_local[counter + n] = ref_val[n_ord_node[i][n]];
+				}
+			}
+			rc = MPI_Ibcast(&ref_val_local[counter], n_active_node[i], MPI_DOUBLE, i, mpi_cartcomm, &request_timelevel[i]);
+			counter += n_active_node[i];
 		}
+
+		counter = counter_old;
+		for (i = j * stride; i < MY_MIN(j * stride + stride, numtasks); i++) {
+			MPI_Wait(&request_timelevel[i], &Statbound[0][0]);
+
+			if (rank != i) {
+				for (n = 0; n < n_active_node[i]; n++) {
+					ref_val[n_ord_node[i][n]] = ref_val_local[counter + n];
+				}
+			}
+			counter += n_active_node[i];
+		}
+		counter_old = counter;
+	}
+}
+
+void calc_density_midplane(void) {
+	int i, j, n, z, index;
+	double rho_squared[NB_1*BS_1], rho[NB_1*BS_1];
+	struct of_geom geom;
+
+	//Initialize midplane density to 0
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		density_midplane[index] = 0.;
+		rho_squared[index] = 0.;
+		rho[index] = 0.;
+	}
+
+	//Calculate rho_squared and rho sum over grid
+	for (n = 0; n < n_active_total; n++) {
+		if (block[n_ord_total[n]][AMR_NODE] == rank) {
+			ZSLOOP3D(N1_GPU_offset[n_ord_total[n]], BS_1 + N1_GPU_offset[n_ord_total[n]] - 1, N2_GPU_offset[n_ord_total[n]], N2_GPU_offset[n_ord_total[n]] + BS_2 - 1, N3_GPU_offset[n_ord_total[n]], N3_GPU_offset[n_ord_total[n]] + BS_3 - 1) {
+				//Convert indices to appropriate format
+				index = i / pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]);
+
+				//Calculate sum in grid of density and density squared
+				if (index * pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]) == i) {
+					get_geometry(n_ord_total[n], i, j, z, CENT, &geom);
+					rho_squared[index] += geom.g * pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], 2.0);
+					rho[index]+= geom.g * p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO];
+				}
+			}
+		}
+	}
+
+	//Sum over MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &(rho_squared[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &(rho[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+
+	//Calculate midplane density
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		density_midplane[index] = rho_squared[index] / rho[index];
 	}
 }
 
@@ -3885,11 +3936,11 @@ void calc_opening_jet(void) {
 	//Calculate half opening angle
 	//A=pi*(r*theta)^2
 	//theta=sqrt(A/(pi*r^2))
-	for (index = 0; index < NB_1 * BS_1; index++) {
-		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle1[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
-		jet_angle1[index] = sqrt(jet_angle1[index] / M_PI + 1.e-30);
+	MPI_Allreduce(MPI_IN_PLACE, &(jet_angle1[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &(jet_angle2[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
 
-		MPI_Allreduce(MPI_IN_PLACE, &(jet_angle2[index]), 1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+	for (index = 0; index < NB_1 * BS_1; index++) {
+		jet_angle1[index] = sqrt(jet_angle1[index] / M_PI + 1.e-30);
 		jet_angle2[index] = sqrt(jet_angle2[index] / M_PI + 1.e-30);
 	}
 	

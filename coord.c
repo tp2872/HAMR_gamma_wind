@@ -320,7 +320,7 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = 0.85 * (1. + sqrt(1. - a * a)); 	
+	Rin = 0.90 * (1. + sqrt(1. - a * a)); 	
 	Rout = ROUT;
 	lim = MC;
 	failed = 0;

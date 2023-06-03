@@ -807,6 +807,7 @@ int N3_GPU_offset[NB];
 int max_blocks;
 int communicator_set;
 float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
+float density_midplane[NB_1 * BS_1];
 
 //MPI Variables
 MPI_Request req[NB], boundreqs[NB_LOCAL][600];

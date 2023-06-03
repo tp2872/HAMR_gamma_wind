@@ -81,10 +81,18 @@ int main(int argc, char *argv[])
 	DTl = 100.0;
 	DTd = 100;
 	DTd_reduced = 25.0;
-	tdump = t + DTd;
-	tdump_reduced = t + DTd_reduced;
-	tlog = t + DTl;
-	tref = t;
+	if (dump_cnt > 0) {
+		tdump = dump_cnt*DTd + DTd;
+		tdump_reduced = dump_cnt_reduced*DTd_reduced + DTd_reduced;
+		tlog = rdump_cnt * DTl + DTl;
+		tref = t;
+	}
+	else {
+		tdump = t + DTd;
+		tdump_reduced = t + DTd_reduced;
+		tlog = t + DTl;
+		tref = t;
+	}
 
 	/*Start timer*/
 	time_spent3 = 0.0;

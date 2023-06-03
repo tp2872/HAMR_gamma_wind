@@ -883,6 +883,7 @@ extern int N3_GPU_offset[NB];
 extern int max_blocks;
 extern int communicator_set;
 extern float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
+extern float density_midplane[NB_1 * BS_1];
 
 /*************************************************************************
 FUNCTION DECLARATIONS
@@ -1253,6 +1254,7 @@ void set_arrays(int n);
 void set_grid(int n);
 void calc_opening_jet(void);
 void calc_opening_coccoon(void);
+void calc_density_midplane(void);
 void alloc_bounds_GPU(int n);
 void free_bound_gpu(int n);
 void set_points(int n);

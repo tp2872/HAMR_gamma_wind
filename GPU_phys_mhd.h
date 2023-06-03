@@ -314,7 +314,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
 	double Y = (GAMMA - 1.)*epsilon / T_target; // HELMEOS
-	double lambda = om_kepler*ph[UU] * sqrt(MY_MIN(Y,1.5) - 1. + fabs(MY_MIN(Y, 1.5) - 1.));
+	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
 	double bsq = dot(q->bcon,q->bcov);
 	#if(WHICHPROBLEM==TRUNC_PROBLEM)
