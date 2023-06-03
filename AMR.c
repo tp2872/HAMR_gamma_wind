@@ -2377,7 +2377,7 @@ void derefine(int n){
 		if (block[block[n][i]][AMR_TIMELEVEL] < min_timelevel) min_timelevel = block[block[n][i]][AMR_TIMELEVEL];
 		block[block[n][i]][AMR_GPU] = -1;
 	}
-	block[n][AMR_TIMELEVEL] = MY_MIN(2 * AMR_MAXTIMELEVEL, 1);
+	block[n][AMR_TIMELEVEL] = MY_MIN(AMR_MAXTIMELEVEL, 2* min_timelevel);
 	if (block[n][AMR_POLE] >= 1)block[n][AMR_TIMELEVEL] = 1;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_ACTIVE] = 0;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_TIMELEVEL] = 1;

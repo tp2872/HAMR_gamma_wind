@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd + DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced + DTd_reduced;
-		tlog = rdump_cnt * DTl + DTl;
+		tlog = t + DTl;
 		tref = t;
 	}
 	else {
