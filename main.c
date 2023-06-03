@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
 			#endif
 			if (n_old == n_active_total) break;
 		}	
-		//restart_write();
-		//close_rdump();
+		diag(INIT_OUT);
 	}
 
 	/* do initial diagnostics */
@@ -74,7 +73,6 @@ int main(int argc, char *argv[])
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
@@ -82,8 +80,8 @@ int main(int argc, char *argv[])
 	DTd = 100;
 	DTd_reduced = 25.0;
 	if (dump_cnt > 0) {
-		tdump = dump_cnt*DTd + DTd;
-		tdump_reduced = dump_cnt_reduced*DTd_reduced + DTd_reduced;
+		tdump = dump_cnt*DTd;
+		tdump_reduced = dump_cnt_reduced*DTd_reduced ;
 		tlog = t + DTl;
 		tref = t;
 	}
