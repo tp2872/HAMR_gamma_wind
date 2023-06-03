@@ -3883,8 +3883,8 @@ void calc_density_midplane(void) {
 	}
 
 	//Sum over MPI processes
-	MPI_Allreduce(MPI_IN_PLACE, &(rho_squared[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &(rho[0]), NB_1 * BS_1, MPI_FLOAT, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &(rho_squared[0]), NB_1 * BS_1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &(rho[0]), NB_1 * BS_1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 
 	//Calculate midplane density
 	for (index = 0; index < NB_1 * BS_1; index++) {
