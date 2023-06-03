@@ -2079,16 +2079,16 @@ void GPU_boundprim_cart(int dir, int flag, int n)
 		#endif
 		if (flag == 1){
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 			#elif(SCUDA)
-			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_CART[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 			#endif
 		}
 		else{
 			#if(SHIP)
-			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			hipLaunchKernelGGL(boundprim_cart, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 			#elif(SCUDA)
-			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], dir);
+			boundprim_cart << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_CART[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 			#endif
 		}
 		//gpuDeviceSynchronize();
