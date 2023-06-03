@@ -3875,8 +3875,8 @@ void calc_density_midplane(void) {
 				//Calculate sum in grid of density and density squared
 				if (index * pow(1 + REF_1, block[n_ord_total[n]][AMR_LEVEL1]) == i) {
 					get_geometry(n_ord_total[n], i, j, z, CENT, &geom);
-					rho_squared[index] += geom.g * pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], 2.0);
-					rho[index]+= geom.g * p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO];
+					rho_squared[index] += geom.g * pow(p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO], 2.0) * dx[nl[n_ord_total[n]]][1] * dx[nl[n_ord_total[n]]][2] *dx[nl[n_ord_total[n]]][3];
+					rho[index]+= geom.g * p[nl[n_ord_total[n]]][index_3D(n_ord_total[n], i, j, z)][RHO] * dx[nl[n_ord_total[n]]][1] * dx[nl[n_ord_total[n]]][2] * dx[nl[n_ord_total[n]]][3];
 				}
 			}
 		}
