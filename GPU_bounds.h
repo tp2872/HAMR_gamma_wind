@@ -727,6 +727,9 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, cons
 		//Set density and internal energy
 		p_local[RHO] = RHOMIN;
 		p_local[UU] = UUMIN;
+		p_local[B1] = pv[B1 * ksize + global_id];
+		p_local[B2] = pv[B2 * ksize + global_id];
+		p_local[B3] = pv[B3 * ksize + global_id];
 
 		//Set other scalars
 		#if(DOKTOT)
