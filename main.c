@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-    set_AMR();
+    	set_AMR();
 
 	#if (DOHELM)
 	eos_init();
@@ -69,6 +69,8 @@ int main(int argc, char *argv[])
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
+	diag(LOG_OUT);
+
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -77,13 +79,13 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 100.0;
-	DTd = 10;
-	DTd_reduced = 5000.0;
-	if (dump_cnt > 1000000000) {
+	DTd = 100;
+	DTd_reduced = 25.0;
+	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
-		tdump_reduced = dump_cnt_reduced*DTd_reduced ;
+		tdump_reduced = dump_cnt_reduced*DTd_reduced;
 		tlog = t + DTl;
-		tref = t;
+		tref = t+1.0;
 	}
 	else {
 		tdump = t + DTd;
@@ -133,6 +135,7 @@ int main(int argc, char *argv[])
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
+
 			#if(!(CARTESIAN || CARTESIAN_GR))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
@@ -149,12 +152,14 @@ int main(int argc, char *argv[])
 			#if (GPU_ENABLED==1)
 			GPU_boundprim(1);
 			#endif
+
 			if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
 			tref += TREF;
 		}
 
 		//Put out log file and rdump file
 		if ((t >= tlog || (end_rdump - begin_rdump)>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			set_timelevel(1);			
 			restart_write(); //do restart dump simultaneous with log
 			#if(!PARALLEL_IO)
 			close_rdump();
@@ -411,13 +416,21 @@ void set_grid(int n)
 			/* theta-face-centered */
 			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, 1, z, FACE2, X);
-				a = 0. ;
+				//a = 0. ;
+				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
+				#else
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				#endif
 			}
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
+				//a = 0.;
+				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
-				a = 0.;
+				#else
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				#endif
 			}
 			else coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
