@@ -48,17 +48,17 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
-	}
-
-	#if (DO_YE)
-    prim[YE] = U[YE] / U[RHO];
-    validate_ye(&prim[YE]);
-    #endif
+		#if (DO_YE)
+		prim[YE] = U[YE] / U[RHO];
+		validate_ye(&prim[YE]);
+		#endif
 
     #if (DONUCLEAR)
-    prim[XALPHA] = U[XALPHA] / U[RHO];
-    prim[XATM] = U[XATM] / U[RHO];
-    #endif
+		prim[XALPHA] = U[XALPHA] / U[RHO];
+		prim[XATM] = U[XATM] / U[RHO];
+		#endif
+	}
+
 
 	return(ret);
 }

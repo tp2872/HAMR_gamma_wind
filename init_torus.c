@@ -16,10 +16,10 @@ void init()
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
 		case MONOPOLE_PROBLEM_2D:
-			init_monopole(1e3);
+			//init_monopole(1e3);
 			break;
 		case BZ_MONOPOLE_2D:
-			init_monopole(100.);
+			//init_monopole(100.);
 			break;
 		case TORUS_PROBLEM:
 			init_torus();
@@ -50,7 +50,7 @@ void init()
 			init_entwave();
 			break;
 		case TRUNC_PROBLEM:
-			init_truncdisk();
+			//init_truncdisk();
 		case BLAST_WAVE:
 			init_blastwave();
 			break;

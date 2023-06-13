@@ -1527,7 +1527,13 @@ __device__ void EP_dEdW_dEdZ_dEdT(double* Eprim, double* Pprim, double* dEdvsq, 
     */
     double gamma = 1. / sqrt(1. - vsq);
     double rho0 = D / gamma;
-    eos_mode_rhotemp_pres_u_3D_T(gpu_eos_table, rho0, T, ye, &pEOS, &epsEOS, &dpEOSdrho, &dpEOSdt, &depsEOSdrho, &depsEOSdt);
+    eos_mode_rhotemp_pres_u_3D_T(gpu_eos_table, rho0, T, 
+        #if (DO_YE)
+        ye,
+        #else
+        1.0,
+        #endif
+        &pEOS, &epsEOS, &dpEOSdrho, &dpEOSdt, &depsEOSdrho, &depsEOSdt);
 
     // Further partial derivatives
     double depsdW = 1.0 / (D * gamma);

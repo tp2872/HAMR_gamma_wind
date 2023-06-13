@@ -215,7 +215,7 @@ void init_torus_spherical()
 	#endif
 }
 
-
+#define Nloops (1)
 void set_mag_spherical(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.0;//0.007/(gam-1.0);
@@ -233,7 +233,7 @@ void set_mag_spherical(void){
 	double turb_coeff = 0.21;
 	double coeff;
 
-	static const size_t Nloops = 0;//10000;
+	//static const size_t Nloops = 0;//10000;
 		FILE* fp = fopen("3dloops_size.dat", "r+");
 		int kk;
         double xc[Nloops], yc[Nloops], zc[Nloops], size[Nloops];
