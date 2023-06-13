@@ -694,7 +694,14 @@ __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn)
 	}
 }
 
-__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
+__global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int *  pflag, int *  failimage
+	#if (DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
@@ -710,13 +717,40 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	double avg[NPR];
-	int counter = 0;
+	//double avg[NPR];
+	//int counter = 0;
+	double pf[NPR];
+	struct of_geom geom;
 
 	/* Fix the interior points first */
 	if (k==1) {
 		if (pflag[global_id] != 0) {
-			for (k = 0; k < NPR; k++) avg[k] = 0.;
+			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+
+			for (k = 0; k < NPR; k++) {
+				pf[k] = pv[k * (ksize)+global_id];
+			}
+
+			pf[RHO] = RHOMINLIMIT;
+			pf[UU] = UUMINLIMIT;
+			pf[U1] = 0.0;
+			pf[U2] = 0.0;
+			pf[U3] = 0.0;
+
+			fixup_cell(pf, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
+
+			for (k = 0; k < NPR; k++) {
+				pv[k * (ksize)+global_id] = pf[k];
+			}
+
+			/*for (k = 0; k < NPR; k++) avg[k] = 0.;
 			if (icurr - 1 >= N1G){
 				if (pflag[global_id - isize] == 0){
 					for (k = 0; k < B1; k++) avg[k] += pv[k * (ksize)+global_id - isize];
@@ -761,6 +795,7 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 			}
 			for (k = 0; k < B1; k++) pv[k * (ksize)+global_id] = 1. / ((double)counter)*avg[k];
 			pv[KTOT * (ksize)+global_id] = 1. / ((double)counter)*avg[KTOT];
+			*/
 		}
 	}
 }

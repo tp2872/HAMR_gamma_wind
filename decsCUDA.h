@@ -165,7 +165,14 @@ __global__ void flux_ct1(const  double* __restrict__  F1, const  double* __restr
 __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double* __restrict__  emf);
 __global__ void Utoprim0(void);
 __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn);
-__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage);
+__global__ void fixuputoprim(double* pv, const  double* __restrict__ radius, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int* pflag, int* failimage
+#if (DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+#if(CALC_MDOT)
+	, double mass_density_scale
+#endif
+);
 __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage);
 __global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps
 	#if(DANAT_GDET_INTERP)	

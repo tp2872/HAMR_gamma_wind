@@ -1527,16 +1527,44 @@ void GPU_fixuputoprim(int flag, int n)
 
 	if (flag == 1){
 		#if(SHIP)
-		hipLaunchKernelGGL(fixuputoprim, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]);
+		hipLaunchKernelGGL(fixuputoprim, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferradius[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]
+			#if (DOHELM) 
+			, GPU_eos_table[0]
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
+			#endif
+		);
 		#elif(SCUDA)
-		fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]);
+		fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferradius[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]
+			#if (DOHELM) 
+			, GPU_eos_table[0]
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
+			#endif
+		);
 		#endif
 	}
 	else{
 		#if(SHIP)
-		hipLaunchKernelGGL(fixuputoprim, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]);
+		hipLaunchKernelGGL(fixuputoprim, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferradius[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]
+			#if (DOHELM) 
+			, GPU_eos_table[0]
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
+			#endif
+		);
 		#elif(SCUDA)
-		fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]);
+		fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferradius[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]]
+			#if (DOHELM) 
+			, GPU_eos_table[0]
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale_cpu
+			#endif
+		);
 		#endif
 	}
 
