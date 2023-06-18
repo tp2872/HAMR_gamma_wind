@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -63,7 +63,13 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
+#if (BHNSQ2_1)
 #define BH_SPIN (0.86)
+#elif (BHNSQ2_2)
+#define BH_SPIN (0.677376)
+#else
+#define BH_SPIN (0.8)
+#endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -90,7 +96,8 @@ Physical Parameters section
 
 // Postmerger problem, ICs from SpEC
 #define BHNSQ2 (1)
-#define BHNSQ2_1 (1)
+#define BHNSQ2_1 (0)
+#define BHNSQ2_2 (1)
 
 // Collapsar problem
 #define COLLAPSAR_GR1D (1)
@@ -601,7 +608,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
     #define M_SGRA_SOLAR (0.1) /* Solar masses */
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
     #if (BHNSQ2)
+    #if (BHNSQ2_1)
     #define M_SGRA_SOLAR (3.795) /* Solar masses */
+    #elif (BHNSQ2_2)
+    #define M_SGRA_SOLAR (2.67396) /* Solar masses */
+    #endif
     #else
     #define M_SGRA_SOLAR (8.07) /* Solar masses */
     #endif
@@ -644,7 +655,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
         #define MASS_DENSITY_SCALE (0.0000001)
     #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
         #if (BHNSQ2)
+        #if (BHNSQ2_1)
         #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+        #elif (BHNSQ2_2)
+        #define MASS_DENSITY_SCALE (1949439399418.96)
+        #endif
         #else
         #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
         #endif

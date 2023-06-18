@@ -59,6 +59,8 @@ void init_postmerger() {
 	#if (BHNSQ2)
 	#if (BHNSQ2_1)
 	char fname1[] = "spec_ic_1.dat";
+	#elif (BHNSQ2_2)
+	char fname1[] = "spec_ic_2.dat";
 	#else
 	char fname1[] = "InterpolatedDataBHNSQ2.dat";
 	#endif
@@ -122,6 +124,10 @@ void init_postmerger() {
 			ext.nx = 384;
 			ext.ny = 96;
 			ext.nz = 96;
+			#elif (BHNSQ2_2)
+			ext.nx = 200;
+			ext.ny = 100;
+			ext.nz = 100;
 			#else
 			ext.nx = 384;
 			ext.ny = 96;
@@ -133,7 +139,7 @@ void init_postmerger() {
 
 			read_first_line(first_line, MAXLEN, fp1);
 			sscanf(first_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmin, &ext.ymin, &ext.zmin);
-			#if (!BHNSQ2_1)
+			#if (!BHNSQ2_1 && !BHNSQ2_2)
 			ext.xmin /= r_unit;
 			ext.xmax /= r_unit;
 			#endif
@@ -146,6 +152,10 @@ void init_postmerger() {
 			nx = 384;
 			ny = 96;
 			nz = 96;
+			#elif (BHNSQ2_2)
+			nx = 200;
+			ny = 100;
+			nz = 100;
 			#else
 			nx = 384;
 			ny = 96;
@@ -235,7 +245,7 @@ void init_postmerger() {
 				dd(ii, jj, kk, VARK) = (double)kk;
 
 				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI), &dd(ii, jj, kk, VARRHO), &dd(ii, jj, kk, VARP), &dd(ii, jj, kk, VARYE), &dd(ii, jj, kk, VARMUDT), &dd(ii, jj, kk, VARUDPHI), &dd(ii, jj, kk, VARVUR), &dd(ii, jj, kk, VARVUTHETA), &dd(ii, jj, kk, VARVUPHI));
-				#if (!BHNSQ2_1)
+				#if (!BHNSQ2_1 && !BHNSQ2_2)
 				dd(ii, jj, kk, VARR) /= r_unit;
 				#endif
 				//dd(ii, jj, kk, VARUDPHI) /= r_unit;

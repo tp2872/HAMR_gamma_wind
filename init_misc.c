@@ -204,7 +204,7 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
 
-  #if (!BHNSQ2_1)
+  #if (!BHNSQ2_1 && !BHNSQ2_2)
   /* Jacobian transformation from spherical to cartesian coords */
   dxdr_sph_to_cart(r, th, phi, dxdr);
   invert_matrix(dxdr, drdx);
