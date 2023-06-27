@@ -896,7 +896,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     if (prim[UU] < 0.0) {
         *pres = (GAMMA - 1.0) * fabs(prim[UU]) / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0);
+        *dpde_d = (GAMMA - 1.0) * dens;
         return;
     }
     #endif
@@ -990,7 +990,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     if (error_h > EOS_TOL) {
         *pres = (GAMMA - 1.0) * w_goal / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0);
+        *dpde_d = (GAMMA - 1.0) * dens;
         error_h = 10.0 * EOS_TOL;
     }
     #endif
@@ -1639,6 +1639,7 @@ __device__ void eos_mode_rhotemp_s_pres_u(const  double* __restrict__ gpu_eos_ta
         #if (inversion_w_edits)
         *dpdrho = *dpdrho - xener / dens * (dpdt / dedt);
         #endif
+        *temp = eos_temp_low;
         return;
     }
     //else if (entr_goal > s_high) {
@@ -1765,6 +1766,43 @@ __device__ void eos_mode_rhotemp_w_pres_u(const  double* __restrict__ gpu_eos_ta
     double xener;
 
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    // check if the input is valid:
+    int is_valid_input = 1;
+#if (HELMEOS_INPUT_CHECK)
+    double h_low, h_high;
+    // Lowest Tgas:
+    eos_helm(gpu_eos_table, 1, eos_temp_low, dens, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+#if (DONUCLEAR)
+        , x_alpha, x_atm
+#endif
+    );
+    h_low = xener + *pres * deni;
+    // Highest Tgas:
+    eos_helm(gpu_eos_table, 1, eos_temp_up, dens, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
+#if (DONUCLEAR)
+        , x_alpha, x_atm
+#endif
+    );
+    h_high = xener + *pres * deni;
+
+    if (xenth < h_low) {
+        is_valid_input = 0;
+#if (revert_gamma)
+        *pres = (GAMMA - 1.0) * fabs(w) / (GAMMA);
+        *temp = eos_temp_low;
+        error_h = 10.0 * EOS_TOL;
+#endif
+        return;
+    }
+    //else if (xenth > h_high) {
+    //    *temp = 0.5*eos_temp_up;
+    //    *dpde_d = dpdt / dedt;
+    //    #if (inversion_w_edits)
+    //    *dpdrho = *dpdrho - xener * deni * (*dpde_d);
+    //    #endif
+    //    return;
+    //}
+#endif
 
     // Check if the guess temperature is already enough
     temp_old = temp_ini_guess;
@@ -1899,9 +1937,10 @@ __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict_
     if (xenth < h_low) {
         is_valid_input = 0;
         #if (revert_gamma)
-        *pres = (GAMMA - 1.0) * (w) / (GAMMA);
+        *pres = (GAMMA - 1.0) * fabs(w) / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0);
+        *dpde_d = (GAMMA - 1.0) * dens;
+        *temp = eos_temp_low;
         error_h = 10.0 * EOS_TOL;
         #endif
         return;
@@ -1999,7 +2038,7 @@ __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict_
     if (error_h > EOS_TOL) {
         *pres = (GAMMA - 1.0) * (w) / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0);
+        *dpde_d = (GAMMA - 1.0) * dens;
         error_h = 10.0 * EOS_TOL;
     }
     #endif
@@ -2045,6 +2084,7 @@ __device__ int eos_mode_rhotemp_u_pres_floor(const  double* gpu_eos_table, doubl
         #if (revert_gamma)
         // Use GAMMA EOS in this case
         *pres = (GAMMA - 1.0) * u;
+        *temp = eos_temp_low;
         error_e = 10.0 * EOS_TOL;
         #endif 
         return;
