@@ -66,7 +66,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 
 	#if(CARTESIAN_GR)
-	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
+	//if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
 
 	if (k == 1) {
@@ -694,7 +694,14 @@ __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn)
 	}
 }
 
-__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
+__global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int *  pflag, int *  failimage
+	#if (DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+	#if(CALC_MDOT)
+	, double mass_density_scale
+	#endif
+)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
@@ -710,13 +717,40 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	double avg[NPR];
-	int counter = 0;
+	//double avg[NPR];
+	//int counter = 0;
+	double pf[NPR];
+	struct of_geom geom;
 
 	/* Fix the interior points first */
 	if (k==1) {
 		if (pflag[global_id] != 0) {
-			for (k = 0; k < NPR; k++) avg[k] = 0.;
+			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+
+			for (k = 0; k < NPR; k++) {
+				pf[k] = pv[k * (ksize)+global_id];
+			}
+
+			pf[RHO] = RHOMINLIMIT;
+			pf[UU] = UUMINLIMIT;
+			pf[U1] = 0.0;
+			pf[U2] = 0.0;
+			pf[U3] = 0.0;
+
+			fixup_cell(pf, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)], &geom
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(CALC_MDOT)
+				, magnetic_density_scale
+				#endif
+				);
+
+			for (k = 0; k < NPR; k++) {
+				pv[k * (ksize)+global_id] = pf[k];
+			}
+
+			/*for (k = 0; k < NPR; k++) avg[k] = 0.;
 			if (icurr - 1 >= N1G){
 				if (pflag[global_id - isize] == 0){
 					for (k = 0; k < B1; k++) avg[k] += pv[k * (ksize)+global_id - isize];
@@ -761,6 +795,7 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 			}
 			for (k = 0; k < B1; k++) pv[k * (ksize)+global_id] = 1. / ((double)counter)*avg[k];
 			pv[KTOT * (ksize)+global_id] = 1. / ((double)counter)*avg[KTOT];
+			*/
 		}
 	}
 }
@@ -826,6 +861,74 @@ __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage)
 			}
 			if (counter > 0) {
 				//for (k = UU_RAD; k <= U3_RAD; k++) pv[k * (ksize)+global_id] = 1. / ((double)counter) * avg[k];
+			}
+		}
+	}
+}
+
+__global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage)
+{
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3) * (BS_2);
+	zcurr = (global_id % (isize)) % (BS_3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
+	icurr = (global_id - (jcurr * (BS_3)+zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	if (global_id < (BS_1) * (BS_2) * (BS_3)) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	double avg[NPR];
+	int counter = 0;
+	int sp;
+	/* Fix the interior points first */
+	if (k == 1) {
+		if (pflag_nu[global_id] != 0) {
+			for (k = 0; k < NPR; k++) avg[k] = 0.;
+			for (sp = 0; sp < NU_SPECIES; sp++) {
+				if (icurr - 1 >= N1G) {
+					if (pflag_nu[global_id - isize] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - isize];
+						counter++;
+					}
+				}
+				if (icurr + 1 < BS_1 + N1G) {
+					if (pflag_nu[global_id + isize] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + isize];
+						counter++;
+					}
+				}
+				if (jcurr - 1 >= N2G) {
+					if (pflag_nu[global_id - (BS_3 + 2 * N3G)] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - (BS_3 + 2 * N3G)];
+						counter++;
+					}
+				}
+				if (jcurr + 1 < BS_2 + N2G) {
+					if (pflag_nu[global_id + (BS_3 + 2 * N3G)] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + (BS_3 + 2 * N3G)];
+						counter++;
+					}
+				}
+				if (zcurr - 1 >= N3G) {
+					if (pflag_nu[global_id - D3] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - D3];
+						counter++;
+					}
+				}
+				if (zcurr + 1 < BS_3 + N3G) {
+					if (pflag_nu[global_id + D3] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + D3];
+						counter++;
+					}
+				}
+				if (counter > 0) {
+					//for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) pv[k * (ksize)+global_id] = 1. / ((double)counter) * avg[k];
+				}
 			}
 		}
 	}

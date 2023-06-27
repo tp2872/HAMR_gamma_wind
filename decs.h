@@ -784,6 +784,7 @@ extern double cour;
 extern double dV, dx[NB_LOCAL][NPR], startx[NPR];
 extern double dt, bdt[NB_LOCAL][4];
 extern int NODE_global[NB];
+extern double gpu_mem;
 extern double t, tf;
 extern int nstep;
 extern double sourceflag, period_max;
@@ -883,6 +884,7 @@ extern int N3_GPU_offset[NB];
 extern int max_blocks;
 extern int communicator_set;
 extern float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
+extern double density_midplane[NB_1 * BS_1];
 
 /*************************************************************************
 FUNCTION DECLARATIONS
@@ -1109,9 +1111,7 @@ void GPU_fixup_post(int n, double Dt);
 void GPU_cleanup_post(int n);
 void GPU_fixuputoprim(int flag, int n);
 void GPU_fixuputoprim_rad(int flag, int n);
-#if (NEUTRINOS_M1)
 void GPU_fixuputoprim_nu(int flag, int n);
-#endif
 void GPU_Utoprim_M1_0(int n, double Dt);
 void GPU_Utoprim_M1_1(int n, double Dt);
 void GPU_Utoprim_M1_2(int n, double Dt);
@@ -1187,8 +1187,8 @@ double ranc(int seed);
 double slope_lim(double y1, double y2, double y3);
 void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
 void area_map(int i, int j, int n, double(*restrict prim[NB_LOCAL])[NPR]);
-void blgset(int n, int i, int j, struct of_geom *geom);
-void ksgset(int n, int i, int j, struct of_geom *geom);
+void blgset(int n, int i, int j, int z, struct of_geom *geom);
+void ksgset(int n, int i, int j, int z, struct of_geom *geom);
 void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi);
 void bl_gcon_func(double r, double th, double gcov[][NDIM]);
 void kerr_gcov_func(double r, double th, double gcov[][NDIM]);
@@ -1253,6 +1253,7 @@ void set_arrays(int n);
 void set_grid(int n);
 void calc_opening_jet(void);
 void calc_opening_coccoon(void);
+void calc_density_midplane(void);
 void alloc_bounds_GPU(int n);
 void free_bound_gpu(int n);
 void set_points(int n);
@@ -1261,7 +1262,7 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);
 void check_cart_grid(void);
 double calc_mem(int n_blocks);
 double calc_mem_gpu(int n);
-void calc_mem_cpu(int n);
+double calc_mem_cpu(int n);
 double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB_LOCAL])[NDIM],
 	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
 	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,
@@ -1556,6 +1557,7 @@ gpuError_t gpuEventRecord(gpuEvent_t event, gpuStream_t stream);
 gpuError_t gpuStreamWaitEvent(gpuStream_t stream, gpuEvent_t event, int zero);
 gpuError_t gpuGetDeviceCount(int* count);
 gpuError_t gpuDeviceSetSharedMemConfig(int kind);
+gpuError_t gpuMemGetInfo(size_t* free, size_t* total);
 
 //Initial conditions related
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th, double* phi, double tilt);

@@ -1,8 +1,9 @@
 #include "include.h"
 #include "decs_MPI.h"
 #include "defs.h"
+#if(SCUDA)
 #include "cudaProfiler.h"
-
+#endif
 
 /*****************************************************************/
 /*****************************************************************
@@ -16,11 +17,11 @@
 -*****************************************************************/
 int main(int argc, char *argv[])
 {
-	double tdump, tdump_reduced, tlog, dump_cnt0;
+	double tdump, tdump_reduced, tlog, dump_cnt0, runtime;
 	int nfailed = 0;
 	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
-	clock_t begin2;
+	clock_t begin2, begin_rdump, end_rdump;
 	nstep = 0;
 	defcon = 1.;
 
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-    set_AMR();
+    	set_AMR();
 
 	#if (DOHELM)
 	eos_init();
@@ -63,32 +64,41 @@ int main(int argc, char *argv[])
 			#endif
 			if (n_old == n_active_total) break;
 		}	
-		restart_write();
-		close_rdump();
+		diag(INIT_OUT);
 	}
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
+	diag(LOG_OUT);
+
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
 	DTl = 100.0;
-	DTd = 50;
-	DTd_reduced = 5000.0;
-	tdump = t + DTd;
-	tdump_reduced = t + DTd_reduced;
-	tlog = t + DTl;
-	tref = t;
+	DTd = 100;
+	DTd_reduced = 25.0;
+	if (dump_cnt > 0) {
+		tdump = dump_cnt*DTd;
+		tdump_reduced = dump_cnt_reduced*DTd_reduced;
+		tlog = t + DTl;
+		tref = t+1.0;
+	}
+	else {
+		tdump = t + DTd;
+		tdump_reduced = t + DTd_reduced;
+		tlog = t + DTl;
+		tref = t;
+	}
 
 	/*Start timer*/
 	time_spent3 = 0.0;
 	begin1 = get_wall_time();
 	begin2 = begin1;
+	begin_rdump = begin1;
 
 	//cuProfilerStart();
 	while(t < tf) {
@@ -118,10 +128,14 @@ int main(int argc, char *argv[])
 		//Every swithchtime read out data from GPU and set boundary
 		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
 			end1 = get_wall_time();
+			end_rdump = end1;
+			runtime = (double)(end_rdump - begin_rdump);
+
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
+
 			#if(!(CARTESIAN || CARTESIAN_GR))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
@@ -132,27 +146,41 @@ int main(int argc, char *argv[])
 
 		//Refine every TREF
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
 			GPU_boundprim(1);
 			#endif
+
 			if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
 			tref += TREF;
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if ((t >= tlog || (end_rdump - begin_rdump)>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			set_timelevel(1);			
 			restart_write(); //do restart dump simultaneous with log
+			#if(!PARALLEL_IO)
 			close_rdump();
+			#endif
+
+			//Calculate exit criterion
+			if (runtime > (RUNTIME * 3600.0)) {
+				if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
+				break;
+			}
+
 			tlog += DTl;
 		}
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT);
+			#if(!PARALLEL_IO)
 			close_dump();
 			close_gdump();
+			#endif
 			tdump += DTd;
 		}
 
@@ -160,8 +188,10 @@ int main(int argc, char *argv[])
 		#if(DUMP_SMALL)
 		if (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT_REDUCED);
+			#if(!PARALLEL_IO)
 			close_dump_reduced();
 			close_gdump_reduced();
+			#endif
 			tdump_reduced += DTd_reduced;
 		}
 		#endif
@@ -282,11 +312,16 @@ void MPI_initialize(int argc, char *argv[])
 	}
 
 	#if(GPU_ENABLED)
-	if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
-	if (rank % numdevices != local_rank % numdevices) {
-		fprintf(stderr, "Error in initializing GPUs with MPI! \n");
-		exit(0);
-	}
+		#if(SCUDA)
+		if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
+		if (rank % numdevices != local_rank % numdevices) {
+			fprintf(stderr, "Error in initializing GPUs with MPI! \n");
+			exit(0);
+		}
+		#else
+		gpuGetDeviceCount(&numdevices);
+		gpuSetDevice(rank%numdevices);
+		#endif
 	#endif
 
 	//Killswitch
@@ -381,13 +416,21 @@ void set_grid(int n)
 			/* theta-face-centered */
 			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, 1, z, FACE2, X);
-				a = 0. ;
+				//a = 0. ;
+				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
+				#else
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				#endif
 			}
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE){
 				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
+				//a = 0.;
+				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
-				a = 0.;
+				#else
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
+				#endif
 			}
 			else coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);

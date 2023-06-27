@@ -1,0 +1,16 @@
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P PHY129
+#BSUB -W 00:15
+#BSUB -nnodes 1
+#BSUB -alloc_flags "smt1"
+#BSUB -N matthewliska92@gmail.com
+#BSUB -J HAMR_HIP
+#BSUB -o HAMR_HIP.%J
+#BSUB -e HAMR_HIP.%J
+
+module load xl
+module load cuda/11.0.3
+cd $PROJWORK/phy129/HAMR_HIP
+
+jsrun --smpiargs "-gpu" -n1 -a6 -g6 -c42 -bpacked:7 ./harm

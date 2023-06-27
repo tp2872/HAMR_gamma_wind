@@ -160,3 +160,11 @@ gpuError_t gpuDeviceSetSharedMemConfig(int kind) {
 	return cudaDeviceSetSharedMemConfig(kind);
 #endif
 }
+
+gpuError_t gpuMemGetInfo(size_t *free, size_t *total) {
+#if(SHIP)
+	return hipMemGetInfo(free, total);
+#elif(SCUDA)
+	return cudaMemGetInfo(free, total);
+#endif
+}

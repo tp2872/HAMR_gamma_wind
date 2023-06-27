@@ -336,7 +336,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 		}
 	}
 	#else
-	if (bsq / ph[RHO]<1. || r<10.){
+	//if (bsq / ph[RHO]<1. || r<10.){
 		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
 			dU[UU] += -q->ucov[0] * lambda;
 			dU[U1] += -q->ucov[1] * lambda;
@@ -352,7 +352,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 			dU[U3] += -q->ucov[3] * lambda;
 			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda; // HELMEOS
 		}
-	}
+	//}
 	#endif
 }
 

@@ -703,7 +703,7 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 	#endif
 }
 
-__global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int dir)
+__global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
 {
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr;
@@ -715,20 +715,74 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, int 
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
 	int k=0;
+	double p_local[NPR], alpha, vsq, gamma;
+	struct of_geom geom;
+
 	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
 
 	if (k==1 && pflag_cart[global_id] == 1) {
-		PLOOP pv[k * ksize + global_id] = 0.0;
-		pv[RHO * ksize + global_id] = RHOMIN;
-		pv[UU * ksize + global_id] = UUMIN;
+		//Get metric
+		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+
+		//Set density and internal energy
+		p_local[RHO] = RHOMIN;
+		p_local[UU] = UUMIN;
+
+		//Set other scalars
+		#if(DOKTOT)
+		p_local[KTOT] = 0.0;
+		#endif
+		#if(TWO_T)
+		p_local[ENTRE] = 0.0;
+		p_local[ENTRI] = 0.0;
+		#endif
+		#if(P_NUM)
+		p_local[PHOTON] = 1.e-30;
+		#endif
+		#if(RAD_M1)
+		p_local[UU_RAD] = 1.e-30;
+		#endif
+
+		//Set fluid velocities to 0
+		alpha = 1. / sqrt(-geom.gcon[0]);
+		p_local[U1] = geom.gcon[1] * alpha;
+		p_local[U2] = geom.gcon[2] * alpha;
+		p_local[U3] = geom.gcon[3] * alpha;
+
+		// now find new gamma and put it back in
+		vsq = geom.gcov[4] * p_local[UTCON1 + 1 - 1] * p_local[UTCON1 + 1 - 1]; //1,1
+		vsq += 2. * geom.gcov[5] * p_local[UTCON1 + 2 - 1] * p_local[UTCON1 + 1 - 1]; //1,2
+		vsq += 2. * geom.gcov[6] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 1 - 1]; //1,3
+		vsq += geom.gcov[7] * p_local[UTCON1 + 2 - 1] * p_local[UTCON1 + 2 - 1]; //2,2
+		vsq += 2 * geom.gcov[8] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 2 - 1]; //2,3
+		vsq += geom.gcov[9] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 3 - 1]; //3,3
+		vsq = MY_MAX(1.e-13, vsq);
+		if (vsq >= 1.) {
+			vsq = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+		}
+		gamma = 1. / sqrt(1. - vsq);
+		p_local[U1] *= gamma;
+		p_local[U2] *= gamma;
+		p_local[U3] *= gamma;
+		#if(RAD_M1)
+		p_local[U1_RAD] = p_local[U1];
+		p_local[U2_RAD] = p_local[U2];
+		p_local[U3_RAD] = p_local[U3];
+		#endif
+
+		//Export results to global memory
+		for (k = 0; k < NPR; k++) {
+			pv[k * ksize + global_id] = p_local[k];
+		}
+
 		if (pflag_cart[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-			ps[0 * ksize + global_id] = 0.0;
+			//ps[0 * ksize + global_id] = 0.0;
 		}
 		if (pflag_cart[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-			ps[1 * ksize + global_id] = 0.0;
+			//ps[1 * ksize + global_id] = 0.0;
 		}
 		if (pflag_cart[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-			ps[2 * ksize + global_id] = 0.0;
+			//ps[2 * ksize + global_id] = 0.0;
 		}
 	}
 }
@@ -859,7 +913,7 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 	pr_ghost[U3] = pr_B[U3] * (1. - dr_over_r);
 	// B-field 
 	pr_ghost[B1] = pr_B[B1] * (1. + dr_over_r);
-	// Theta, phi velocity
+	// Theta, phi velocity 
 	pr_ghost[B2] = pr_B[B2] * (1. - dr_over_r);
 	pr_ghost[B3] = pr_B[B3] * (1. - dr_over_r);
 	#if(DO_YE)

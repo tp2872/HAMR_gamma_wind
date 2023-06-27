@@ -129,11 +129,12 @@ void vofx_matthewcoords(double *X, double *V){
 	if (!isfinite(r))fprintf(stderr, "Error 1: R not finite! \n");
 
 	//r = R;
+	V[0] = X[0];
 	V[1] = r;
 	V[2] = acos(z / r);
 	if (!isfinite(V[2]))fprintf(stderr, "Error 2: V2 not finite! %f %f \n", r,z);
 	V[3] = atan2(y, x) + atan(a / r);
-	if (!isfinite(V[3]))fprintf(stderr, "Error 3: V3 not finite! %f %f %f \n", x / (sqrt(r * r + a * a) * sin(V[2])), atan(a/r));
+	if (!isfinite(V[3]))fprintf(stderr, "Error 3: V3 not finite! %f %f %f %f \n", x / (sqrt(r * r + a * a) * sin(V[2])), atan(a/r));
 
 	#else
 	V[0] = X[0];
@@ -319,7 +320,7 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = 0.5 * (1. + sqrt(1. - a * a)); 	
+	Rin = 0.90 * (1. + sqrt(1. - a * a)); 	
 	Rout = ROUT;
 	lim = MC;
 	failed = 0;
@@ -330,6 +331,8 @@ void set_gridparam(void) {
 	gam = GAMMA;
 
 	#if(CARTESIAN || CARTESIAN_GR)
+		//Leave Rin to this value for CKS coordinates
+		Rin = 0.5 * (1. + sqrt(1. - a * a));
 		#if(WHICHPROBLEM==SHOCK_TUBE)
 		startx[1] = -1.1;
 		startx[2] = -1.1;

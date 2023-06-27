@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -53,7 +53,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (0)
+#define REFINE_THIN (1)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -81,19 +81,19 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (100000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILT_ANGLE (0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (0)
-#define H_OVER_R (0.1)
+#define COOL_DISK (1)
+#define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -209,7 +209,7 @@ Physical Parameters section
 #define TMAX (1.e15)
 
 /*Runtime in hours*/
-#define RUNTIME (24.0)
+#define RUNTIME (2.0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -236,11 +236,19 @@ Numerical Parameters section
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
 
-/*Memory of each GPU in GB*/
-#define GPU_MEM (40.0)
+/*Set to high value to circumvent cross-GPU GPU_DIRECT*/
+#define GPU_SET (1)
+
+/*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
+
+/*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
+#define CUDA_MEMCALC (0)
+
+/*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
+#define MEM_CLEAN (0)
 
 /*Memory of the node*/
-#define CPU_MEM (80.0)
+#define CPU_MEM (40.0)
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -252,7 +260,7 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define NB_LOCAL (4000)
+#define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -319,16 +327,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (80)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -434,7 +442,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if(SPHERICAL || SPHERICAL_GR)
 #define COORDSINGFIX 1
 #else
-#define COORDSINGFIX 1
+#define COORDSINGFIX 0
 #endif
 
 // whether to move polar axis to a bit larger theta
@@ -489,7 +497,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RAD_M1 (0)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
-#define HIGH_MDOT (1)
+#define HIGH_MDOT (0)
 
 /* number of species evolved */
 #define NU_SPECIES (3)       
@@ -679,7 +687,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
         #endif
     #endif
 #else
-    #define MASS_DENSITY_SCALE (3.1)
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)

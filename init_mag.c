@@ -13,7 +13,7 @@ void set_mag(void){
 	struct of_state state;
 	double gamma_g;
 
-	#if(!NSY)
+	#if(!NSY || CARTESIAN_GR)
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
@@ -108,9 +108,9 @@ void set_mag(void){
 				}
 				#endif
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005; //Postmerger problem
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005; //Postmerger problem
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){	
 				#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -136,15 +136,12 @@ void set_mag(void){
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
-					//fprintf(stderr, "Error 1: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
-					//fprintf(stderr, "Error 2: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
 					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
-					//fprintf(stderr, "Error 3: (%d %d %d) r: %f th: %f phi: %f  r2: %f th2: %f phi2: %f \n", i, j, z, r, th, phi, pos_new[1], pos_new[2], pos_new[3]);
 				}
 				#endif
 			}
@@ -296,11 +293,11 @@ void set_mag(void){
 			}
 			#else
 
-			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && j > (int)(20.0/180.0* N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) && j < (int)(N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))){
 				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif
-			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (bsq_ij > bsq_max && (j > 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))) {
 				bsq_max = bsq_ij;
 			}
 			#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -387,7 +384,7 @@ void set_mag(void){
 
 			#endif
 
-			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (bsq_ij > bsq_max && (j > 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))) {
 				bsq_max = bsq_ij;
 			}
 
@@ -402,11 +399,11 @@ void set_mag(void){
 			#endif
 
 			#if(RAD_M1)
-			if (((gamma_g - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (((gamma_g - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))) {
 				pmax = (gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
-			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if ((gamma_g - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 20.0 / 180.0 * N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))) {
 				pmax = (gamma_g-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			#endif

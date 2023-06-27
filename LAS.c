@@ -9,7 +9,7 @@ void set_timelevel(int tag){
 	ni = NB_1;
 	nj = NB_2;
 	nz = NB_3;
-	
+
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
 	#if(CARTESIAN==-10)
 	if (nstep > 0) {
@@ -46,18 +46,40 @@ void set_timelevel(int tag){
 	if (tag) {
 		int *min_j;
 		min_j = (int*)malloc(NB_1 * pow(1 + REF_1, N_LEVELS_3D) * sizeof(int));
+		int i, counter=0, counter_old = 0, j, stride=1000, n_stride;
+		int timelevel_local[NB];
+
+		//Number of strides in messages of stride 1000
+		n_stride = numtasks / stride + 1;
 
 		//First make sure all nodes have the same information regarding the timestep
 		//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
-		for (n = 0; n < n_active_total; n++) {
-			rc = MPI_Ibcast(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-		}
 
-		//Receive from other nodes using blocking receive
-		for (n = 0; n < n_active_total; n++) {
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
-		}
+		for (j = 0; j < n_stride; j++) {
+			//Transmit refinement criterion to all MPI ranks
+			for (i = j * stride; i < MY_MIN(j * stride + stride, numtasks); i++) {
+				if (rank == i) {
+					for (n = 0; n < n_active_node[i]; n++) {
+						timelevel_local[counter + n] = block[n_ord_node[i][n]][AMR_TIMELEVEL];
+					}
+				}
+				rc = MPI_Ibcast(&timelevel_local[counter], n_active_node[i], MPI_INT, i, mpi_cartcomm, &request_timelevel[i]);
+				counter += n_active_node[i];
+			}
 
+			counter = counter_old;
+			for (i = j * stride; i < MY_MIN(j * stride + stride, numtasks); i++) {
+				MPI_Wait(&request_timelevel[i], &Statbound[0][0]);
+
+				if (rank != i) {
+					for (n = 0; n < n_active_node[i]; n++) {
+						block[n_ord_node[i][n]][AMR_TIMELEVEL] = timelevel_local[counter + n];
+					}
+				}
+				counter += n_active_node[i];
+			}
+			counter_old = counter;
+		}
 		//Fixate timelevel on block level and 0-level theta-phi slice
 		/*for (n = 0; n < n_active_total; n++) {
 			min_timelevel = 1000;
@@ -116,7 +138,7 @@ void set_timelevel(int tag){
 				}
 			}
 		}
-		#endif		
+		#endif	
 		free(min_j);
 	}
 	else {

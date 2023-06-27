@@ -740,6 +740,7 @@ double cour;
 double dV, dx[NB_LOCAL][NPR], startx[NPR];
 double dt, bdt[NB_LOCAL][4];
 int NODE_global[NB];
+double gpu_mem;
 double t, tf;
 int nstep;
 double sourceflag, period_max;
@@ -807,6 +808,7 @@ int N3_GPU_offset[NB];
 int max_blocks;
 int communicator_set;
 float jet_angle1[NB_1 * BS_1], jet_angle2[NB_1 * BS_1], coccoon_angle1[NB_1 * BS_1], coccoon_angle2[NB_1 * BS_1], r_head1, r_head2;
+double density_midplane[NB_1 * BS_1];
 
 //MPI Variables
 MPI_Request req[NB], boundreqs[NB_LOCAL][600];

@@ -135,14 +135,11 @@ void close_dump(void) {
 		}
 
 		MPI_File_close(&fdump[0]);
-		for (u = 0; u < u_max; u++) {
-			//MPI_File_close(&fdump[u]);
-			#if(DUMP_DIAG)
-			if ((dump_cnt - 1) % DUMP_DIAG_FREQUENCY == 0) {
-				MPI_File_close(&fdumpdiag[u]);
-			}
-			#endif
+		#if(DUMP_DIAG)
+		if ((dump_cnt - 1) % DUMP_DIAG_FREQUENCY == 0) {
+			MPI_File_close(&fdumpdiag[0]);
 		}
+		#endif
 	}
 	first_dump = 0;
 }

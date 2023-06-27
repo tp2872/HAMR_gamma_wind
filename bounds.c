@@ -740,21 +740,62 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n){
 	int i, j, z, k;
 	struct of_geom geom;
+	double alpha, vsq, gamma;
 
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G - 1) {
 		if (pflag_cart[nl[n]][index_3D(n, i, j, z)] == 1) {
-			PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = 0.0;
+			//Get metric
+			get_geometry(n, i, j, z, CENT, &geom);
+
+			//Set density and internal energy
 			prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHOMIN;
 			prim[nl[n]][index_3D(n, i, j, z)][UU] = UUMIN;
 
+			//Set other scalars
+			#if(DOKTOT)
+			prim[nl[n]][index_3D(n, i, j, z)][KTOT] = 0.0;
+			#endif
+			#if(TWO_T)
+			prim[nl[n]][index_3D(n, i, j, z)][ENTRE] = 0.0;
+			prim[nl[n]][index_3D(n, i, j, z)][ENTRI] = 0.0;
+			#endif
+			#if(P_NUM)
+			prim[nl[n]][index_3D(n, i, j, z)][PHOTON] = 1.e-30;
+			#endif
+			#if(RAD_M1)
+			prim[nl[n]][index_3D(n, i, j, z)][UU_RAD] = 1.e-30;
+			#endif
+
+			//Set fluid velocities to 0
+			alpha = 1. / sqrt(-geom.gcon[0][0]);
+			prim[nl[n]][index_3D(n, i, j, z)][U1] = geom.gcon[0][1] * alpha;
+			prim[nl[n]][index_3D(n, i, j, z)][U2] = geom.gcon[0][2] * alpha;
+			prim[nl[n]][index_3D(n, i, j, z)][U3] = geom.gcon[0][3] * alpha;
+
+			// now find new gamma and put it back in
+			SLOOP vsq += geom.gcov[j][k] * prim[nl[n]][index_3D(n, i, j, z)][U1 + j - 1] * prim[nl[n]][index_3D(n, i, j, z)][U1 + k - 1];
+			vsq = MY_MAX(1.e-13, vsq);
+			if (vsq >= 1.) {
+				vsq = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+			}
+			gamma = 1. / sqrt(1. - vsq);
+			prim[nl[n]][index_3D(n, i, j, z)][U1] *= gamma;
+			prim[nl[n]][index_3D(n, i, j, z)][U2] *= gamma;
+			prim[nl[n]][index_3D(n, i, j, z)][U3] *= gamma;
+			#if(RAD_M1)
+			prim[nl[n]][index_3D(n, i, j, z)][U1_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U1];
+			prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U2];
+			prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U3];
+			#endif
+
 			if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
-				ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
 			}
 			if (pflag_cart[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
-				ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
 			}
 			if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
-				ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
+				//ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
 			}					
 		}
 	}

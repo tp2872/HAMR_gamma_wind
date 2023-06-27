@@ -250,48 +250,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	//r = MY_MAX(r, 1.0);
 
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
-	dxdxp_func(X, dxdxp);
-
-	dxdxp[0][0] = 1.;
-	dxdxp[0][1] = 0.;
-	dxdxp[0][2] = 0.;
-	dxdxp[0][3] = 0.;
-	dxdxp[1][0] = 0.;
-	dxdxp[1][1] = sin(th) * cos(phi);
-	dxdxp[1][2] = r * cos(th) * cos(phi);
-	dxdxp[1][3] = -r * sin(th) * sin(phi);
-	dxdxp[2][0] = 0.;
-	dxdxp[2][1] = sin(th) * sin(phi);
-	dxdxp[2][2] = r * cos(th) * sin(phi);
-	dxdxp[2][3] = r * sin(th) * cos(phi);
-	dxdxp[3][0] = 0.;
-	dxdxp[3][1] = cos(th);
-	dxdxp[3][2] = -r * sin(th);
-	dxdxp[3][3] = 0.;
-	invert_matrix(dxdxp, dxdxp_inv);
-
-	#if(NSY)
-	//compute Jacobian nt->t (dt/dnt)
-	dxdxt[0][0] = 1.;
-	dxdxt[0][1] = 0.;
-	dxdxt[0][2] = 0.;
-	dxdxt[0][3] = 0.;
-	dxdxt[1][0] = 0.;
-	dxdxt[1][1] = cos(tilt);
-	dxdxt[1][2] = 0.;
-	dxdxt[1][3] = -sin(tilt);
-	dxdxt[2][0] = 0.;
-	dxdxt[2][1] = 0.;
-	dxdxt[2][2] = 1.;
-	dxdxt[2][3] = 0.;
-	dxdxt[3][0] = 0.;
-	dxdxt[3][1] = sin(tilt);
-	dxdxt[3][2] = 0.0;
-	dxdxt[3][3] = cos(tilt);
-
-	//compute Jacobian t->nt (dnt/dt)
-	invert_matrix(dxdxt, dxtdx);
-	#endif
+	//dxdxp_func(X, dxdxp);
 
 	#if(CARTESIAN)
 	gcov[0][0] = -1.0;
@@ -334,6 +293,7 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	gcov[3][1] = f * L[3] * L[1];
 	gcov[3][2] = f * L[3] * L[2];
 	gcov[3][3] = 1.0 + f * L[3] * L[3];
+	
 	/*
 	double cth, sth, s2, rho2;
 	cth = cos(th);
@@ -371,10 +331,10 @@ void gcov_func_cartesian(double *X, double gcovp[][NDIM])
 	//		gcovp[i][j] = 0.;
 	//		for (k = 0; k < NDIM; k++) {
 	//			for (l = 0; l < NDIM; l++) {
-	//				gcovp[i][j] += gcov[k][l] * dxdxp_inv[k][i] * dxdxp_inv[l][j];
+	//				gcovp[i][j] += gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
 	//			}
-		//	}
-		//}
+	//		}
+	//	}
 	//}
 	//convert to code coordinates
 	for (i = 0; i < NDIM; i++) {
@@ -504,6 +464,7 @@ void raise(double * restrict ucov, struct of_geom * restrict geom, double * rest
 /* NOTE: parameter hides global variable */
 void dxdxp_func(double *X, double dxdxp[][NDIM])
 {
+	#if(1)
 	int i, j, k, l;
 	double Xh[NDIM], Xl[NDIM];
 	double Vh[NDIM], Vl[NDIM];
@@ -520,6 +481,28 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 		for (j = 0; j<NDIM; j++)
 			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
 	}
+	#else
+	double r, th, phi, dxdxp_inv[NDIM][NDIM];
+	bl_coord(X, &r, &th, &phi);
+
+	dxdxp_inv[0][0] = 1.0;
+	dxdxp_inv[0][1] = 0.0;
+	dxdxp_inv[0][2] = 0.0;
+	dxdxp_inv[0][3] = 0.0;
+	dxdxp_inv[1][0] = 0.0;
+	dxdxp_inv[1][1] = sin(th)*cos(phi);
+	dxdxp_inv[1][2] = r * cos(th) * cos(phi) + a * cos(th) * sin(phi);
+	dxdxp_inv[1][3] = -r * sin(th) * sin(phi) + a * sin(th) * cos(phi);
+	dxdxp_inv[2][0] = 0.0;
+	dxdxp_inv[2][1] = sin(th) * sin(phi);
+	dxdxp_inv[2][2] = r * cos(th) * sin(phi) - a * cos(th) * cos(phi);
+	dxdxp_inv[2][3] = r * sin(th) * cos(phi) + a * sin(th) * sin(phi);
+	dxdxp_inv[3][0] = 0.0;
+	dxdxp_inv[3][1] = cos(th);
+	dxdxp_inv[3][2] = -r * sin(th);
+	dxdxp_inv[3][3] = 0.0;
+	invert_matrix(dxdxp_inv, dxdxp);
+	#endif
 }
 
 /* load local geometry into structure geom */
@@ -615,11 +598,11 @@ void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom)
 #undef EPS
 
 /* Boyer-Lindquist ("bl") metric functions */
-void blgset(int n, int i, int j, struct of_geom *geom)
+void blgset(int n, int i, int j, int z, struct of_geom *geom)
 {
 	double r, th,phi, X[NDIM];
 
-	coord(n, i, j, 0, CENT, X);
+	coord(n, i, j, z, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 
 	if (th < 0) th *= -1.;
@@ -631,11 +614,11 @@ void blgset(int n, int i, int j, struct of_geom *geom)
 }
 
 /* Returns spinning BH metric in Kerr-Schild coordinates; assumes axisymmetry */
-void ksgset(int n, int i, int j, struct of_geom *geom)
+void ksgset(int n, int i, int j, int z, struct of_geom *geom)
 {
   double r, th,phi, X[NDIM];
   
-  coord(n, i, j, 0, CENT, X);
+  coord(n, i, j, z, CENT, X);
   bl_coord(X, &r, &th, &phi);
   
   if (th < 0) th *= -1.;

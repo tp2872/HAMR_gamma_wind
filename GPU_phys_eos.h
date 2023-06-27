@@ -896,7 +896,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     if (prim[UU] < 0.0) {
         *pres = (GAMMA - 1.0) * fabs(prim[UU]) / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0) * dens;
+        *dpde_d = (GAMMA - 1.0) * den;
         return;
     }
     #endif
@@ -990,7 +990,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
     if (error_h > EOS_TOL) {
         *pres = (GAMMA - 1.0) * w_goal / (GAMMA);
         *dpdrho = 0.0;
-        *dpde_d = (GAMMA - 1.0) * dens;
+        *dpde_d = (GAMMA - 1.0) * den;
         error_h = 10.0 * EOS_TOL;
     }
     #endif
