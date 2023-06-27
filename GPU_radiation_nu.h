@@ -697,7 +697,7 @@ __device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* n
     for (i = 0; i < NDIM; i++) 
         P_dot_ucov[i] = ph[index_nu(UU_NU, species)] / 3. * (ucov[i] + ncov0 * delta(0, i) * (4. * n_dot_unu * W_v_dot_unu - W) + q_nu.ucov[i] * 4. * W_v_dot_unu) / (-Q_dot_n);
 
-    double Puu = ph[index_nu(UU_NU, species)] / 3. * (4. * W_v_dot_unu * W_v_dot_unu - (1. + W * W)) / (-Q_dot_n);
+    double Puu = ph[index_nu(UU_NU, species)] / 3. * (4. * W_v_dot_unu * W_v_dot_unu - (1. - W * W)) / (-Q_dot_n);
 
     /*
     double P_dot_ucov[NDIM], R_dot_ucov[NDIM], 
