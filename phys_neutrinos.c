@@ -333,7 +333,7 @@ void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_
 	}
 
 	*Tnu_over_Tgas = (ener_nu_avg * C_CGS * C_CGS) * F2 / (F3 + 1e-30) / (BOLTZ_CGS * ph[UU]);
-	//*Tnu_over_Tgas = MY_MIN(1.0, *Tnu_over_Tgas);
+	*Tnu_over_Tgas = MY_MIN(1.0, *Tnu_over_Tgas);
 	// 222.
 	//if (*Tnu_over_Tgas != *Tnu_over_Tgas) printf("\n\t [sp=%d] T_nu/T_g = %e, <e>=%e, T_g=%e (F2, F3 = %e %e)", species, *Tnu_over_Tgas, ener_nu_avg, ph[UU], F2, F3);
 }

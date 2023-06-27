@@ -741,7 +741,7 @@ __device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_tab
 
     // debugging:
     if (isnan(*Tnu_over_Tgas)) *Tnu_over_Tgas = 1.0;
-    //*Tnu_over_Tgas = MY_MAX(1.0, *Tnu_over_Tgas);
+    *Tnu_over_Tgas = MY_MAX(1.0, *Tnu_over_Tgas);
 }
 
 __device__ double calc_fermiint2(double x) {
