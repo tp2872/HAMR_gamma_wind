@@ -63,10 +63,14 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2_1)
 #define BH_SPIN (0.86)
 #elif (BHNSQ2_2)
 #define BH_SPIN (0.677376)
+#else 
+#define BH_SPIN (0.8)
+#endif
 #else
 #define BH_SPIN (0.8)
 #endif
@@ -100,7 +104,7 @@ Physical Parameters section
 #define BHNSQ2_2 (1)
 
 // Collapsar problem
-#define COLLAPSAR_GR1D (1)
+#define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (0)
