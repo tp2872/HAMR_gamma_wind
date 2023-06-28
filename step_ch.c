@@ -1209,7 +1209,7 @@ double advance_GPU(void)
 			GPU_fixuputoprim_rad(1, n_ord[n]);
 			#endif
 			#if (NEUTRINOS_M1)
-			//GPU_fixuputoprim_nu(1, n_ord[n]);
+			GPU_fixuputoprim_nu(1, n_ord[n]);
 			#endif
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1 ){
@@ -1219,7 +1219,7 @@ double advance_GPU(void)
 			GPU_fixuputoprim_rad(0, n_ord[n]);
 			#endif
 			#if (NEUTRINOS_M1)
-			//GPU_fixuputoprim_nu(0, n_ord[n]);
+			GPU_fixuputoprim_nu(0, n_ord[n]);
 			#endif
 		}
 	}
