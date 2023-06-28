@@ -240,6 +240,7 @@ Numerical Parameters section
 #define GPU_SET (1)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
+#define GPU_MEM (14.0)
 
 /*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
 #define CUDA_MEMCALC (0)
