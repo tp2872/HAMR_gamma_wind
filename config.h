@@ -107,14 +107,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (0)
@@ -159,7 +159,7 @@ Physical Parameters section
 #define enable_input_check  (0)
 #define revert_gamma        (1)
 #define eos_nr_debug (0)
-#define HELMEOS_INPUT_CHECK (1)
+#define HELMEOS_INPUT_CHECK (0)
 
 // subcycling testing
 #define RADM1_SUBCYCLING (0)
