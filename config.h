@@ -53,7 +53,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (1)
+#define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -92,8 +92,8 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
-#define H_OVER_R (0.02)
+#define COOL_DISK (0)
+#define H_OVER_R (0.1)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)

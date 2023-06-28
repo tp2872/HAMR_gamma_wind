@@ -528,7 +528,11 @@ __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt);
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt
+	#if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+    #endif
+);
 __device__ double calc_entropy(double* pr
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table

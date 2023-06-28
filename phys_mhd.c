@@ -435,12 +435,18 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 /* Add any additional source terms (e.g. cooling functions) */
 void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_state *q, double *dU, double r, double Dt) 
 {
-	double epsilon = ph[UU] / ph[RHO];
+	#if (DOHELM_TEMPERATURE)
+	double xpres, ugas;
+	eos_mode_rhotemp_pres_u(ph[RHO], ph[UU], ph[YE], &xpres, &ugas);
+	#else
+	double ugas = ph[UU];
+	#endif
+	double epsilon = ugas / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + a);
 	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
 	double Y = (gam - 1.)*epsilon / T_target;
-	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
-	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
+	double lambda = om_kepler*ugas * sqrt(Y - 1. + fabs(Y - 1.));
+	double int_energy = q->ucov[0] * q->ucon[0] * ugas;
 	double bsq = dot(q->bcon, q->bcov);
 
 	if (bsq / ph[RHO]<1. || r<10.){
