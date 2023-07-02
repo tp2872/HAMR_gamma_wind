@@ -171,6 +171,7 @@ __global__ void fixuputoprim(double* pv, const  double* __restrict__ radius, con
 #endif
 #if(CALC_MDOT)
 	, double mass_density_scale
+	, double magnetic_density_scale
 #endif
 );
 __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage);

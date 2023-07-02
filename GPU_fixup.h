@@ -700,6 +700,7 @@ __global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, c
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale
+	, double magnetic_density_scale
 	#endif
 )
 {

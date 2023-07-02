@@ -71,18 +71,18 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (100000.0)
+#define ROUT (1000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (65.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
@@ -213,8 +213,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (1)
-#define SCUDA (0)
+#define SHIP (0)
+#define SCUDA (1)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
@@ -229,13 +229,13 @@ Numerical Parameters section
 #define GPU_SET (1)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
-#define GPU_MEM (50.0)
+#define GPU_MEM (30.0)
 
 /*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
-#define CUDA_MEMCALC (0)
+#define CUDA_MEMCALC (1)
 
 /*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
-#define MEM_CLEAN (0)
+#define MEM_CLEAN (1)
 
 /*Memory of the node*/
 #define CPU_MEM (40.0)
@@ -244,7 +244,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Enable parallel I/0*/
-#define PARALLEL_IO (1)
+#define PARALLEL_IO (0)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
@@ -253,17 +253,17 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 35
-#define NB_2 12
-#define NB_3 4
+#define NB_1 4
+#define NB_2 4
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 64
+#define BS_1 100
+#define BS_2 100
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (0)
@@ -301,10 +301,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -326,7 +326,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (80)
+#define DUMPFACTOR (800)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -347,7 +347,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 50.0
+#define TREF 1000.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -467,7 +467,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ZIRI_DUMP 0
 
 /*Whether to output a reduced resolution file*/
-#define DUMP_SMALL (1)
+#define DUMP_SMALL (0)
 #define REDUCE_FACTOR1 (4)
 #define REDUCE_FACTOR2 (4)
 #define REDUCE_FACTOR3 (4)

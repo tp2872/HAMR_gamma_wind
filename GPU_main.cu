@@ -1533,6 +1533,7 @@ void GPU_fixuputoprim(int flag, int n)
 			#endif
 			#if(CALC_MDOT)
 			, mass_density_scale_cpu
+			, magnetic_density_scale_cpu
 			#endif
 		);
 		#elif(SCUDA)
@@ -1542,6 +1543,7 @@ void GPU_fixuputoprim(int flag, int n)
 			#endif
 			#if(CALC_MDOT)
 			, mass_density_scale_cpu
+			, magnetic_density_scale_cpu
 			#endif
 		);
 		#endif
@@ -1554,6 +1556,7 @@ void GPU_fixuputoprim(int flag, int n)
 			#endif
 			#if(CALC_MDOT)
 			, mass_density_scale_cpu
+			, magnetic_density_scale_cpu
 			#endif
 		);
 		#elif(SCUDA)
@@ -1563,6 +1566,7 @@ void GPU_fixuputoprim(int flag, int n)
 			#endif
 			#if(CALC_MDOT)
 			, mass_density_scale_cpu
+			, magnetic_density_scale_cpu
 			#endif
 		);
 		#endif

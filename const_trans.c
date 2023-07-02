@@ -56,7 +56,7 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 			ind0 = index_3D(n, i, j, z);
 
 			#if(CALC_MDOT)
-			double factor = magnetic_density_scale_cpu;
+			double factor = 1.0 / magnetic_density_scale_cpu;
 			#else
 			double factor = 1.0;
 			#endif
@@ -140,7 +140,7 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 			E_corn[nl[n]][ind0][3] *= 0.5;
 
 			#if(CALC_MDOT)
-			double factor = magnetic_density_scale_cpu;
+			double factor = 1.0 / magnetic_density_scale_cpu;
 			#else
 			double factor = 1.0;
 			#endif

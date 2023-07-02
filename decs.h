@@ -1497,6 +1497,12 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 );
 #endif
 
+//Mass accretion rate related
+#if(CALC_MDOT)
+void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_density_scale_cpu);
+#endif
+double calc_Mdot(void);
+
 /*Neutrino function*/
 #if(NEUTRINOS_M1)
 void init_nulib_table(void);
@@ -1513,12 +1519,6 @@ void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 double calc_fermiint2(double x);
 double calc_fermiint3(double x);
-
-//Mass accretion rate related
-#if(CALC_MDOT)
-void set_mass_density_scale(double *mass_density_scale_cpu, double* magnetic_density_scale_cpu);
-#endif
-double calc_Mdot(void);
 
 //Neutrino opacity table related arrays
 extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];
