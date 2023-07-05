@@ -53,7 +53,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (1)
+#define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -255,12 +255,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 4
-#define NB_3 1
+#define NB_3 4
 
 /*Set block size in each dimension*/
 #define BS_1 100
 #define BS_2 100
-#define BS_3 1
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
