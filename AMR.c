@@ -3547,7 +3547,7 @@ double calc_refcrit(int n){
 					double pres, u;
 					eos_mode_rhotemp_pres_u(p[nl[n]][index_3D(n, i, j, z)][RHO], p[nl[n]][index_3D(n, i, j, z)][UU], p[nl[n]][index_3D(n, i, j, z)][YE], &pres, &u, 
 						#if (DONUCLEAR)
-						, p[nl[n]][index_3D(n, i, j, z)][XALPHA], p[nl[n]][index_3D(n, i, j, z)][XATM]
+						, &p[nl[n]][index_3D(n, i, j, z)][XALPHA], &p[nl[n]][index_3D(n, i, j, z)][XATM]
 						#endif
 						);
 					if (u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > HIGH_CUTOFF && t>t_ff)

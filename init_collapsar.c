@@ -398,7 +398,7 @@ void init_collapsar(void)
 			#else
 			eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 				#if (DONUCLEAR)
-				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
 				#endif
 			);
 			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1e3;

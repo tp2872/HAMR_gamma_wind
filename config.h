@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -61,6 +61,11 @@ Physical Parameters section
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
+// Postmerger problem, ICs from SpEC
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (0)
+#define BHNSQ2_2 (1)
+
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
@@ -78,10 +83,10 @@ Physical Parameters section
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e2)
+#define BETA (1e1)
 
 /*Select grid outer radius*/
-#define ROUT (100000.0)
+#define ROUT (10000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -97,11 +102,6 @@ Physical Parameters section
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
-
-// Postmerger problem, ICs from SpEC
-#define BHNSQ2 (1)
-#define BHNSQ2_1 (0)
-#define BHNSQ2_2 (1)
 
 // Collapsar problem
 #define COLLAPSAR_GR1D (0)
@@ -134,10 +134,10 @@ Physical Parameters section
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
-#define DONUCLEAR (0)
+#define DONUCLEAR (1)
 #else 
 #define DO_YE (1)
-#define DONUCLEAR (0)
+#define DONUCLEAR (1)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
@@ -153,12 +153,13 @@ Physical Parameters section
 
 #define USE_3D_INV (0)
 
+#define EOS_DEBUG (0)
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (0)
 #define revert_gamma        (1)
-#define eos_nr_debug (0)
+#define eos_nr_debug        (0)
 #define HELMEOS_INPUT_CHECK (0)
 
 // subcycling testing
@@ -479,9 +480,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Whether to output a reduced resolution file*/
 #define DUMP_SMALL (0)
-#define REDUCE_FACTOR1 (2)
-#define REDUCE_FACTOR2 (2)
-#define REDUCE_FACTOR3 (2)
+#define REDUCE_FACTOR1 (4)
+#define REDUCE_FACTOR2 (4)
+#define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
 #define DUMP_DIAG (0)
@@ -504,16 +505,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NU_SPECIES (3)       
 
 /* number of Nulib table entries for each variable */
-#define NULIB_RHO   (70) // (50)
-#define NULIB_TEMP  (60) // (40)
-#define NULIB_YE    (50) // (30)
+#define NULIB_RHO   (82) //(70)
+#define NULIB_TEMP  (65) //(60)
+#define NULIB_YE    (51) //(50)
 
 /* Nulib table variable bounds  */
-#define nulib_dhi (14.0) // (15.5)
-#define nulib_dlo (8.0) // (6.0)
-#define nulib_thi (13.0)
-#define nulib_tlo (9.763594473254775)
-#define nulib_yhi (0.55)
+#define nulib_dhi (14.0) 
+#define nulib_dlo (6.0) //(8.0) 
+#define nulib_thi (12.24) //(13.0)
+#define nulib_tlo (8.76) //(9.763594473254775)
+#define nulib_yhi (0.6) //(0.55)
 #define nulib_ylo (0.01)
 
 #define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
@@ -1019,8 +1020,8 @@ Variable Inversion Section
 #define NEWT_DIM_1 1
 
 // Section with DONUCLEAR constants
-#define x_atm_cutoff (0.5)
-#define tgas_cutoff (1e10)
+#define x_atm_cutoff (0.01)
+#define tgas_cutoff (5e9)
 #define Qalpha (28.3 * 1.60217733e-6)
 #define amu (1.6605402e-24)
 #define m_alpha (4.0 * amu)
@@ -1060,10 +1061,9 @@ Section with EOS constants
 
 // if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
 // otherwise, set EOS_COULOMB_CORR to 0
-#define eos_coulombMult (0.0)
+#define eos_coulombMult (1.0)
 #define EOS_COULOMB_CORR (0)
-
-#define eos_coulombAbort (1)
+#define EOS_COULOMB_CORR_GPU (0)
 
 // from eos_helmConstData
 #define avo (6.0221367e23)

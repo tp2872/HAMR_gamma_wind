@@ -18,6 +18,12 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
     double ye_new = U[YE] / U[RHO];
     validate_ye(&ye_new);
     #endif
+	#if (DONUCLEAR)
+    double x_alpha_new = U[XALPHA] / U[RHO];
+    double x_atm_new = U[XATM] / U[RHO];
+    validate_abund(&x_alpha_new);
+    validate_abund(&x_atm_new);
+    #endif
 
 	if (U[0] <= 0.) {
 		return(-100);
@@ -64,7 +70,7 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
         , ye_new
         #endif
         #if(DONUCLEAR)
-        , prim[XALPHA], prim[XATM]
+        , &x_alpha_new, &x_atm_new
         #endif
 		#if(TWO_T)
 		, S
@@ -77,17 +83,20 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		#pragma unroll 5
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
+			
+			#if (DO_YE)
+			prim[YE] = U[YE] / U[RHO];
+			validate_ye(&prim[YE]);
+			#endif
+        
+			#if (DONUCLEAR)
+			prim[XALPHA] = U[XALPHA] / U[RHO];
+			prim[XATM] = U[XATM] / U[RHO];
+			validate_abund(&prim[XALPHA]);
+			validate_abund(&prim[XATM]);
+			#endif
 		}
 
-		#if (DO_YE)
-        prim[YE] = U[YE] / U[RHO];
-        validate_ye(&prim[YE]);
-        #endif
-        
-        #if (DONUCLEAR)
-        prim[XALPHA] = U[XALPHA] / U[RHO];
-        prim[XATM] = U[XATM] / U[RHO];
-        #endif
 
 		//Set entropy variables
 		#if(TWO_T)
@@ -107,7 +116,7 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -318,7 +327,7 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -445,7 +454,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -487,7 +496,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 		, ye
 		#endif
 		#if(DONUCLEAR)
-		, x_alpha, x_atm
+		, *x_alpha, *x_atm
 		#endif
 		#if(TWO_T)
 		, S
@@ -512,7 +521,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 			, ye
 			#endif
 			#if(DONUCLEAR)
-			, x_alpha, x_atm
+			, *x_alpha, *x_atm
 			#endif
 			#if(TWO_T)
 			, S
@@ -544,7 +553,7 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -742,7 +751,7 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 )
 {

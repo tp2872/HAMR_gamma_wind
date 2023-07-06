@@ -16,7 +16,7 @@ __device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], do
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -35,7 +35,7 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -54,7 +54,7 @@ __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], dou
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif	
 	#if(TWO_T)
 	, double* S
@@ -80,7 +80,7 @@ __device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, doubl
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -95,7 +95,7 @@ __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], d
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
 	, double* S
@@ -114,7 +114,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif	
 	#if(TWO_T)
 	, double* S
@@ -133,7 +133,7 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif	
 	#if(TWO_T)
 	, double* S
@@ -435,7 +435,7 @@ __device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table
     , double ye
     #endif
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 );
 #endif
@@ -571,7 +571,7 @@ __device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, doubl
 #endif
 __device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele);
@@ -588,53 +588,53 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 #if (DOHELM_TEMPERATURE)
 __device__ void eos_mode_rhotemp_pres_u(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* pres, double* u
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_mode_rhotemp_pres_u_cs2(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* pres, double* u, double* cs2
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_mode_rhotemp_pres_u_3D_T(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* pres, double* ener, double* dPdrho, double* dPdT, double* dEdrho, double* dEdT);
 __device__ void eos_mode_rhotemp_pres(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* pres
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_mode_rhotemp_entr(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* entr
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 
 // Rootfinding functions based on w and s (3x)
 __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict__ gpu_eos_table, double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_mode_rhotemp_w_pres_u(const  double* __restrict__ gpu_eos_table, double dens, double* temp, double ye, double w, double* pres, double* u
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 __device__ void eos_mode_rhotemp_s_pres_u(const  double* __restrict__ gpu_eos_table, double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 // Fixup
 __device__ int eos_mode_rhotemp_u_pres_floor(const  double* gpu_eos_table, double dens, double* temp, double ye, double u, double* pres
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 // For neutrinos
 #if(NEUTRINOS_M1)
 __device__ void eos_mode_rhotemp_etaele(const  double* __restrict__ gpu_eos_table, double dens, double temp, double ye, double* mu_ele
 #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
 #endif
 );
 #endif
@@ -643,7 +643,8 @@ __device__ void eos_mode_rhotemp_etaele(const  double* __restrict__ gpu_eos_tabl
 #if(DONUCLEAR)
 __device__ double get_xp(double ye, double x_alpha);
 __device__ double get_xn(double ye, double x_alpha);
-__device__ void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha);
+__device__ void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha, double* x_atm);
+__device__ void WB_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha, double* x_atm);
 __device__ void nse_derivatives(double rho, double tgas, double ye, double x_n, double x_p, double x_alpha, double* xn_d, double* xn_t, double* xn_y, double* xp_d, double* xp_t, double* xp_y, double* xa_d, double* xa_t, double* xa_y);
 __device__ void nse_nucevol(double rho, double tgas, double ye, double* x_alpha, double* x_atm, double* xa_t);
 __device__ void nuc_evol(const double* __restrict__ gpu_eos_table, double* ph);
@@ -733,7 +734,11 @@ __device__ double calc_nu_number_abs(const double* __restrict__ gpu_eos_table, c
 __device__ void interp_nulib_check_bounds(const double* __restrict__ gpu_nulib_table, double* ph, int species, int quantity, double* opacity);
 __device__ void interp_nulib_table(const double* __restrict__ gpu_nulib_table, double rho, double Tgas, double ye, int species, int quantity, double* opacity);
 __device__ void calc_neutrino_temperature(const double* __restrict__ gpu_eos_table, double* ph, double ener_nu_avg, double* Tnu_over_Tgas, int species);
-__device__ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p);
+__device__ void calc_mu_np(double rho, double T_gas, double ye, double* mu_n, double* mu_p
+	#if (DONUCLEAR)
+    , double x_alpha, double x_atm
+    #endif
+);
 
 // explicit part:
 __device__ void source_nu(double* ph, struct of_geom* geom, double* dU, double* U_i, double* U_f, double Dt, double y_max, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table
@@ -756,6 +761,7 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 __device__ double calc_fermiint2(double x);
 __device__ double calc_fermiint3(double x);
 __device__ void validate_ye(double* ye);
+__device__ void validate_abund(double* xa);
 __device__ void validate_T(double* temp);
 
 //Resistive 3D contoprim inversion

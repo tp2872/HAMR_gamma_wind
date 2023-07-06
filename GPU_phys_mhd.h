@@ -61,7 +61,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
         #endif
         &P, &u
         #if (DONUCLEAR)
-        , ph[XALPHA], ph[XATM]
+        , &ph[XALPHA], &ph[XATM]
         #endif
     );
     #else
@@ -320,7 +320,11 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 ){
 	#if (DOHELM_TEMPERATURE)
 	double xpres, ugas;
-	eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], ph[YE], &xpres, &ugas);
+	eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], ph[YE], &xpres, &ugas
+		#if (DONUCLEAR)
+		, &ph[XALPHA], &ph[XATM]
+		#endif
+	);
 	#else
 	double ugas = ph[UU];
 	#endif
@@ -397,7 +401,7 @@ __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mh
 			#endif
 			&P, &u
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -451,7 +455,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 			#endif
 			&P, &u, &cs2_helm
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -633,7 +637,7 @@ __device__ double calc_entropy(double* pr
 			#endif
 			&entr
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -802,7 +806,7 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
 			#endif
 			&xpres, &u, &cs2
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		w = pr[RHO] + u + xpres;

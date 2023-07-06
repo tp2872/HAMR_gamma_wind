@@ -53,9 +53,11 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 		validate_ye(&prim[YE]);
 		#endif
 
-    #if (DONUCLEAR)
+		#if (DONUCLEAR)
 		prim[XALPHA] = U[XALPHA] / U[RHO];
 		prim[XATM] = U[XATM] / U[RHO];
+		validate_abund(&prim[XALPHA]);
+		validate_abund(&prim[XATM]);
 		#endif
 	}
 

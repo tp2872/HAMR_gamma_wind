@@ -447,7 +447,7 @@ void eos_helm_backup_nondegenerate(int calc_derivatives, double btemp, double de
 */
 void eos_helm(int calc_derivatives, double btemp, double den, double ye, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2, double* etaele
     #if (DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 )
 {
@@ -482,17 +482,20 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     // Alpha particle recombination part
     #if (DONUCLEAR)
     double x_n, x_p, x_alpha_tmp, x_atm_tmp, xn_d, xn_t, xn_y, xp_d, xp_t, xp_y, xa_d, xa_t, xa_y;
-    x_alpha_tmp = x_alpha;
-    x_atm_tmp = x_atm;
+    x_alpha_tmp = *x_alpha;
+    x_atm_tmp = *x_atm;
     // Compute abundances 
+    //if (0) {
+    /*
+    */
     if (x_atm_tmp < x_atm_cutoff && btemp > tgas_cutoff) {
         x_atm_tmp = 0.0;
-        nse_abundances(den, btemp, ye, &x_n, &x_p, &x_alpha_tmp);
+        nse_abundances(den, btemp, ye, &x_n, &x_p, &x_alpha_tmp, &x_atm_tmp);
         nse_derivatives(den, btemp, ye, x_n, x_p, x_alpha_tmp, &xn_d, &xn_t, &xn_y, &xp_d, &xp_t, &xp_y, &xa_d, &xa_t, &xa_y);
     }
     else {
         x_n = get_xn(ye, x_alpha_tmp);
-        x_p = get_xp(ye, x_alpha_tmp);
+        x_p = get_xp(ye - x_atm_tmp, x_alpha_tmp);
         // set derivatives
         // normalize
         double x_sum = x_n + x_p + x_alpha_tmp + x_atm_tmp;
@@ -504,6 +507,10 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         }
         xn_d = xn_t = xn_y = xp_d = xp_t = xp_y = xa_d = xa_t = xa_y = 0.0;
     }
+    //if (x_alpha_tmp < 0.01) fprintf(stderr, "\t\n xn, xp, xa (ini), xatm (ini), ye = %e %e %e (%e) %e (%e) %e", x_n, x_p, x_alpha_tmp, *x_alpha, x_atm_tmp, *x_atm, ye);
+
+    *x_alpha = x_alpha_tmp;
+    *x_atm = x_atm_tmp;
 
     ytot1 = x_n + x_p + x_atm_tmp + 0.25 * x_alpha_tmp;
     abar = 1. / ytot1;
@@ -522,7 +529,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     double xni = avo * ytot1 * den;
     pion = xni * kt;
     #if (DONUCLEAR)
-    eion = 1.5 * pion * deni - 0.25 * Qalpha * avo * x_alpha_tmp;
+    eion = 1.5 * pion * deni - 0.25 * Qalpha * avo * x_alpha_tmp; 
     //if (eion < 0.0) fprintf(stderr, "\n\t [eoshelm, eion negative %g]: %g, %g, %g (%e %e %e, xatm: %e, ytot1: %e)\n", eion, 1.5 * pion * deni, 0.25 * Qalpha * avo * x_alpha_tmp, x_alpha_tmp, den, btemp, ye, x_atm_tmp, ytot1);
     #else
     eion = 1.5 * pion * deni;
@@ -579,7 +586,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
     inv_lami = 1.0 / lami;
     dxnidd = avo * ytot1;
     ktinv = 1.0 / kt;
-    plasg = zbar * zbar * esqu * ktinv * inv_lami;
+    plasg = (ye * abar) * (ye * abar) * esqu * ktinv * inv_lami;
     if (plasg >= 1.0) {
         // yakovlev & shalybkov 1989 equations 82, 85, 86, 87
         x4 = pow(plasg, 0.25);
@@ -611,10 +618,16 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 
     // sackur-tetrode equation for the ion entropy of
     // a single ideal gas characterized by abar
+
 #if (EOS_COULOMB_CORR)
-    *pres = prad + pion + pele + pcoul * eos_coulombMult;
-    *ener = erad + eion + eele + ecoul * eos_coulombMult;
-    *entr = srad + sion + sele + scoul * eos_coulombMult;
+    double prestot = prad + pion + pele + pcoul * eos_coulombMult;
+    
+    double local_coulombMult = eos_coulombMult;
+    if (prestot < 0.) local_coulombMult = 0.;
+    
+    *pres = prad + pion + pele + pcoul * local_coulombMult;
+    *ener = erad + eion + eele + ecoul * local_coulombMult;
+    *entr = srad + sion + sele + scoul * local_coulombMult;
 #else
     *pres = prad + pion + pele;
     *ener = erad + eion + eele;
@@ -677,8 +690,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 #endif
 
 #if (EOS_COULOMB_CORR)
-        *dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * eos_coulombMult; // pressure derivative vs density
-        *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * eos_coulombMult; // pressure derivative vs temperature
+        *dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; // pressure derivative vs density
+        *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; // pressure derivative vs temperature
 #else
         *dpresdd = dpraddd + dpiondd * (1. + LOWDENS_CORR * ye) + dpepdd * (LOWDENS_CORR == 0); // pressure derivative vs density
         *dpresdt = dpraddt + dpiondt * (1. + LOWDENS_CORR * ye) + dpepdt * (LOWDENS_CORR == 0); // pressure derivative vs temperature
@@ -718,8 +731,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
         #endif
 
 #if (EOS_COULOMB_CORR)
-        *denerdd = deraddd + deiondd + deepdd + decouldd * eos_coulombMult;  // energy derivative vs density
-        *denerdt = deraddt + deiondt + deepdt + decouldt * eos_coulombMult; // energy derivative vs temperature
+        *denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult;  // energy derivative vs density
+        *denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; // energy derivative vs temperature
 #else 
         *denerdd = deraddd + deiondd * (1. + LOWDENS_CORR * ye) + deepdd * (LOWDENS_CORR == 0);  // energy derivative vs density
         *denerdt = deraddt + deiondt * (1. + LOWDENS_CORR * ye) + deepdt * (LOWDENS_CORR == 0); // energy derivative vs temperature
@@ -752,8 +765,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double ye, double*
 #endif
 
 #if (EOS_COULOMB_CORR)
-        //dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * eos_coulombMult; // entropy derivative vs density and density
-        *dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * eos_coulombMult; // entropy derivative vs density and time
+        //dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * local_coulombMult; // entropy derivative vs density and density
+        *dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * local_coulombMult; // entropy derivative vs density and time
 #else
         //dentrdd = dsraddd + dsiondd + dsepdd; // entropy derivative vs density and density
         *dentrdt = dsraddt + dsiondt * (1. + LOWDENS_CORR * ye) + dsepdt * (LOWDENS_CORR == 0); // entropy derivative vs density and time
@@ -811,6 +824,10 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
 
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
+    
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, pres, cs2;
     double dsdt, dedrho, etaele;
     double error, error_q;
@@ -824,7 +841,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
     {
         eos_helm(1, temp_old, den, ye, &pres, &ener_tmp, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
 
@@ -858,7 +875,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, ye, &pres, &enerA, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fA = enerA - ener_goal;
@@ -866,7 +883,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
         tempB = eos_temp_up;
         eos_helm(1, tempB, den, ye, &pres, &enerB, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
 
@@ -880,7 +897,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
 
             eos_helm(1, tempC, den, ye, &pres, &enerC, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
 
@@ -923,7 +940,9 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr, cs2;
     double dsdt, dedrho, etaele;
     double error, error_q;
@@ -937,7 +956,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
     {
         eos_helm(1, temp_old, den, ye, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -971,7 +990,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, ye, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fA = enerA - ener_goal;
@@ -979,7 +998,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
         tempB = eos_temp_up;
         eos_helm(1, tempB, den, ye, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fB = enerB - ener_goal;
@@ -992,7 +1011,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
 
             eos_helm(1, tempC, den, ye, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
             fC = enerC - ener_goal;
@@ -1027,7 +1046,9 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr;
     double dsdt, dedrho, etaele;
     double error, error_q;
@@ -1041,7 +1062,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     {
         eos_helm(1, temp_old, den, ye, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
 
@@ -1076,7 +1097,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, ye, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fA = enerA - ener_goal;
@@ -1084,7 +1105,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
         tempB = eos_temp_up;
         eos_helm(1, tempB, den, ye, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fB = enerB - ener_goal;
@@ -1097,7 +1118,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
 
             eos_helm(1, tempC, den, ye, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, cs2
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
             fC = enerC - ener_goal;
@@ -1133,7 +1154,9 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrh
     if (xenth < 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-    
+    #if (DONUCLEAR)
+    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     double xener = 0.0;
     double h_tmp;
 
@@ -1150,7 +1173,7 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrh
     {
         eos_helm(1, temp_old, den, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         h_tmp = xener + (*pres) * deni;
@@ -1198,7 +1221,9 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     if (xenth < 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-    
+    #if (DONUCLEAR)
+    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     double temp_new, temp_old;
     double ener_old, pres_old;
     double dpresdener_d, dhdtemp;
@@ -1219,7 +1244,7 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     for(i = 0; i < EOS_ITERATIONS; i++){
         eos_helm(1, temp_old, den, ye, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         
@@ -1241,7 +1266,9 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
             if (more_iterations == 0) break;
         }
     }
-    
+    #if (DONUCLEAR)
+    xener += 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     *u = xener * den;
 }
 
@@ -1252,9 +1279,10 @@ void eos_mode_rhotemp_pres_min(double den, double ye, double* pres) {
     double ener, dpdt, dedt, dpdrho;
     double entr, cs2, etaele;
     double dsdt, dedrho;
+    double x_alpha = 0., x_atm = 0.;
     eos_helm(1, temp, den, ye, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
         #if (DONUCLEAR)
-        , 0., 0.
+        , &x_alpha, &x_atm
         #endif
     );
 }
@@ -1300,13 +1328,13 @@ void eos_mode_rhopres_u (double* prim) {
     // Lowest Tgas:
     eos_helm(1, eos_temp_low, den, ye, &p_low, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
         #if (DONUCLEAR)
-        , prim[XALPHA], prim[XATM]
+        , &prim[XALPHA], &prim[XATM]
         #endif
     );
     // Highest Tgas:
     eos_helm(1, eos_temp_up, den, ye, &p_high, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
         #if (DONUCLEAR)
-        , prim[XALPHA], prim[XATM]
+        , &prim[XALPHA], &prim[XATM]
         #endif
     );
 
@@ -1320,7 +1348,7 @@ void eos_mode_rhopres_u (double* prim) {
         if (is_valid_input) {
             eos_helm(1, temp_old, den, ye, &p_tmp, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
         }
@@ -1358,7 +1386,7 @@ void eos_mode_rhopres_u (double* prim) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, ye, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fA = presA - p_goal;
@@ -1366,7 +1394,7 @@ void eos_mode_rhopres_u (double* prim) {
         tempB = eos_temp_up;
         eos_helm(1, tempB, den, ye, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fB = presB - p_goal;
@@ -1379,7 +1407,7 @@ void eos_mode_rhopres_u (double* prim) {
 
             eos_helm(1, tempC, den, ye, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
             fC = presC - p_goal;
@@ -1395,7 +1423,9 @@ void eos_mode_rhopres_u (double* prim) {
         }
     }
     #endif
-    
+    #if (DONUCLEAR)
+    xener += 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     if (error_p > EOS_TOL || error > EOS_TEMP_TOL) {
         fprintf(stderr, "5 errP: %g T_ini: %g T_fin: %g rho: %g pG: %g\n", error_p, temp_ini_guess, temp_old, den, p_goal);
 
@@ -1418,7 +1448,9 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    #endif
     double temp_new, temp_old;
     double ener_tmp;
     double dpdt, dedt, dpdrho;
@@ -1444,7 +1476,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
     for (i = 0; i < EOS_ITERATIONS; i++) {
         eos_helm(1, temp_old, den, ye, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2, &etaele
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -1476,7 +1508,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, ye, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fA = enerA - ener_goal;
@@ -1484,7 +1516,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
         tempB = eos_temp_up;
         eos_helm(1, tempB, den, ye, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         fB = enerB - ener_goal;
@@ -1497,7 +1529,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
 
             eos_helm(1, tempC, den, ye, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2
                 #if (DONUCLEAR)
-                , prim[XALPHA], prim[XATM]
+                , &prim[XALPHA], &prim[XATM]
                 #endif
             );
             fC = enerC - ener_goal;
@@ -1526,7 +1558,7 @@ void test_eos(void) {
 
 void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, double* u
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double ener;
@@ -1536,12 +1568,15 @@ void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, 
         , x_alpha, x_atm
         #endif
     );
+    #if (DONUCLEAR)
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     *u = dens * ener;
 }
 
 void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pres, double* u, double* cs2
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double ener;
@@ -1551,12 +1586,15 @@ void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pr
         , x_alpha, x_atm
         #endif
     );
+    #if (DONUCLEAR)
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     *u = dens * ener;
 }
 
 void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double ener, entr, dpdt, dedt, dsdt, dpdrho, dedrho, cs2, etaele;
@@ -1569,7 +1607,7 @@ void eos_mode_rhotemp_pres(double dens, double temp, double ye, double* pres
 
 void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double pres, ener, dpdt, dedt, dsdt, dpdrho, dedrho, cs2, etaele;
@@ -1588,7 +1626,7 @@ void eos_mode_rhotemp_entr(double dens, double temp, double ye, double* entr
 
 void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double ener_goal = u_goal / dens;
@@ -1598,7 +1636,9 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
 #if (DOHELM_LOWTEMP)
     temp_ini_guess = (GAMMA - 1.) * ener_goal / (BOLTZ_CGS * avo) * C_CGS * C_CGS;
     validate_T(&temp_ini_guess);
@@ -1712,7 +1752,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
 
 void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_goal
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     // Parameters of Newton-Raphson iterations
@@ -1809,7 +1849,7 @@ void eos_mode_rhopres_temp_init(double dens, double* temp, double ye, double p_g
 
 void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr, double* pres, double* u, double* dpdrho, double* dudrho
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double deni = 1.0 / dens;
@@ -1909,7 +1949,9 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr
         }
     }
     #endif
-
+    #if (DONUCLEAR)
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     * u = xener * dens;
     *dudrho = dedrho * dens + xener;
     #if (inversion_w_edits)
@@ -1919,7 +1961,7 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr
 
 void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, double* pres, double* u
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     // implementation in Newman-Hamlin inversion
@@ -1935,7 +1977,9 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, d
         return;
     }
     #endif
-
+    #if (DONUCLEAR)
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
 
@@ -1980,6 +2024,9 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, d
             if (more_iterations == 0) break;
         }
     }
+    #if (DONUCLEAR)
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     *u = xener * dens;
 
     #if (EOS_BISECTION)
@@ -2035,7 +2082,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, d
 
 void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye, double w, double* pres, double* dpdrho, double* dpde_d
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double deni = 1.0 / dens;
@@ -2051,7 +2098,9 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye,
         return;
     }
     #endif
-
+    #if (DONUCLEAR)
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
 
@@ -2136,7 +2185,9 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye,
         xener = enerC;
     }
     #endif
-
+    #if (DONUCLEAR)
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     * dpde_d = dpdt / dedt;
     #if (inversion_w_edits)
     *dpdrho = *dpdrho - xener * deni * (*dpde_d);
@@ -2155,7 +2206,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye,
 
 void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double u, double* pres
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 ) {
     double ener_goal = u / dens;
@@ -2169,7 +2220,9 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
         return;
     }
     #endif
-
+    #if (DONUCLEAR)
+    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
 
@@ -2248,7 +2301,6 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
         }
     }
     #endif 
-
     #if (revert_gamma)
     if (error_e > EOS_TOL) {
         // Use GAMMA EOS in this case
@@ -2263,35 +2315,65 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 
 #if (DONUCLEAR)
 double get_xp(double ye, double x_alpha) {
-    return (ye - 0.5 * x_alpha);
+    double xp = (ye - 0.5 * x_alpha);
+    xp = MY_MAX(0.0, xp);
+    xp = MY_MIN(1.0, xp);
+    return xp;
 }
 
 double get_xn(double ye, double x_alpha) {
-    return (1. - ye - 0.5 * x_alpha);
+    double xn = (1. - ye - 0.5 * x_alpha);
+    xn = MY_MAX(0.0, xn);
+    xn = MY_MIN(1.0, xn);
+    return xn;
 }
 
-void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha) {
+void WB_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha, double* x_atm) {
+    double rho_10 = rho * 1e-10;
+    double T_MeV = tgas * k2mev;
+
+    double xWB = 15.58 * pow(T_MeV, 1.125) / pow(rho_10, 0.75) * exp(-7.074 / T_MeV);
+    *x_alpha = (1. - MY_MIN(1., xWB)) * MY_MIN(2.*ye, 2.-2.*ye);
+
+    if (*x_alpha < *x_atm) *x_alpha = 0.;
+    else *x_alpha -= *x_atm;
+
+    *x_n = get_xn(ye, *x_alpha);
+    *x_p = get_xp(ye - *x_atm, *x_alpha);
+
+    return;
+}
+
+void nse_abundances(double rho, double tgas, double ye, double* x_n, double* x_p, double* x_alpha, double* x_atm) {
     double n = rho / amu;
     double n_Q = pow((2.0 * M_PI * amu * BOLTZ_CGS * tgas / (PLANCK_CGS * PLANCK_CGS)), 1.5);
     double Fa, dFa;
     int i, max_iter = 50;
 
-    *x_alpha = ye;
+    //*x_alpha = 0.0;
+
+    // Better guess:
+    WB_abundances(rho, tgas, ye, x_n, x_p, x_alpha, x_atm);
+
     for (i = 0; i < max_iter; i++) {
         *x_n = get_xn(ye, *x_alpha);
-        *x_p = get_xp(ye, *x_alpha);
+        *x_p = get_xp(ye - *x_atm, *x_alpha);
 
         Fa = pow((*x_n) * (*x_p), 2.0) - 0.5 * (*x_alpha) * pow((n_Q / n), 3.0) * exp(-Qalpha / (BOLTZ_CGS * tgas));
         dFa = -(*x_p) * pow((*x_n), 2.0) - (*x_n) * pow((*x_p), 2.0) - 0.5 * pow((n_Q / n), 3.0) * exp(-Qalpha / (BOLTZ_CGS * tgas));
         *x_alpha -= Fa / dFa;
 
-        fprintf(stderr, "\n\t\t(iter = %d, r,t,y=%e %e %e) dx=%e, xa=%e, xn=%e, xp=%e", i, rho, tgas, ye, fabs(Fa/dFa), *x_alpha, *x_n, *x_p);
+        //if (i == max_iter-1) 
+            //fprintf(stderr, "\n\t\t(iter = %d, r,t,y=%e %e %e) dx=%e, xa=%e, xn=%e, xp=%e", i, rho, tgas, ye, fabs(Fa/dFa), *x_alpha, *x_n, *x_p);
 
         if (fabs(Fa / dFa) < 1e-8 * (*x_alpha)) break;
     }
 
+    if (*x_alpha < *x_atm) *x_alpha = 0.;
+    else *x_alpha -= *x_atm;
+
     *x_n = get_xn(ye, *x_alpha);
-    *x_p = get_xp(ye, *x_alpha);
+    *x_p = get_xp(ye - *x_atm, *x_alpha);
 
     return;
 }

@@ -184,7 +184,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			pv[index_nu(NUMBER_NU, sp)] = pv[index_nu(UU_NU, sp)] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tnu);
 		}
 	}
-
 	#endif
 
 	//Divide internal energy inject between electrons and ions 1:1

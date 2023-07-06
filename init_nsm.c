@@ -442,7 +442,7 @@ void init_postmerger() {
 	calc_source();
 	#endif
 
-	#if DOHELM
+	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	for (n = 0; n < n_active; n++) {
 		//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
@@ -468,11 +468,21 @@ void init_postmerger() {
 				#endif
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 				#if (DONUCLEAR)
-				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
 				#endif
 			);
 		}
 	}
+
+		/* Initialize alpha particles */
+	#if(DONUCLEAR)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
 
 	#if (NEUTRINOS_M1)
 	for (n = 0; n < n_active; n++) {

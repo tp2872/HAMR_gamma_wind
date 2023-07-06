@@ -216,8 +216,9 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
 				#endif
 				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 1.0;
 				#endif			
 			}
 			/* region inside magnetized torus; u^i is calculated in
@@ -281,7 +282,7 @@ void init_torus()
 				#endif
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.15;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.1;
 				#endif
 				#if (DONUCLEAR)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
@@ -417,6 +418,12 @@ void init_torus()
 
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] > 1.) fprintf(stderr, "### (%d %d %d) 2 rho=%e, ug=%e, ye=%f, xalpha=%f, xatm=%f\n", i, j, z, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]);
+		}
+	}
 		#if (DOHELM_TEMPERATURE)
 		// Set temperatures given u:
 		for (n = 0; n < n_active; n++) {
@@ -424,7 +431,7 @@ void init_torus()
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 					#if (DONUCLEAR)
-					, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+					, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
 					#endif
 				);
 			}
@@ -432,12 +439,22 @@ void init_torus()
 		#endif
 	#endif
 
+	/* Initialize alpha particles */
+	#if(DONUCLEAR)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+
 	/* Initialize neutrinos */
 	#if(NEUTRINOS_M1)
 	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 		}
 	}

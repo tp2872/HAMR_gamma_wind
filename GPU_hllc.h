@@ -926,7 +926,7 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
         #endif
         &P, &u
         #if (DONUCLEAR)
-        , pr[XALPHA], pr[XATM]
+        , &pr[XALPHA], &pr[XATM]
         #endif
     );
     #else
@@ -970,7 +970,7 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 				#endif
 				&xentr
 				#if (DONUCLEAR)
-				, pr[XALPHA], pr[XATM]
+				, &pr[XALPHA], &pr[XATM]
 				#endif
 			);
 			#else
@@ -1022,7 +1022,7 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
         #endif
         &xpres, &u, &cs2
         #if (DONUCLEAR)
-        , pr[XALPHA], pr[XATM]
+        , &pr[XALPHA], &pr[XATM]
         #endif
     );
     w = pr[RHO] + u + xpres;

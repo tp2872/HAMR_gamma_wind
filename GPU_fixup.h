@@ -263,12 +263,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
                 printf("\n\t\t pf[%d] = %e, U[%d] = %e, dU[%d] = %e", k, pf[k], k, U[k], k, dU[k]);
             }
         }*/
-
-        #if (DONUCLEAR)
-        // Compute the effect of the alpha particle recombination on the gas temperature, Xalpha and Xatm (keeping rho and ye fixed)
-        nuc_evol(gpu_eos_table, pf);
-        #endif
-
         #else
 			#if(RESISTIVE)
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
@@ -376,6 +370,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				}
 			#endif
 		#endif
+
+		//#if (DONUCLEAR && DOHELM && DOHELM_TEMPERATURE)
+		#if (0)
+        // Compute the effect of the alpha particle recombination on the gas temperature, Xalpha and Xatm (keeping rho and ye fixed)
+        nuc_evol(gpu_eos_table, pf);
+        #endif
 
 		#if(CALC_MDOT)
 		pf[B1] = U[B1] / geom.g / magnetic_density_scale;
@@ -1000,7 +1000,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#endif
 			&xP, &u
 			#if (DONUCLEAR)
-			, pf[XALPHA], pf[XATM]
+			, &pf[XALPHA], &pf[XATM]
 			#endif
 		);
     
@@ -1045,11 +1045,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	}
 
 	#if (DONUCLEAR)
-    pf[XALPHA] = MY_MAX(1e-10, pf[XALPHA]);
-    pf[XALPHA] = MY_MIN(1.0, pf[XALPHA]);
-
-    pf[XATM] = MY_MAX(1e-10, pf[XATM]);
-    pf[XATM] = MY_MIN(1.0, pf[XATM]);
+	validate_abund(&pf[XALPHA]);
+	validate_abund(&pf[XATM]);
     #endif
 
 	//Internal energy floor
@@ -1267,7 +1264,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 				#endif
 				u, &xP
 				#if (DONUCLEAR)
-				, pf[XALPHA], pf[XATM]
+				, &pf[XALPHA], &pf[XATM]
 				#endif
 			);
 			wnew = pf[RHO] + u + xP;

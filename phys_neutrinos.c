@@ -208,7 +208,7 @@ void calc_ymax(void) {
 void init_nulib_table(void) {
 	FILE* fp;
 	#if (NU_SPECIES>1)
-	char fname_nulib_table[] = "nulib_table_Nsp3.bdat";
+	char fname_nulib_table[] = "nulib_table_Nsp3_alpha.bdat";
 	#else
 	char fname_nulib_table[] = "nulib_table_Nsp1.bdat";
 	#endif
@@ -302,12 +302,16 @@ void calc_neutrino_temperature(double* ph, double ener_nu_avg, double* Tnu_over_
 	double mu_ele;
 	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_ele
 		#if (DONUCLEAR)
-		, ph[XALPHA], ph[XATM]
+		, &ph[XALPHA], &ph[XATM]
 		#endif
 	);
 
 	double mu_n, mu_p, mu_nu;
-	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
+	calc_mu_np(ph[RHO], ph[UU], ph[YE], &mu_n, &mu_p
+		#if (DONUCLEAR)
+		, ph[XALPHA], ph[XATM]
+		#endif
+	);
 	mu_nu = mu_p + mu_ele - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
 
 	double F2, F3;
@@ -354,9 +358,18 @@ double calc_fermiint3(double x) {
 
 // Neutron-proton chemical potentials assuming ideal gas
 // From: NuLib code
-void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, double* mu_p) {
-	x_n = MY_MAX(x_n, 1e-20);
-	x_p = MY_MAX(x_p, 1e-20);
+void calc_mu_np(double rho, double T_gas, double ye, double* mu_n, double* mu_p
+	#if (DONUCLEAR)
+    , double x_alpha, double x_atm
+    #endif
+) {
+	#if (DONUCLEAR)
+	double x_n = get_xn(ye, x_alpha);
+	double x_p = get_xp(ye - x_atm, x_alpha);
+	#else
+	double x_n = MY_MAX(1. - ye, 1e-20);
+	double x_p = MY_MAX(ye, 1e-20);
+    #endif
 
 	double n_n = x_n * rho * MASS_DENSITY_SCALE / MN_CGS;
 	double n_p = x_p * rho * MASS_DENSITY_SCALE / MP_CGS;
@@ -371,12 +384,21 @@ void calc_mu_np(double rho, double T_gas, double x_n, double x_p, double* mu_n, 
 	else
 		*mu_p = 0.0;
 
-	// Danat: didn't include Coulomb corrections for mu_p for now
+	//coulomb correction for charged particles from Chabrier & Potkhin(1998)
+	double A_1 = -0.9052;
+	double A_2 = 0.6322;
+	double A_3 = -sqrt(3.0) / 2.0 - A_1 / sqrt(A_2);
+	double a_e = pow(4.0 / 3.0 * M_PI * rho * ye * avo, -1. / 3.);
+	double Gamma_p = esqu / (BOLTZ_CGS * T_gas * a_e);
+
+	double mu_p_coul = (A_1 * (sqrt(Gamma_p * (A_2 + Gamma_p)) - A_2 * log(sqrt(Gamma_p / A_2) + sqrt(1. + Gamma_p / A_2))) + 2. * A_3 * (sqrt(Gamma_p) - atan(sqrt(Gamma_p))));
+
+	*mu_p = *mu_p + mu_p_coul;
 }
 
 void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 	#if (DONUCLEAR)
-	, double x_alpha, double x_atm
+	, double* x_alpha, double* x_atm
 	#endif
 ) {
 	double free, df_d, df_t, df_dd, df_tt, df_dt, etaele, dpepdd;
@@ -384,7 +406,7 @@ void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 	dens *= conv_dens_CODE2CGS;
 	interp_eostable(dens, temp, dens * ye, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele 
 		#if (DONUCLEAR)
-		, x_alpha, x_atm
+		, *x_alpha, *x_atm
 		#endif
 		);
 	*mu_ele = etaele;

@@ -85,7 +85,7 @@ __device__ int semiimplicit_solve_nu(double* pb, double* U_n, double* U_i, doubl
     double xentr;
     eos_mode_rhotemp_entr(gpu_eos_table, pb_i[RHO], pb_i[UU], pb_i[YE], &xentr
         #if (DONUCLEAR)
-        , pb_i[XALPHA], pb_i[XATM]
+        , &pb_i[XALPHA], &pb_i[XATM]
         #endif
     );
     U_i_temp[KTOT] = geom->g * pb_i[RHO] * q.ucon[0] * xentr;
@@ -309,7 +309,11 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
     double dJ[NU_SPECIES];
     double Eint, xP;
     double nu_gas_timescale = 0.;
-    eos_mode_rhotemp_pres_u(gpu_eos_table, pb[RHO], pb[UU], pb[YE], &xP, &Eint);
+    eos_mode_rhotemp_pres_u(gpu_eos_table, pb[RHO], pb[UU], pb[YE], &xP, &Eint
+        #if (DONUCLEAR)
+        , &pb[XALPHA], &pb[XATM]
+        #endif
+    );
     for (sp = 0; sp < NU_SPECIES; sp++) {
         dJ[sp] = (eta_0[sp] / (kappa_abs0[sp] + 1e-30) - J0[sp]) * (1. - exp(-kappa_abs0[sp] * Dt)) + 1e-30;
         nu_gas_timescale = MY_MAX(nu_gas_timescale, 1. / sqrt(1e-30 + kappa_abs0[sp] * (kappa_abs0[sp] + kappa_s0[sp])));
@@ -404,7 +408,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
         //Recompute entropy for consistency
         eos_mode_rhotemp_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], pb_new[YE], &xentr
 #if (DONUCLEAR)
-            , pb_new[XALPHA], pb_new[XATM]
+            , &pb_new[XALPHA], &pb_new[XATM]
 #endif
         );
         U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
@@ -587,8 +591,12 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
     // In case MHD inversion fails, terminate with this error message
     if (*pflag) {
         #if(NU_DEBUG)
-        if (tau > 0.) {
-            printf("\nFailed inversion after a neutrino step (impl.): [flag=%d (%d)] r,t,y=[%e %e %e] (cons.del: %e, %e %e %e), tau=%e, <e>=%e %e %e, E/dJ=%e, Dt:%e tau:%e, dt_equil:%e, Eint:%e, dJtot:%e, Jtot0:%e, kappaA:%e %e %e, rad=%e\n", *pflag, is_backup_inv, pb_new[RHO], pb_new[UU], pb_new[YE], fabs(dU[UU]) / U_old[UU], fabs(dU[U1]) / U_old[U1], fabs(dU[U2]) / U_old[U2], fabs(dU[U3]) / U_old[U3], tau, ener_nu_avg[0], ener_nu_avg[1], ener_nu_avg[2]
+        //if (tau > 0.) {
+            printf("\n[post-nu step: con2prim failed, flag %d (prev. %d)] \n\tr,t,y: (%e %e %e) xa,xamb: (%e %e) (dU[UU->U3]: %e, %e %e %e), \n\topt.depth = %e, <e> = (%e %e %e), E/dJ=%e, Dt,dt_cool,dt_beta: (%e, %e, %e), Eint,J_ini,dJ: (%e, %e, %e), \n\tkappaA = (%e %e %e), r = %e\n", 
+                *pflag, is_backup_inv, 
+                pb_new[RHO], pb_new[UU], pb_new[YE], pb_new[XALPHA], pb_new[XATM],
+                fabs(dU[UU]) / U_old[UU], fabs(dU[U1]) / U_old[U1], fabs(dU[U2]) / U_old[U2], fabs(dU[U3]) / U_old[U3], 
+                tau, ener_nu_avg[0], ener_nu_avg[1], ener_nu_avg[2]
 #if (NU_COOLING)
                 , ratio_cooling, Dt, tau_cooling, nu_gas_timescale, Eint, fabs(dJ[0] + dJ[1] + dJ[2]), (J0[0]+J0[1]+J0[2]), kappa_abs0[0], kappa_abs0[1], kappa_abs0[2]
 #endif
@@ -596,7 +604,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
                 , radius
 #endif
             );
-        }
+        //}
         #endif
         return(1);
     }
@@ -614,7 +622,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
     //Recompute entropy for consistency
     eos_mode_rhotemp_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], pb_new[YE], &xentr
         #if (DONUCLEAR)
-        , pb_new[XALPHA], pb_new[XATM]
+        , &pb_new[XALPHA], &pb_new[XATM]
         #endif
     );
     U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
@@ -955,7 +963,11 @@ __device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const
         delR_cont_covi[species] = delJ[species] * (4. / 3. * ucon[0] * ucov[ii]) + delH[0] * ucov[ii] + delHcov[ii] * ucon[0];
     }
     // Find old value of enthalpy
-    eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], ph[YE], &pres, &u);
+    eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], ph[YE], &pres, &u
+    #if (DONUCLEAR)
+        , &ph[XALPHA], &ph[XATM]
+        #endif
+    );
     wold = pres + u;
 
     // Change in enthalpy
@@ -969,7 +981,11 @@ __device__ void get_ye_predictor(const double* __restrict__ gpu_eos_table, const
 
     // Find new value of temperature based on new enthalpy
     wnew = wold + delw;
-    eos_mode_rhotemp_w_pres_u(gpu_eos_table, ph[RHO], &ph[UU], ph[YE], wnew, &pres, &u);
+    eos_mode_rhotemp_w_pres_u(gpu_eos_table, ph[RHO], &ph[UU], ph[YE], wnew, &pres, &u
+        #if (DONUCLEAR)
+        , &ph[XALPHA], &ph[XATM]
+        #endif
+    );
 }
 
 // For explicit step:

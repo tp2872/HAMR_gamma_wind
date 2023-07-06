@@ -437,7 +437,11 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 {
 	#if (DOHELM_TEMPERATURE)
 	double xpres, ugas;
-	eos_mode_rhotemp_pres_u(ph[RHO], ph[UU], ph[YE], &xpres, &ugas);
+	eos_mode_rhotemp_pres_u(ph[RHO], ph[UU], ph[YE], &xpres, &ugas
+		#if (DONUCLEAR)
+		, &ph[XALPHA], &ph[XATM]
+		#endif
+	);
 	#else
 	double ugas = ph[UU];
 	#endif
