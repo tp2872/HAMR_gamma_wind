@@ -406,7 +406,7 @@ void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 	dens *= conv_dens_CODE2CGS;
 	interp_eostable(dens, temp, dens * ye, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele 
 		#if (DONUCLEAR)
-		, *x_alpha, *x_atm
+		, x_alpha, x_atm
 		#endif
 		);
 	*mu_ele = etaele;
