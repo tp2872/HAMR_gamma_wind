@@ -32,6 +32,16 @@ void diag(int call_code)
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
+				#elif(DO_RBOUND)
+				divb = divb_calc(n_ord[n], i, j, z);
+				#pragma omp critical
+				if (pflag_rbound[nl[n_ord[n]]][index_3D(n_ord[n],i,j,z)]==0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
+					imax = i;
+					jmax = j;
+					zmax = z;
+					nmax = n_ord[n];
+					divbmax = divb;
+				}
 				#else
 				divb = divb_calc(n_ord[n], i, j, z);
 

@@ -136,12 +136,21 @@ int main(int argc, char *argv[])
 			#endif
 			bound_prim(p, 1);
 
-			#if(!(CARTESIAN || CARTESIAN_GR))
+			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
 				exit(0);
 			}
 			#endif
+
+			/*#if(DO_RBOUND)
+			if (dt > 0.5*RBOUND) {
+				if(rank==0) fprintf(stderr, "\n dt too big \n");
+				exit(0);
+			}
+			#endif*/ 
+
+
 		}
 
 		//Refine every TREF
@@ -441,6 +450,9 @@ void set_grid(int n)
 
 	#if(CARTESIAN_GR)
 	set_pflag_cart(n);
+	#endif
+	#if(DO_RBOUND)
+	set_pflag_rbound(n);
 	#endif
 
 	#if(FRAME_TRANSFORM)

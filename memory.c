@@ -87,6 +87,9 @@ void set_arrays(int n)
 	#if(CARTESIAN_GR)
 	pflag_cart[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
+	#if(DO_RBOUND)
+	pflag_rbound[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
+	#endif
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
@@ -700,6 +703,9 @@ void free_arrays(int n){
 	#endif
 	#if(CARTESIAN_GR)
 	free(pflag_cart[nl[n]]);
+	#endif
+	#if(DO_RBOUND)
+	free(pflag_rbound[nl[n]]);
 	#endif
 	free(U[nl[n]]);
 	free(dq[nl[n]]);
@@ -2638,6 +2644,33 @@ void set_pflag_cart(int n) {
 		}
 		else {
 			pflag_cart[nl[n]][index_3D(n, i, j, z)] = 0;
+		}
+	}
+}
+
+//Flag cells that need inflow boundary conditions in Spherical mesh
+void set_pflag_rbound(int n) {
+	int i, j, z;
+	double X[NDIM], r, th, phi;
+	double rmin = RBOUND;
+
+
+	/*
+	Add flag, AMR_RBOUNDFLAG, which labels each block that contains cells that have cells marked for inflow boundary conditions
+	*/
+	block[n][AMR_RBOUNDFLAG] = 0;
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {	
+		//Calculate coordiante
+		coord(n, i, j, z, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+
+		//Flag cells that are smaller than rmin
+		if (r<rmin) {
+			pflag_rbound[nl[n]][index_3D(n, i, j, z)] = 1;
+			block[n][AMR_RBOUNDFLAG] = 1;
+		}
+		else {
+			pflag_rbound[nl[n]][index_3D(n, i, j, z)] = 0;
 		}
 	}
 }

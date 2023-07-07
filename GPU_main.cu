@@ -176,6 +176,10 @@ void GPU_write(int n)
 			pflag_CART_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_cart[nl[n]][index_3D(n, i, j, z)];
 			#endif
 
+			#if(DO_RBOUND)
+			pflag_RBOUND_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_rbound[nl[n]][index_3D(n, i, j, z)];
+			#endif
+
 			#if(CARTESIAN|| CARTESIAN_GR)
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
@@ -211,6 +215,9 @@ void GPU_write(int n)
 	#endif
 	#if(CARTESIAN_GR)
 	gpuMemcpyAsync(Bufferpflag_CART[nl[n]], pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#endif
+	#if(DO_RBOUND)
+	gpuMemcpyAsync(Bufferpflag_RBOUND[nl[n]], pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 
 	/*Copy metric to GPU*/
@@ -469,6 +476,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
@@ -482,6 +492,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -520,6 +533,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], 
@@ -533,6 +549,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -571,6 +590,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
@@ -584,6 +606,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -624,6 +649,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
@@ -637,6 +665,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -675,6 +706,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
@@ -688,6 +722,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -726,6 +763,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
 					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
+					#endif
 					);
 				#elif(SCUDA)
 				fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
@@ -739,6 +779,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 					#endif
 					#if(CALC_MDOT)
 					, mass_density_scale_cpu, magnetic_density_scale_cpu
+					#endif
+					#if(DO_RBOUND)
+					, Bufferpflag_RBOUND[nl[n]]
 					#endif
 					);
 				#endif
@@ -1669,6 +1712,9 @@ void GPU_fixup_post(int n, double Dt)
 		#if(CARTESIAN_GR)
 		, Bufferpflag_CART[nl[n]]
 		#endif
+		#if(DO_RBOUND)
+		, Bufferpflag_RBOUND[nl[n]]
+		#endif
 		);
 	#elif(SCUDA)
 		fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
@@ -1684,6 +1730,9 @@ void GPU_fixup_post(int n, double Dt)
 		#endif
 		#if(CARTESIAN_GR)
 		, Bufferpflag_CART[nl[n]]
+		#endif
+		#if(DO_RBOUND)
+		, Bufferpflag_RBOUND[nl[n]]
 		#endif
 		);
 	#endif
@@ -1936,6 +1985,13 @@ void GPU_boundprim(int bound_force)
 	}
 	#endif
 
+	#if(DO_RBOUND)
+	for (n = 0; n < n_active; n++) {
+		GPU_boundprim_rbound(1, 0, n_ord[n]);
+		GPU_boundprim_rbound(1, 1, n_ord[n]);
+	}
+	#endif
+
 	//MPI communication
 	//for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
 		//#if(N_GPU>1)
@@ -2126,6 +2182,34 @@ void GPU_boundprim_cart(int dir, int flag, int n)
 		//gpuDeviceSynchronize();
 		status = gpuGetLastError();
 		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim_cart %d\n", status);
+	}
+}
+
+void GPU_boundprim_rbound(int dir, int flag, int n)
+{
+	if(block[n][AMR_RBOUNDFLAG]==1){
+		int nr_workgroups_local = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G))) / LOCAL_WORK_SIZE;
+
+		#if(N_GPU>1)
+		gpuSetDevice(block[n][AMR_GPU]);
+		#endif
+		if (flag == 1){
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim_rbound, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_RBOUND[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+			#elif(SCUDA)
+			boundprim_rbound << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferpflag_RBOUND[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+			#endif
+		}
+		else{
+			#if(SHIP)
+			hipLaunchKernelGGL(boundprim_rbound, nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_RBOUND[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+			#elif(SCUDA)
+			boundprim_rbound << < nr_workgroups_local, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferpflag_RBOUND[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+			#endif
+		}
+		//gpuDeviceSynchronize();
+		status = gpuGetLastError();
+		if (gpuSuccess != status ) fprintf(stderr, "Error boundprim_rbound %d\n", status);
 	}
 }
 

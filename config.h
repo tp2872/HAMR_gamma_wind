@@ -480,6 +480,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+/*For variable radial boundary*/
+#define DO_RBOUND (1)
+#define RBOUND (10.)
+
 /*Enable constant boundary conditions*/
 #define CONSTANT_BC (0)
 
@@ -772,7 +776,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 184
+#define NV 185
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -956,6 +960,7 @@ MNEMONICS SECTION
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
 #define AMR_CARTFLAG 183
+#define AMR_RBOUNDFLAG 184
 
 //Same as above but for old datasets used in grid_read function
 #define READ_AMR_COORD1 (0)
