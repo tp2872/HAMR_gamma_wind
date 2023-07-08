@@ -174,30 +174,30 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		double dE_RIGHT_32_1 = 0.0;
 		double dE_RIGHT_32_2 = 0.0;
 		#else
-		double dE_LEFT_13_1 = factor * (E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id]);
-		double dE_LEFT_13_2 = factor * (E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2]);
-		double dE_RIGHT_13_1 = factor * (F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3]);
-		double dE_RIGHT_13_2 = factor * (F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3]);
-		double dE_LEFT_12_1 = factor * (E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id]);
-		double dE_LEFT_12_2 = factor * (E_cent[1 * (ksize)+global_id - D3] + F2[B3 * (ksize)+global_id - D3]);
-		double dE_RIGHT_12_1 = factor * (-F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize]);
-		double dE_RIGHT_12_2 = factor * (-F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3]);
-		double dE_LEFT_21_1 = factor * (E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id]);
-		double dE_LEFT_21_2 = factor * (E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3]);
-		double dE_RIGHT_21_1 = factor * (F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize]);
-		double dE_RIGHT_21_2 = factor * (F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3]);
-		double dE_LEFT_23_1 = factor * (E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id]);
-		double dE_LEFT_23_2 = factor * (E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize]);
-		double dE_RIGHT_23_1 = factor * (-F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3]);
-		double dE_RIGHT_23_2 = factor * (-F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3]);
-		double dE_LEFT_31_1 = factor * (E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id]);
-		double dE_LEFT_31_2 = factor * (E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize]);
+		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - factor * F3[B2 * (ksize)+global_id];
+		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - factor * F3[B2 * (ksize)+global_id - jsize * D2];
+		double dE_RIGHT_13_1 = factor * F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+		double dE_RIGHT_13_2 = factor * F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + factor * F2[B3 * (ksize)+global_id];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + factor * F2[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_12_1 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_12_2 = -factor * F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - factor * F1[B3 * (ksize)+global_id];
+		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - factor * F1[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_21_1 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = factor * F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + factor * F3[B1 * (ksize)+global_id];
+		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + factor * F3[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_23_1 = -factor * F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+		double dE_RIGHT_23_2 = -factor * F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + factor * F1[B2 * (ksize)+global_id];
+		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + factor * F1[B2 * (ksize)+global_id - D2 * jsize];
 		double dE_RIGHT_31_1 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
 		double dE_RIGHT_31_2 = -factor * F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		double dE_LEFT_32_1 = factor * (E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id]);
-		double dE_LEFT_32_2 = factor * (E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize]);
-		double dE_RIGHT_32_1 = factor * (F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize]);
-		double dE_RIGHT_32_2 = factor * (F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize]);
+		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - factor * F2[B1 * (ksize)+global_id];
+		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - factor * F2[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_32_1 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_32_2 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
 		#endif
 
 		emf[1 * (ksize)+global_id] = 0.25*((-factor * F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))

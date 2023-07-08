@@ -14,6 +14,12 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 		ZSLOOP3D(N1_GPU_offset[n] * D1 - D1, (N1_GPU_offset[n] + BS_1)*D1, N2_GPU_offset[n] * D2 - D2, (N2_GPU_offset[n] + BS_2)*D2, N3_GPU_offset[n] * D3 - D3, (N3_GPU_offset[n] + BS_3)*D3){
 			ind0 = index_3D(n, i, j, z);
 
+			#if(CALC_MDOT)
+			double factor = magnetic_density_scale_cpu;
+			#else
+			double factor = 1.0;
+			#endif
+
 			//calculate the corner values of the electric field by averaging the Godunov fluxes, see formula 7 balsara&spicer
 			#if(N3G>0)
 			E_corn[nl[n]][ind0][1] = 0.25*(F3[nl[n]][ind0][B2] + F3[nl[n]][index_3D(n, i, j - D2, z)][B2] - F2[nl[n]][ind0][B3] - F2[nl[n]][index_3D(n, i, j, z - D3)][B3]);
@@ -26,10 +32,10 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 
 			//calculate the cell center values of the E-field
 			#if(N3G>0)
-			E_cent[1] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]); //-F2[B3]
-			E_cent[2] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]); //-F3[B1]
+			E_cent[1] = -geom.g * factor * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]); //-F2[B3]
+			E_cent[2] = -geom.g * factor * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]); //-F3[B1]
 			#endif
-			E_cent[3] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]); //-F1[B2]
+			E_cent[3] = -geom.g * factor * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]); //-F1[B2]
 
 			//upwind the electric field based on transverse gradients conform gardiner&stone 2005/2015, not yet tested
 			#if(N3G>0)
@@ -95,6 +101,12 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 		ZSLOOP3D(N1_GPU_offset[n] * D1 - D1, (N1_GPU_offset[n] + BS_1) * D1, N2_GPU_offset[n] * D2 - D2, (N2_GPU_offset[n] + BS_2) * D2, N3_GPU_offset[n] * D3 - D3, (N3_GPU_offset[n] + BS_3) * D3) {
 			ind0 = index_3D(n, i, j, z);
 
+			#if(CALC_MDOT)
+			double factor = magnetic_density_scale_cpu;
+			#else
+			double factor = 1.0;
+			#endif
+
 			//calculate the corner values of the electric field by averaging the Godunov fluxes, see formula 7 balsara&spicer
 			#if(N3G>0)
 			E_corn[nl[n]][ind0][1] = 0.25 * (F3[nl[n]][ind0][B2] + F3[nl[n]][index_3D(n, i, j - D2, z)][B2] - F2[nl[n]][ind0][B3] - F2[nl[n]][index_3D(n, i, j, z - D3)][B3]);
@@ -107,10 +119,10 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 
 			//calculate the cell center values of the E-field
 			#if(N3G>0)
-			E_cent[1] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
-			E_cent[2] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
+			E_cent[1] = -geom.g * factor * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
+			E_cent[2] = -geom.g * factor * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
 			#endif
-			E_cent[3] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
+			E_cent[3] = -geom.g * factor * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
 
 			//upwind the electric field based on transverse gradients conform gardiner&stone 2005/2015, not yet tested
 			#if(N3G>0)
