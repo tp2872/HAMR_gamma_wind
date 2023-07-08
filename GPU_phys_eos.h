@@ -1546,7 +1546,7 @@ __device__ void eos_mode_rhotemp_pres_u(const  double* __restrict__ gpu_eos_tabl
 #endif
     );
     #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = dens * ener;
 }
@@ -1564,7 +1564,7 @@ __device__ void eos_mode_rhotemp_u_dudt(const  double* __restrict__ gpu_eos_tabl
         #endif
     );
     #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = dens * ener;
     *dudt = dens * dedt;
@@ -1583,7 +1583,7 @@ __device__ void eos_mode_rhotemp_pres_u_cs2(const  double* __restrict__ gpu_eos_
 #endif
     );
     #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = dens * ener;
 }
@@ -1658,7 +1658,7 @@ __device__ void eos_mode_rhotemp_pres(const  double* __restrict__ gpu_eos_table,
 #endif
     );
 #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
 #endif
 }
 
@@ -1674,7 +1674,7 @@ __device__ void eos_mode_rhotemp_entr(const  double* __restrict__ gpu_eos_table,
 #endif
     );
 #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
 #endif
 }
 
@@ -1691,7 +1691,7 @@ __device__ void eos_mode_rhotemp_etaele(const  double* __restrict__ gpu_eos_tabl
 #endif
     );
 #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
 #endif
     // eta_ele to mu_ele
     *mu_ele = etaele - 0.511 * mev2k / temp;
@@ -1828,7 +1828,7 @@ __device__ void eos_mode_rhotemp_s_pres_u(const  double* __restrict__ gpu_eos_ta
     }
     #endif
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *temp = temp_new;
     *u = xener * dens;
@@ -1869,7 +1869,7 @@ __device__ void eos_mode_rhotemp_w_pres_u(const  double* __restrict__ gpu_eos_ta
     }
     #endif
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     double x_alpha_ini = *x_alpha;
     double x_atm_ini = *x_atm;
     #endif
@@ -1969,7 +1969,7 @@ __device__ void eos_mode_rhotemp_w_pres_u(const  double* __restrict__ gpu_eos_ta
         }	
     }
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = xener * dens;
 
@@ -2045,7 +2045,7 @@ __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict_
     // w is w - rho for this function
     double xenth = w * deni; // Helmholtz EOS takes non-relativistic enthalpy
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     double x_alpha_ini = *x_alpha;
     double x_atm_ini = *x_atm;
     #endif
@@ -2184,7 +2184,7 @@ __device__ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(const  double* __restrict_
     #endif
 
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *dpde_d = dpdt / dedt;
     #if (inversion_w_edits)
@@ -2241,7 +2241,7 @@ __device__ int eos_mode_rhotemp_u_pres_floor(const  double* gpu_eos_table, doubl
 
     double ener_goal = u / dens;
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     double x_alpha_ini = *x_alpha;
     double x_atm_ini = *x_atm;
     #endif
@@ -2372,7 +2372,7 @@ __device__ int eos_mode_rhotemp_u_pres_floor(const  double* gpu_eos_table, doubl
         );
         */
         #if (DONUCLEAR)
-        ener_tmp += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+        ener_tmp += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
         #endif
         gamma_2 = GAMMA; //(*pres) / (dens * ener_tmp) + 1.;
 

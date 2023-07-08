@@ -825,7 +825,7 @@ void eos_mode_rhou_entr(double* prim, double* entr) {
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
 
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, pres, cs2;
@@ -941,7 +941,7 @@ void eos_mode_rhou_pres(double* prim, double *pres) {
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr, cs2;
     double dsdt, dedrho, etaele;
@@ -1047,7 +1047,7 @@ void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr;
     double dsdt, dedrho, etaele;
@@ -1155,7 +1155,7 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrh
     else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     double xener = 0.0;
     double h_tmp;
@@ -1222,7 +1222,7 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -1267,7 +1267,7 @@ void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
         }
     }
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     *u = xener * den;
 }
@@ -1424,11 +1424,10 @@ void eos_mode_rhopres_u (double* prim) {
     }
     #endif
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     if (error_p > EOS_TOL || error > EOS_TEMP_TOL) {
-        fprintf(stderr, "5 errP: %g T_ini: %g T_fin: %g rho: %g pG: %g\n", error_p, temp_ini_guess, temp_old, den, p_goal);
-
+        //fprintf(stderr, "5 errP: %g T_ini: %g T_fin: %g rho: %g pG: %g\n", error_p, temp_ini_guess, temp_old, den, p_goal);
     }
 
     prim[UU] = xener * den;
@@ -1449,7 +1448,7 @@ void eos_mode_rhou_temp(double* prim, double* temp) {
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * prim[XALPHA] / (C_CGS * C_CGS);
     #endif
     double temp_new, temp_old;
     double ener_tmp;
@@ -1569,7 +1568,7 @@ void eos_mode_rhotemp_pres_u(double dens, double temp, double ye, double* pres, 
         #endif
     );
     #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = dens * ener;
 }
@@ -1587,7 +1586,7 @@ void eos_mode_rhotemp_pres_u_cs2(double dens, double temp, double ye, double* pr
         #endif
     );
     #if (DONUCLEAR)
-    ener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = dens * ener;
 }
@@ -1637,7 +1636,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
 #if (DOHELM_LOWTEMP)
     temp_ini_guess = (GAMMA - 1.) * ener_goal / (BOLTZ_CGS * avo) * C_CGS * C_CGS;
@@ -1708,7 +1707,7 @@ void eos_mode_rhou_temp_init(double dens, double* temp, double ye, double u_goal
 
     if (error_e > EOS_TOL || error > EOS_TEMP_TOL) {
         //*temp = temp_ini_guess;
-        fprintf(stderr, "6 errE: %g, errT: %e T_ini: %g T_fin: %g rho: %g uG: %g ye: %g)\n", error_e, error, temp_ini_guess, temp_old, dens, u_goal, ye);
+        //fprintf(stderr, "6 errE: %g, errT: %e T_ini: %g T_fin: %g rho: %g uG: %g ye: %g)\n", error_e, error, temp_ini_guess, temp_old, dens, u_goal, ye);
     }
 
     #if (EOS_BISECTION)
@@ -1950,7 +1949,7 @@ void eos_mode_rhotemp_s_pres_u(double dens, double* temp, double ye, double entr
     }
     #endif
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     * u = xener * dens;
     *dudrho = dedrho * dens + xener;
@@ -1978,7 +1977,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, d
     }
     #endif
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
@@ -2025,7 +2024,7 @@ void eos_mode_rhotemp_w_pres_u(double dens, double* temp, double ye, double w, d
         }
     }
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     *u = xener * dens;
 
@@ -2099,7 +2098,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye,
     }
     #endif
     #if (DONUCLEAR)
-    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xenth -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
@@ -2186,7 +2185,7 @@ void eos_mode_rhotemp_w_pres_dpdrho_dpde_d(double dens, double* temp, double ye,
     }
     #endif
     #if (DONUCLEAR)
-    xener += 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    xener += 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     * dpde_d = dpdt / dedt;
     #if (inversion_w_edits)
@@ -2221,7 +2220,7 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
     }
     #endif
     #if (DONUCLEAR)
-    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / ENERGY_DENSITY_SCALE;
+    ener_goal -= 0.25 * Qalpha * avo * (*x_alpha) / (C_CGS * C_CGS);
     #endif
     // initial guess : temperature
     double temp_ini_guess = *temp;
