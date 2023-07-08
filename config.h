@@ -64,7 +64,8 @@ Physical Parameters section
 // Postmerger problem, ICs from SpEC
 #define BHNSQ2 (1)
 #define BHNSQ2_1 (0)
-#define BHNSQ2_2 (1)
+#define BHNSQ2_2 (0)
+#define FORNAX_IC (1)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
@@ -73,6 +74,8 @@ Physical Parameters section
 #define BH_SPIN (0.86)
 #elif (BHNSQ2_2)
 #define BH_SPIN (0.677376)
+#elif (FORNAX_IC)
+#define BH_SPIN (0.168)
 #else 
 #define BH_SPIN (0.8)
 #endif
@@ -626,6 +629,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
     #define M_SGRA_SOLAR (3.795) /* Solar masses */
     #elif (BHNSQ2_2)
     #define M_SGRA_SOLAR (2.67396) /* Solar masses */
+    #elif (FORNAX_IC)
+    #define M_SGRA_SOLAR (4.03) /* Solar masses */
     #endif
     #else
     #define M_SGRA_SOLAR (8.07) /* Solar masses */
@@ -673,6 +678,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
         #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
         #elif (BHNSQ2_2)
         #define MASS_DENSITY_SCALE (1949439399418.96)
+        #elif (FORNAX_IC)
+        #define MASS_DENSITY_SCALE (1.02e14) // (4.762731e13)
         #endif
         #else
         #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)

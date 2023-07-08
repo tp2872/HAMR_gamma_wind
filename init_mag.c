@@ -34,6 +34,20 @@ void set_mag(void){
 	beta = 100.0 / (3.6 * Bfactor * Bfactor);
 	#endif
 
+	#if(WHICHPROBLEM==POSTMERGER_PROBLEM && FORNAX_IC)
+	double Bfactor = 1e-2; //1e13 G for alpha = 1
+	double M_STAR = 7.21;
+	double R_STARcm = 2e9;
+
+	double M_BH = M_SGRA_SOLAR;
+	double r_rc = R_G_CGS;	
+	double Rs = R_STARcm / r_rc;
+	double Fe_core = 1e8 / r_rc;
+	double r_hole = 3.5;
+	double fr;
+	beta = 100.0 / (3.6 * Bfactor * Bfactor);
+	#endif
+
 	#if(WHICHPROBLEM==BONDI_PROBLEM_2D)
 	beta = BETA;
 	double rin = R_BONDI;
@@ -86,7 +100,7 @@ void set_mag(void){
 			#elif(WHICHPROBLEM==BONDI_PROBLEM_2D)
 			if (r >= rin) q = (r * r - rin * rin) * (sin(th) * sin(th));
 			else q = 0.;
-			#elif(WHICHPROBLEM==COLLAPSAR || WHICHPROBLEM==NSM)
+			#elif(WHICHPROBLEM==COLLAPSAR || (WHICHPROBLEM==POSTMERGER_PROBLEM && FORNAX_IC) || WHICHPROBLEM==NSM)
 				#if(COLLAPSAR_GR1D)
 				q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 				#else
