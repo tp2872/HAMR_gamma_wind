@@ -321,7 +321,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
 		#endif
-
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
 		QdotB = udotB * wold * q.ucon[0];
 
