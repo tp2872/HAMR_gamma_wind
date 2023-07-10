@@ -715,7 +715,7 @@ __global__ void boundprim_rbound(double * pv, double *  ps, int * pflag_rbound, 
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
 	int k=0;
-	double p_local[NPR], alpha, vsq, gamma;
+	double p_local[NPR];
 	struct of_geom geom;
 
 	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
@@ -744,26 +744,9 @@ __global__ void boundprim_rbound(double * pv, double *  ps, int * pflag_rbound, 
 		#endif
 
 		//Set fluid velocities to 0
-		alpha = 1. / sqrt(-geom.gcon[0]);
 		p_local[U1] = 0;
 		p_local[U2] = 0;
 		p_local[U3] = 0;
-
-		// now find new gamma and put it back in
-		vsq = geom.gcov[4] * p_local[UTCON1 + 1 - 1] * p_local[UTCON1 + 1 - 1]; //1,1
-		vsq += 2. * geom.gcov[5] * p_local[UTCON1 + 2 - 1] * p_local[UTCON1 + 1 - 1]; //1,2
-		vsq += 2. * geom.gcov[6] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 1 - 1]; //1,3
-		vsq += geom.gcov[7] * p_local[UTCON1 + 2 - 1] * p_local[UTCON1 + 2 - 1]; //2,2
-		vsq += 2 * geom.gcov[8] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 2 - 1]; //2,3
-		vsq += geom.gcov[9] * p_local[UTCON1 + 3 - 1] * p_local[UTCON1 + 3 - 1]; //3,3
-		vsq = MY_MAX(1.e-13, vsq);
-		if (vsq >= 1.) {
-			vsq = 1. - 1. / (GAMMAMAX * GAMMAMAX);
-		}
-		gamma = 1. / sqrt(1. - vsq);
-		p_local[U1] *= gamma;
-		p_local[U2] *= gamma;
-		p_local[U3] *= gamma;
 		#if(RAD_M1)
 		p_local[U1_RAD] = p_local[U1];
 		p_local[U2_RAD] = p_local[U2];

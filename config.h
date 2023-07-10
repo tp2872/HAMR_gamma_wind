@@ -482,7 +482,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*For variable radial boundary*/
 #define DO_RBOUND (1)
-#define RBOUND (10.)
+#define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
 #define CONSTANT_BC (0)
