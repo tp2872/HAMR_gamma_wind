@@ -788,6 +788,11 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 			prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U3];
 			#endif
 
+			//Set (staggered) magnetic field components
+			//prim[nl[n]][index_3D(n, i, j, z)][B1] = 0.0;
+			//prim[nl[n]][index_3D(n, i, j, z)][B2] = 0.0;
+			//prim[nl[n]][index_3D(n, i, j, z)][B3] = 0.0;
+
 			if (pflag_cart[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
 				//ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
 			}

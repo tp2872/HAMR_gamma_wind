@@ -770,6 +770,11 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, cons
 		p_local[U3_RAD] = p_local[U3];
 		#endif
 
+		//Set magnetic fields
+		p_local[B1]=  pv[B1 * ksize + global_id];
+		p_local[B2] = pv[B2 * ksize + global_id];
+		p_local[B3] = pv[B3 * ksize + global_id];
+
 		//Export results to global memory
 		for (k = 0; k < NPR; k++) {
 			pv[k * ksize + global_id] = p_local[k];
