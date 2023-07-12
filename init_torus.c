@@ -300,7 +300,7 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
 
 			// initialize neutrinos
-			#if (0)
+			#if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-15;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
@@ -418,12 +418,6 @@ void init_torus()
 
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	
-	for (n = 0; n < n_active; n++) {
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] > 1.) fprintf(stderr, "### (%d %d %d) 2 rho=%e, ug=%e, ye=%f, xalpha=%f, xatm=%f\n", i, j, z, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]);
-		}
-	}
 		#if (DOHELM_TEMPERATURE)
 		// Set temperatures given u:
 		for (n = 0; n < n_active; n++) {

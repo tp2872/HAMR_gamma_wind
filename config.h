@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -270,12 +270,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 4
-#define NB_3 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
-#define BS_3 1
+#define BS_1 48
+#define BS_2 48
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -319,7 +319,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
