@@ -706,26 +706,22 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 	, double radius
 #endif
 );
-__device__ void source_linearized_nu(double* ph, struct of_geom* geom, double* ncon, double ncov0, double* U_old, double* U_new, double Dt, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, int species
+__device__ int source_linearized_nu(double* ph, struct of_geom* geom, double* ncon, double ncov0, double* U_old, double* U_new, double Dt, const  double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, int species
 #if (NU_KEEP_COEFF_CONST)
 	, double eta_0, double kappa_abs0, double kappa_s0, double eta_N0, double kappa_N0
 #endif
 );
 __device__ int calc_linearized_error(double* ncon, double ncov0, double gcon[10], double* U_1, double* U_2, double* U_old, double* U_new, int species, double y_max, double* error_tmp);
-__device__ void implicit_evolve_neutrino_num(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, struct of_geom* geom, double* ucon, double* ucov, double Ncon0_i, double* Ncon0_f, double Dt, int species);
 
 // Neutrino functions declarations
 __device__ int Rtoprim_nu(double* U, struct of_geom* geom, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
 __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim);
-__device__ void Rtoprim_nu_number(double UN, struct of_geom* geom, double* prim, double* primN, int sp);
 __device__ void primtoflux_nu(double* pr, struct of_state_nu* q_nu, int dir, struct of_geom* geom, double* flux);
-__device__ void primtoflux_nu_number(double* ph, double* ucon, double* ucov, int dir, struct of_geom* geom, double* flux);
 __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_nu, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table, const  double* __restrict__ gpu_nulib_table);
 __device__ void mhd_calc_nu(double* pr, int dir, struct of_state_nu* q_nu, double* mhd_nu, int species);
 __device__ void ucon_calc_nu(double* pr, struct of_geom* geom, double* ucon_nu, int species);
 __device__ int gamma_calc_nu(double* pr, struct of_geom* geom, double* gamma_nu, int species);
 __device__ void get_state_nu(double* pr, struct of_geom* geom, struct of_state_nu* q_nu, int species);
-__device__ void calc_source_numdens_nu(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double J, double ener_nu_avg, double* source_nu_num, int species);
 __device__ double calc_nu_kappa_emiss(const double* __restrict__ gpu_nulib_table, double* ph, int sp);
 __device__ double calc_nu_kappa_abs(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);
 __device__ double calc_nu_kappa_scatt(const double* __restrict__ gpu_eos_table, const double* __restrict__ gpu_nulib_table, double* ph, double ener_nu_avg, int sp);

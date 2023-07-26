@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -120,24 +120,23 @@ Physical Parameters section
 #define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
-#define NU_SUBCYCLING (0)
+#define NU_SUBCYCLING (1)
 #define NU_DEBUG (1)
 #define NEUTRINOS_DEBUG (0)
-#define NEUTRINOS_DEBUG_NFLAGS (0)
+#define NEUTRINOS_DEBUG_NFLAGS (3)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (0)
 #define NU_INNER_STOP (1)
 #define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
 #define NU_PREDICTOR (0)
-#define NU_KEEP_COEFF_CONST (1)
-#define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
+#define NU_KEEP_COEFF_CONST (0)
 #define NULIB_YE_CORRECTION (1)
 
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
-#define DONUCLEAR (1)
+#define DONUCLEAR (0)
 #else 
 #define DO_YE (1)
 #define DONUCLEAR (1)
@@ -213,7 +212,7 @@ Physical Parameters section
 #define TMAX (1.e15)
 
 /*Runtime in hours*/
-#define RUNTIME (2.0)
+#define RUNTIME (24.0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -319,7 +318,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -488,7 +487,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 

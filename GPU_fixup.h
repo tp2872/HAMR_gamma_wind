@@ -114,9 +114,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
             struct of_state_nu q_nu[NU_SPECIES];
             for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(pf, &geom, &q_nu[sp], sp);
             primtoflux_nu(pf, q_nu, 0, &geom, U);
-				#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-				//primtoflux_nu_number(pf, q.ucon, q.ucov, 0, &geom, U);
-				#endif
             #endif
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++) {

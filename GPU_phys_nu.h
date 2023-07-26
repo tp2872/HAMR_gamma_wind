@@ -30,6 +30,7 @@ __device__ int Rtoprim_nu(double* U, struct of_geom* geom, double gcov[10], doub
     return(ret);
 }
 
+#if (1)
 __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim) {
 
     double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
@@ -70,9 +71,143 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
     // utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
     for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
-#if (!NU_NUMBER_DENSITY_FLUID_EVOLVE)
-    prim[4] = U[4] / sqrt(gammasq);
-#endif
+    if (y > y_max || y < 0. || isnan(Qdotn) || Qdotn > 0.0 || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
+        Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
+        for (i = 1; i < 4; i++)prim[i] = GAMMAMAX_NU * Qtcon[i] / Uabs;
+
+        qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
+            + 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
+        if (qsq < 0. || fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+        gammasq = 1. + qsq;
+
+        f = sqrt((GAMMAMAX_NU * GAMMAMAX_NU - 1.) / (gammasq - 1.));
+        prim[1] *= f;
+        prim[2] *= f;
+        prim[3] *= f;
+
+        if (lim == TYPE2) {
+            /*
+            // if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+            Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
+            // }
+
+            //Get gammasq
+            gammasq = (2. - y_max + sqrt(4. - 3. * y_max)) / (4. - 4. * y_max);
+
+            pressure = -Qdotn / (4. * gammasq - 1.);
+            prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
+
+            // utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
+            for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+
+            returnval = 1;
+            */
+
+            if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+                Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
+            }
+            pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+            prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
+
+            returnval = 1;
+        }
+        else if (lim == TYPE3) {
+            // If energy density is negative, reset it to floor value
+            if (Qdotn > 0.0) {
+                prim[0] = 1.e-30;
+                prim[1] = 0.;
+                prim[2] = 0.;
+                prim[3] = 0.;
+            }
+            // Causality violation: rescale!
+            else if (y > y_max) {
+                pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+                prim[0] = pressure * 3.; // Erad = 3*p_rad
+                for (i = 1; i < 4; i++) prim[i] = Qtcon[i] / (4. * pressure * GAMMAMAX_NU);
+            }
+        }
+        else {
+            if (1) {
+                // if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+                    // if (Qdotn > 0.0 || y < 0.0) {
+                prim[0] = 1.e-30;
+                prim[1] = 0.;
+                prim[2] = 0.;
+                prim[3] = 0.;
+            }
+            else {
+                pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+                prim[0] = pressure * 3.;
+            }
+        }
+        if (!isfinite(prim[0])) prim[0] = 1.e-30;
+        if (!isfinite(prim[1])) prim[1] = 0.0;
+        if (!isfinite(prim[2])) prim[2] = 0.0;
+        if (!isfinite(prim[3])) prim[3] = 0.0;
+        returnval = 1;
+    }
+
+    double ucon_nu[NDIM];
+    qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
+        + 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
+    if (qsq < 0. || fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+    double gamma = sqrt(1. + qsq);
+    ucon_nu[0] = gamma * ncon[0];
+    for (i = 1; i < 4; i++) ucon_nu[i] = prim[i] + gamma * ncon[i];
+
+    double u_dot_unu = 0.0;
+    for (i = 0; i < 4; i++) u_dot_unu += ucov[i] * ucon_nu[i];
+
+    prim[4] = U[4] * 3 * ncon[0] / (4. * ucon_nu[0] + ucon[0] / u_dot_unu);
+    if (prim[4] < 0.0 || returnval) {
+        Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+        prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
+        prim[4] *= 3 * (-ncov * ucon[0]) / (4. * (ncov * ncov * ucon[0] * ucon[0]) - 1.);
+        returnval = 1;
+    }
+
+    return(returnval);
+}
+#else
+__device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim) {
+
+    double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
+    double Uabs, qsq;
+    double gammasq, y, pressure, f;
+    double Tnu;
+    int i, returnval = 0;
+
+    for (i = 0; i < 4; i++) Qcov[i] = U[i];
+    raise(Qcov, gcon, Qcon);
+
+    ncov = -sqrt(-1. / gcon[0]);
+    ncon[0] = gcon[0] * ncov;
+    ncon[1] = gcon[1] * ncov;
+    ncon[2] = gcon[2] * ncov;
+    ncon[3] = gcon[3] * ncov;
+
+    Qdotn = Qcon[0] * ncov; //-Erad in McKinney2013
+    for (i = 1; i < 4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;  //Utilde in McKinney2013 
+
+    for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
+    Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
+
+    if (Qtsq < 0.0) {
+        Qtsq = 0.0;
+        Qtcon[1] = 0.;
+        Qtcon[2] = 0.;
+        Qtcon[3] = 0.;
+    }
+
+    y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
+    gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
+
+    // Get Ebar and p_rad as usual
+    pressure = -Qdotn / (4. * gammasq - 1.);
+    prim[0] = pressure * 3.; // Erad = 3*p_rad
+
+    // utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
+    for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
     if (y > y_max || y < 0. || isnan(Qdotn) || Qdotn > 0.0 || isnan(prim[1]) || isnan(prim[2]) || isnan(prim[3])) {
         Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
@@ -104,19 +239,12 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
                 prim[1] = 0.;
                 prim[2] = 0.;
                 prim[3] = 0.;
-#if (!NU_NUMBER_DENSITY_FLUID_EVOLVE)
-                Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-                prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-#endif
             }
             // Causality violation: rescale!
             else if (y > y_max) {
                 pressure = fabs(Qdotn) / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
                 prim[0] = pressure * 3.; // Erad = 3*p_rad
                 for (i = 1; i < 4; i++) prim[i] = Qtcon[i] / (4. * pressure * GAMMAMAX_NU);
-#if (!NU_NUMBER_DENSITY_FLUID_EVOLVE)
-                prim[4] = U[4] / GAMMAMAX_NU;
-#endif
             }
         }
         else {
@@ -126,10 +254,6 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
                 prim[1] = 0.;
                 prim[2] = 0.;
                 prim[3] = 0.;
-#if (!NU_NUMBER_DENSITY_FLUID_EVOLVE)
-                Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-                prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-#endif
             }
             else {
                 //else if (y > y_max) {
@@ -149,15 +273,10 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
         if (!isfinite(prim[3]))prim[3] = 0.0;
 
         //Floor on photon number+
-#if (!NU_NUMBER_DENSITY_FLUID_EVOLVE)
-        Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-        if (lim != TYPE3) prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-#endif
         //prim[4] = U[4];
         returnval = 1;
     }
 
-#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
     double ucon_nu[NDIM];
     qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
         + 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
@@ -177,50 +296,9 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
         prim[4] *= 3 * (-ncov * ucon[0]) / (4. * (ncov * ncov * ucon[0] * ucon[0]) - 1.);
         returnval = 1;
     }
-#else
-    if (prim[4] < 0.0) {
-        Tnu = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-        prim[4] = prim[0] * ENERGY_DENSITY_SCALE / (2.701178 * MASS_DENSITY_SCALE * BOLTZ_CGS * Tnu);
-        returnval = 1;
-    }
-#endif
     return(returnval);
 }
-
-// P2F
-__device__ void Rtoprim_nu_number(double UN, struct of_geom* geom, double* prim, double* primN, int sp) {
-#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-    double mhd_nu[NDIM][NDIM];
-    struct of_state_nu q_nu;
-    double R_dot_ucon[NDIM];
-    double J;
-    double ucon[NDIM], ucov[NDIM];
-    double alpha = 1. / sqrt(-geom->gcon[0]);
-    ucon_calc(prim, geom, ucon);
-    lower(ucon, geom->gcov, ucov);
-
-    // 1. Compute the radiation tensor
-    get_state_nu(prim, geom, &q_nu, sp);
-    mhd_calc_nu(prim, 0, &q_nu, mhd_nu[0], sp);
-    mhd_calc_nu(prim, 1, &q_nu, mhd_nu[1], sp);
-    mhd_calc_nu(prim, 2, &q_nu, mhd_nu[2], sp);
-    mhd_calc_nu(prim, 3, &q_nu, mhd_nu[3], sp);
-
-    // 2. Compute R^mu_nu ucon_nu = J u^mu + H^mu
-    for (int i = 0; i < NDIM; i++)
-        R_dot_ucon[i] = (mhd_nu[i][0] * ucon[0] + mhd_nu[i][1] * ucon[1] + mhd_nu[i][2] * ucon[2] + mhd_nu[i][3] * ucon[3]);
-
-    // 3. Compute J = R ucon ucov
-    J = (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]);
-
-    *primN = (UN / alpha) / (-R_dot_ucon[0] / J);
-    if (*primN < 0) {
-        //printf("Nhat = %e, UN = %e, Ju^t+H^t = %e \n", *primN, UN, R_dot_ucon[0]);
-        *primN = 1e-30;
-    }
-
 #endif
-}
 
 __device__ void primtoflux_nu(double* pr, struct of_state_nu* q_nu, int dir, struct of_geom* geom, double* flux) {
     int k;
@@ -232,46 +310,12 @@ __device__ void primtoflux_nu(double* pr, struct of_state_nu* q_nu, int dir, str
         for (k = UU_NU; k <= U3_NU; k++) flux[index_nu(k, sp)] *= geom->g;
 
         //Flux of photon number
-#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
         double u_dot_unu = 0.;
         for (int i = 0; i < NDIM; i++) u_dot_unu += ucov[i] * q_nu[sp].ucon[i];
         flux[index_nu(NUMBER_NU, sp)] = (geom->g) * pr[index_nu(NUMBER_NU, sp)] / 3. * (4. * q_nu[sp].ucon[dir] + ucon[dir] / u_dot_unu);
-#else
-        flux[index_nu(NUMBER_NU, sp)] = (geom->g) * pr[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[dir];
-#endif
     }
 
     return;
-}
-
-__device__ void primtoflux_nu_number(double* ph, double* ucon, double* ucov, int dir, struct of_geom* geom, double* flux) {
-#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-    double mhd_nu[NDIM][NDIM];
-    struct of_state_nu q_nu;
-    double R_dot_ucon[NDIM];
-    double J, Hcon;
-
-    for (int sp = 0; sp < NU_SPECIES; sp++) {
-        // 1. Compute the radiation tensor
-        get_state_nu(ph, geom, &q_nu, sp);
-        mhd_calc_nu(ph, 0, &q_nu, mhd_nu[0], sp);
-        mhd_calc_nu(ph, 1, &q_nu, mhd_nu[1], sp);
-        mhd_calc_nu(ph, 2, &q_nu, mhd_nu[2], sp);
-        mhd_calc_nu(ph, 3, &q_nu, mhd_nu[3], sp);
-
-        // 2. Compute R^mu_nu ucon_nu = J u^mu + H^mu
-        for (int i = 0; i < NDIM; i++)
-            R_dot_ucon[i] = (mhd_nu[i][0] * ucon[0] + mhd_nu[i][1] * ucon[1] + mhd_nu[i][2] * ucon[2] + mhd_nu[i][3] * ucon[3]);
-
-        // 3. Compute J = R ucon ucov
-        J = (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]);
-        Hcon = -R_dot_ucon[dir] - J * ucon[dir];
-        // 4. Compute f^mu
-        flux[index_nu(NUMBER_NU, sp)] = geom->g * ph[index_nu(NUMBER_NU, sp)] * (ucon[dir] + Hcon / J);
-    }
-
-    return;
-#endif
 }
 
 // Neutrino energy-momentum tensor
@@ -361,7 +405,7 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
         Acon_js = geom->gcon[9];
     }
 
-    double mhd_nu[NDIM][NDIM], ener_nu_avg, R_dot_ucon[NDIM], u_dot_unu;
+    double ener_nu_avg;
     for (int sp = 0; sp < NU_SPECIES; sp++) {
         /* find radiation wave speed at 1./3. speed of light (==isotropic in radiation frame) */
         crad2 = 1.0 / 3.0;
@@ -398,28 +442,7 @@ __device__ void vchar_nu(double* pr, struct of_state* q, struct of_state_nu* q_n
 
         /* find radiation wave speed in fluid frame based on optical depth */
         // calculate avg. energy of neutrinos
-        mhd_calc_nu(pr, 0, &q_nu[sp], mhd_nu[0], sp);
-
-#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-        /*
-        mhd_calc_nu(pr, 1, &q_nu[sp], mhd_nu[1], sp);
-        mhd_calc_nu(pr, 2, &q_nu[sp], mhd_nu[2], sp);
-        mhd_calc_nu(pr, 3, &q_nu[sp], mhd_nu[3], sp);
-        for (int i = 0; i < NDIM; i++)
-            R_dot_ucon[i] = (mhd_nu[i][0] * q->ucon[0] + mhd_nu[i][1] * q->ucon[1] + mhd_nu[i][2] * q->ucon[2] + mhd_nu[i][3] * q->ucon[3]);
-        ener_nu_avg = (R_dot_ucon[0] * q->ucov[0] + R_dot_ucon[1] * q->ucov[1] + R_dot_ucon[2] * q->ucov[2] + R_dot_ucon[3] * q->ucov[3]) / pr[index_nu(NUMBER_NU, sp)];
-        */
-
-        u_dot_unu = q->ucov[0] * q_nu[sp].ucon[0] + q->ucov[1] * q_nu[sp].ucon[1] + q->ucov[2] * q_nu[sp].ucon[2] + q->ucov[3] * q_nu[sp].ucon[3];
-        // compute avg neutrino energy in fluid frame
-        ener_nu_avg = -u_dot_unu * pr[index_nu(UU_NU, sp)] / pr[index_nu(NUMBER_NU, sp)];
-        ener_nu_avg = fabs(ener_nu_avg);
-        if (ener_nu_avg < 0) {
-            printf("2. [e<0] %d, <e>: %e, udotuR: %e, E: %e, N: %e\n", sp, ener_nu_avg, u_dot_unu, pr[index_nu(UU_NU, sp)], (pr[index_nu(NUMBER_NU, sp)]));
-        }
-#else 
-        ener_nu_avg = -((mhd_nu[0][0] * q->ucon[0] + mhd_nu[0][1] * q->ucon[1] + mhd_nu[0][2] * q->ucon[2] + mhd_nu[0][3] * q->ucon[3])) / (pr[index_nu(NUMBER_NU, sp)] * q_nu[sp].ucon[0]);
-#endif
+        calc_avg_neutrino_energy(pr, &ener_nu_avg, geom, sp);
 
         //Calculate optical depth
         kappa_tot = (calc_nu_kappa_abs(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + (calc_nu_kappa_scatt(gpu_eos_table, gpu_nulib_table, pr, ener_nu_avg, sp)) + SMALL; // to make it non-zero
