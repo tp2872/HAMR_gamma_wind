@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 100.0;
-	DTd = 20.0;
+	DTd = 100.0;
 	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 			#endif
 			bound_prim(p, 1);
 
-			#if(!(CARTESIAN || CARTESIAN_GR))
+			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
 				exit(0);
@@ -445,6 +445,9 @@ void set_grid(int n)
 
 	#if(CARTESIAN_GR)
 	set_pflag_cart(n);
+	#endif
+	#if(DO_RBOUND)
+	set_pflag_rbound(n);
 	#endif
 
 	#if(FRAME_TRANSFORM)

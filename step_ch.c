@@ -74,6 +74,12 @@ void step_ch()
 	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
 
+	//Set radial boundary for moving RBOUN
+	#if(DO_RBOUND)
+	for (n = 0; n < n_active; n++) {
+		set_pflag_rbound(n_ord[n]);
+	}
+	#endif	
 	/* done! */
 }
 
@@ -922,6 +928,13 @@ void GPU_step_ch()
 	#if(CALC_MDOT)
 	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
+
+	//Set radial boundary for moving RBOUN
+	#if(DO_RBOUND)
+	for (n = 0; n < n_active; n++) {
+		set_pflag_rbound(n_ord[n]);
+	}
+	#endif	
 }
 
 double advance_GPU(void)

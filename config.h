@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM SPHERICAL_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -62,8 +62,8 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
-#define BH_SPIN (0.95)
+#define GAMMA	(13./9.)
+#define BH_SPIN (0.9375)
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -71,11 +71,11 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (4000.0)
+#define ROUT (1000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -253,14 +253,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 6
-#define NB_3 2
+#define NB_1 6
+#define NB_2 4
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 72
-#define BS_2 32
-#define BS_3 64
+#define BS_1 100
+#define BS_2 70
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -301,10 +301,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -387,7 +387,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -480,8 +480,12 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+/*For variable radial boundary*/
+#define DO_RBOUND (1)
+#define RBOUND (20.)
+
 /*Enable constant boundary conditions*/
-#define CONSTANT_BC (1)
+#define CONSTANT_BC (0)
 
 /*Enable Radiation*/
 #define RAD_M1 (0)
@@ -772,7 +776,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 184
+#define NV 185
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -956,6 +960,7 @@ MNEMONICS SECTION
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
 #define AMR_CARTFLAG 183
+#define AMR_RBOUNDFLAG 184
 
 //Same as above but for old datasets used in grid_read function
 #define READ_AMR_COORD1 (0)
