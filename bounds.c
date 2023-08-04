@@ -635,7 +635,6 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR6] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -657,7 +656,6 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	if (block[n][AMR_NBR5] == -1){
 		// outer r BC: outflow 		
