@@ -229,7 +229,7 @@ Numerical Parameters section
 #define GPU_SET (1)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
-#define GPU_MEM (30.0)
+#define GPU_MEM (32.0)
 
 /*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
 #define CUDA_MEMCALC (1)
@@ -238,7 +238,7 @@ Numerical Parameters section
 #define MEM_CLEAN (1)
 
 /*Memory of the node*/
-#define CPU_MEM (40.0)
+#define CPU_MEM (80.0)
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -250,7 +250,7 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define NB_LOCAL (1000)
+#define NB_LOCAL (4000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
