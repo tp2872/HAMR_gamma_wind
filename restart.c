@@ -177,11 +177,11 @@ void rdump_block_read(FILE *fp, int n)
 	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
 
-	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
-	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
+	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_nuclear * DONUCLEAR * 2 + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
+	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_nuclear * 2 + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
 	int red_1, red_2, red_3, i1, j1, z1;
 	double reduce_factor;
-	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
+	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + 2 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
 	struct of_geom geom;
 	#if(RAD_M1)
 	int uu_rad = (8 + DOKTOT);
@@ -205,12 +205,16 @@ void rdump_block_read(FILE *fp, int n)
 	#if(DO_YE)
 	int ye = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1);
 	#endif
+	#if(DONUCLEAR)
+	int xalpha = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
+	int xatm = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
+	#endif
 	#if(NEUTRINOS_M1)
-	int uu_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
-	int u1_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
-	int u2_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 2);
-	int u3_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 3);
-	int number_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 4);
+	int uu_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2);
+	int u1_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 1);
+	int u2_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 2);
+	int u3_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 3);
+	int number_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 4);
 	#endif
 
 	//Set grid reduction factor
@@ -336,6 +340,19 @@ void rdump_block_read(FILE *fp, int n)
 			else {
 				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
 				p[nl[n]][index_3D(n, i1, j1, z1)][YE] += read[ye] * reduce_factor;
+			}
+			#endif
+			#if(DONUCLEAR)
+			if (!read_nuclear) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][XALPHA] = 0.0;
+					p[nl[n]][index_3D(n, i1, j1, z1)][XATM] = 1.0;
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][XALPHA] += read[xalpha] * reduce_factor;
+				p[nl[n]][index_3D(n, i1, j1, z1)][XATM] += read[xatm] * reduce_factor;
 			}
 			#endif
 			#if(NEUTRINOS_M1)
@@ -656,6 +673,12 @@ void param_read(FILE *fp) {
 	fread(&rt, int_size, 1, fp);
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
+
+	if (docyl >= 1000000) {
+		read_nuclear = 1;
+		docyl -= 1000000;
+	}
+	else read_nuclear = 0;
 
 	if (docyl >= 100000) {
 		read_neutrinos = 1;

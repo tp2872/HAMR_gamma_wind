@@ -18,6 +18,12 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
     double ye_new = U[YE] / U[RHO];
     validate_ye(&prim[YE]);
     #endif
+    #if (DONUCLEAR)
+    double x_alpha_new = U[XALPHA] / U[RHO];
+    double x_atm_new = U[XATM] / U[RHO];
+    validate_abund(&x_alpha_new);
+    validate_abund(&x_atm_new);
+    #endif
 
     //If mass flux negative, return immediately
     if (U[0] <= 0.) return(-100);
@@ -74,6 +80,8 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
     #if (DONUCLEAR)
     prim[XALPHA] = U[XALPHA] / U[RHO];
     prim[XATM] = U[XATM] / U[RHO];
+    validate_abund(&prim[XALPHA]);
+    validate_abund(&prim[XATM]);
     #endif
 
     return(ret);
@@ -145,7 +153,7 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
         #endif
         &xpres
         #if (DONUCLEAR)
-        , prim[XALPHA], prim[XATM]
+        , &prim[XALPHA], &prim[XATM]
         #endif
     );
     #else 
@@ -201,7 +209,7 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
             #endif
             w - rho0, &xpres, &u
             #if (DONUCLEAR)
-            , 0., 0.
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         #else
@@ -283,7 +291,7 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
             #endif
             w - rho0, &p_new, &u
             #if (DONUCLEAR)
-            , prim[XALPHA], prim[XATM]
+            , &prim[XALPHA], &prim[XATM]
             #endif
         );
         #else

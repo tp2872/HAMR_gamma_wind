@@ -2421,12 +2421,23 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 			#if(DO_YE)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][YE] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][YE]);
 			#endif
+			#if(DONUCLEAR)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][XALPHA] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][XALPHA]);
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][XATM] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][XATM]);
+			#endif
 			#if(TWO_T)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRE]);
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][ENTRI]);
 			#endif
 			#if(RAD_M1)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_RAD] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_RAD]);
+			#endif
+			#if(NEUTRINOS_M1)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_NU] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU_NU]);
+			#if(NU_SPECIES>1)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][index_nu(UU_NU,1)] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][index_nu(UU_NU,1)]);
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][index_nu(UU_NU,2)] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][index_nu(UU_NU,2)]);
+			#endif
 			#endif
 			#if(P_NUM)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON]);
@@ -3553,9 +3564,9 @@ double calc_refcrit(int n){
 					//Check if cell is part of the jet; If so set the cell up for refinement
 					#if (DOHELM && DOHELM_TEMPERATURE)
 					double pres, u;
-					eos_mode_rhotemp_pres_u(p[nl[n]][index_3D(n, i, j, z)][RHO], p[nl[n]][index_3D(n, i, j, z)][UU], p[nl[n]][index_3D(n, i, j, z)][YE], &pres, &u, 
+					eos_mode_rhotemp_pres_u(p[nl[n]][index_3D(n, i, j, z)][RHO], p[nl[n]][index_3D(n, i, j, z)][UU], p[nl[n]][index_3D(n, i, j, z)][YE], &pres, &u 
 						#if (DONUCLEAR)
-						, p[nl[n]][index_3D(n, i, j, z)][XALPHA], p[nl[n]][index_3D(n, i, j, z)][XATM]
+						, &p[nl[n]][index_3D(n, i, j, z)][XALPHA], &p[nl[n]][index_3D(n, i, j, z)][XATM]
 						#endif
 						);
 					if (u / pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA) > HIGH_CUTOFF && t>t_ff)

@@ -61,7 +61,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
         #endif
         &P, &u
         #if (DONUCLEAR)
-        , ph[XALPHA], ph[XATM]
+        , &ph[XALPHA], &ph[XATM]
         #endif
     );
     #else
@@ -161,7 +161,11 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 
     //Add cooling term if needed
     #if (COOL_DISK)
-    misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
+    misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+	);
     #endif
 
     dU[UU] *= geom->g;
@@ -309,13 +313,27 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 }
 
 
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,  double r, double Dt){
-	double epsilon = ph[UU] / ph[RHO];
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,  double r, double Dt
+	#if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+    #endif
+){
+	#if (DOHELM_TEMPERATURE)
+	double xpres, ugas;
+	eos_mode_rhotemp_pres_u(gpu_eos_table, ph[RHO], ph[UU], ph[YE], &xpres, &ugas
+		#if (DONUCLEAR)
+		, &ph[XALPHA], &ph[XATM]
+		#endif
+	);
+	#else
+	double ugas = ph[UU];
+	#endif
+	double epsilon = ugas / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
 	double Y = (GAMMA - 1.)*epsilon / T_target; // HELMEOS
-	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
-	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
+	double lambda = om_kepler*ugas * sqrt(Y - 1. + fabs(Y - 1.));
+	double int_energy = q->ucov[0] * q->ucon[0] * ugas;
 	double bsq = dot(q->bcon,q->bcov);
 	#if(WHICHPROBLEM==TRUNC_PROBLEM)
 	if (r > 40.) {
@@ -383,7 +401,7 @@ __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mh
 			#endif
 			&P, &u
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -437,7 +455,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 			#endif
 			&P, &u, &cs2_helm
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -619,7 +637,7 @@ __device__ double calc_entropy(double* pr
 			#endif
 			&entr
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		#else
@@ -788,7 +806,7 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
 			#endif
 			&xpres, &u, &cs2
 			#if (DONUCLEAR)
-			, pr[XALPHA], pr[XATM]
+			, &pr[XALPHA], &pr[XATM]
 			#endif
 		);
 		w = pr[RHO] + u + xpres;

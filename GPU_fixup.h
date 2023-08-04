@@ -114,9 +114,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
             struct of_state_nu q_nu[NU_SPECIES];
             for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(pf, &geom, &q_nu[sp], sp);
             primtoflux_nu(pf, q_nu, 0, &geom, U);
-				#if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-				//primtoflux_nu_number(pf, q.ucon, q.ucov, 0, &geom, U);
-				#endif
             #endif
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++) {
@@ -263,12 +260,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
                 printf("\n\t\t pf[%d] = %e, U[%d] = %e, dU[%d] = %e", k, pf[k], k, U[k], k, dU[k]);
             }
         }*/
-
-        #if (DONUCLEAR)
-        // Compute the effect of the alpha particle recombination on the gas temperature, Xalpha and Xatm (keeping rho and ye fixed)
-        nuc_evol(gpu_eos_table, pf);
-        #endif
-
         #else
 			#if(RESISTIVE)
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
@@ -376,6 +367,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				}
 			#endif
 		#endif
+
+		//#if (DONUCLEAR && DOHELM && DOHELM_TEMPERATURE)
+		#if (0)
+        // Compute the effect of the alpha particle recombination on the gas temperature, Xalpha and Xatm (keeping rho and ye fixed)
+        nuc_evol(gpu_eos_table, pf);
+        #endif
 
 		#if(CALC_MDOT)
 		pf[B1] = U[B1] / geom.g / magnetic_density_scale;
@@ -875,6 +872,74 @@ __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage)
 	}
 }
 
+__global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage)
+{
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3) * (BS_2);
+	zcurr = (global_id % (isize)) % (BS_3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
+	icurr = (global_id - (jcurr * (BS_3)+zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	if (global_id < (BS_1) * (BS_2) * (BS_3)) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	double avg[NPR];
+	int counter = 0;
+	int sp;
+	/* Fix the interior points first */
+	if (k == 1) {
+		if (pflag_nu[global_id] != 0) {
+			for (k = 0; k < NPR; k++) avg[k] = 0.;
+			for (sp = 0; sp < NU_SPECIES; sp++) {
+				if (icurr - 1 >= N1G) {
+					if (pflag_nu[global_id - isize] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - isize];
+						counter++;
+					}
+				}
+				if (icurr + 1 < BS_1 + N1G) {
+					if (pflag_nu[global_id + isize] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + isize];
+						counter++;
+					}
+				}
+				if (jcurr - 1 >= N2G) {
+					if (pflag_nu[global_id - (BS_3 + 2 * N3G)] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - (BS_3 + 2 * N3G)];
+						counter++;
+					}
+				}
+				if (jcurr + 1 < BS_2 + N2G) {
+					if (pflag_nu[global_id + (BS_3 + 2 * N3G)] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + (BS_3 + 2 * N3G)];
+						counter++;
+					}
+				}
+				if (zcurr - 1 >= N3G) {
+					if (pflag_nu[global_id - D3] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id - D3];
+						counter++;
+					}
+				}
+				if (zcurr + 1 < BS_3 + N3G) {
+					if (pflag_nu[global_id + D3] == 0) {
+						for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) avg[k] += pv[k * (ksize)+global_id + D3];
+						counter++;
+					}
+				}
+				if (counter > 0) {
+					//for (k = index_nu(UU_NU, sp); k <= index_nu(U3_NU, sp); k++) pv[k * (ksize)+global_id] = 1. / ((double)counter) * avg[k];
+				}
+			}
+		}
+	}
+}
+
 //Apply floors to a cell
 __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if (DOHELM)
@@ -941,7 +1006,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#endif
 			&xP, &u
 			#if (DONUCLEAR)
-			, pf[XALPHA], pf[XATM]
+			, &pf[XALPHA], &pf[XATM]
 			#endif
 		);
     
@@ -986,11 +1051,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	}
 
 	#if (DONUCLEAR)
-    pf[XALPHA] = MY_MAX(1e-10, pf[XALPHA]);
-    pf[XALPHA] = MY_MIN(1.0, pf[XALPHA]);
-
-    pf[XATM] = MY_MAX(1e-10, pf[XATM]);
-    pf[XATM] = MY_MIN(1.0, pf[XATM]);
+	validate_abund(&pf[XALPHA]);
+	validate_abund(&pf[XATM]);
     #endif
 
 	//Internal energy floor
@@ -1208,7 +1270,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 				#endif
 				u, &xP
 				#if (DONUCLEAR)
-				, pf[XALPHA], pf[XATM]
+				, &pf[XALPHA], &pf[XATM]
 				#endif
 			);
 			wnew = pf[RHO] + u + xP;

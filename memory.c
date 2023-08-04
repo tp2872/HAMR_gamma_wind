@@ -1590,10 +1590,10 @@ double calc_mem_gpu(int n){
 	#endif
 	mem +=((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) * NFAIL * sizeof(int);
 	#if(NEUTRINOS_M1)
-	mem += ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)0) * sizeof(int);
-		#if (NEUTRINOS_DEBUG)
-	mem +=((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)0) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double);
-		#endif
+	mem += ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) * sizeof(int);
+	#if (NEUTRINOS_DEBUG)
+	mem +=((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) * NEUTRINOS_DEBUG_NFLAGS * NU_SPECIES * sizeof(double);
+	#endif
 	#endif
 
 	//Send buffers primitive variables

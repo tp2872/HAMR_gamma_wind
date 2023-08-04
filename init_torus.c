@@ -16,10 +16,10 @@ void init()
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
 		case MONOPOLE_PROBLEM_2D:
-			init_monopole(1e3);
+			//init_monopole(1e3);
 			break;
 		case BZ_MONOPOLE_2D:
-			init_monopole(100.);
+			//init_monopole(100.);
 			break;
 		case TORUS_PROBLEM:
 			init_torus();
@@ -50,7 +50,7 @@ void init()
 			init_entwave();
 			break;
 		case TRUNC_PROBLEM:
-			init_truncdisk();
+			//init_truncdisk();
 		case BLAST_WAVE:
 			init_blastwave();
 			break;
@@ -216,8 +216,9 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.5;
 				#endif
 				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 1.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 0.0;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM] = 1.0;
 				#endif			
 			}
 			/* region inside magnetized torus; u^i is calculated in
@@ -281,7 +282,7 @@ void init_torus()
 				#endif
 
 				#if (DO_YE)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.15;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE] = 0.1;
 				#endif
 				#if (DONUCLEAR)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA] = 0.0;
@@ -299,7 +300,7 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;	
 
 			// initialize neutrinos
-			#if (0)
+			#if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(UU_NU, sp)] = 1e-15;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][index_nu(U1_NU, sp)] = ur;
@@ -424,7 +425,7 @@ void init_torus()
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				eos_mode_rhou_temp_init(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 					#if (DONUCLEAR)
-					, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+					, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
 					#endif
 				);
 			}
@@ -432,18 +433,28 @@ void init_torus()
 		#endif
 	#endif
 
+	/* Initialize alpha particles */
+	#if(DONUCLEAR)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
+
 	/* Initialize neutrinos */
 	#if(NEUTRINOS_M1)
 	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			init_neutrinos(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 		}
 	}
 	#endif
 
-	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	//for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)

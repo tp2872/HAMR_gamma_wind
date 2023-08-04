@@ -29,12 +29,12 @@ void GPU_init(void)
 		for (j = gpu_offset; j < gpu_offset + N_GPU; j++){
 			if (i!=j) gpuDeviceEnablePeerAccess(j, 0);
 		}
-		#if (DOHELM)
-		eos_init_GPU(i + rank / ranks_per_node);
-		#endif
-		#if(NEUTRINOS_M1)
-		nulib_init_GPU(i + rank / ranks_per_node);
-		#endif
+		//#if (DOHELM)
+		//eos_init_GPU(i + rank / ranks_per_node);
+		//#endif
+		//#if(NEUTRINOS_M1)
+		//nulib_init_GPU(i + rank / ranks_per_node);
+		//#endif
 	}
 	#endif
 
@@ -88,11 +88,9 @@ void eos_init_GPU(int n) {
 	#if(N_GPU>1)
 	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
-
 	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
-	gpuMallocHost((void**)&eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
-	gpuMalloc((void**)&GPU_eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
-
+	gpuMallocHost((void**)&eos_table[n], (EOSIMAX * EOSJMAX + eos_offset) * 21 * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	gpuMalloc((void**)&GPU_eos_table[n], (EOSIMAX * EOSJMAX + eos_offset) * 21 * sizeof(double)); // same here regarding the OFFSET
 	// Check for errors: EOS array allocation
 	status = gpuGetLastError();
 	if (gpuSuccess != status) fprintf(stderr, "Error in setting EOS: %d \n", status);
@@ -101,37 +99,39 @@ void eos_init_GPU(int n) {
 	// fill in the host array
 	for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++) {
 		// helmholtz free energy table (total: 9 items)
-		eos_table[0][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
-		eos_table[0][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
-		eos_table[0][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
-		eos_table[0][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
-		eos_table[0][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
-		eos_table[0][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
-		eos_table[0][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
-		eos_table[0][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
-		eos_table[0][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
+		eos_table[n][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
+		eos_table[n][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
+		eos_table[n][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
+		eos_table[n][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
+		eos_table[n][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
+		eos_table[n][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
+		eos_table[n][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
+		eos_table[n][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
+		eos_table[n][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
 
 		// pressure derivative with density table (total: 4 items)
-		eos_table[0][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
-		eos_table[0][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
-		eos_table[0][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
-		eos_table[0][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
+		eos_table[n][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
+		eos_table[n][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
+		eos_table[n][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
+		eos_table[n][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
 
 		// electron chemical potential table (total: 4 items)
-		eos_table[0][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
-		eos_table[0][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
-		eos_table[0][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
-		eos_table[0][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
+		eos_table[n][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
+		eos_table[n][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
+		eos_table[n][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
+		eos_table[n][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
 
 		// number denisty table (total: 4 items)
-		eos_table[0][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
-		eos_table[0][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
-		eos_table[0][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
-		eos_table[0][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
+		eos_table[n][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
+		eos_table[n][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
+		eos_table[n][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
+		eos_table[n][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
 	}
 
-	gpuMemcpy(GPU_eos_table[0], eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), gpuMemcpyHostToDevice);
+	gpuMemcpy(GPU_eos_table[n], eos_table[n], (EOSIMAX * EOSJMAX + eos_offset) * 21 * sizeof(double), gpuMemcpyHostToDevice);
 	gpuDeviceSynchronize();
+	status = gpuGetLastError();
+	if (gpuSuccess != status) fprintf(stderr, "Error in eos_init_GPU: %d\n", status);
 }
 #endif
 
@@ -439,7 +439,6 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	//GPU_boundprim_cart(dir, 0, n);
 	//GPU_boundprim_cart(dir, 1, n);
 	#endif
-
 	/*Calculate reconstructed left state*/
 	GPU_fluxcalcprep(dir, flag, 1, n);
 	if (flag == 1){
@@ -1648,26 +1647,33 @@ void GPU_fixuputoprim_rad(int flag, int n)
 	if (gpuSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
 }
 
-#if (NEUTRINOS_M1)
 void GPU_fixuputoprim_nu(int flag, int n)
 {
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
 	#if(N_GPU>1)
-	cudaSetDevice(block[n][AMR_GPU]);
+	gpuSetDevice(block[n][AMR_GPU]);
 	#endif
 
 	if (flag == 1) {
+		#if(SHIP)
+		hipLaunchKernelGGL(fixuputoprim_nu, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferp_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+		#elif(SCUDA)
 		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+		#endif
 	}
 	else {
+		#if(SHIP)
+		hipLaunchKernelGGL(fixuputoprim_nu, nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]], Bufferph_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+		#elif(SCUDA)
 		fixuputoprim_nu << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpflag_NU[nl[n]], Bufferfailimage[nl[n]]);
+		#endif
 	}
-	//cudaDeviceSynchronize();
-	status = cudaGetLastError();
-	if (cudaSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
+
+	//gpuDeviceSynchronize();
+	status = gpuGetLastError();
+	if (gpuSuccess != status) fprintf(stderr, "Error fixuputoprim %d\n", status);
 }
-#endif
 
 void GPU_cleanup_post(int n)
 {

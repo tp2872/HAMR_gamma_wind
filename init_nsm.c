@@ -59,6 +59,10 @@ void init_postmerger() {
 	#if (BHNSQ2)
 	#if (BHNSQ2_1)
 	char fname1[] = "spec_ic_1.dat";
+	#elif (BHNSQ2_2)
+	char fname1[] = "spec_ic_2.dat";
+	#elif (FORNAX_IC)
+	char fname1[] = "fornax_ic_1.dat";
 	#else
 	char fname1[] = "InterpolatedDataBHNSQ2.dat";
 	#endif
@@ -122,6 +126,14 @@ void init_postmerger() {
 			ext.nx = 384;
 			ext.ny = 96;
 			ext.nz = 96;
+			#elif (BHNSQ2_2)
+			ext.nx = 200;
+			ext.ny = 100;
+			ext.nz = 100;
+			#elif (FORNAX_IC)
+			ext.nx = 678;
+			ext.ny = 256;
+			ext.nz = 1;
 			#else
 			ext.nx = 384;
 			ext.ny = 96;
@@ -133,7 +145,7 @@ void init_postmerger() {
 
 			read_first_line(first_line, MAXLEN, fp1);
 			sscanf(first_line, "%lf %lf %lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf %*lf", &ext.xmin, &ext.ymin, &ext.zmin);
-			#if (!BHNSQ2_1)
+			#if (!BHNSQ2_1 && !BHNSQ2_2 && !FORNAX_IC)
 			ext.xmin /= r_unit;
 			ext.xmax /= r_unit;
 			#endif
@@ -146,6 +158,14 @@ void init_postmerger() {
 			nx = 384;
 			ny = 96;
 			nz = 96;
+			#elif (BHNSQ2_2)
+			nx = 200;
+			ny = 100;
+			nz = 100;
+			#elif (FORNAX_IC)
+			nx = 678;
+			ny = 256;
+			nz = 1;
 			#else
 			nx = 384;
 			ny = 96;
@@ -224,7 +244,6 @@ void init_postmerger() {
 
 			#if (BHNSQ2)
 			for (ii = 0; ii < nx; ii++) for (jj = 0; jj < ny; jj++) for (kk = 0; kk < nz; kk++) {
-				//fprintf(stderr, "[%d] blah %d %d %d\n", rank, ii, jj, kk);
 
 				//first file, containing grid and data information
 				ptr1 = fgets(buf1, MAXLEN, fp1);
@@ -235,7 +254,7 @@ void init_postmerger() {
 				dd(ii, jj, kk, VARK) = (double)kk;
 
 				nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", &dd(ii, jj, kk, VARR), &dd(ii, jj, kk, VARTHETA), &dd(ii, jj, kk, VARPHI), &dd(ii, jj, kk, VARRHO), &dd(ii, jj, kk, VARP), &dd(ii, jj, kk, VARYE), &dd(ii, jj, kk, VARMUDT), &dd(ii, jj, kk, VARUDPHI), &dd(ii, jj, kk, VARVUR), &dd(ii, jj, kk, VARVUTHETA), &dd(ii, jj, kk, VARVUPHI));
-				#if (!BHNSQ2_1)
+				#if (!BHNSQ2_1 && !BHNSQ2_2 && !FORNAX_IC)
 				dd(ii, jj, kk, VARR) /= r_unit;
 				#endif
 				//dd(ii, jj, kk, VARUDPHI) /= r_unit;
@@ -432,7 +451,7 @@ void init_postmerger() {
 	calc_source();
 	#endif
 
-	#if DOHELM
+	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	for (n = 0; n < n_active; n++) {
 		//#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
@@ -458,11 +477,21 @@ void init_postmerger() {
 				#endif
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]
 				#if (DONUCLEAR)
-				, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
+				, &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XALPHA], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][XATM]
 				#endif
 			);
 		}
 	}
+
+		/* Initialize alpha particles */
+	#if(DONUCLEAR)
+	for (n = 0; n < n_active; n++) {
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z)
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			init_nuclear(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		}
+	}
+	#endif
 
 	#if (NEUTRINOS_M1)
 	for (n = 0; n < n_active; n++) {
@@ -589,7 +618,7 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 		j0 = 0;
 		dj = 0;
 	}
-	else if (j0 >= ext.ny - 1) {
+	else if (j0 >= ny - 1) {
 		j0 = ny - 1;
 		dj = 0;
 	}
@@ -600,8 +629,14 @@ int interpolate_spec_var(double r, double th, double ph, extent ext, double* icd
 	j = j0 + dj;
 
 	// Index in phi
-	dz = (ext.zmax - ext.zmin) / (nz - 1);
-	k = (ph - ext.zmin) / dz;// -0.5;
+	if (nz == 1) {
+		dz = 0.0;
+		k = 0.0;
+	}
+	else {
+		dz = (ext.zmax - ext.zmin) / (nz - 1);
+		k = (ph - ext.zmin) / dz;// -0.5;
+	}
 
 	i1 = (int)ceil(i);
 	j1 = (int)ceil(j);

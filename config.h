@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -61,17 +61,35 @@ Physical Parameters section
 /*Gibwa's refinement criterion*/
 #define REFINE_GIBWA (0)
 
+// Postmerger problem, ICs from SpEC
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (0)
+#define BHNSQ2_2 (0)
+#define FORNAX_IC (1)
+
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2_1)
+#define BH_SPIN (0.86)
+#elif (BHNSQ2_2)
+#define BH_SPIN (0.677376)
+#elif (FORNAX_IC)
+#define BH_SPIN (0.168)
+#else 
+#define BH_SPIN (0.8)
+#endif
+#else
+#define BH_SPIN (0.8)
+#endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e2)
+#define BETA (1e1)
 
 /*Select grid outer radius*/
-#define ROUT (1000.0)
+#define ROUT (10000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -88,36 +106,31 @@ Physical Parameters section
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
-// Postmerger problem, ICs from SpEC
-#define BHNSQ2 (1)
-#define BHNSQ2_1 (1)
-
 // Collapsar problem
-#define COLLAPSAR_GR1D (1)
+#define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
-#define NU_SUBCYCLING (0)
+#define NU_SUBCYCLING (1)
 #define NU_DEBUG (1)
 #define NEUTRINOS_DEBUG (0)
-#define NEUTRINOS_DEBUG_NFLAGS (0)
+#define NEUTRINOS_DEBUG_NFLAGS (3)
 #define DUMP_EACH_STEP (0)
 #define ZERO_TAU_MODE (0)
 #define DANAT_GDET_INTERP (0)
 #define NU_INNER_STOP (1)
 #define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
 #define NU_PREDICTOR (0)
-#define NU_KEEP_COEFF_CONST (1)
-#define NU_NUMBER_DENSITY_FLUID_EVOLVE (1)
+#define NU_KEEP_COEFF_CONST (0)
 #define NULIB_YE_CORRECTION (1)
 
 // Whether electron fraction is evolved
@@ -125,16 +138,16 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (0)
-#define DONUCLEAR (0)
+#define DO_YE (1)
+#define DONUCLEAR (1)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
     #if (NEUTRINOS_M1)
-    #define DOHELM_TEMPERATURE (0) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+    #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
     #else
-    #define DOHELM_TEMPERATURE (0) 
+    #define DOHELM_TEMPERATURE (1) 
     #endif
 #else
     #define DOHELM_TEMPERATURE (0) 
@@ -142,13 +155,14 @@ Physical Parameters section
 
 #define USE_3D_INV (0)
 
+#define EOS_DEBUG (0)
 #define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (0)
 #define revert_gamma        (1)
-#define eos_nr_debug (0)
-#define HELMEOS_INPUT_CHECK (1)
+#define eos_nr_debug        (0)
+#define HELMEOS_INPUT_CHECK (0)
 
 // subcycling testing
 #define RADM1_SUBCYCLING (0)
@@ -258,8 +272,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 70
+#define BS_1 48
+#define BS_2 48
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -295,7 +309,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 0
+#define NORMALIZE_DIVB 1
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300
@@ -350,7 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 1000.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.9)
+#define COUR (0.5)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -498,16 +512,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NU_SPECIES (3)       
 
 /* number of Nulib table entries for each variable */
-#define NULIB_RHO   (70) // (50)
-#define NULIB_TEMP  (60) // (40)
-#define NULIB_YE    (50) // (30)
+#define NULIB_RHO   (82) //(70)
+#define NULIB_TEMP  (65) //(60)
+#define NULIB_YE    (51) //(50)
 
 /* Nulib table variable bounds  */
-#define nulib_dhi (14.0) // (15.5)
-#define nulib_dlo (8.0) // (6.0)
-#define nulib_thi (13.0)
-#define nulib_tlo (9.763594473254775)
-#define nulib_yhi (0.55)
+#define nulib_dhi (14.0) 
+#define nulib_dlo (6.0) //(8.0) 
+#define nulib_thi (12.24) //(13.0)
+#define nulib_tlo (8.76) //(9.763594473254775)
+#define nulib_yhi (0.6) //(0.55)
 #define nulib_ylo (0.01)
 
 #define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
@@ -615,7 +629,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
     #define M_SGRA_SOLAR (0.1) /* Solar masses */
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
     #if (BHNSQ2)
+    #if (BHNSQ2_1)
     #define M_SGRA_SOLAR (3.795) /* Solar masses */
+    #elif (BHNSQ2_2)
+    #define M_SGRA_SOLAR (2.67396) /* Solar masses */
+    #elif (FORNAX_IC)
+    #define M_SGRA_SOLAR (4.03) /* Solar masses */
+    #endif
     #else
     #define M_SGRA_SOLAR (8.07) /* Solar masses */
     #endif
@@ -653,13 +673,18 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
-
 #if(NEUTRINOS_M1 || DOHELM)
     #if (RADM1_SUBCYCLING)
         #define MASS_DENSITY_SCALE (0.0000001)
     #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
         #if (BHNSQ2)
+        #if (BHNSQ2_1)
         #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+        #elif (BHNSQ2_2)
+        #define MASS_DENSITY_SCALE (1949439399418.96)
+        #elif (FORNAX_IC)
+        #define MASS_DENSITY_SCALE (1.02e14) // (4.762731e13)
+        #endif
         #else
         #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
         #endif
@@ -1007,8 +1032,8 @@ Variable Inversion Section
 #define NEWT_DIM_1 1
 
 // Section with DONUCLEAR constants
-#define x_atm_cutoff (0.5)
-#define tgas_cutoff (1e10)
+#define x_atm_cutoff (0.01)
+#define tgas_cutoff (5e9)
 #define Qalpha (28.3 * 1.60217733e-6)
 #define amu (1.6605402e-24)
 #define m_alpha (4.0 * amu)
@@ -1048,10 +1073,9 @@ Section with EOS constants
 
 // if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
 // otherwise, set EOS_COULOMB_CORR to 0
-#define eos_coulombMult (0.0)
+#define eos_coulombMult (1.0)
 #define EOS_COULOMB_CORR (0)
-
-#define eos_coulombAbort (1)
+#define EOS_COULOMB_CORR_GPU (0)
 
 // from eos_helmConstData
 #define avo (6.0221367e23)
@@ -1069,6 +1093,7 @@ Section with EOS constants
 #define asoli3 (asol / 3.0e0)
 #define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+#define selecon ((2.0e0 * M_PI * 0.000548 * amu * kerg) / (h_planck * h_planck))
 
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)

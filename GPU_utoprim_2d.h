@@ -17,6 +17,12 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
     double ye_new = U[YE] / U[RHO];
     validate_ye(&ye_new);
     #endif
+    #if (DONUCLEAR)
+    double x_alpha_new = U[XALPHA] / U[RHO];
+    double x_atm_new = U[XATM] / U[RHO];
+    validate_abund(&x_alpha_new);
+    validate_abund(&x_atm_new);
+    #endif
 
     if (U[0] <= 0.) {
         return(-100);
@@ -55,7 +61,7 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
         , ye_new
         #endif
 		#if(DONUCLEAR)
-        , prim[XALPHA], prim[XATM]
+        , &x_alpha_new, &x_atm_new
         #endif
         #if(TWO_T)
         , S
@@ -81,6 +87,8 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
         #if (DONUCLEAR)
         prim[XALPHA] = U[XALPHA] / U[RHO];
         prim[XATM] = U[XATM] / U[RHO];
+        validate_abund(&prim[XALPHA]);
+        validate_abund(&prim[XATM]);
         #endif
     }
 
@@ -95,7 +103,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
     , double *S
@@ -395,7 +403,7 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
     , double *S
@@ -499,7 +507,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
     , double ye
     #endif
     #if(DONUCLEAR)
-    , double x_alpha, double x_atm
+    , double* x_alpha, double* x_atm
     #endif
 	#if(TWO_T)
     , double *S

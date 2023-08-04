@@ -204,7 +204,7 @@ void utilde_to_ucon(double *pr, double udphi, double mudt, int n, int ii, int jj
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
 
-  #if (!BHNSQ2_1)
+  #if (!BHNSQ2_1 && !BHNSQ2_2 && !FORNAX_IC)
   /* Jacobian transformation from spherical to cartesian coords */
   dxdr_sph_to_cart(r, th, phi, dxdr);
   invert_matrix(dxdr, drdx);
@@ -399,11 +399,11 @@ void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, 
 			pos_new_tmp[i] = pos_new[i];
 		}
 
-		#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-		kerr_gcov_func(*r, *th, bl_gcov);
-		#else
-		bl_gcov_func(*r, *th, bl_gcov);
-		#endif
+	#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+	kerr_gcov_func(*r, *th, bl_gcov);
+	#else
+	bl_gcov_func(*r, *th, bl_gcov);
+	#endif
 
 		V_tmp[1] *= sqrt(bl_gcov[1][1]);
 		V_tmp[2] *= sqrt(bl_gcov[2][2]);
@@ -787,10 +787,14 @@ void init_neutrinos(double ph[NPR]) {
 	double F2, F3, mu_nu, mu_p, mu_n, mu_e;
 	eos_mode_rhotemp_etaele(ph[RHO], ph[UU], ph[YE], &mu_e
 		#if (DONUCLEAR)
+		, &ph[XALPHA], &ph[XATM]
+		#endif
+	);
+	calc_mu_np(ph[RHO], ph[UU], ph[YE], &mu_n, &mu_p
+		#if (DONUCLEAR)
 		, ph[XALPHA], ph[XATM]
 		#endif
 	);
-	calc_mu_np(ph[RHO], ph[UU], 1.0 - ph[YE], ph[YE], &mu_n, &mu_p);
 	mu_nu = mu_p + mu_e - mu_n + (MP_CGS + ME_CGS - MN_CGS) * C_CGS * C_CGS / (BOLTZ_CGS * ph[UU]);
 	double T_nu;
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
@@ -837,15 +841,15 @@ void init_nuclear(double ph[NPR]) {
 	exit(1);
 	#endif
 
-	double x_n, x_p;
+	double x_n, x_p, x_alpha_ini = ph[XALPHA], x_atm_ini = ph[XATM];
 	// Compute abundances 
 	if (ph[XATM] < x_atm_cutoff && ph[UU] > tgas_cutoff) {
-		ph[XATM] = 0.0;
-		nse_abundances(ph[RHO] * MASS_DENSITY_SCALE, ph[UU], ph[YE], &x_n, &x_p, &ph[XALPHA]);
+		//ph[XATM] = 0.0;
+		nse_abundances(ph[RHO] * MASS_DENSITY_SCALE, ph[UU], ph[YE] - ph[XATM], &x_n, &x_p, &ph[XALPHA], &ph[XATM]);
 	}
 	else {
 		x_n = get_xn(ph[YE], ph[XALPHA]);
-		x_p = get_xp(ph[YE], ph[XALPHA]);
+		x_p = get_xp(ph[YE] - ph[XATM], ph[XALPHA]);
 		// normalize
 		double x_sum = x_n + x_p + ph[XALPHA] + ph[XATM];
 		if (x_sum > 1.0) {
@@ -854,7 +858,8 @@ void init_nuclear(double ph[NPR]) {
 		}
 	}
 
-	fprintf(stderr, "\t\n xn, xp, xa, xatm, ye = %e %e %e %e %e", x_n, x_p, ph[XALPHA], ph[XATM], ph[YE]);
+	//if (ph[YE] < 0.2) 
+		//fprintf(stderr, "\t\n xn, xp, xa (ini), xatm (ini), ye = %e %e %e (%e) %e (%e) %e", x_n, x_p, ph[XALPHA], x_alpha_ini, ph[XATM], x_atm_ini, ph[YE]);
 
 	// Check if the abundances are out of bounds
 	ph[XALPHA] = MY_MIN(1.0, ph[XALPHA]);

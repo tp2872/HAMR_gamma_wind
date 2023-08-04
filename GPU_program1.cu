@@ -350,10 +350,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
         for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(p, &geom, &state_nu[sp], sp);
         primtoflux_nu(p, state_nu, dir, &geom, temp1);
         primtoflux_nu(p, state_nu, 0, &geom, temp2);
-        #if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-        //primtoflux_nu_number(p, state.ucon, state.ucov, dir, &geom, temp1);
-        //primtoflux_nu_number(p, state.ucon, state.ucov, 0, &geom, temp2);
-        #endif
         vchar_nu(p, &state, state_nu, &geom, dir, &cmax_l_nu[0], &cmin_l_nu[0], factor/cour, gpu_eos_table, gpu_nulib_table);
         #endif
 
@@ -466,10 +462,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
         for (sp = 0; sp < NU_SPECIES; sp++) get_state_nu(p, &geom, &state_nu[sp], sp);
         primtoflux_nu(p, state_nu, dir, &geom, temp3);
         primtoflux_nu(p, state_nu, 0, &geom, temp4);
-        #if (NU_NUMBER_DENSITY_FLUID_EVOLVE)
-        //primtoflux_nu_number(p, state.ucon, state.ucov, dir, &geom, temp3);
-        //primtoflux_nu_number(p, state.ucon, state.ucov, 0, &geom, temp4);
-        #endif
 
         vchar_nu(p, &state, state_nu, &geom, dir, &cmax_r_nu[0], &cmin_r_nu[0], factor / cour, gpu_eos_table, gpu_nulib_table);
         for (sp = 0; sp < NU_SPECIES; sp++) {

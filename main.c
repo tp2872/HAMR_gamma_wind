@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-    	set_AMR();
+    set_AMR();
 
 	#if (DOHELM)
 	eos_init();
@@ -79,8 +79,8 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 100.0;
-	DTd = 100.0;
-	DTd_reduced = 5.0;
+	DTd = 10.;
+	DTd_reduced = 25.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced;
@@ -263,10 +263,12 @@ void MPI_initialize(int argc, char *argv[])
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
+	/*
 	#if(GPU_ENABLED)
 	gpuGetDeviceCount(&numdevices);
 	gpuSetDevice(local_rank%numdevices);
 	#endif
+	*/
 
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
@@ -317,6 +319,8 @@ void MPI_initialize(int argc, char *argv[])
 
 	#if(GPU_ENABLED)
 		#if(SCUDA)
+		gpuGetDeviceCount(&numdevices);
+		gpuSetDevice(local_rank % numdevices);
 		if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
 		if (rank % numdevices != local_rank % numdevices) {
 			fprintf(stderr, "Error in initializing GPUs with MPI! \n");
