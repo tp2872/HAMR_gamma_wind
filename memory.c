@@ -2650,7 +2650,7 @@ void set_pflag_cart(int n) {
 
 //Flag cells that need inflow boundary conditions in Spherical mesh
 void set_pflag_rbound(int n) {
-	int i, j, z;
+	int i, i2, j, z;
 	double X[NDIM], r, th, phi;
 	double rmin = RBOUND;
 
@@ -2661,7 +2661,8 @@ void set_pflag_rbound(int n) {
 	block[n][AMR_RBOUNDFLAG] = 0;
 	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G-1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G-1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G-1) {	
 		//Calculate coordiante
-		coord(n, i, j, z, CENT, X);
+		i2 = ((int)(i / pow(1 + REF_1, block[n][AMR_LEVEL1]))) * ((int)pow(1 + REF_1, block[n][AMR_LEVEL1])); //Making the index consistent near AMR boundaries
+		coord(n, i2, j, z, FACE1, X);
 		bl_coord(X, &r, &th, &phi);
 
 		//Flag cells that are smaller than rmin

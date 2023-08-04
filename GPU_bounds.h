@@ -704,64 +704,80 @@ __global__ void boundprim_rbound(double * pv, double *  ps, int * pflag_rbound, 
 	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
-	int k=0;
+	int k=0, tag=0, i2;
 	double p_local[NPR];
 	struct of_geom geom;
 
 	if (global_id < (BS_1+2*N1G) * (BS_2+2*N2G) * (BS_3+2*N3G)) k = 1;
 
 	if (k==1 && pflag_rbound[global_id] == 1) {
-		//Get metric
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
-
-		//Set density and internal energy
-		p_local[RHO] = RHOMIN;
-		p_local[UU] = UUMIN;
-
-		//Set other scalars
-		#if(DOKTOT)
-		p_local[KTOT] = 0.0;
-		#endif
-		#if(TWO_T)
-		p_local[ENTRE] = 0.0;
-		p_local[ENTRI] = 0.0;
-		#endif
-		#if(P_NUM)
-		p_local[PHOTON] = 1.e-30;
-		#endif
-		#if(RAD_M1)
-		p_local[UU_RAD] = 1.e-30;
-		#endif
-
-		//Set fluid velocities to 0
-		p_local[U1] = 0;
-		p_local[U2] = 0;
-		p_local[U3] = 0;
-
-		//Set B-fields to 0
-		p_local[B1] = 0;
-		p_local[B2] = 0;
-		p_local[B3] = 0;
-
-		#if(RAD_M1)
-		p_local[U1_RAD] = p_local[U1];
-		p_local[U2_RAD] = p_local[U2];
-		p_local[U3_RAD] = p_local[U3];
-		#endif
-
-		//Export results to global memory
-		for (k = 0; k < NPR; k++) {
-			pv[k * ksize + global_id] = p_local[k];
+		#if(RBOUND_INFLOW)
+		tag = 0;
+		for (i2 = 1; i2 <= N1G; i2++) {
+			if ((icurr+i2<BS_1+2*N1G) && (pflag_rbound[global_id+i2*isize] == 0)) {
+				PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + i2 * isize];
+				#if(STAGGERED)
+				ps[1 * ksize + global_id] = ps[1 * ksize + global_id + i2 * isize];
+				ps[2 * ksize + global_id] = ps[2 * ksize + global_id + i2 * isize];
+				#endif
+				tag = 1;
+				break;
+			}
 		}
+		#endif		
+		if(tag==0){
+			//Get metric
+			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 
-		if (pflag_rbound[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
-			ps[0 * ksize + global_id] = 0.0;
-		}
-		if (pflag_rbound[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
-			ps[1 * ksize + global_id] = 0.0;
-		}
-		if (pflag_rbound[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
-			ps[2 * ksize + global_id] = 0.0;
+			//Set density and internal energy
+			p_local[RHO] = RHOMIN;
+			p_local[UU] = UUMIN;
+
+			//Set other scalars
+			#if(DOKTOT)
+			p_local[KTOT] = 0.0;
+			#endif
+			#if(TWO_T)
+			p_local[ENTRE] = 0.0;
+			p_local[ENTRI] = 0.0;
+			#endif
+			#if(P_NUM)
+			p_local[PHOTON] = 1.e-30;
+			#endif
+			#if(RAD_M1)
+			p_local[UU_RAD] = 1.e-30;
+			#endif
+
+			//Set fluid velocities to 0
+			p_local[U1] = 0;
+			p_local[U2] = 0;
+			p_local[U3] = 0;
+
+			#if(RAD_M1)
+			p_local[U1_RAD] = p_local[U1];
+			p_local[U2_RAD] = p_local[U2];
+			p_local[U3_RAD] = p_local[U3];
+			#endif
+
+			//Set B-fields to 0
+			p_local[B1] = 0;
+			p_local[B2] = 0;
+			p_local[B3] = 0;
+
+			//Export results to global memory
+			for (k = 0; k < NPR; k++) {
+				pv[k * ksize + global_id] = p_local[k];
+			}
+
+			if (pflag_rbound[global_id - D1 * isize * ((icurr - D1) >= 0)] == 1) { //B1
+				ps[0 * ksize + global_id] = 0.0;
+			}
+			if (pflag_rbound[global_id  - D2 * (BS_3 + 2 * N3G) * ((jcurr - D2) >= 0)] == 1) { //B2
+				ps[1 * ksize + global_id] = 0.0;
+			}
+			if (pflag_rbound[global_id - D3 * ((zcurr - D3) >= 0)] == 1) { //B3
+				ps[2 * ksize + global_id] = 0.0;
+			}
 		}
 	}
 }
