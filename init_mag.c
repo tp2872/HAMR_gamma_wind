@@ -152,7 +152,7 @@ void set_mag(void){
 			}
 			#endif
 
-			#if(CARTESIAN_GR)
+			#if(1)
 			double dxdxp[NDIM][NDIM], dq_temp[NDIM];
 			int k1, k2;
 			dxdxp_func(X, dxdxp);
