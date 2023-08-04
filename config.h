@@ -62,7 +62,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.95)
 
 /*For Aris's ICs*/
@@ -481,7 +481,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable constant boundary conditions*/
-#define CONSTANT_BC (0)
+#define CONSTANT_BC (1)
 
 /*Enable Radiation*/
 #define RAD_M1 (0)
