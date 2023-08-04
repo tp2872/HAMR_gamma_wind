@@ -20,7 +20,6 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 	#endif
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
 		
 		#if(DANAT_GDET_INTERP)	
@@ -92,7 +91,6 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 		jcurr = -10;
 		zcurr = -10;
 	}
-	#endif
 
 	if (global_id<isize){
 		global_id = -10;
@@ -167,7 +165,6 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -220,7 +217,6 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		icurr = -10;
 		zcurr = -10;
 	}
-	#endif
 
 	if (global_id<gridsize){
 		global_id = -10;
@@ -234,7 +230,6 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 	}
 
 	// outer r BC: outflow
-	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -279,7 +274,6 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		#endif
 		#endif
 	}
-	#endif
 }
 
 __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
@@ -588,7 +582,6 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && jcurr >= 0 && jcurr<BS_2 + 2 * N2G && NBR_6 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -641,7 +634,6 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 		icurr = -10;
 		jcurr = -10;
 	}
-	#endif
 
 	if (global_id<gridsize){
 		global_id = -10;
@@ -655,7 +647,6 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 	}
 
 	// outer r BC: outflow
-	#if(!CONSTANT_BC)
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && jcurr >= 0 && jcurr<BS_2 + 2 * N2G && NBR_5 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -700,7 +691,6 @@ __global__ void boundprim3_outflow(double * pv, const  double* __restrict__ gcov
 		#endif
 		#endif
 	}
-	#endif
 }
 
 __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
