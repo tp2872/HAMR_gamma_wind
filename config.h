@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM SPHERICAL_PROBLEM
 
 #define READBINARY (0)
 
@@ -53,7 +53,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_THIN (1)
+#define REFINE_THIN (0)
 
 /*refinement for GRB jets*/
 #define REFINE_GRB (0)
@@ -62,8 +62,8 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.95)
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
@@ -71,11 +71,11 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (1000.0)
+#define ROUT (4000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -198,7 +198,7 @@ Physical Parameters section
 #define TMAX (1.e15)
 
 /*Runtime in hours*/
-#define RUNTIME (2.0)
+#define RUNTIME (24.0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -254,13 +254,13 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
-#define NB_3 1
+#define NB_2 6
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 1
+#define BS_1 72
+#define BS_2 32
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -301,10 +301,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -326,7 +326,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (800)
+#define DUMPFACTOR (240)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -387,7 +387,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -468,9 +468,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Whether to output a reduced resolution file*/
 #define DUMP_SMALL (0)
-#define REDUCE_FACTOR1 (4)
-#define REDUCE_FACTOR2 (4)
-#define REDUCE_FACTOR3 (4)
+#define REDUCE_FACTOR1 (2)
+#define REDUCE_FACTOR2 (2)
+#define REDUCE_FACTOR3 (2)
 
 /*Whether to dump diag file*/
 #define DUMP_DIAG (0)

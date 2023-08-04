@@ -802,7 +802,7 @@ double calc_Mdot() {
 	//Calculate Mdot at r=rcalc
 	for (n = 0; n < n_active; n++) {
 		//Set index at which to calculate mdot
-		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1]);
+		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
 		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
