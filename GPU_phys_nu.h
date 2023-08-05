@@ -85,7 +85,7 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
         prim[2] *= f;
         prim[3] *= f;
 
-        if (lim == TYPE2) {
+        if (lim == TYPE2 && 0) {
             /*
             // if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
             Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
@@ -111,7 +111,7 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
 
             returnval = 1;
         }
-        else if (lim == TYPE3) {
+        else if (lim == TYPE3 && 0) {
             // If energy density is negative, reset it to floor value
             if (Qdotn > 0.0) {
                 prim[0] = 1.e-30;

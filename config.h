@@ -63,9 +63,9 @@ Physical Parameters section
 
 // Postmerger problem, ICs from SpEC
 #define BHNSQ2 (1)
-#define BHNSQ2_1 (0)
+#define BHNSQ2_1 (1)
 #define BHNSQ2_2 (0)
-#define FORNAX_IC (1)
+#define FORNAX_IC (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
@@ -89,7 +89,7 @@ Physical Parameters section
 #define BETA (1e1)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (200.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -267,14 +267,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
+#define NB_1 4
 #define NB_2 4
-#define NB_3 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 48
 #define BS_2 48
-#define BS_3 1
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -318,7 +318,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -495,8 +495,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (1)
-#define RBOUND_INFLOW (1)
+#define DO_RBOUND (0)
+#define RBOUND_INFLOW (0)
 #define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
