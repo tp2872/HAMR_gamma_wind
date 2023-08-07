@@ -267,13 +267,13 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 6
-#define NB_3 2
+#define NB_1 10
+#define NB_2 12
+#define NB_3 4
 
 /*Set block size in each dimension*/
 #define BS_1 72
-#define BS_2 32
+#define BS_2 48
 #define BS_3 64
 
 /*Set the maximum number of refinement levels*/
@@ -309,7 +309,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 1
+#define NORMALIZE_DIVB 0
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300
@@ -318,7 +318,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (4)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
