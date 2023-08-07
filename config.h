@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM SPHERICAL_PROBLEM
 
 #define READBINARY (0)
 
@@ -68,7 +68,7 @@ Physical Parameters section
 #define FORNAX_IC (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2_1)
 #define BH_SPIN (0.86)
@@ -80,7 +80,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.8)
+#define BH_SPIN (0.95)
 #endif
 
 /*For Aris's ICs*/
@@ -89,11 +89,11 @@ Physical Parameters section
 #define BETA (1e1)
 
 /*Select grid outer radius*/
-#define ROUT (200.0)
+#define ROUT (4000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -110,14 +110,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (1)
@@ -138,8 +138,8 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
-#define DONUCLEAR (1)
+#define DO_YE (0)
+#define DONUCLEAR (0)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
@@ -227,8 +227,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (0)
-#define SCUDA (1)
+#define SHIP (1)
+#define SCUDA (0)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
@@ -268,13 +268,13 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
+#define NB_2 6
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 32
+#define BS_1 72
+#define BS_2 32
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -315,10 +315,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -401,7 +401,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2

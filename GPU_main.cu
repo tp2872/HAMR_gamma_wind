@@ -64,8 +64,8 @@ void nulib_init_GPU(int n) {
 	gpuMallocHost((void**)&nulib_table[0], (NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double));
 
 	// Check for errors: Nulib array allocation
-	status = cudaGetLastError();
-	if (cudaSuccess != status) fprintf(stderr, "Error in setting Nulib tables: %d \n", status);
+	status = gpuGetLastError();
+	if (gpuSuccess != status) fprintf(stderr, "Error in setting Nulib tables: %d \n", status);
 
 	// fill in the host array
 	for (i = 0; i < NULIB_RHO; i++) for (j = 0; j < NULIB_TEMP; j++) for (k = 0; k < NULIB_YE; k++) for (l = 0; l < NU_SPECIES; l++) {
@@ -74,7 +74,7 @@ void nulib_init_GPU(int n) {
 		nulib_table[0][(2 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_scatt[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
 		nulib_table[0][(3 * (NULIB_RHO * NULIB_TEMP * NULIB_YE) + i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l] = nu_kappa_emiss_N[(i * NULIB_TEMP * NULIB_YE + j * NULIB_YE + k) * NU_SPECIES + l];
 	}
-	gpuMemcpy(GPU_nulib_table[0], nulib_table[0], ((NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double)), cudaMemcpyHostToDevice);
+	gpuMemcpy(GPU_nulib_table[0], nulib_table[0], ((NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES * NULIB_VARS) * sizeof(double)), gpuMemcpyHostToDevice);
 	gpuDeviceSynchronize();
 }
 #endif
