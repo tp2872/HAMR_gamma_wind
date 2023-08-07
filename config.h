@@ -361,7 +361,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 1000.0
+#define TREF 50.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -500,7 +500,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
-#define CONSTANT_BC (0)
+#define CONSTANT_BC (1)
 
 /*Enable Radiation*/
 #define RAD_M1 (0)
