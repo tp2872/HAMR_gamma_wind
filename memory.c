@@ -2666,12 +2666,22 @@ void set_pflag_rbound(int n) {
 		bl_coord(X, &r, &th, &phi);
 
 		//Flag cells that are smaller than rmin
-		if (r<rmin) {
+		if (r<(rmin - t/1000.0)) {
 			pflag_rbound[nl[n]][index_3D(n, i, j, z)] = 1;
 			block[n][AMR_RBOUNDFLAG] = 1;
 		}
 		else {
 			pflag_rbound[nl[n]][index_3D(n, i, j, z)] = 0;
 		}
+	
+		#if(GPU_ENABLED)
+		pflag_RBOUND_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_rbound[nl[n]][index_3D(n, i, j, z)];
+		#endif
 	}
+
+	#if(GPU_ENABLED)
+		#if(DO_RBOUND)
+		gpuMemcpyAsync(Bufferpflag_RBOUND[nl[n]], pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+		#endif
+	#endif
 }

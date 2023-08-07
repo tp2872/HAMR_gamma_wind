@@ -352,6 +352,10 @@ void GPU_write(int n)
 	gpuMemcpyAsync(Bufferconn[nl[n]], conn_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NDIM*10*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 
+	#if(DO_RBOUND)
+	set_pflag_rbound(n);
+	#endif
+
 	//gpuDeviceSynchronize();
 	status = gpuGetLastError();
 	if (gpuSuccess != status) fprintf(stderr, "Error in GPU_write: %d \n", status);
@@ -1168,6 +1172,9 @@ void GPU_consttransport2(int flag, double Dt, int n){
 			#if(CARTESIAN_GR)
 			, Bufferpflag_CART[nl[n]]
 			#endif
+			#if(DO_RBOUND)
+			, Bufferpflag_RBOUND[nl[n]]
+			#endif
 			);
 		#elif(SCUDA)
 		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
@@ -1177,6 +1184,9 @@ void GPU_consttransport2(int flag, double Dt, int n){
 			#endif
 			#if(CARTESIAN_GR)
 			, Bufferpflag_CART[nl[n]]
+			#endif
+			#if(DO_RBOUND)
+			, Bufferpflag_RBOUND[nl[n]]
 			#endif
 			);
 		#endif
@@ -1191,6 +1201,9 @@ void GPU_consttransport2(int flag, double Dt, int n){
 		#if(CARTESIAN_GR)
 		, Bufferpflag_CART[nl[n]]
 		#endif
+		#if(DO_RBOUND)
+		, Bufferpflag_RBOUND[nl[n]]
+		#endif
 		);
 	#elif(SCUDA)
 	consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
@@ -1200,6 +1213,9 @@ void GPU_consttransport2(int flag, double Dt, int n){
 		#endif
 		#if(CARTESIAN_GR)
 		, Bufferpflag_CART[nl[n]]
+		#endif
+		#if(DO_RBOUND)
+		, Bufferpflag_RBOUND[nl[n]]
 		#endif
 		);
 	#endif
@@ -2309,4 +2325,3 @@ void GPU_read(int n)
 	status = gpuGetLastError();
 	if (gpuSuccess != status )fprintf(stderr, "Error in GPU_read: %d \n", status);
 }
-

@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
+	DTl = 10000.0;
 	DTd = 50.;
 	DTd_reduced = 25.0;
 	if (dump_cnt > 0) {
@@ -449,9 +449,6 @@ void set_grid(int n)
 
 	#if(CARTESIAN_GR)
 	set_pflag_cart(n);
-	#endif
-	#if(DO_RBOUND)
-	set_pflag_rbound(n);
 	#endif
 
 	#if(FRAME_TRANSFORM)

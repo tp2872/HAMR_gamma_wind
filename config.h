@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM SPHERICAL_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -80,20 +80,20 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.95)
+#define BH_SPIN (0.9375)
 #endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e1)
+#define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (4000.0)
+#define ROUT (1000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -227,8 +227,8 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Set CUDA or HIP*/
-#define SHIP (1)
-#define SCUDA (0)
+#define SHIP (0)
+#define SCUDA (1)
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
 #define AMD (0)
@@ -267,14 +267,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
-#define NB_2 12
-#define NB_3 4
+#define NB_1 4
+#define NB_2 6
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 72
-#define BS_2 48
-#define BS_3 64
+#define BS_2 32
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -315,10 +315,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -361,7 +361,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 50.0
+#define TREF 1000.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -401,7 +401,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -495,8 +495,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (0)
-#define RBOUND_INFLOW (0)
+#define DO_RBOUND (1)
+#define RBOUND_INFLOW (1)
 #define RBOUND (20.)
 
 /*Enable constant boundary conditions*/

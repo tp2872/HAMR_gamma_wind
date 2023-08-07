@@ -84,6 +84,13 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 
 			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][1] = 0.5* factor * (-F2[nl[n]][ind0][B3] - F2[nl[n]][index_3D(n, i, j, z - D3)][B3]);
 			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][3] = 0.0;
+
+			#if(DO_RBOUND)
+			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)]==1) {
+				E_corn[nl[n]][ind0][1] = 0.0;
+				E_corn[nl[n]][ind0][3] = 0.0;
+			}
+			#endif
 			#endif
 		}
 	}
@@ -173,6 +180,13 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 			#if(!(CARTESIAN || CARTESIAN_GR))
 			if (j == 0 || j == (int)(N2 * pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][1] += 0.5 * 0.5 * factor * (-F2[nl[n]][ind0][B3] - F2[nl[n]][index_3D(n, i, j, z - D3)][B3]);
 			if (j == 0 || j == (int)(N2 * pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][3] = 0.0;
+			#endif
+
+			#if(DO_RBOUND)
+			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)]==1) {
+				E_corn[nl[n]][ind0][1] = 0.0;
+				E_corn[nl[n]][ind0][3] = 0.0;
+			}
 			#endif
 		}
 	}

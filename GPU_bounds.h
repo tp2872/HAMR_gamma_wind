@@ -727,8 +727,9 @@ __global__ void boundprim_rbound(double * pv, double *  ps, int * pflag_rbound, 
 			if ((icurr+i2<BS_1+2*N1G) && (pflag_rbound[global_id+i2*isize] == 0)) {
 				PLOOP pv[k * ksize + global_id] = pv[k * ksize + global_id + i2 * isize];
 				#if(STAGGERED)
-				ps[1 * ksize + global_id] = ps[1 * ksize + global_id + i2 * isize];
-				ps[2 * ksize + global_id] = ps[2 * ksize + global_id + i2 * isize];
+				ps[0 * ksize + global_id] = 0.0;
+				ps[1 * ksize + global_id] = 0.0;// ps[1 * ksize + global_id + i2 * isize];
+				ps[2 * ksize + global_id] = 0.0;// ps[2 * ksize + global_id + i2 * isize];
 				#endif
 				tag = 1;
 				break;
