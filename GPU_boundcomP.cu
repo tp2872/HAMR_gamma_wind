@@ -410,7 +410,14 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 			for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 				for (k = 0; k < NPR; k++){
 					factor=1.;
-					if (k == U3 || k == U2 || k == U3_RAD || k == U2_RAD || k == B2 || k == B3) factor = -1.;
+					if (k == U3 || k == U2 || k == B2 || k == B3) factor = -1.;
+					#if(RAD_M1)
+					if (k == U3_RAD || k == U2_RAD) factor = -1.;
+					#endif
+					#if(NEUTRINOS_M1)
+					int kk;
+					for(kk=0;kk<NU_SPECIES;kk++) if (k == index_nu(U2_NU,kk) || k == index_nu(U3_NU, kk) ) factor = -1.;
+					#endif
 					else factor = 1.;
 					p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = factor*receive[nl[n_rec2]][(NPR + 3)*(j2 - 1 - j)*zsize*isize + (NPR + 3)*(i - i1 + i_offset * 2 * D1 / (1 + ref_1))*zsize + (NPR + 3)*(z - z1 + z_offset * 2 * D3 / (1 + ref_3)) + k];
 					ph[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = factor*receive[nl[n_rec2]][(NPR + 3)*(j2 - 1 - j)*zsize*isize + (NPR + 3)*(i - i1 + i_offset * 2 * D1 / (1 + ref_1))*zsize + (NPR + 3)*(z - z1 + z_offset * 2 * D3 / (1 + ref_3)) + k];

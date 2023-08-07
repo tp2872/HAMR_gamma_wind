@@ -242,7 +242,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
 				#endif
             );
 
-            flag_nu = Rtoprim_nu(U_h, geom, geom->gcov, geom->gcon, geom->g, p_h, y_max, BASIC); // danat: TYPE2
+            flag_nu = Rtoprim_nu(U_h, geom, geom->gcov, geom->gcon, geom->g, p_h, y_max, TYPE2); // danat: TYPE2
 
             source_linearized_nu(p_h, geom, &ncon[0], ncov0, U_h, U_2, 0.5 * factor_Dt * Dt, gpu_eos_table, gpu_nulib_table, sp
 				#if (NU_KEEP_COEFF_CONST)
@@ -304,7 +304,7 @@ __device__ int implicit_solve_nu(double* pb, double* U_n, double* U_i, double* U
         );
 
         if (flag == 0) {
-	        flag_nu = Rtoprim_nu(U_new, geom, geom->gcov, geom->gcon, geom->g, pb_new, y_max, BASIC); // danat: TYPE2
+	        flag_nu = Rtoprim_nu(U_new, geom, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2); // danat: TYPE2
 			PLOOP U_prev_old[k] = U_new[k];
 
 	        //Recompute T_t^mu for consistency
