@@ -803,11 +803,11 @@ void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 			#if(RBOUND_INFLOW)
 			tag = 0;
 			for (i2 = 1; i2 <= N1G; i2++) {
-				if ((pflag_rbound[nl[n]][index_3D(n, MY_MIN(i + i2, BS_1 + N1_GPU_offset[n] + N1G - 1), j, z)] == 0)) {
-					PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i + i2, j, z)][k];
+				if ((i+i2 < BS_1 + N1_GPU_offset[n] + N1G) && (pflag_rbound[nl[n]][index_3D(n, i2, j, z)] == 0)) {
+					PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i2, j, z)][k];
 					#if(STAGGERED)
-					ps[nl[n]][index_3D(n, i, j, z)][2] = 0.0; // ps[nl[n]][index_3D(n, i + i2, j, z)][2];
-					ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0; // ps[nl[n]][index_3D(n, i + i2, j, z)][3];
+					ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i2, j, z)][2];
+					ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i2, j, z)][3];
 					#endif
 					tag = 1;
 					break;
