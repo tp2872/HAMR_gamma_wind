@@ -854,13 +854,13 @@ void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 				prim[nl[n]][index_3D(n, i, j, z)][B2] = 0;
 				prim[nl[n]][index_3D(n, i, j, z)][B3] = 0;
 
-				if (pflag_rbound[nl[n]][index_3D(n, i - D1 * ((i - D1) >= 0), j, z)] == 1) { //B1
+				if (pflag_rbound[nl[n]][index_3D(n, i - D1 * ((i - D1) >= N1_GPU_offset[n] - N1G), j, z)] == 1) { //B1
 					ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
 				}
-				if (pflag_rbound[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= 0), z)] == 1) { //B2
+				if (pflag_rbound[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= N2_GPU_offset[n] - N2G), z)] == 1) { //B2
 					ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
 				}
-				if (pflag_rbound[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
+				if (pflag_rbound[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= N3_GPU_offset[n] - N3G))] == 1) { //B3
 					ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
 				}	
 			}
