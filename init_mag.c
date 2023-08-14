@@ -128,8 +128,9 @@ void set_mag(void){
 			#endif
 			if (q > 0.){	
 				#if(WHICHPROBLEM==THIN_PROBLEM)
-				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
+														 
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
@@ -139,26 +140,31 @@ void set_mag(void){
 				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = 0.0;
 			}
 
-			if (q > 0.) {
-				#if (TILTED)
-				V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1];
-				V[2] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
-				V[3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
-				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
-				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
-					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
-				}
-				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
-					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
-				}
-				if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
-					dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
-				}
-				#endif
+			#if(WHICHPROBLEM==THIN_PROBLEM)
+			double R = r * sin(th);
+			double norm_factor = 0.125*2.0 * sqrt(7.0 / 0.0007414) * sqrt(0.005608131);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = norm_factor * (R * (R < 10.0) + 10.0 * (R >= 10.0)); //poloidal field within 10 rg						
+			#endif
+
+			#if (TILTED)
+			V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1];
+			V[2] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
+			V[3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
+			rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
+			if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1])) {
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.0;
 			}
+			if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2])) {
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.0;
+			}
+			if (!isfinite(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3])) {
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
+			}
+			#endif
+
 			#if(SPHERICAL || SPHERICAL_GR)
 			if (j < 0 || j >= N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) {
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= -1.0;
@@ -343,11 +349,13 @@ void set_mag(void){
 	/* finally, normalize to set field strength */
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
+	if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
+	norm = sqrt(0.0007414 / 7.0);
 	#else
 	beta_act = pmax / (0.5*bsq_max);
-	#endif
 	if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
 	norm = sqrt(beta_act / beta);
+	#endif
 
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){		

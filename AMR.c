@@ -3822,7 +3822,7 @@ double calc_refcrit(int n){
 
 //Send refinement criterion across cluster
 void synch_refcrit(void){
-	int n, task, i, j, stride=1000, n_stride;
+	int n, task, i, j, stride=500, n_stride;
 	int counter = 0, counter_old=0;
 	double ref_val_local[NB];
 
@@ -3842,7 +3842,7 @@ void synch_refcrit(void){
 		ref_val[n_ord[n]] = calc_refcrit(n_ord[n]);
 	}
 
-	//Number of strides in messages of stride 1000
+	//Number of strides in messages of stride 500
 	n_stride = numtasks / stride + 1;
 
 	for (j = 0; j < n_stride; j++) {

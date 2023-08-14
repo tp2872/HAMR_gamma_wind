@@ -69,8 +69,6 @@ int main(int argc, char *argv[])
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
-	diag(LOG_OUT);
-
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -78,9 +76,9 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 10000.0;
-	DTd = 50.;
-	DTd_reduced = 25.0;
+	DTl = 100.0;
+	DTd = 20.;
+	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced;

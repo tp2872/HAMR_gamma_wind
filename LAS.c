@@ -46,10 +46,10 @@ void set_timelevel(int tag){
 	if (tag) {
 		int *min_j;
 		min_j = (int*)malloc(NB_1 * pow(1 + REF_1, N_LEVELS_3D) * sizeof(int));
-		int i, counter=0, counter_old = 0, j, stride=1000, n_stride;
+		int i, counter=0, counter_old = 0, j, stride=500, n_stride;
 		int timelevel_local[NB];
 
-		//Number of strides in messages of stride 1000
+		//Number of strides in messages of stride 500
 		n_stride = numtasks / stride + 1;
 
 		//First make sure all nodes have the same information regarding the timestep

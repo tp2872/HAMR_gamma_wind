@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM SPHERICAL_PROBLEM
 
 #define READBINARY (0)
 
@@ -80,7 +80,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.5)
 #endif
 
 /*For Aris's ICs*/
@@ -89,11 +89,11 @@ Physical Parameters section
 #define BETA (1e2)
 
 /*Select grid outer radius*/
-#define ROUT (1000.0)
+#define ROUT (4000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -251,6 +251,9 @@ Numerical Parameters section
 /*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
 #define MEM_CLEAN (1)
 
+/*Clean temporary GPU transfer buffers*/
+#define CLEAN_TEMP_BUFFERS_GPU (1)
+
 /*Memory of the node*/
 #define CPU_MEM (40.0)
 
@@ -269,12 +272,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 6
-#define NB_3 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 72
 #define BS_2 32
-#define BS_3 1
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -318,7 +321,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -361,7 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 1000.0
+#define TREF 50.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -401,7 +404,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
