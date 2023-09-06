@@ -3660,6 +3660,8 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		#if(!CONSTANTGAMMA)
 		double Theta_e, Theta_i;
 		#endif
+	#else
+	double T_GAS;
 	#endif
 
 	//Set variables to previously iterated values

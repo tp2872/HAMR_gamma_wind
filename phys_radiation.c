@@ -358,7 +358,7 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_abs = 0.;
+	kappa_abs = 1e-30;// 0.;
 	#endif
 	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }
@@ -404,7 +404,7 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_abs = 0.;
+	kappa_abs = 1e-30;// 0.;
 	#endif
 	return(kappa_abs * (ph[RHO] * mass_density_scale) * R_G_CGS);
 }

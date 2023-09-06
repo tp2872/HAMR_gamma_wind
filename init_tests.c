@@ -322,9 +322,9 @@ void init_radpulse()
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &x, &y, &zz);
 			//applying the perturbations
-			//T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc) + (zz - zc) * (zz - zc)) / (w * w)));
+			T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc) + (zz - zc) * (zz - zc)) / (w * w)));
 			//T_rad = T0 * (100. * exp(- ((x - xc) * (x - xc)) / (w * w)));
-			T_rad = T0 * (1. + 100. * exp(-((x - xc) * (x - xc)) / (w * w)));
+			//T_rad = T0 * (1. + 100. * exp(-((x - xc) * (x - xc)) / (w * w)));
 
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myrho * T0 / (GAMMA - 1.);

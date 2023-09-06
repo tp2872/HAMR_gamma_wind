@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 10.;
+	DTl = 20.0;
+	DTd = 10.0;
 	DTd_reduced = 25.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
@@ -316,6 +316,7 @@ void MPI_initialize(int argc, char *argv[])
 	#if(GPU_ENABLED)
 		#if(SCUDA)
 		gpuGetDeviceCount(&numdevices);
+		local_rank = rank;
 		gpuSetDevice(local_rank % numdevices);
 		if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
 		if (rank % numdevices != local_rank % numdevices) {
@@ -556,7 +557,7 @@ void check_input() {
 	//Don't use block sizes this small in any case
 	if ((BS_3 < 8 && NB_3 * BS_3 > 1)|| BS_2 < 8 || BS_1 < 8) {
 		if (rank == 0) fprintf(stderr, "Init error 4");
-		exit(0);
+		//exit(0);
 	}
 
 	if (((BS_3%2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {

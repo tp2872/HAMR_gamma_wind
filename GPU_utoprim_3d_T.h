@@ -166,6 +166,7 @@ __device__ int Utoprim_new_3D_T(double* U, double gcov[10], double gcon[10], dou
 
     double x_3d[3];
 
+    /*
     int safe_guess = get_safe_guess_NR_3D_T(x_3d, D, Bsq, Qdotn 
 		#if(DO_YE)
 		, ye
@@ -176,8 +177,8 @@ __device__ int Utoprim_new_3D_T(double* U, double gcov[10], double gcon[10], dou
         , gpu_eos_table
         #endif
     );
-
-    if (safe_guess == 0) {
+    */
+    //if (safe_guess == 0) {
         // safe guess
         
         x_3d[0] = fabs(W_last);
@@ -192,7 +193,7 @@ __device__ int Utoprim_new_3D_T(double* U, double gcov[10], double gcon[10], dou
     
         x_3d[2] = MY_MAX(eos_temp_low, x_3d[2]);
         x_3d[2] = MY_MIN(eos_temp_up, x_3d[2]);*/
-    }
+    //}
 
     /*i_increase = 0;
     while (((W_last * W_last * Qtsq + QdotBsq * (2. * W_last + Bsq)) >= W_last * W_last * (Bsq * Bsq + W_last) * (Bsq * Bsq + W_last)) && (i_increase < 10)) {

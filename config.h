@@ -28,7 +28,7 @@ Physical Parameters section
 #define READBINARY (0)
 
 // DIMARK: rad.pulse kappa_es
-#define KAPPARADPULSE (10.)
+#define KAPPARADPULSE (0.)
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -63,9 +63,9 @@ Physical Parameters section
 
 // Postmerger problem, ICs from SpEC
 #define BHNSQ2 (1)
-#define BHNSQ2_1 (0)
+#define BHNSQ2_1 (1)
 #define BHNSQ2_2 (0)
-#define FORNAX_IC (1)
+#define FORNAX_IC (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
@@ -80,16 +80,16 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.8)
+#define BH_SPIN (0.86)
 #endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e1)
+#define BETA (10.)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (200.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -138,8 +138,8 @@ Physical Parameters section
 #define DO_YE (1)
 #define DONUCLEAR (0)
 #else 
-#define DO_YE (1)
-#define DONUCLEAR (1)
+#define DO_YE (0)
+#define DONUCLEAR (0)
 #endif
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
@@ -237,10 +237,10 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
-#define GPU_SET (1)
+#define GPU_SET (10000)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
 #define GPU_MEM (14.0)
@@ -318,7 +318,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -364,7 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.0
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.5)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -487,7 +487,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (1)
+#define DUMP_DIAG (0)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
@@ -702,7 +702,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (244475423533.749)
 #endif
 #else
-#define MASS_DENSITY_SCALE (1e12)
+#define MASS_DENSITY_SCALE (3.1)
+//#define MASS_DENSITY_SCALE (1e12)
 #endif
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)

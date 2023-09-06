@@ -870,7 +870,7 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 	}
 	#endif
 
-	#if(NEUTRINOS_M1)
+	#if(0)
     double ucon_nu[NDIM], gamma_nu, vsq_nu;
     for (int sp = 0; sp < NU_SPECIES; sp++) {
         ucon_calc_nu(pr, &geom, ucon_nu, sp);

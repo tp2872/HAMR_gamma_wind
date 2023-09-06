@@ -1206,7 +1206,7 @@ double advance_GPU(void)
 			GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(1, n_ord[n]);
 			#if(RAD_M1)
-			GPU_fixuputoprim_rad(1, n_ord[n]);
+			//GPU_fixuputoprim_rad(1, n_ord[n]);
 			#endif
 			#if (NEUTRINOS_M1)
 			//GPU_fixuputoprim_nu(1, n_ord[n]);
@@ -1216,7 +1216,7 @@ double advance_GPU(void)
 			GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(0, n_ord[n]);
 			#if(RAD_M1)
-			GPU_fixuputoprim_rad(0, n_ord[n]);
+			//GPU_fixuputoprim_rad(0, n_ord[n]);
 			#endif
 			#if (NEUTRINOS_M1)
 			//GPU_fixuputoprim_nu(0, n_ord[n]);

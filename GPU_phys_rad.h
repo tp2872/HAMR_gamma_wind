@@ -977,8 +977,8 @@ __device__ void calc_kappa_new(double* ph, double bsq, double Tr, double Te, dou
 	#endif
 
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_abs[0] = 0.0;
-	kappa_emmit[0] = 0.0;
+	kappa_abs[0] = 1e-30;// 0.0;
+	kappa_emmit[0] = 1e-30;// 0.0;
 	#endif
 
 	//Calculate electron scattering opacity
