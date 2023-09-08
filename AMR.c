@@ -2377,8 +2377,8 @@ void derefine(int n){
 		if (block[block[n][i]][AMR_TIMELEVEL] < min_timelevel) min_timelevel = block[block[n][i]][AMR_TIMELEVEL];
 		block[block[n][i]][AMR_GPU] = -1;
 	}
-	block[n][AMR_TIMELEVEL] = MY_MIN(AMR_MAXTIMELEVEL, 2* min_timelevel);
-	if (block[n][AMR_POLE] >= 1)block[n][AMR_TIMELEVEL] = 1;
+	block[n][AMR_TIMELEVEL] = MY_MIN(AMR_MAXTIMELEVEL, 2*min_timelevel);
+	//if (block[n][AMR_POLE] >= 1)block[n][AMR_TIMELEVEL] = 1;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_ACTIVE] = 0;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_TIMELEVEL] = 1;
 
@@ -2412,7 +2412,7 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 			z1 = (z - z % (1 + ref_3)) / (1 + ref_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * ref_3;
 			PLOOP{
 				prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-				prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + i % (1 + ref_1)) * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + j % (1 + ref_2)) * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5*(-0.5 + z % (1 + ref_3)) * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+				prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5 * (-0.5 + i % (1 + ref_1)) * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5 * (-0.5 + j % (1 + ref_2)) * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.5 * (-0.5 + z % (1 + ref_3)) * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 			}
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][RHO]);
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][UU]);		
@@ -3133,6 +3133,7 @@ void check_refcrit(void){
 
 	count = 0;
 	gpu_counter = 0;
+	int pole_tag = 0;
 	do{
 		count++;
 		tag = 0;
@@ -3148,6 +3149,8 @@ void check_refcrit(void){
 					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 0.5*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
 				}
 			}
+
+			#if(SPHERICAL || SPHERICAL_GR)
 			//Do not derefine other block around pole
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 				for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
@@ -3155,6 +3158,7 @@ void check_refcrit(void){
 						/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] = 2;
 				}
 			}
+			#endif
 		}
 		
 		do{
@@ -3180,6 +3184,7 @@ void check_refcrit(void){
 					}
 				}
 
+				#if(SPHERICAL || SPHERICAL_GR)
 				//Do not derefine other block around pole
 				if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 					for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
@@ -3191,6 +3196,7 @@ void check_refcrit(void){
 							/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] = 2;
 					}
 				}
+				#endif
 			}
 		} while (tag2);
 
@@ -3331,7 +3337,7 @@ void check_refcrit(void){
 										gpu_choice = gpu_counter%N_GPU;
 										gpu_counter++;
 									}
-									set_arrays_GPU(n_send, 0);
+									set_arrays_GPU(n_send, rank%numdevices);
 									GPU_write(n_send);
 									#endif
 								}
@@ -3341,14 +3347,16 @@ void check_refcrit(void){
 					}
 					block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
 					derefine(block[n_ord_total[n]][AMR_PARENT]);
+					pole_tag = 1;
 					block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 				//}
 			}
 		}
 
-
+		//Fixate timelevel around pole and do post-refinement steps
+		if (pole_tag == 1) timelevel_fixate();
 		if (one_block_derefined == 1)post_refine();
-		
+
 		balance_load();
 		#if(GPU_ENABLED)
 		balance_load_gpu();
@@ -3365,9 +3373,9 @@ void check_refcrit(void){
 	reduce_timestep = 0;
 	
 	//Start very conservatively
-	//dt /= 2.;
+	dt /= 2.;
 	//for (n = 0; n < n_active_total; n++){
-		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+	//	block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	//}
 	set_corners(0);
 
@@ -3722,8 +3730,8 @@ double calc_refcrit(int n){
 			double cells_per_scaleheight = scaleheight / M_PI * NB_2 * BS_2 * pow(1.0 + REF_2, block[n][AMR_LEVEL2]);
 
 			//Real refinement criterion
-			if ((cells_per_scaleheight < CELLS_PER_SCALEHEIGHT) && (rho>0.25*density_midplane[(int)(i/pow(1+REF_1,block[n][AMR_LEVEL1]))]) && (rho > 0.001) && (bsq / rho < 1.0) && (r < 400.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-			else if((cells_per_scaleheight >= CELLS_PER_SCALEHEIGHT) && (cells_per_scaleheight < 3.0*CELLS_PER_SCALEHEIGHT) && (rho > 0.05 * density_midplane[(int)(i / pow(1 + REF_1, block[n][AMR_LEVEL1]))]) && (rho>0.0001) && (bsq / rho < 2.0) && (r<400.0)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
+			if ((cells_per_scaleheight < CELLS_PER_SCALEHEIGHT) && (rho>0.25*density_midplane[(int)(i/pow(1+REF_1,block[n][AMR_LEVEL1]))]) && (rho > 0.1) && (bsq / rho < 1.0) && (r < 400.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+			else if((cells_per_scaleheight >= CELLS_PER_SCALEHEIGHT) && (cells_per_scaleheight < 3.0*CELLS_PER_SCALEHEIGHT) && (rho > 0.05 * density_midplane[(int)(i / pow(1 + REF_1, block[n][AMR_LEVEL1]))]) && (rho>0.05) && (bsq / rho < 2.0) && (r<400.0)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 		}
 	}
 	#elif(WHICHPROBLEM==DISRUPTION_PROBLEM)
@@ -3814,7 +3822,7 @@ double calc_refcrit(int n){
 
 //Send refinement criterion across cluster
 void synch_refcrit(void){
-	int n, task, i, j, stride=1000, n_stride;
+	int n, task, i, j, stride=500, n_stride;
 	int counter = 0, counter_old=0;
 	double ref_val_local[NB];
 
@@ -3834,7 +3842,7 @@ void synch_refcrit(void){
 		ref_val[n_ord[n]] = calc_refcrit(n_ord[n]);
 	}
 
-	//Number of strides in messages of stride 1000
+	//Number of strides in messages of stride 500
 	n_stride = numtasks / stride + 1;
 
 	for (j = 0; j < n_stride; j++) {

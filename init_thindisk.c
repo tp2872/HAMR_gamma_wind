@@ -163,7 +163,7 @@ void init_thindisk()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
 
-																	  /* convert from 4-vel to 3-vel */
+				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 				#endif
 			}
@@ -205,7 +205,7 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
-	//set_mag();
+	set_mag();
 
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)

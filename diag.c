@@ -32,6 +32,16 @@ void diag(int call_code)
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
+				#elif(DO_RBOUND)
+				divb = divb_calc(n_ord[n], i, j, z);
+				#pragma omp critical
+				if (pflag_rbound[nl[n_ord[n]]][index_3D(n_ord[n],i,j,z)]==0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
+					imax = i;
+					jmax = j;
+					zmax = z;
+					nmax = n_ord[n];
+					divbmax = divb;
+				}
 				#else
 				divb = divb_calc(n_ord[n], i, j, z);
 
@@ -58,9 +68,17 @@ void diag(int call_code)
 		if (divbmax == divbmax_local) {
 			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
 		}
-		if (divbmax > 0.00001) {
+		if (divbmax > 0.00003) {
 			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
-			//exit(0);
+			if (rank == 0) {
+				fprintf(stderr, "GDUMP_reduced started \n");
+				fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt_reduced);
+			}
+			gdump_new_reduced();
+			dump_new_reduced();
+			close_gdump_reduced();
+			close_dump_reduced();
+			exit(0);
 		}
 	}
 

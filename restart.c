@@ -825,7 +825,7 @@ double calc_Mdot() {
 	//Calculate Mdot at r=rcalc
 	for (n = 0; n < n_active; n++) {
 		//Set index at which to calculate mdot
-		icalc = (int)((log(rcalc) - log(Rin)) / (log(Rout) - log(Rin)) / dx[nl[n_ord[n]]][1]);
+		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
 		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
@@ -905,7 +905,7 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 			#endif
 			scaling_factor = mdot_target / mdot_cgs_edd;
 			mass_density_scale_cpu[0] = scaling_factor * MASS_DENSITY_SCALE;
-			magnetic_density_scale_cpu[0] = 1.0;
+			magnetic_density_scale_cpu[0] = pow(2.0, -(t - T_INIT) / T_DOUBLE);
 		}
 	}
 }

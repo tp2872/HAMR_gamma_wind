@@ -417,6 +417,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
+	#if(DO_RBOUND)
+	, int* pflag_rbound
+	#endif
 )
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -500,6 +503,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	if (k == 1 && pflag_cart[global_id] == 1) k = 0;
 	#endif
+
+	/* Check if cell is marked for inflow because it is within RBOUND. */
+	#if(DO_RBOUND)
+    if (k == 1 && pflag_rbound[global_id] == 1) k = 0;
+    #endif
 
 	if (k > 0){
 		if (icurr >= N1G  && jcurr >= N2G + (ki == 1 || ki == 2) && zcurr >= N3G + (ki == 1 || ki == 2) + (ki == 3 || ki == 4) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G - (ki == 1 || ki == 2) && zcurr < BS_3 + N3G - (ki == 1 || ki == 2) - (ki == 3 || ki == 4)){
@@ -697,6 +705,7 @@ __global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, c
 	#endif
 	#if(CALC_MDOT)
 	, double mass_density_scale
+	, double magnetic_density_scale
 	#endif
 )
 {

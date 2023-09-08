@@ -199,6 +199,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
+	#if (DO_RBOUND)
+    	, int* __restrict__ pflag_rbound
+	#endif
 ) {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -511,6 +514,13 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#endif
         #endif
         local_dtij[local_id] = factor / ctop;
+
+		#if(DO_RBOUND)
+		if (pflag_rbound[global_id] == 1){
+			local_dtij[local_id] = 1e9;
+		}
+		#endif
+
 	}
 	if (calc_time == 1){
 		__syncthreads();

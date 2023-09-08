@@ -46,10 +46,10 @@ void set_timelevel(int tag){
 	if (tag) {
 		int *min_j;
 		min_j = (int*)malloc(NB_1 * pow(1 + REF_1, N_LEVELS_3D) * sizeof(int));
-		int i, counter=0, counter_old = 0, j, stride=1000, n_stride;
+		int i, counter=0, counter_old = 0, j, stride=500, n_stride;
 		int timelevel_local[NB];
 
-		//Number of strides in messages of stride 1000
+		//Number of strides in messages of stride 500
 		n_stride = numtasks / stride + 1;
 
 		//First make sure all nodes have the same information regarding the timestep
@@ -115,6 +115,7 @@ void set_timelevel(int tag){
 					min_j[i] = 10000;
 					if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 3) {
 						for (z = 0; z < nz; z++) {
+							if (block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_ACTIVE] != 1) fprintf(stderr, "Set timelevel error! \n");
 							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL], min_j[i]);
 						}
 						for (z = 0; z < nz; z++) {
@@ -129,6 +130,7 @@ void set_timelevel(int tag){
 					min_j[i] = 10000;
 					if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 3) {
 						for (z = 0; z < nz; z++) {
+							if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_ACTIVE] != 1) fprintf(stderr, "Set timelevel error! \n");
 							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
 						}
 						for (z = 0; z < nz; z++) {
@@ -1552,13 +1554,50 @@ void set_communicator(void) {
 	}
 }
 
-/*
-void check_corners(void){
-	int n;
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1){
-			if ()
+//Fixate timelevel around pole
+void timelevel_fixate(void) {
+	int i, z, l, ni, nj, nz;
+	int* min_j;
+	min_j = (int*)malloc(NB_1 * pow(1 + REF_1, N_LEVELS_3D) * sizeof(int));
 
+	//Fixate the timestep around the pole
+	#if(SPHERICAL || SPHERICAL_GR)
+	for (l = 0; l < N_LEVELS_3D; l++) {
+		ni = NB_1 * pow(1 + REF_1, l);
+		nj = NB_2 * pow(1 + REF_2, l);
+		nz = NB_3 * pow(1 + REF_3 * (!DEREFINE_POLE), l);
+		//#pragma omp parallel for schedule(static,1) private(i)
+		for (i = 0; i < ni; i++) {
+			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1) {
+				min_j[i] = 10000;
+				if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 3) {
+					for (z = 0; z < nz; z++) {
+						if (block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_ACTIVE] != 1) fprintf(stderr, "Set timelevel error! \n");
+						min_j[i] = MY_MIN(block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL], min_j[i]);
+					}
+					for (z = 0; z < nz; z++) {
+						block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL] = min_j[i];
+					}
+				}
+			}
+		}
+		//#pragma omp parallel for schedule(static,1) private(i)
+		for (i = 0; i < ni; i++) {
+			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1) {
+				min_j[i] = 10000;
+				if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 3) {
+					for (z = 0; z < nz; z++) {
+						if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_ACTIVE] != 1) fprintf(stderr, "Set timelevel error! \n");
+						min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
+					}
+					for (z = 0; z < nz; z++) {
+						block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
+					}
+				}
+			}
 		}
 	}
-}*/
+	#endif
+
+	free(min_j);
+}

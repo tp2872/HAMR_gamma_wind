@@ -18,7 +18,7 @@
 int main(int argc, char *argv[])
 {
 	double tdump, tdump_reduced, tlog, dump_cnt0, runtime;
-	int nfailed = 0;
+	int nfailed = 0, flag;
 	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
 	clock_t begin2, begin_rdump, end_rdump;
@@ -69,8 +69,6 @@ int main(int argc, char *argv[])
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
-	diag(LOG_OUT);
-
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -124,19 +122,22 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Failure of some sort \n");
 			break;
 		}
+		
+		flag=0;
 
 		//Every swithchtime read out data from GPU and set boundary
 		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
 			end1 = get_wall_time();
 			end_rdump = end1;
 			runtime = (double)(end_rdump - begin_rdump);
+			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
 
-			#if(!(CARTESIAN || CARTESIAN_GR))
+			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
 				exit(0);
@@ -146,8 +147,8 @@ int main(int argc, char *argv[])
 
 		//Refine every TREF
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 			set_timelevel(1);
+			flag=1;
 			check_refcrit();
 			#if (GPU_ENABLED==1)
 			GPU_boundprim(1);
@@ -158,8 +159,8 @@ int main(int argc, char *argv[])
 		}
 
 		//Put out log file and rdump file
-		if ((t >= tlog || (end_rdump - begin_rdump)>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			set_timelevel(1);			
+		if ((t >= tlog || runtime>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			if(flag==0)set_timelevel(1);			
 			restart_write(); //do restart dump simultaneous with log
 			#if(!PARALLEL_IO)
 			close_rdump();
@@ -205,6 +206,7 @@ int main(int argc, char *argv[])
 			if (rank == 0){
 				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
+				fprintf(stderr, "ZCPS/GPU: %f \n", (double)(n_active_total) * (double)(BS_1 * BS_2 * BS_3) * (double)(DUMPFACTOR * AMR_SWITCHTIMELEVEL) * 0.5 / (double)(end1 - begin1) / (double)(numtasks));
 				#if(CALC_MDOT)
 				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
 				#endif

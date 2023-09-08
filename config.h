@@ -246,10 +246,13 @@ Numerical Parameters section
 #define GPU_MEM (14.0)
 
 /*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
-#define CUDA_MEMCALC (0)
+#define CUDA_MEMCALC (1)
 
 /*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
-#define MEM_CLEAN (0)
+#define MEM_CLEAN (1)
+
+/*Clean temporary GPU transfer buffers*/
+#define CLEAN_TEMP_BUFFERS_GPU (1)
 
 /*Memory of the node*/
 #define CPU_MEM (40.0)
@@ -340,7 +343,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (80)
+#define DUMPFACTOR (240)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -482,9 +485,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Whether to output a reduced resolution file*/
 #define DUMP_SMALL (0)
-#define REDUCE_FACTOR1 (4)
-#define REDUCE_FACTOR2 (4)
-#define REDUCE_FACTOR3 (4)
+#define REDUCE_FACTOR1 (2)
+#define REDUCE_FACTOR2 (2)
+#define REDUCE_FACTOR3 (2)
 
 /*Whether to dump diag file*/
 #define DUMP_DIAG (0)
@@ -493,6 +496,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
+
+/*For variable radial boundary*/
+#define DO_RBOUND (0)
+#define RBOUND_INFLOW (0)
+#define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
 #define CONSTANT_BC (0)
@@ -798,7 +806,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 184
+#define NV 185
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -982,6 +990,7 @@ MNEMONICS SECTION
 #define AMR_WEIGHT 181
 #define GDUMP_WRITTEN_REDUCED 182
 #define AMR_CARTFLAG 183
+#define AMR_RBOUNDFLAG 184
 
 //Same as above but for old datasets used in grid_read function
 #define READ_AMR_COORD1 (0)

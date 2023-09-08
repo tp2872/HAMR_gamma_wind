@@ -86,6 +86,20 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
         prim[3] *= f;
 
         if (lim == TYPE2) {
+            // Get Ebar and p_rad as usual
+        //if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+            Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
+
+            //Get gammasq
+            gammasq = (2. - y_max + sqrt(4. - 3. * y_max)) / (4. - 4. * y_max);
+
+            // Get Ebar and p_rad as usual
+            pressure = -Qdotn / (4. * gammasq - 1.);
+            prim[0] = pressure * 3.; // Erad = 3*p_rad
+
+            // utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
+            for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+
             /*
             // if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
             Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
@@ -103,11 +117,11 @@ __device__ int Rtoprim_nu_calc(double* U, double* ucon, double* ucov, double gco
             returnval = 1;
             */
 
-            if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
-                Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
-            }
-            pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
-            prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
+            //if (y < 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
+            //    Qdotn = -(1e-30 + sqrt(fabs(Qtsq) / y_max));
+            //}
+           // pressure = -Qdotn / (4. * GAMMAMAX_NU * GAMMAMAX_NU - 1.);
+           // prim[0] = 1e-30 + pressure * 3.; // Erad = 3*p_rad	
 
             returnval = 1;
         }

@@ -79,6 +79,7 @@ extern double(*restrict F3[NB_LOCAL])[NPR];
 extern int(*restrict pflag[NB_LOCAL]);
 extern int(*restrict pflag_rad[NB_LOCAL]);
 extern int(*restrict pflag_cart[NB_LOCAL]);
+extern int(*restrict pflag_rbound[NB_LOCAL]);
 extern double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
@@ -140,6 +141,7 @@ extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
 extern double* radius_GPU[NB_LOCAL];
 extern int* pflag_CART_GPU[NB_LOCAL];
+extern int* pflag_RBOUND_GPU[NB_LOCAL];
 extern int failimage_counter[NFAIL];
 
 /*MPI arrays*/
@@ -326,6 +328,7 @@ extern double * Bufferdtij2[NB_LOCAL];
 extern double * Bufferdtij3[NB_LOCAL];
 extern int * Bufferpflag[NB_LOCAL];
 extern int * Bufferpflag_CART[NB_LOCAL];
+extern int * Bufferpflag_RBOUND[NB_LOCAL];
 extern int * Bufferpflag_RAD[NB_LOCAL];
 extern int * Bufferpflag_NU[NB_LOCAL];
 #if (NEUTRINOS_DEBUG)
@@ -920,6 +923,7 @@ double advance(int flag);
 double advance_GPU(void);
 void bound_prim(double(*restrict pr[NB_LOCAL])[NPR], int MPI);
 void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n);
+void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n);
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 void   flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
 void const_transport1(double(*restrict p[NB_LOCAL])[NPR], int n);
@@ -1128,6 +1132,7 @@ void GPU_boundprim2_reflective(int flag, int n);
 void GPU_boundprim2_trans(int flag, int n);
 void GPU_boundprim3_outflow(int flag, int n);
 void GPU_boundprim_cart(int dir, int flag, int n);
+void GPU_boundprim_rbound(int dir, int flag, int n);
 void GPU_step_ch();
 void GPU_read(int n);
 void GPU_consttransport1(int flag, double Dt, int n);
@@ -1245,6 +1250,7 @@ void set_prestep(void);
 void prestep_bound(void);
 void mpi_synch(int tag);
 void set_timelevel(int tag);
+void timelevel_fixate(void);
 void rm_order1(void);
 void balance_load(void);
 void balance_load_gpu(void);
@@ -1385,6 +1391,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, gpuEvent_t *boundevent);
 
 void set_pflag_cart(int n);
+void set_pflag_rbound(int n);
 
 //Cylindrification related
 double Ftr(double x);
@@ -1496,6 +1503,12 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 );
 #endif
 
+//Mass accretion rate related
+#if(CALC_MDOT)
+void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_density_scale_cpu);
+#endif
+double calc_Mdot(void);
+
 /*Neutrino function*/
 #if(NEUTRINOS_M1)
 void init_nulib_table(void);
@@ -1516,12 +1529,6 @@ void eos_mode_rhotemp_etaele(double dens, double temp, double ye, double* mu_ele
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 double calc_fermiint2(double x);
 double calc_fermiint3(double x);
-
-//Mass accretion rate related
-#if(CALC_MDOT)
-void set_mass_density_scale(double *mass_density_scale_cpu, double* magnetic_density_scale_cpu);
-#endif
-double calc_Mdot(void);
 
 //Neutrino opacity table related arrays
 extern double nu_kappa_emiss[NULIB_RHO * NULIB_TEMP * NULIB_YE * NU_SPECIES];

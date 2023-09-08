@@ -97,6 +97,13 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	//	bound_prim_cart(ph, psh, 1, n_ord[n]);
 	//}
 	//#endif
+	
+	#if(DO_RBOUND)
+	for (n = 0; n < n_active; n++) {
+		bound_prim_rbound(p, ps, 1, n_ord[n]);
+		bound_prim_rbound(ph, psh, 1, n_ord[n]);
+	}
+	#endif
 
 	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
@@ -147,7 +154,6 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR4] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -169,7 +175,6 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR2] == -1){
@@ -194,7 +199,6 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR4] == -1){
 		for (i = -N1G; i <= -1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
@@ -212,7 +216,6 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	// make sure there is no inflow at the outer boundary
 	#if(!CONSTANT_BC)
@@ -241,7 +244,6 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR1] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -263,9 +265,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR3] == -1){
 		// outer r BC: outflow 		
 		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
@@ -285,10 +285,8 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR1] == -1){
 		for (j = -N2G; j <= -1; j++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
@@ -306,10 +304,8 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	// make sure there is no inflow at the outer boundary
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR3] == -1){
 		for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j <= N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G - 1; j++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, j) private(i,z)
@@ -327,7 +323,6 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 }
 
 void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
@@ -647,7 +642,6 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 	struct of_geom geom;
 
 	// inner r boundary condition: u, gdet extrapolation
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR6] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
@@ -669,9 +663,7 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR5] == -1){
 		// outer r BC: outflow 		
 		#pragma omp parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
@@ -691,10 +683,8 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	// make sure there is no inflow at the inner boundary 
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR6] == -1){
 		for (z = -N3G; z <= -1; z++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, z) private(j,i)
@@ -712,10 +702,8 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 
 	// make sure there is no inflow at the outer boundary
-	#if(!CONSTANT_BC)
 	if (block[n][AMR_NBR5] == -1){
 		for (z = N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]); z <= N3 * pow(1 + REF_3, block[n][AMR_LEVEL3]) + N3G - 1; z++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, z) private(j,i)
@@ -733,7 +721,6 @@ void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			}
 		}
 	}
-	#endif
 }
 
 //Set Cartesian boundary conditions
@@ -797,6 +784,81 @@ void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[
 			if (pflag_cart[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= 0))] == 1) { //B3
 				//ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
 			}					
+		}
+	}
+}
+
+// For spherical coords, set inflow to cells beneath RBOUND when DO_RBOUND is 1
+void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n){
+	int i,i2, j, z, k, tag=0;
+	struct of_geom geom;
+
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, BS_1 + N1_GPU_offset[n] + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 + N3G - 1) {
+		if (pflag_rbound[nl[n]][index_3D(n, i, j, z)] == 1) {
+			#if(RBOUND_INFLOW)
+			tag = 0;
+			for (i2 = 1; i2 <= N1G; i2++) {
+				if ((i+i2 < BS_1 + N1_GPU_offset[n] + N1G) && (pflag_rbound[nl[n]][index_3D(n, i + i2, j, z)] == 0)) {
+					PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i + i2, j, z)][k];
+					#if(STAGGERED)
+					ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
+					ps[nl[n]][index_3D(n, i, j, z)][2] = 0.0; //ps[nl[n]][index_3D(n, i + i2, j, z)][2];
+					ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0; //ps[nl[n]][index_3D(n, i + i2, j, z)][3];
+					#endif
+					tag = 1;
+					break;
+				}
+			}
+			#endif		
+			if(tag==0){
+				//Get metric
+				get_geometry(n, i, j, z, CENT, &geom);
+
+				//Set density and internal energy
+				prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHOMIN;
+				prim[nl[n]][index_3D(n, i, j, z)][UU] = UUMIN;
+
+				//Set other scalars
+				#if(DOKTOT)
+				prim[nl[n]][index_3D(n, i, j, z)][KTOT] = 0.0;
+				#endif
+				#if(TWO_T)
+				prim[nl[n]][index_3D(n, i, j, z)][ENTRE] = 0.0;
+				prim[nl[n]][index_3D(n, i, j, z)][ENTRI] = 0.0;
+				#endif
+				#if(P_NUM)
+				prim[nl[n]][index_3D(n, i, j, z)][PHOTON] = 1.e-30;
+				#endif
+				#if(RAD_M1)
+				prim[nl[n]][index_3D(n, i, j, z)][UU_RAD] = 1.e-30;
+				#endif
+
+				//Set fluid velocities to 0
+				prim[nl[n]][index_3D(n, i, j, z)][U1] = 0;
+				prim[nl[n]][index_3D(n, i, j, z)][U2] = 0;
+				prim[nl[n]][index_3D(n, i, j, z)][U3] = 0;
+
+				#if(RAD_M1)
+				prim[nl[n]][index_3D(n, i, j, z)][U1_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U1];
+				prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U2];
+				prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] = prim[nl[n]][index_3D(n, i, j, z)][U3];
+				#endif
+
+				//Set magnetic fields to 0
+				prim[nl[n]][index_3D(n, i, j, z)][B1] = 0;
+				prim[nl[n]][index_3D(n, i, j, z)][B2] = 0;
+				prim[nl[n]][index_3D(n, i, j, z)][B3] = 0;
+
+				if (pflag_rbound[nl[n]][index_3D(n, i - D1 * ((i - D1) >= N1_GPU_offset[n] - N1G), j, z)] == 1) { //B1
+					ps[nl[n]][index_3D(n, i, j, z)][1] = 0.0;
+				}
+				if (pflag_rbound[nl[n]][index_3D(n, i, j - D2 * ((j - D2) >= N2_GPU_offset[n] - N2G), z)] == 1) { //B2
+					ps[nl[n]][index_3D(n, i, j, z)][2] =  0.0;
+				}
+				if (pflag_rbound[nl[n]][index_3D(n, i, j, z - D3 * ((z - D3) >= N3_GPU_offset[n] - N3G))] == 1) { //B3
+					ps[nl[n]][index_3D(n, i, j, z)][3] = 0.0;
+				}	
+			}
 		}
 	}
 }

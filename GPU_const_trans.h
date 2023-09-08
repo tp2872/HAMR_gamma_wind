@@ -124,6 +124,9 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
+	#if(DO_RBOUND)
+	, int* pflag_rbound
+	#endif
 )
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
@@ -217,6 +220,13 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 			emf[3 * (ksize)+global_id] = 0.;
 			emf[1 * (ksize)+global_id] = -0.5 * factor * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
+
+		#if(DO_RBOUND)
+		if (pflag_rbound[global_id - isize * D1] == 1) {
+			emf[3 * (ksize)+global_id] = 0.;
+			emf[2 * (ksize)+global_id] = 0.;
+		}
+		#endif
 
 		#if(CARTESIAN_GR)
 		/*if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize - D2 * jsize] == 1) {

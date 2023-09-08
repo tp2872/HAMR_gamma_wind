@@ -66,6 +66,9 @@ __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
+	#if(DO_RBOUND)
+	, int* __restrict__ pflag_rbound
+	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
 	const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
@@ -105,6 +108,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
+	#endif
+	#if (DO_RBOUND)
+    	, int* pflag_rbound
 	#endif
 );
 __global__ void Utoprim_M1_0(double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
@@ -154,6 +160,9 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
+	#if(DO_RBOUND)
+	, int* pflag_rbound
+	#endif
 );
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
@@ -171,6 +180,7 @@ __global__ void fixuputoprim(double* pv, const  double* __restrict__ radius, con
 #endif
 #if(CALC_MDOT)
 	, double mass_density_scale
+	, double magnetic_density_scale
 #endif
 );
 __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage);
@@ -184,6 +194,7 @@ __global__ void boundprim2_reflective(double* pv, const  double* __restrict__ gd
 __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 __global__ void boundprim3_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_5, int NBR_6, double* ps);
 __global__ void boundprim_cart(double* pv, double* ps, int* pflag_cart, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
+__global__ void boundprim_rbound(double* pv, double* ps, int* pflag_rbound, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
 
 		

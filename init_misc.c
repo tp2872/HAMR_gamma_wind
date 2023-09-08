@@ -575,7 +575,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(*r, *th, bl_gcov);
 	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 0 %f %f\n", *r, *th);
-	dxdxp_func2(X, dxdxp);
+	dxdxp_func(X, dxdxp);
 	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 1 \n");
 
 	for (i = 0; i<NDIM; i++){
@@ -624,7 +624,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
 	if (invert_matrix(bl_gcov, bl_gcon))fprintf(stderr, "Rotate error 2 \n");
 
-	dxdxp_func2(X, dxdxp);
+	dxdxp_func(X, dxdxp);
 	if (invert_matrix(dxdxp, dxpdx))fprintf(stderr, "Rotate error 3 \n");
 
 	for (i = 0; i<NDIM; i++){
