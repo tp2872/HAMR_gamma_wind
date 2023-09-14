@@ -279,7 +279,7 @@ void dump_block(MPI_File *fp, int n)
 	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
 	struct of_geom geom;
 
-    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad)
+    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad, ucon_nu)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + RHO] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + UU] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
