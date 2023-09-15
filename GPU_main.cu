@@ -492,6 +492,7 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 
 	//gpuDeviceSynchronize();
 	status = gpuGetLastError();
+	if (status == 719) exit(1);
 	if (gpuSuccess != status ) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
 }
 

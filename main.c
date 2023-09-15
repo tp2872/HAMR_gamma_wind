@@ -318,6 +318,7 @@ void MPI_initialize(int argc, char *argv[])
 	#if(GPU_ENABLED)
 		#if(SCUDA)
 		gpuGetDeviceCount(&numdevices);
+		local_rank = rank;
 		gpuSetDevice(local_rank % numdevices);
 		if(rank<8)fprintf(stderr, "Local rank: %d Number of devices: %d Device number: %d \n", local_rank, numdevices, local_rank % numdevices);
 		if (rank % numdevices != local_rank % numdevices) {
@@ -371,8 +372,7 @@ void set_grid(int n)
 	dV = dx[nl[n]][1] * dx[nl[n]][2] * dx[nl[n]][3];
 	double X[NDIM];
 
-	double temp = a;
-	#pragma omp parallel private(X,i,j,z,k,geom, i1,j1,z1,r,th,phi,a,zsize,zlevel,zoffset)
+	#pragma omp parallel private(X,i,j,z,k,geom, i1,j1,z1,r,th,phi,zsize,zlevel,zoffset)
 	{
 		DLOOPA X[j] = 0.;
 		#pragma omp for collapse(2) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)/nthreads)
@@ -381,9 +381,6 @@ void set_grid(int n)
 		#else
 		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		#endif
-			if (j<0 || j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE) a = -temp;
-			else a = temp;
-
 			zlevel = 0;
 			if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
 			if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
@@ -421,8 +418,6 @@ void set_grid(int n)
 
 			/* theta-face-centered */
 			if (j == 0 && BOUND_TYPE2 == TRANSMISSIVE){
-				//coord(n, i, 1, z, FACE2, X);
-				//a = 0. ;
 				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 				#else
@@ -430,8 +425,6 @@ void set_grid(int n)
 				#endif
 			}
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && BOUND_TYPE2 == TRANSMISSIVE){
-				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-				//a = 0.;
 				#if( TRANS_BOUND_SMALL)
 				coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 				#else
@@ -506,8 +499,6 @@ void set_grid(int n)
 	}
 	#endif
 
-	a=temp;
-
 	#if ZIRI_DUMP
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		coord(n,i, j, z, CENT, X);
@@ -558,7 +549,7 @@ void check_input() {
 	//Don't use block sizes this small in any case
 	if ((BS_3 < 8 && NB_3 * BS_3 > 1)|| BS_2 < 8 || BS_1 < 8) {
 		if (rank == 0) fprintf(stderr, "Init error 4");
-		exit(0);
+		//exit(0);
 	}
 
 	if (((BS_3%2 != 0) && (NB_3 * BS_3 > 1)) || BS_2 % 2 != 0 || BS_1 % 2 != 0) {

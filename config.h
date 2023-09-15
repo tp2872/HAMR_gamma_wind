@@ -23,12 +23,12 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM SPHERICAL_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
 // DIMARK: rad.pulse kappa_es
-#define KAPPARADPULSE (10.)
+#define KAPPARADPULSE (0.)
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -80,20 +80,20 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.5)
+#define BH_SPIN (0.9375)
 #endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (1e2)
+#define BETA (10.)
 
 /*Select grid outer radius*/
-#define ROUT (4000.0)
+#define ROUT (500.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (90.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -110,14 +110,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (1)
@@ -136,7 +136,7 @@ Physical Parameters section
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
-#define DONUCLEAR (0)
+#define DONUCLEAR (1)
 #else 
 #define DO_YE (0)
 #define DONUCLEAR (0)
@@ -237,10 +237,10 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
-#define GPU_SET (1)
+#define GPU_SET (10000)
 
 /*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
 #define GPU_MEM (30.0)
@@ -271,13 +271,13 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 6
-#define NB_3 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 72
-#define BS_2 32
-#define BS_3 64
+#define BS_1 150
+#define BS_2 150
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -321,7 +321,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -364,7 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 50.0
+#define TREF 500.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -404,7 +404,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -498,12 +498,12 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (1)
-#define RBOUND_INFLOW (1)
+#define DO_RBOUND (0)
+#define RBOUND_INFLOW (0)
 #define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
-#define CONSTANT_BC (1)
+#define CONSTANT_BC (0)
 
 /*Enable Radiation*/
 #define RAD_M1 (0)
@@ -710,7 +710,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (244475423533.749)
 #endif
 #else
-#define MASS_DENSITY_SCALE (1e12)
+#define MASS_DENSITY_SCALE (3.1)
+//#define MASS_DENSITY_SCALE (1e12)
 #endif
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
