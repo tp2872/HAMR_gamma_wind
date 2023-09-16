@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM COLLAPSAR
 
 #define READBINARY (0)
 
@@ -89,7 +89,7 @@ Physical Parameters section
 #define BETA (10.)
 
 /*Select grid outer radius*/
-#define ROUT (500.0)
+#define ROUT (100000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -275,7 +275,7 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 150
+#define BS_1 200
 #define BS_2 150
 #define BS_3 1
 
