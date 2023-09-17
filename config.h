@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM SPHERICAL_PROBLEM
 
 #define READBINARY (0)
 
@@ -50,7 +50,7 @@ Physical Parameters section
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Calculate variable metric*/
-#define CALC_METRIC (1)
+#define CALC_METRIC (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -83,7 +83,7 @@ Physical Parameters section
 #define BH_SPIN (0.8)
 #endif
 #else
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.95)
 #endif
 
 /*For Aris's ICs*/
@@ -92,11 +92,11 @@ Physical Parameters section
 #define BETA (100.)
 
 /*Select grid outer radius*/
-#define ROUT (100.0)
+#define ROUT (4000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (90.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -240,7 +240,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
 #define GPU_SET (10000)
@@ -255,7 +255,7 @@ Numerical Parameters section
 #define MEM_CLEAN (1)
 
 /*Clean temporary GPU transfer buffers*/
-#define CLEAN_TEMP_BUFFERS_GPU (0)
+#define CLEAN_TEMP_BUFFERS_GPU (1)
 
 /*Memory of the node*/
 #define CPU_MEM (40.0)
@@ -274,13 +274,13 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
-#define NB_3 1
+#define NB_2 6
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 1
+#define BS_1 72
+#define BS_2 32
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -321,10 +321,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -410,7 +410,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -504,12 +504,12 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (1)
+#define DO_RBOUND (0)
 #define RBOUND_INFLOW (0)
 #define RBOUND (20.)
 
 /*Enable constant boundary conditions*/
-#define CONSTANT_BC (0)
+#define CONSTANT_BC (1)
 
 /*Enable Radiation*/
 #define RAD_M1 (0)

@@ -76,8 +76,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 1000000.0;
-	DTd = 50.;
+	DTl = 100.0;
+	DTd = 20.;
 	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
