@@ -294,7 +294,6 @@ void GPU_write_metric(int n) {
 
 	#if(CLEAN_TEMP_BUFFERS_GPU)
 	gpuDeviceSynchronize();
-	status += gpuFreeHost(radius_GPU[nl[n]]);
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
 	status += gpuFreeHost(gcon_GPU[nl[n]]);
 	status += gpuFreeHost(conn_GPU[nl[n]]);

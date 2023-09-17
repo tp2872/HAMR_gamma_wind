@@ -26,6 +26,9 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 
 	#if(NSY)
 	bl_coord(X, &r, &th, &phi);
+		#if(CALC_METRIC)
+		r = r / metric_scale_cpu;
+		#endif
 
 	//compute Jacobian nt->t (dt/dnt)
 	dxdxt[0][0] = 1.;
@@ -77,6 +80,9 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 	r = Vp[1];
 	th = Vp[2];
 	phi = Vp[3];
+		#if(CALC_METRIC)
+		r = r / metric_scale_cpu;
+		#endif
 
 	cth = cos(th);
 	sth = sin(th);
@@ -186,6 +192,9 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 
 	//compute Jacobian r,th,phi->x,y,z (dx/dr)
 	bl_coord(X, &r, &th, &phi);
+		#if(CALC_METRIC)
+		r = r / metric_scale_cpu;
+		#endif
 
 	dxdr[0][0] = 1.;
 	dxdr[0][1] = 0.;
