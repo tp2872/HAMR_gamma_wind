@@ -757,7 +757,8 @@ int nthreads;
 int gpu, gpu_offset;
 int status;
 double y_max;
-double mass_density_scale_cpu, magnetic_density_scale_cpu, mdot_cpu, t_mdot;
+double mass_density_scale_cpu, metric_scale_cpu, magnetic_density_scale_cpu, mdot_cpu, t_mdot;
+double accreted_mass, t_prev;
 
 /* output parameters */
 double DTd;
@@ -766,6 +767,7 @@ double DTl;
 double DTi;
 int    DTr;
 double tref;
+double tmetric;
 int    dump_cnt, dump_cnt_reduced;
 int    image_cnt;
 int    rdump_cnt;

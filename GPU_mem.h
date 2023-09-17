@@ -100,14 +100,15 @@ void set_arrays_GPU(int n, int device){
 	if (gpuSuccess != status ) fprintf(stderr, "Error in creating events: %d \n", status);
 
 	/*Allocate memory to 1D arrays*/
-	#if(!CLEAN_TEMP_BUFFERS_GPU)
-	gpuMallocHost((void**)&p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	gpuMallocHost((void**)&p_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+
 	gpuMallocHost((void**)&ph_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&dq_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double)); //array to store temporary data
 	#if(STAGGERED)
-	gpuMallocHost((void**)&ps_1[nl[n]], NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	gpuMallocHost((void**)&ps_1[nl[n]], NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&psh_1[nl[n]], NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	#endif
+	#if(!CLEAN_TEMP_BUFFERS_GPU)
 	#if(!NSY)
 	gpuMallocHost((void**)&gcov_GPU[nl[n]],((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG*10 * sizeof(double));
 	gpuMallocHost((void**)&gcon_GPU[nl[n]], ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG*10 * sizeof(double));
@@ -127,14 +128,14 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	gpuMallocHost((void**)&gdet_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG  * sizeof(double));
 	#endif
-	#if(CARTESIAN_GR)
-	gpuMallocHost((void**)&pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
-	#endif
-	#if(DO_RBOUND)
-        gpuMallocHost((void**)&pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
-        #endif
 	gpuMallocHost((void**)&failimage_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
 	gpuMallocHost((void**)&radius_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	#endif
+	#if(CARTESIAN_GR)
+	gpuMallocHost((void**)&pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
+	#endif
+	#if(DO_RBOUND)
+	gpuMallocHost((void**)&pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
 	#endif
 
 	/*Allocate memory to buffers on GPU*/
@@ -1272,10 +1273,11 @@ void GPU_finish(int n, int force_delete)
 	for (i = 0; i < 100; i++) gpuEventDestroy(boundevent1[nl[n]][i]);
 	gpuStreamDestroy(commandQueueGPU[nl[n]]);
 
-	#if(!CLEAN_TEMP_BUFFERS_GPU)
 	status += gpuFreeHost(p_1[nl[n]]);
 	#if(STAGGERED)
 	status += gpuFreeHost(ps_1[nl[n]]);
+	#endif
+	#if(STAGGERED)
 	status += gpuFreeHost(psh_1[nl[n]]);
 	#endif
 	status += gpuFreeHost(ph_1[nl[n]]);
@@ -1283,8 +1285,9 @@ void GPU_finish(int n, int force_delete)
 	#if(NEUTRINOS_DEBUG)
 	gpuFreeHost(allflags_NU_GPU[nl[n]]);
 	#endif
-	status += gpuFreeHost(radius_GPU[nl[n]]);
 	status += gpuFreeHost(dq_1[nl[n]]);
+	#if(!CLEAN_TEMP_BUFFERS_GPU)
+	status += gpuFreeHost(radius_GPU[nl[n]]);
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
 	status += gpuFreeHost(gcon_GPU[nl[n]]);
 	status += gpuFreeHost(conn_GPU[nl[n]]);
@@ -1294,12 +1297,12 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	status += gpuFreeHost(gdet_GPU[nl[n]]);
 	//gpuFreeHost(pflag_GPU[nl[n]]);
+	#endif
 	#if(CARTESIAN_GR)
 	gpuFreeHost(pflag_CART_GPU[nl[n]]);
 	#endif
 	#if(DO_RBOUND)
 	gpuFreeHost(pflag_RBOUND_GPU[nl[n]]);
-	#endif
 	#endif
 
     status += gpuFreeHost(dtij1_GPU[nl[n]]);

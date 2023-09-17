@@ -104,7 +104,8 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 	sth = sin(th);
 
 	s2 = sth*sth;
-	rho2 = r*r + a*a*cth*cth;
+	
+	rho2 = r * r + a * a * cth * cth;
 
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
@@ -232,6 +233,21 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 			}
 		}
 	}
+
+	#if(CALC_METRIC)
+	gcovp[0][0] *= metric_scale_cpu * metric_scale_cpu;
+	gcovp[0][1] *= metric_scale_cpu * metric_scale_cpu;
+	gcovp[0][2] *= metric_scale_cpu;
+	gcovp[0][3] *= metric_scale_cpu;
+	gcovp[1][0] = gcovp[0][1];
+	gcovp[1][1] *= metric_scale_cpu * metric_scale_cpu;
+	gcovp[1][2] *= metric_scale_cpu;
+	gcovp[1][3] *= metric_scale_cpu;
+	gcovp[2][0] = gcovp[0][2];
+	gcovp[2][1] = gcovp[1][2];
+	gcovp[3][0] *= metric_scale_cpu;
+	gcovp[3][1] = gcovp[1][3];
+	#endif
 }
 
 void gcov_func_cartesian(double *X, double gcovp[][NDIM])

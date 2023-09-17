@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM COLLAPSAR
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -48,6 +48,9 @@ Physical Parameters section
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
 #define T_DOUBLE (1000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
+
+/*Calculate variable metric*/
+#define CALC_METRIC (1)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -86,10 +89,10 @@ Physical Parameters section
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (10.)
+#define BETA (100.)
 
 /*Select grid outer radius*/
-#define ROUT (100000.0)
+#define ROUT (100.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -110,14 +113,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (1)
@@ -252,7 +255,7 @@ Numerical Parameters section
 #define MEM_CLEAN (1)
 
 /*Clean temporary GPU transfer buffers*/
-#define CLEAN_TEMP_BUFFERS_GPU (1)
+#define CLEAN_TEMP_BUFFERS_GPU (0)
 
 /*Memory of the node*/
 #define CPU_MEM (40.0)
@@ -271,12 +274,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 2
+#define NB_2 4
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 200
-#define BS_2 150
+#define BS_1 100
+#define BS_2 100
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -363,8 +366,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
 
-//The time between refinement (AMR) steps
-#define TREF 500.0
+/*The time between refinement(AMR) steps*/
+#define TREF 50.0
+
+//The time between recalculating metric
+#define TMETRIC (10.0)
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -498,7 +504,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (0)
+#define DO_RBOUND (1)
 #define RBOUND_INFLOW (0)
 #define RBOUND (20.)
 

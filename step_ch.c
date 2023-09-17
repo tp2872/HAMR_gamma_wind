@@ -74,6 +74,11 @@ void step_ch()
 	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
 
+	//Recalculate metric every refinement step when taking into account mass growth of black hole
+	//#if(CALC_METRIC)
+	//set_metric_scale();
+	//#endif
+
 	//Set radial boundary for moving RBOUN
 	#if(DO_RBOUND)
 	for (n = 0; n < n_active; n++) {
@@ -928,6 +933,11 @@ void GPU_step_ch()
 	#if(CALC_MDOT)
 	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
 	#endif
+
+	//Recalculate metric every refinement step when taking into account mass growth of black hole
+	//#if(CALC_METRIC)
+	//set_metric_scale();
+	//#endif
 
 	//Set radial boundary for moving RBOUN
 	#if(DO_RBOUND)

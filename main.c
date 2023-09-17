@@ -76,20 +76,22 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 20.;
+	DTl = 1000000.0;
+	DTd = 50.;
 	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced;
 		tlog = t + DTl;
 		tref = t+1.0;
+		tmetric = t + 1.0;
 	}
 	else {
 		tdump = t + DTd;
 		tdump_reduced = t + DTd_reduced;
 		tlog = t + DTl;
 		tref = t;
+		tmetric = t + 1.0;
 	}
 
 	/*Start timer*/
@@ -157,6 +159,14 @@ int main(int argc, char *argv[])
 			if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
 			tref += TREF;
 		}
+
+		#if(CALC_METRIC)
+		//Refine every TREF
+		if (t >= tmetric && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			set_metric_scale();
+			tmetric += TMETRIC;
+		}
+		#endif
 
 		//Put out log file and rdump file
 		if ((t >= tlog || runtime>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {

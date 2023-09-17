@@ -135,22 +135,11 @@ void eos_init_GPU(int n) {
 }
 #endif
 
-void GPU_write(int n)
-{
-	int i, j, z, k;
-	double r, th, phi, X[NDIM];
-	#if(N_GPU>1)
-	gpuSetDevice(block[n][AMR_GPU]);
-	#endif
+void GPU_write_metric(int n) {
+	int i, j, z, pg;
 
+	//Allocate memory if necessary
 	#if(CLEAN_TEMP_BUFFERS_GPU)
-	gpuMallocHost((void**)&p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	gpuMallocHost((void**)&ph_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	gpuMallocHost((void**)&dq_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double)); //array to store temporary data
-	#if(STAGGERED)
-	gpuMallocHost((void**)&ps_1[nl[n]], NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	gpuMallocHost((void**)&psh_1[nl[n]], NDIM * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	#endif
 	#if(!NSY)
 	gpuMallocHost((void**)&gcov_GPU[nl[n]],((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG*10 * sizeof(double));
 	gpuMallocHost((void**)&gcon_GPU[nl[n]], ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG*10 * sizeof(double));
@@ -170,95 +159,9 @@ void GPU_write(int n)
 	#endif
 	gpuMallocHost((void**)&gdet_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NPG  * sizeof(double));
 	#endif
-	#if(CARTESIAN_GR)
-	gpuMallocHost((void**)&pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
-	#endif
-	#if(DO_RBOUND)
-    gpuMallocHost((void**)&pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
-    #endif
-	gpuMallocHost((void**)&failimage_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int));
-	gpuMallocHost((void**)&radius_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	#endif
-
-	#if(SPHERICAL|| SPHERICAL_GR)
-	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
-		coord(n, i, 0, 0, CENT, X);
-		bl_coord(X, &r, &th, &phi);
-		radius_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)] = r;
-	}
-	#endif
-
-	#pragma omp parallel private(i, j, z, k, X, r, th, phi)
-	{
-		#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G){
-			for (k = 0; k < NPR; k++){
-				p_1[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = p[nl[n]][index_3D(n, i, j, z)][k];
-				#if(GPU_DEBUG)
-				ph_1[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[nl[n]][index_3D(n, i, j, z)][k];
-				#endif
-			}
-			#if(STAGGERED)
-			for (k = 1; k < NDIM; k++){
-				ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[nl[n]][index_3D(n, i, j, z)][k];
-				#if(GPU_DEBUG)
-				psh_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = psh[nl[n]][index_3D(n, i, j, z)][k];
-				#endif
-			}
-			#endif
-			for (k = 0; k < NFAIL; k++){
-				failimage_GPU[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
-			}
-			#if(CARTESIAN_GR)
-			pflag_CART_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_cart[nl[n]][index_3D(n, i, j, z)];
-			#endif
-
-			#if(DO_RBOUND)
-			pflag_RBOUND_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_rbound[nl[n]][index_3D(n, i, j, z)];
-			#endif
-
-			#if(CARTESIAN|| CARTESIAN_GR)
-			coord(n, i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			radius_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = r;
-			#endif
-		}
-	}
-
-	status = 0;
-	#if (ELLIPTICAL2)
-	for (i = N1_GPU_offset[n] - N1G; i<N1_GPU_offset[n] + BS_1 + N1G; i++){
-		for (j = N2_GPU_offset[n] - N2G; j<N2_GPU_offset[n] + BS_2 + N2G; j++){
-			for (k = 0; k < NPR; k++){
-				dU_GPU[nl[n]][k*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + (i - N1_GPU_offset[n] + N1G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = dU_s[nl[n]][index_2D(n, i, j, 0)][k];
-			}
-		}
-	}
-	status = gpuMemcpyAsync(BufferdU[nl[n]], dU_GPU[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#endif
-	/*Initialize memory items that have to be passed on to the GPU*/
-	gpuMemcpyAsync(Bufferp_1[nl[n]], p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	gpuMemcpyAsync(Bufferph_1[nl[n]], p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#if(STAGGERED)
-	gpuMemcpyAsync(Bufferps_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	gpuMemcpyAsync(Bufferpsh_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#endif
-	//gpuMemcpyAsync(Bufferpflag[nl[n]], pflag_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(int), gpuMemcpyHostToDevice,commandQueueGPU[nl[n]]);
-	gpuMemcpyAsync(Bufferfailimage[nl[n]], failimage_GPU[nl[n]], NFAIL*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#if(CARTESIAN || CARTESIAN_GR)
-	gpuMemcpyAsync(Bufferradius[nl[n]], radius_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#else
-	gpuMemcpyAsync(Bufferradius[nl[n]], radius_GPU[nl[n]], (BS_1 + 2 * N1G)*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#endif
-	#if(CARTESIAN_GR)
-	gpuMemcpyAsync(Bufferpflag_CART[nl[n]], pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-	#endif
-	#if(DO_RBOUND)
-	gpuMemcpyAsync(Bufferpflag_RBOUND[nl[n]], pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 
 	/*Copy metric to GPU*/
-	int pg;
 	#pragma omp parallel private(i, j, z, pg)
 	{
 		#if(!NSY)
@@ -389,24 +292,9 @@ void GPU_write(int n)
 	gpuMemcpyAsync(Bufferconn[nl[n]], conn_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2[nl[n]])*NDIM*10*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 
-	#if(DO_RBOUND)
-	set_pflag_rbound(n);
-	#endif
-
-	#if(!CLEAN_TEMP_BUFFERS_GPU)
+	#if(CLEAN_TEMP_BUFFERS_GPU)
 	gpuDeviceSynchronize();
-	status += gpuFreeHost(p_1[nl[n]]);
-	#if(STAGGERED)
-	status += gpuFreeHost(ps_1[nl[n]]);
-	status += gpuFreeHost(psh_1[nl[n]]);
-	#endif
-	status += gpuFreeHost(ph_1[nl[n]]);
-	status += gpuFreeHost(failimage_GPU[nl[n]]);
-	#if(NEUTRINOS_DEBUG)
-	gpuFreeHost(allflags_NU_GPU[nl[n]]);
-	#endif
 	status += gpuFreeHost(radius_GPU[nl[n]]);
-	status += gpuFreeHost(dq_1[nl[n]]);
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
 	status += gpuFreeHost(gcon_GPU[nl[n]]);
 	status += gpuFreeHost(conn_GPU[nl[n]]);
@@ -415,13 +303,98 @@ void GPU_write(int n)
 	status += gpuFreeHost(Mud_inv_GPU[nl[n]]);
 	#endif
 	status += gpuFreeHost(gdet_GPU[nl[n]]);
-	//gpuFreeHost(pflag_GPU[nl[n]]);
+	#endif
+}
+
+void GPU_write(int n)
+{
+	int i, j, z, k;
+	double r, th, phi, X[NDIM];
+	#if(N_GPU>1)
+	gpuSetDevice(block[n][AMR_GPU]);
+	#endif
+
+	#if(SPHERICAL|| SPHERICAL_GR)
+	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
+		coord(n, i, 0, 0, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+		radius_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)] = r;
+	}
+	#endif
+
+	#pragma omp parallel private(i, j, z, k, X, r, th, phi)
+	{
+		#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G){
+			for (k = 0; k < NPR; k++){
+				p_1[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = p[nl[n]][index_3D(n, i, j, z)][k];
+				#if(GPU_DEBUG)
+				ph_1[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[nl[n]][index_3D(n, i, j, z)][k];
+				#endif
+			}
+			#if(STAGGERED)
+			for (k = 1; k < NDIM; k++){
+				ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[nl[n]][index_3D(n, i, j, z)][k];
+				#if(GPU_DEBUG)
+				psh_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = psh[nl[n]][index_3D(n, i, j, z)][k];
+				#endif
+			}
+			#endif
+			for (k = 0; k < NFAIL; k++){
+				failimage_GPU[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
+			}
+			#if(CARTESIAN_GR)
+			pflag_CART_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_cart[nl[n]][index_3D(n, i, j, z)];
+			#endif
+
+			#if(DO_RBOUND)
+			pflag_RBOUND_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_rbound[nl[n]][index_3D(n, i, j, z)];
+			#endif
+
+			#if(CARTESIAN|| CARTESIAN_GR)
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			radius_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = r;
+			#endif
+		}
+	}
+
+	status = 0;
+	#if (ELLIPTICAL2)
+	for (i = N1_GPU_offset[n] - N1G; i<N1_GPU_offset[n] + BS_1 + N1G; i++){
+		for (j = N2_GPU_offset[n] - N2G; j<N2_GPU_offset[n] + BS_2 + N2G; j++){
+			for (k = 0; k < NPR; k++){
+				dU_GPU[nl[n]][k*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + (i - N1_GPU_offset[n] + N1G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = dU_s[nl[n]][index_2D(n, i, j, 0)][k];
+			}
+		}
+	}
+	status = gpuMemcpyAsync(BufferdU[nl[n]], dU_GPU[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#endif
+	/*Initialize memory items that have to be passed on to the GPU*/
+	gpuMemcpyAsync(Bufferp_1[nl[n]], p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(Bufferph_1[nl[n]], p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#if(STAGGERED)
+	gpuMemcpyAsync(Bufferps_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(Bufferpsh_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#endif
+	//gpuMemcpyAsync(Bufferpflag[nl[n]], pflag_GPU[nl[n]], ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(int), gpuMemcpyHostToDevice,commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(Bufferfailimage[nl[n]], failimage_GPU[nl[n]], NFAIL*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#if(CARTESIAN || CARTESIAN_GR)
+	gpuMemcpyAsync(Bufferradius[nl[n]], radius_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#else
+	gpuMemcpyAsync(Bufferradius[nl[n]], radius_GPU[nl[n]], (BS_1 + 2 * N1G)*sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	#endif
 	#if(CARTESIAN_GR)
-	gpuFreeHost(pflag_CART_GPU[nl[n]]);
+	gpuMemcpyAsync(Bufferpflag_CART[nl[n]], pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 	#if(DO_RBOUND)
-	gpuFreeHost(pflag_RBOUND_GPU[nl[n]]);
+	gpuMemcpyAsync(Bufferpflag_RBOUND[nl[n]], pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
+
+	GPU_write_metric(n);
+
+	#if(DO_RBOUND)
+	set_pflag_rbound(n);
 	#endif
 
 	//gpuDeviceSynchronize();
