@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 #define READBINARY (0)
 
@@ -50,7 +50,7 @@ Physical Parameters section
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Calculate variable metric*/
-#define CALC_METRIC (1)
+#define CALC_METRIC (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -89,10 +89,10 @@ Physical Parameters section
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (100.)
+#define BETA (10.)
 
 /*Select grid outer radius*/
-#define ROUT (100.0)
+#define ROUT (500.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -113,14 +113,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (0)
+#define NEUTRINOS_M1 (1)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (1)
@@ -147,13 +147,13 @@ Physical Parameters section
 
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
-    #if (NEUTRINOS_M1)
-    #define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
-    #else
-    #define DOHELM_TEMPERATURE (1) 
-    #endif
+#if (NEUTRINOS_M1)
+#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
 #else
-    #define DOHELM_TEMPERATURE (0) 
+#define DOHELM_TEMPERATURE (1) 
+#endif
+#else
+#define DOHELM_TEMPERATURE (0) 
 #endif
 
 #define USE_3D_INV (0)
@@ -174,28 +174,28 @@ Physical Parameters section
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
-    #if (DOHELM)
-    // Danat: otherwise EOS fails, since the densities are too low outside the torus
-        #define RHOMIN      (1.e-14)    
-        #define UUMIN       (1.e-16)     
-        #define RHOMINLIMIT (1.e-20)
-        #define UUMINLIMIT  (1.e-20) 
-    #else
-        #define RHOMIN      (1.e-26)
-        #define UUMIN       (1.e-27)
-        #define RHOMINLIMIT (1.e-40)
-        #define UUMINLIMIT  (1.e-40)
-    #endif
-#elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN    (1.e-14)
-    #define UUMIN    (1.e-16)
-    #define RHOMINLIMIT (1.e-30)
-    #define UUMINLIMIT  (1.e-30)
+#if (DOHELM)
+// Danat: otherwise EOS fails, since the densities are too low outside the torus
+#define RHOMIN      (1.e-14)    
+#define UUMIN       (1.e-16)     
+#define RHOMINLIMIT (1.e-20)
+#define UUMINLIMIT  (1.e-20) 
 #else
-    #define RHOMIN    (1.e-7) 
-    #define UUMIN    (1.e-9)
-    #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT  (1.e-20)
+#define RHOMIN      (1.e-26)
+#define UUMIN       (1.e-27)
+#define RHOMINLIMIT (1.e-40)
+#define UUMINLIMIT  (1.e-40)
+#endif
+#elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
+#define RHOMIN    (1.e-14)
+#define UUMIN    (1.e-16)
+#define RHOMINLIMIT (1.e-30)
+#define UUMINLIMIT  (1.e-30)
+#else
+#define RHOMIN    (1.e-7) 
+#define UUMIN    (1.e-9)
+#define RHOMINLIMIT (1.e-20)
+#define UUMINLIMIT  (1.e-20)
 #endif
 
 #define POWRHO (2.0)
@@ -240,7 +240,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
 #define GPU_SET (10000)
@@ -274,12 +274,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
+#define BS_1 150
+#define BS_2 150
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -463,7 +463,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define SINGSMALL (1.E-20)
 
 /*Define local work size for GPU, for NVIDIA Kepler,Pascal, Volta and AMD GCN chose 64*/
-#define LOCAL_WORK_SIZE 256
+#define LOCAL_WORK_SIZE 64
 
 /*Set grid parameters X1*/
 #define RADEXP 1.0
@@ -504,7 +504,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*For variable radial boundary*/
-#define DO_RBOUND (1)
+#define DO_RBOUND (0)
 #define RBOUND_INFLOW (0)
 #define RBOUND (20.)
 
@@ -635,27 +635,27 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
 #if (RADM1_SUBCYCLING)
-    #define M_SGRA_SOLAR (0.1) /* Solar masses */
+#define M_SGRA_SOLAR (0.1) /* Solar masses */
 #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-    #if (BHNSQ2)
-    #if (BHNSQ2_1)
-    #define M_SGRA_SOLAR (3.795) /* Solar masses */
-    #elif (BHNSQ2_2)
-    #define M_SGRA_SOLAR (2.67396) /* Solar masses */
-    #elif (FORNAX_IC)
-    #define M_SGRA_SOLAR (4.03) /* Solar masses */
-    #endif
-    #else
-    #define M_SGRA_SOLAR (8.07) /* Solar masses */
-    #endif
+#if (BHNSQ2)
+#if (BHNSQ2_1)
+#define M_SGRA_SOLAR (3.795) /* Solar masses */
+#elif (BHNSQ2_2)
+#define M_SGRA_SOLAR (2.67396) /* Solar masses */
+#elif (FORNAX_IC)
+#define M_SGRA_SOLAR (4.03) /* Solar masses */
+#endif
+#else
+#define M_SGRA_SOLAR (8.07) /* Solar masses */
+#endif
 #elif (WHICHPROBLEM == COLLAPSAR)
-    #if (COLLAPSAR_GR1D)
-    #define M_SGRA_SOLAR (2.5) /* Solar masses */
-    #else
-    #define M_SGRA_SOLAR (4.0) /* Solar masses */
-    #endif
+#if (COLLAPSAR_GR1D)
+#define M_SGRA_SOLAR (2.5) /* Solar masses */
+#else
+#define M_SGRA_SOLAR (4.0) /* Solar masses */
+#endif
 #else 
-    #define M_SGRA_SOLAR (10.0) /* Solar masses */
+#define M_SGRA_SOLAR (10.0) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -683,31 +683,31 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 //#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
 //#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
 #if(NEUTRINOS_M1 || DOHELM)
-    #if (RADM1_SUBCYCLING)
-        #define MASS_DENSITY_SCALE (0.0000001)
-    #elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
-        #if (BHNSQ2)
-        #if (BHNSQ2_1)
-        #define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
-        #elif (BHNSQ2_2)
-        #define MASS_DENSITY_SCALE (1949439399418.96)
-        #elif (FORNAX_IC)
-        #define MASS_DENSITY_SCALE (1.02e14) // (4.762731e13)
-        #endif
-        #else
-        #define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
-        #endif
-    #else
-        #if (WHICHPROBLEM == COLLAPSAR)
-            #if (COLLAPSAR_GR1D)
-            #define MASS_DENSITY_SCALE (604401395800000.0)
-            #else
-            #define MASS_DENSITY_SCALE (244475423533.749)
-            #endif
-        #else
-        #define MASS_DENSITY_SCALE (1e12)
-        #endif
-    #endif
+#if (RADM1_SUBCYCLING)
+#define MASS_DENSITY_SCALE (0.0000001)
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#if (BHNSQ2_1)
+#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+#elif (BHNSQ2_2)
+#define MASS_DENSITY_SCALE (1949439399418.96)
+#elif (FORNAX_IC)
+#define MASS_DENSITY_SCALE (1.02e14) // (4.762731e13)
+#endif
+#else
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#endif
+#else
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
+#endif
 #else
 #if (WHICHPROBLEM == COLLAPSAR)
 #if (COLLAPSAR_GR1D)
