@@ -120,7 +120,7 @@ void init_thindisk()
 			* so it needs to be transformed at the end */
 			else {
 				up = 1. / (pow(r, 3. / 2.) + a);
-				up *= sqrt(1. / (1 - up*up));
+				up *= sqrt(1. / (1 - up*up*r*r));
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
 				if (rho > rhomax) {

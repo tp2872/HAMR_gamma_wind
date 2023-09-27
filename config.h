@@ -23,7 +23,7 @@ Physical Parameters section
 #define RAD_PULSE 19
 
 /*Set problem*/
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 #define READBINARY (0)
 
@@ -44,9 +44,9 @@ Physical Parameters section
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
 #define CALC_MDOT (0)
-#define T_INIT (100.0) //Time in rg/c before which to set mass density scale to standard value
+#define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-10) //Mdot in Eddington units at start of run
-#define T_DOUBLE (1000.0) //Time during which Mdot doubles
+#define T_DOUBLE (10000.0) //Time during which Mdot doubles
 #define T_MDOT (1.0) //Interval to read mdot from GPU
 
 /*Calculate variable metric*/
@@ -71,7 +71,7 @@ Physical Parameters section
 #define FORNAX_IC (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(13./9.)
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2_1)
 #define BH_SPIN (0.86)
@@ -89,10 +89,10 @@ Physical Parameters section
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (10.)
+#define BETA (100.)
 
 /*Select grid outer radius*/
-#define ROUT (500.0)
+#define ROUT (2000.0)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -113,14 +113,14 @@ Physical Parameters section
 #define COLLAPSAR_GR1D (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #if (WHICHPROBLEM == COLLAPSAR)
 #define DOHELM_LOWTEMP (1)
 #else
 #define DOHELM_LOWTEMP (0)
 #endif
 
-#define NEUTRINOS_M1 (1)
+#define NEUTRINOS_M1 (0)
 #define NU_EXPLICIT (0)
 #define NU_COOLING (1)
 #define NU_SUBCYCLING (1)
@@ -215,7 +215,7 @@ Physical Parameters section
 #define TMAX (1.e15)
 
 /*Runtime in hours*/
-#define RUNTIME (24.0)
+#define RUNTIME (240.0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -273,14 +273,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
-#define NB_3 1
+#define NB_1 6
+#define NB_2 3
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 150
-#define BS_2 150
-#define BS_3 1
+#define BS_1 64
+#define BS_2 64
+#define BS_3 96
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -324,7 +324,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (4)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -367,7 +367,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*The time between refinement(AMR) steps*/
-#define TREF 50.0
+#define TREF 500.0
 
 //The time between recalculating metric
 #define TMETRIC (10.0)
