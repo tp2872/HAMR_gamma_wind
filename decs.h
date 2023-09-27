@@ -869,7 +869,7 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-extern int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
+extern int read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
 extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/

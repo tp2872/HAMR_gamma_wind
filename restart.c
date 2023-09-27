@@ -266,9 +266,7 @@ void rdump_block_read(FILE *fp, int n)
 			#if(RAD_M1)
 			if (!read_M1) {
 				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
-					read_M1 = 1;
 					init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
-					read_M1 = 0;
 				}
 				//dt = 1.e-5;
 			}
@@ -718,7 +716,11 @@ void param_read(FILE *fp) {
 		read_M1 = 1;
 		docyl -= 1;
 	}
-	else read_M1 = 0;
+	else {
+		read_M1 = 0;
+		read_M1_2 = 1;
+	}
+	
 	fread(&dk, int_size, 1, fp);
 
 	//First deactivate all blocks
