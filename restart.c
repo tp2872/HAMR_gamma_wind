@@ -871,11 +871,11 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 	double mdot_target, mdot_cgs, mdot_cgs_edd, scaling_factor;
 	double L_dot_edd, M_dot_edd, efficiency;
 	double n_steps;
-	magnetic_density_scale_cpu[0] = 1.0;
 
 	//Initialize mdot_cpu and t_mdot at start of run
 	if (!isfinite(mdot_cpu)) mdot_cpu = 0.;
 	if (!isfinite(t_mdot)) t_mdot = t-1.0e-5;
+	if (!isfinite(magnetic_density_scale_cpu[0])) magnetic_density_scale_cpu[0] = 1.0;
 
 	//Check input
 	if (0.1 * T_DOUBLE / T_MDOT < 10) {
@@ -911,7 +911,7 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 			#endif
 			scaling_factor = mdot_target / mdot_cgs_edd;
 			mass_density_scale_cpu[0] = scaling_factor * MASS_DENSITY_SCALE;
-			magnetic_density_scale_cpu[0] = pow(2.0, -(t - T_INIT) / T_DOUBLE);
+			magnetic_density_scale_cpu[0] = 1.0;// pow(2.0, -(t - T_INIT) / T_DOUBLE);
 		}
 	}
 }
