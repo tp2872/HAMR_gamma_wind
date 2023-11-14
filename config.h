@@ -554,7 +554,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Set AGN opacity scaling for OP_EXTRA*/
-#define AGN (0)
+#define AGN (1)
 
 /*Enable photon number evolution*/
 #define P_NUM (1)
@@ -655,7 +655,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (4.0) /* Solar masses */
 #endif
 #else 
-#define M_SGRA_SOLAR (10.0) /* Solar masses */
+#define M_SGRA_SOLAR (6.4e9) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -717,7 +717,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #endif
 #else
 //#define MASS_DENSITY_SCALE (3.1)
-#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*6.4e8*0.1/30.0) //XRB
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
 //#define MASS_DENSITY_SCALE (1e12)
 #endif
 #endif
