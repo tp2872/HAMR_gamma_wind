@@ -540,8 +540,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 		E_old[1] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
-		T_GAS = 1.0;// (GAMMA - 1.)* pb_old[UU] / pb_old[RHO];
-		E_old[1 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		E_old[1 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
 		#endif
 		if (do_entropy == 1) {
 			#if(TWO_T)	
@@ -733,8 +732,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 				dEdpb_inv[1][i] = (E_new[1] - E_old[1]) / dpb;
 				#endif
 				#if(P_NUM)
-				T_GAS = 1.0;// (GAMMA - 1.)* pb_new[UU] / pb_new[RHO];
-				E_new[1 + TWO_T] = T_GAS  * (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
+				E_new[1 + TWO_T] = (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
 				dEdpb_inv[1 + TWO_T][i] = (E_new[1 + TWO_T] - E_old[1 + TWO_T]) / dpb;
 				#endif
 				if (do_entropy == 1) {
@@ -1157,8 +1155,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		E_old[4] = (1.0 / dK_dS) * (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
-		T_GAS = 1.0;// (GAMMA - 1.)* pb_old[UU] / pb_old[RHO];
-		E_old[4 + TWO_T] = T_GAS * (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
 		#endif
 		if (do_entropy == 1) {
 			#if(TWO_T)	
