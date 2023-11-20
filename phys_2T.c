@@ -137,7 +137,7 @@ double calc_gamma_gas_prim(double* pr) {
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 	#endif
 
-	if (!isfinite(gamg) || gamg > 1.00001*GAMMA || gamg < 0.99999*GAMMAE) {
+	if (!isfinite(gamg) || gamg > 1.00001*(5./3.) || gamg < 0.99999*GAMMAE) {
 		fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
 		exit(0);
 	}

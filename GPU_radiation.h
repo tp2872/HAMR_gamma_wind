@@ -85,30 +85,6 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#if(CALC_MDOT)
 			, mass_density_scale, magnetic_density_scale
 			#endif
-		);
-
-		if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(COOL_STOP)
-			, r
-			#endif
-			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
-			#endif
-		);
-
-		if (pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(COOL_STOP)
-			, r
-			#endif
-			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
-			#endif
 		);*/
 		#else
 		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
@@ -1423,7 +1399,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 
 			n_iter_jacob++;
-		} while (0 && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
 		if (flag) return 1;
 		
@@ -1741,7 +1717,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//double bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 10)) {
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 20)) {
 			keep_iterating = 0;
 		}
 
@@ -1763,13 +1739,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If total error increased more than 4 times stop iterating
-		if ((n_iter > 1) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			if (count_increase >= 2) keep_iterating = 0;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
-		if ((n_iter > 1) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 			count_increase2++;
 			//if (count_increase2 >= 5) keep_iterating = 0;
 		}

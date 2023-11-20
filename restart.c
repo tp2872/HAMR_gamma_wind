@@ -832,14 +832,12 @@ double calc_Mdot() {
 	for (n = 0; n < n_active; n++) {
 		//Set index at which to calculate mdot
 		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
-		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
-		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+		if ((icalc >= N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
 			#if(GPU_ENABLED)
 			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 			gpuDeviceSynchronize();
-
 			#pragma omp parallel private(i, j, z, k)
 			{
 				#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)

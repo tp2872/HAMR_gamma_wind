@@ -54,10 +54,67 @@ __device__ double calc_delta(double* ph, double bsq) {
 	delta=0.5;
 	#endif
 
-	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) delta = 0.5;
+	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) {
+		delta = 0.5;
+	}
 
 	return delta;
 }
+
+__device__ double calc_Te(double* ph) {
+	double Te;
+
+	#if(TWO_T)
+		#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+			#if(FULL_ENTROPY)
+			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMA - 1.0);
+			#else
+			Te = ph[ENTRE] * pow(ph[RHO], GAMMA - 1.0);
+			#endif
+		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+			#if(FULL_ENTROPY)
+			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMAE - 1.0);
+			#else
+			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
+			#endif
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+			#if(FULL_ENTROPY_VARGAMMA)
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRE])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
+			#else
+			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRE])) - 1.0) / (MU_E * MASS_RATIO);
+			#endif
+		#endif
+	#else
+	Te = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+
+	return Te;
+}
+
+__device__ double calc_Ti(double* ph) {
+	double Ti;
+
+	#if(TWO_T)
+		#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+			#if(FULL_ENTROPY)
+			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(ph[RHO], GAMMA - 1.0);
+			#else
+			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
+			#endif
+		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
+			#if(FULL_ENTROPY_VARGAMMA)
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRI])), 2. / 3.)) - 1.0) / MU_I;
+			#else
+			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRI])) - 1.0) / MU_I;
+			#endif
+		#endif
+	#else
+	Ti = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+
+	return Ti;
+}
+
 
 __device__ void heating(double* ph, struct of_state* q)
 {
@@ -192,7 +249,9 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	
 	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
-	if (!isfinite(gamg))gamg = GAMMA;
+	if (!isfinite(gamg)) {
+		gamg = GAMMA;
+	}
 	#endif
 
 	return gamg;
@@ -231,7 +290,9 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 
 	#if(VARGAMMA || FIXEDGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
-	if (!isfinite(gamg))gamg = GAMMA;
+	if (!isfinite(gamg)) {
+		gamg = GAMMA;
+	}
 	#endif
 
 	return gamg;
@@ -333,7 +394,9 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	//Calculate gas eos gammma
 	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg))gamg = GAMMA;
+	if (!isfinite(gamg)) {
+		gamg = GAMMA;
+	}
 	#else
 	gamg = GAMMA;
 	#endif
@@ -386,7 +449,9 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	//Calculate gamma assuming purely adiabatic evolution
 	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg))gamg = GAMMA;
+	if (!isfinite(gamg)) {
+		gamg = GAMMA;
+	}
 	#else
 	gamg = GAMMA;
 	#endif
@@ -462,7 +527,9 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 
 	#if(FIXEDGAMMA || VARGAMMA)
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg))gamg = GAMMA;
+	if (!isfinite(gamg)) {
+		gamg = GAMMA;
+	}
 	#else
 	gamg = GAMMA;
 	#endif

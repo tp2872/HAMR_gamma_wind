@@ -39,60 +39,6 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	return Tr;
 }
 
-__device__ double calc_Te(double* ph) {
-	double Te;
-
-	#if(TWO_T)
-		#if(CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-			#if(FULL_ENTROPY)
-			Te = exp((GAMMA - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMA - 1.0);
-			#else
-			Te = ph[ENTRE] * pow(ph[RHO], GAMMA - 1.0);
-			#endif
-		#elif(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-			#if(FULL_ENTROPY)
-			Te = exp((GAMMAE - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMAE - 1.0);
-			#else
-			Te = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
-			#endif
-		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY_VARGAMMA)
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRE])), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO);
-			#else
-			Te = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRE])) - 1.0) / (MU_E * MASS_RATIO);
-			#endif
-		#endif
-	#else
-	Te = (GAMMA - 1.) * ph[UU] / ph[RHO];
-	#endif
-
-	return Te;
-}
-
-__device__ double calc_Ti(double* ph) {
-	double Ti;
-
-	#if(TWO_T)
-		#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-			#if(FULL_ENTROPY)
-			Ti = exp((GAMMA - 1.0) * ph[ENTRI]) * pow(ph[RHO], GAMMA - 1.0);
-			#else
-			Ti = ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0);
-			#endif
-		#elif(VARGAMMA)     // variable gamma: Sadowski+17 & Chael+19
-			#if(FULL_ENTROPY_VARGAMMA)
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO] * fabs(exp(ph[ENTRI])), 2. / 3.)) - 1.0) / MU_I;
-			#else
-			Ti = 0.2 * (sqrt(1.0 + 25.0 * pow(ph[RHO], 2. / 3.) * fabs(ph[ENTRI])) - 1.0) / MU_I;
-			#endif
-		#endif
-	#else
-	Ti = (GAMMA - 1.) * ph[UU] / ph[RHO];
-	#endif
-
-	return Ti;
-}
-
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux){
 	#if(RAD_M1)
 	int k;

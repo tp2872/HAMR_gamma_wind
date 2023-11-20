@@ -234,7 +234,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)]
 			#endif
 			#if(CALC_MDOT)
-			,  mass_density_scale
+			, mass_density_scale
+			, magnetic_density_scale
 			#endif
 		);
 		#elif(NEUTRINOS_M1)

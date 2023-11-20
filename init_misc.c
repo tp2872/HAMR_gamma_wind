@@ -884,7 +884,6 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 	pe_new = p_tot * delta_f;
 	pe_old = pe_new;
 
-	#if(!HIGH_MDOT)
 	//Iterate electron pressure, minimize error in real vs predicted deltaf
 	while (keep_iterating) {
 		//Calculate ion pressure from total pressure
@@ -997,9 +996,6 @@ void set_2T_entropy(double pi[NPR], double bsq) {
 		pe_new = pi_new = 0.5 * p_tot;
 		fprintf(stderr, "set_2T_entropy failed to converge! \n");
 	}
-	#else
-	pe_new = pi_new = 0.5 * p_tot;
-	#endif
 
 	//Calculate electron and ion entropy primitive variables
 	#if(FIXEDGAMMA || CONSTANTGAMMA)   // fixed gamma: Ressler+15, Ryan+17

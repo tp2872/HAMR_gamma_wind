@@ -374,9 +374,9 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 	
 			#if(CALC_MDOT)
-			U_1[B1] *= magnetic_density_scale_cpu;
-			U_1[B2] *= magnetic_density_scale_cpu;
-			U_1[B3] *= magnetic_density_scale_cpu;
+			U_1[nl[n]][ind0][B1] *= magnetic_density_scale_cpu;
+			U_1[nl[n]][ind0][B2] *= magnetic_density_scale_cpu;
+			U_1[nl[n]][ind0][B3] *= magnetic_density_scale_cpu;
 			#endif
 
 			PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
@@ -448,9 +448,9 @@ void utoprim_M1_2(double Dt, int n){
 			#endif
 
 			#if(CALC_MDOT)
-			U[B1] *= magnetic_density_scale_cpu;
-			U[B2] *= magnetic_density_scale_cpu;
-			U[B3] *= magnetic_density_scale_cpu;
+			U_2[B1] *= magnetic_density_scale_cpu;
+			U_2[B2] *= magnetic_density_scale_cpu;
+			U_2[B3] *= magnetic_density_scale_cpu;
 			#endif
 
 			#if(NEWMAN)
