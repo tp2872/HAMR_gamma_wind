@@ -493,7 +493,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[1+TWO_T+P_NUM], dpb,  dEdpb_inv[1 + TWO_T + P_NUM][1 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
+	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4+TWO_T+P_NUM], dpb,  dEdpb_inv[1 + TWO_T + P_NUM][1 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
 	double dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -775,7 +775,9 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 			n_iter_jacob++;
 		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
-		if (flag) return 1;
+		if (flag) {
+			return 1;
+		}
 		
 		//Set primitive variables before Newton step
 		PLOOP pb_new[k] = pb_old[k];
@@ -1106,7 +1108,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb,  dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
+	double U_new[NPR], U_old[NPR], U_old_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4 + TWO_T + P_NUM], dpb,  dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5*2], offset = 1.e-9;
 	double dK_dS, norm, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -1795,7 +1797,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4 + TWO_T + P_NUM], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
 	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -2421,7 +2423,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR],  pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR],  pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4 + TWO_T + P_NUM], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM],  error_new[10], offset = pow(10., -8.);
 	double  norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -3042,7 +3044,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], U_prev_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], U_prev_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4 + TWO_T + P_NUM], dUb, dEdUb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdUb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
 	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -3304,7 +3306,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			n_iter_jacob++;
 		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
-		if (flag) return 1;
+		if (flag) {
+			return 1;
+		}
 
 		n_iter_fail = 0;
 		while (n_iter_fail < 5) {
@@ -3647,7 +3651,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 , double mass_density_scale, double magnetic_density_scale
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[4 + TWO_T + P_NUM], E_new[4 + TWO_T + P_NUM], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[10], offset = pow(10., -8.);
 	double norm, D, tol, dK_dS;
 	struct of_state q;
 	struct of_state_rad q_rad;
