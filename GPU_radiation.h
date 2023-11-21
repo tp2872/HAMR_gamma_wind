@@ -75,7 +75,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		);
 		
-		/*if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+		if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
 			#endif
@@ -85,7 +85,30 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#if(CALC_MDOT)
 			, mass_density_scale, magnetic_density_scale
 			#endif
-		);*/
+		);
+		if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale, magnetic_density_scale
+			#endif
+		);
+
+		if (pflag_rad[0])implicit_rad_solve_EMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			#if(DOHELM)
+			, gpu_eos_table
+			#endif
+			#if(COOL_STOP)
+			, r
+			#endif
+			#if(CALC_MDOT)
+			, mass_density_scale, magnetic_density_scale
+			#endif
+		);
 		#else
 		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
@@ -1488,12 +1511,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		
 		//Make sure that electron entropy stays positive
 		#if(TWO_T)
-		//if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+		if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
 		#endif
 		
 		//Make sure that photon number stays positive
 		#if(P_NUM)
-		//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+		if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 		#endif
 
 		//Obtain new conserved quantaties from MHD variables
@@ -1511,11 +1534,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				//flag_floor_kappa = 1;
+				flag_floor_kappa = 1;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				//flag_floor_kappa = 1;
+				flag_floor_kappa = 1;
 			}
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
@@ -1535,11 +1558,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			//Check limits
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				//flag_floor_kappa = 1;
+				flag_floor_kappa = 1;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				//flag_floor_kappa = 1;
+				flag_floor_kappa = 1;
 			}
 			ui = pb_new[UU] - ue;
 		
@@ -1750,7 +1773,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error decreased compared to start value, update variables
-		if (((fabs(error_new[n_iter % 5 + 5]) < error_t[1])) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
+		if (((fabs(error_new[n_iter % 5]) < error_t[0])) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 			error_t[0] = error_new[n_iter % 5];
 			error_t[1] = error_new[n_iter % 5 + 5];
 
@@ -2376,7 +2399,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (((fabs(error_new[n_iter % 5 + 5]) < error_t[1]) || (pflag_rad[0]==1 && flag_rad==0)) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
+				if (((fabs(error_new[n_iter % 5]) < error_t[0]) || (pflag_rad[0]==1 && flag_rad==0)) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
 
