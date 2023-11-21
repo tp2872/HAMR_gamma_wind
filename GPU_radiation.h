@@ -2399,7 +2399,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (((fabs(error_new[n_iter % 5]) < error_t[0]) || (pflag_rad[0]==1 && flag_rad==0)) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
+				if (((fabs(error_new[n_iter % 5 + 5]) < error_t[1]) || (pflag_rad[0]==1 && flag_rad==0)) && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
 
