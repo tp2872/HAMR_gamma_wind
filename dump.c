@@ -279,7 +279,7 @@ void dump_block(MPI_File *fp, int n)
 	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
 	struct of_geom geom;
 
-    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad, ucon_nu)
+    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + RHO] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + UU] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
@@ -359,10 +359,10 @@ void dump_block_reduced(MPI_File *fp, int n){
 	int i, j, z, k;
 	int i1, j1, z1;
 	struct of_geom geom;
-	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
+	double ucon[NDIM], ucon_rad[NDIM];
 	float factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
 
-    #pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom, ucon,ucon_rad, ucon_nu)
+    #pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom, ucon,ucon_rad)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++)for (z = 0; z < BS_3 / REDUCE_FACTOR3; z++) {
         for (k = 0; k < 9; k++) array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)* NPRDUMP + k] = 0;
 		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++)for (z1 = 0; z1 < 1; z1++) {
@@ -410,28 +410,6 @@ void dump_block_reduced(MPI_File *fp, int n){
 			#if(P_NUM)
 			array_reduced[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (PHOTON + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][PHOTON] * factor;
 			#endif
-
-			#if(DO_YE)
-			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (YE + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][YE];
-			#endif
-
-			#if(DONUCLEAR)
-			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP * NPRDUMP + (XALPHA + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][XALPHA];
-			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (XATM + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][XATM];
-			#endif
-
-			#if(NEUTRINOS_M1)
-			for (int sp = 0; sp < NU_SPECIES; sp++) {
-				ucon_calc_nu(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_nu, sp);
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][index_nu(UU_NU, sp)];
-				//fprintf(stderr, "%d %d %d [sp=%d] [ind_nu=%d] %e\n", i, j, z, sp, index_nu(UU_NU, sp), p[nl[n]][index_3D(n, i, j, z)][index_nu(UU_NU, sp)]);
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 1)] = (float)ucon_nu[0];
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 2)] = (float)ucon_nu[1];
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 3)] = (float)ucon_nu[2];
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 4)] = (float)ucon_nu[3];
-				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 5)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][index_nu(NUMBER_NU, sp)];
-			}
-			#endif
 		}
 	}
 	#if(PARALLEL_IO)
@@ -468,7 +446,7 @@ void gdump_new(void){
 	char filename[100];
 	
 	FILE *grid, *file;
-	if (rank == 1 % numtasks && nstep==0){
+	if (rank == 1 % numtasks){
 		sprintf(filename, "gdumps/grid");
 		grid = fopen(filename, "wb");
 		gdump_grid(grid);
@@ -505,7 +483,7 @@ void gdump_new_reduced(void) {
 	char filename[100];
 
 	FILE *grid;
-	if (rank == 1 % numtasks && nstep == 0) {
+	if (rank == 1 % numtasks) {
 		sprintf(filename, "reduced/gdumps/grid");
 		grid = fopen(filename, "wb");
 		gdump_grid(grid);
@@ -539,7 +517,7 @@ void gdump_grid(FILE *fp)
 
 	fwrite(&array_gdumpgrid[0], sizeof(int), 1, fp);
 	for (n = 0; n <= n_max; n++){
-		for (k = 0; k < NV; k++){
+		for (k = 0; k < 120; k++){
 			fwrite(&block[n][k],sizeof(int), 1, fp);
 		}
 	}
@@ -570,12 +548,13 @@ void gdump_grid_read(FILE* fp)
 
 	//Exit if error during read
 	if (NV_read != NV) {
-		fprintf(stderr, "You are trying to read an erronous block file probably generated by another version of the code! \n");
-		exit(0);
+		if(rank==0)fprintf(stderr, "You are trying to read an erronous block file probably generated by another version of the code! \n");
+		NV_read = 120;		
+		//exit(0);
 	}
 
 	//Allocate memory for block read
-	block_read = (int(*)[10])malloc((NB + 1)*sizeof(int[10]));
+	block_read = (int(*)[8])calloc((NB + 1), sizeof(int[8]));
 
 	//Read in required variables
 	for (n_read = 0; n_read < NB; n_read++) {
@@ -586,6 +565,7 @@ void gdump_grid_read(FILE* fp)
 			//Read in coordinates in old grid
 			fseek(fp, (n_read * NV_read + AMR_COORD1 + 1) * int_size, SEEK_SET);
 			fread(&(block_read[n_read][READ_AMR_COORD1]), sizeof(int), 1, fp);
+
 			fseek(fp, (n_read * NV_read + AMR_COORD2 + 1) * int_size, SEEK_SET);
 			fread(&(block_read[n_read][READ_AMR_COORD2]), sizeof(int), 1, fp);
 			fseek(fp, (n_read * NV_read + AMR_COORD3 + 1) * int_size, SEEK_SET);
@@ -611,11 +591,20 @@ void gdump_grid_read(FILE* fp)
 		block[n_read][AMR_ACTIVE] = 0;
 	}
 
+	MPI_Barrier(mpi_cartcomm);
+	if(rank==0)fprintf(stderr, "test2.5: %d %d %d \n",NB_read, NV_read, filesize);
+
 	for (n_read = 0; n_read < NB; n_read++) {
 		if(active_block[n_read] == 1) {
+
 			//Find index in new grid
 			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
+			//if(rank==0)fprintf(stderr, "test2: %d %d \n", n_read,n);
 			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
+			//if(rank==0)fprintf(stderr, "test3 \n");
+
+			if(!(n>=0 && n<NB)) fprintf(stderr, "n smaller than 0: %d \n", n);
+			if(n>NB-1) fprintf(stderr, "n bigger than NB: %d \n", n);
 
 			//Activate block in new grid
 			block[n][AMR_ACTIVE] = 1;
@@ -633,6 +622,9 @@ void gdump_grid_read(FILE* fp)
 			}
 		}
 	}
+
+	MPI_Barrier(mpi_cartcomm);
+	if(rank==0)fprintf(stderr, "test3: %d %d %d \n",NB_read, NV_read, filesize);
 }
 
 void gdump_block(MPI_File  *fp, int n)
