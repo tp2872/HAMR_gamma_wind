@@ -872,7 +872,7 @@ extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
 extern int(*block)[NV];
-extern int(*block_read)[8];
+extern int(*block_read)[10];
 extern int *lin_coord[N_LEVELS];
 extern int *lin_coord_RM[N_LEVELS];
 extern double ref_val[MY_MAX(NB, 40000)];
