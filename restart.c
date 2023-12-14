@@ -266,9 +266,7 @@ void rdump_block_read(FILE *fp, int n)
 			#if(RAD_M1)
 			if (!read_M1) {
 				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
-					read_M1 = 1;
 					init_rad_pres(p[nl[n]][index_3D(n, i1, j1, z1)]);
-					read_M1 = 0;
 				}
 				//dt = 1.e-5;
 			}
@@ -525,8 +523,9 @@ int restart_read_param(void)
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
 			if (param != NULL) {
-				gdump_grid_read(param);
+				//gdump_grid_read(param);
 				fclose(param);
+				gdump_grid_read_new(0);
 			}
 			t0 = t;
 			restart_number = 0;
@@ -551,8 +550,9 @@ int restart_read_param(void)
 				sprintf(filename, "rdumps1/grid");
 				param = fopen(filename, "rb");
 				if (param != NULL) {
-					gdump_grid_read(param);
+					//gdump_grid_read(param);
 					fclose(param);
+					gdump_grid_read_new(1);
 				}
 				restart_number = 1;
 			}
@@ -569,8 +569,9 @@ int restart_read_param(void)
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
 			if (param != NULL) {
-				gdump_grid_read(param);
+				//gdump_grid_read(param);
 				fclose(param);
+				gdump_grid_read_new(0);
 			}
 			restart_number = 0;
 		}
@@ -578,6 +579,10 @@ int restart_read_param(void)
 
 	#if(CALC_MDOT)
 	set_mass_density_scale(&mass_density_scale_cpu, &magnetic_density_scale_cpu);
+	#endif
+
+	#if(CALC_METRIC)
+	set_metric_scale();
 	#endif
 
 	if (restart_number == -1) {
@@ -714,7 +719,11 @@ void param_read(FILE *fp) {
 		read_M1 = 1;
 		docyl -= 1;
 	}
-	else read_M1 = 0;
+	else {
+		read_M1 = 0;
+		read_M1_2 = 1;
+	}
+	
 	fread(&dk, int_size, 1, fp);
 
 	//First deactivate all blocks
@@ -826,14 +835,12 @@ double calc_Mdot() {
 	for (n = 0; n < n_active; n++) {
 		//Set index at which to calculate mdot
 		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
-		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
-		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+		if ((icalc >= N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
 			#if(GPU_ENABLED)
 			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 			gpuDeviceSynchronize();
-
 			#pragma omp parallel private(i, j, z, k)
 			{
 				#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
@@ -865,11 +872,11 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 	double mdot_target, mdot_cgs, mdot_cgs_edd, scaling_factor;
 	double L_dot_edd, M_dot_edd, efficiency;
 	double n_steps;
-	magnetic_density_scale_cpu[0] = 1.0;
 
 	//Initialize mdot_cpu and t_mdot at start of run
 	if (!isfinite(mdot_cpu)) mdot_cpu = 0.;
 	if (!isfinite(t_mdot)) t_mdot = t-1.0e-5;
+	if (!isfinite(magnetic_density_scale_cpu[0])) magnetic_density_scale_cpu[0] = 1.0;
 
 	//Check input
 	if (0.1 * T_DOUBLE / T_MDOT < 10) {
@@ -905,7 +912,71 @@ void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_den
 			#endif
 			scaling_factor = mdot_target / mdot_cgs_edd;
 			mass_density_scale_cpu[0] = scaling_factor * MASS_DENSITY_SCALE;
-			magnetic_density_scale_cpu[0] = pow(2.0, -(t - T_INIT) / T_DOUBLE);
+			magnetic_density_scale_cpu[0] = 1.0;// pow(2.0, -(t - T_INIT) / T_DOUBLE);
 		}
 	}
+}
+
+//Calculate mass of black hole as function of time
+double calc_MBH(void) {
+	int n, i, j, z, k, icalc;
+	double rcalc = 5.0; //Radius at which to calculate mdot
+	double mdot = 0.;
+	struct of_geom geom;
+	struct of_state q;
+
+	//Calculate Mdot at r=rcalc
+	for (n = 0; n < n_active; n++) {
+		//Set index at which to calculate mdot
+		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
+
+		//Loop over cells in theta-phi plane
+		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+			#if(GPU_ENABLED)
+			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+			gpuDeviceSynchronize();
+
+			#pragma omp parallel private(i, j, z, k)
+			{
+				#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
+				ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+					for (k = 0; k < 5; k++) {
+						p[nl[n]][index_3D(n, i, j, z)][k] = p_1[nl[n]][k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+					}
+				}
+			}
+			#endif
+
+			ZSLOOP3D(icalc, icalc, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+				get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+
+				mdot += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * q.ucon[1] * geom.g * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
+			}
+		}
+	}
+
+	//Sum over MPI processes
+	MPI_Allreduce(MPI_IN_PLACE, &mdot, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	
+	//Reset at start of run total accreted mass
+	if (!isfinite(accreted_mass))accreted_mass = 0;
+	if (!isfinite(t_prev)) t_prev = 0.0;
+
+	//Add mass accreted to accreted_mass variable
+	accreted_mass += (mdot * (t - t_prev) * MASS_DENSITY_SCALE * R_G_CGS * R_G_CGS * R_G_CGS); //ORE: Need to check this
+
+	//Set t_prev to current time
+	t_prev = t;
+
+	//Return total mass of black
+	return fabs(1.0 + accreted_mass / (M_SGRA_SOLAR * M_SOLAR_CGS));
+}
+
+//Sets density scale of metric as function of time
+void set_metric_scale(void) {
+}
+
+//Recalculate metric for increased black hole mass
+void recalculate_metric(int n) {
 }

@@ -801,7 +801,8 @@ extern int nthreads,numdevices;
 extern int gpu, gpu_offset;
 extern int status;
 extern double y_max;
-extern double mass_density_scale_cpu, magnetic_density_scale_cpu, mdot_cpu, t_mdot;
+extern double mass_density_scale_cpu, metric_scale_cpu, magnetic_density_scale_cpu, mdot_cpu, t_mdot;
+extern double accreted_mass, t_prev;
 
 /* output parameters */
 extern double DTd;
@@ -810,6 +811,7 @@ extern double DTl;
 extern double DTi;
 extern int    DTr;
 extern double tref;
+extern double tmetric;
 extern int    dump_cnt, dump_cnt_reduced;
 extern int    image_cnt;
 extern int    rdump_cnt;
@@ -867,7 +869,7 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-extern int read_M1, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
+extern int read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
 extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -901,6 +903,8 @@ void dump_params(FILE *fp, int dump_reduced);
 double divb_calc(int n, int i, int j, int z);
 void param_read(FILE *fp);
 void gdump_grid_read(FILE* fp);
+void gdump_grid_new(int flag);
+void gdump_grid_read_new(int flag);
 void rdump_block_read(FILE *fp, int n);
 int restart_read_param(void);
 void restart_write(void);
@@ -1108,6 +1112,7 @@ void benchmark_GPU(int n);
 void GPU_init(void);
 void set_arrays_GPU(int n, int device);
 void GPU_write(int n);
+void GPU_write_metric(int n);
 void GPU_finish(int n, int force_delete);
 void GPU_hcor(int n);
 void GPU_fixup(int flag, int n, double Dt);
@@ -1503,11 +1508,14 @@ void eos_mode_rhotemp_u_pres_floor(double dens, double* temp, double ye, double 
 );
 #endif
 
-//Mass accretion rate related
+//Mass accretion rate and metric growth related
 #if(CALC_MDOT)
 void set_mass_density_scale(double* mass_density_scale_cpu, double* magnetic_density_scale_cpu);
 #endif
+void set_metric_scale(void);
+void recalculate_metric(int n);
 double calc_Mdot(void);
+double calc_MBH(void);
 
 /*Neutrino function*/
 #if(NEUTRINOS_M1)

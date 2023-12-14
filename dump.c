@@ -447,10 +447,11 @@ void gdump_new(void){
 	
 	FILE *grid, *file;
 	if (rank == 1 % numtasks){
-		sprintf(filename, "gdumps/grid");
-		grid = fopen(filename, "wb");
-		gdump_grid(grid);
-		fclose(grid);
+		//sprintf(filename, "gdumps/grid");
+		//grid = fopen(filename, "wb");
+		//gdump_grid(grid);
+		//fclose(grid);
+		gdump_grid_new(0);
 	}
 
 	for (n = 0; n < n_active_total; n++){
@@ -484,10 +485,11 @@ void gdump_new_reduced(void) {
 
 	FILE *grid;
 	if (rank == 1 % numtasks) {
-		sprintf(filename, "reduced/gdumps/grid");
-		grid = fopen(filename, "wb");
-		gdump_grid(grid);
-		fclose(grid);
+		//sprintf(filename, "reduced/gdumps/grid");
+		//grid = fopen(filename, "wb");
+		//gdump_grid(grid);
+		//fclose(grid);
+		gdump_grid_new(1);
 	}
 
 	for (n = 0; n < n_active_total; n++) {
@@ -510,6 +512,159 @@ void gdump_new_reduced(void) {
 	}
 }
 
+void gdump_grid_new(int flag) {
+	int i, n, k;
+	int u_stride = 2000000;
+	int u_max = (NB - NB % u_stride) / u_stride;
+	if (NB % u_stride != 0) u_max++;
+	char filename[100];
+	array_gdumpgrid[0] = NB;
+	FILE* grid;
+
+	for (i = 0; i < u_max; i++) {
+		//Open file
+		if (i == 0) {
+			if(flag == 0) sprintf(filename, "gdumps/grid");
+			else sprintf(filename, "reduced/gdumps/grid");
+		}
+		else {
+			if (flag == 0) sprintf(filename, "gdumps/grid%d", i);
+			else sprintf(filename, "reduced/gdumps/grid%d", i);
+		}
+		grid = fopen(filename, "wb");
+
+		//Write number of blocks
+		if (i == 0) fwrite(&array_gdumpgrid[0], sizeof(int), 1, grid);
+
+		//Write block data
+		for (n = i*u_stride; n < MY_MIN((i+1)*u_stride,NB); n++) {
+			for (k = 0; k < NV; k++) {
+				fwrite(&block[n][k], sizeof(int), 1, grid);
+			}
+		}
+
+		//Close file
+		fclose(grid);
+	}
+}
+
+void gdump_grid_read_new(int flag) {
+	int n, i, n_read, j0;
+	int trash, NB_read, NV_read=NV, filesize;
+	int int_size = sizeof(int);
+	int active_block[NB];
+	FILE* fp;
+	char filename[100];
+	int u_stride = 2000000;
+
+	//Open file
+	if (flag == 0) sprintf(filename, "rdumps0/grid");
+	else sprintf(filename, "rdumps1/grid");
+	fp = fopen(filename, "rb");
+
+	//Exit if NULL pointer
+	if (fp == NULL) {
+		fprintf(stderr, "You are trying to read a non-existent block file! \n");
+		exit(0);
+	}
+
+	//Read in NB_read
+	fread(&NB_read, sizeof(int), 1, fp);
+
+	//Close file
+	fclose(fp);
+
+	int u_max = (NB_read - NB_read % u_stride) / u_stride;
+	if (NB_read % u_stride != 0) u_max++;
+
+	//Reset active-block array
+	for (n_read = 0; n_read < NB; n_read++) active_block[n_read] = 0;
+
+	//Allocate memory for block read
+	block_read = (int(*)[10])malloc((NB + 1) * sizeof(int[10]));
+
+	//Read in required variables
+	for (i = 0; i < u_max; i++) {
+		//Open file
+		if (i == 0) {
+			if (flag == 0) sprintf(filename, "rdumps0/grid");
+			else sprintf(filename, "rdumps1/grid");
+		}
+		else {
+			if (flag == 0) sprintf(filename, "rdumps0/grid%d", i);
+			else sprintf(filename, "rdumps1/grid%d", i);
+		}
+		fp = fopen(filename, "rb");
+
+		//Exit if NULL pointer
+		if (fp == NULL) {
+			fprintf(stderr, "You are trying to read a non-existent block file! \n");
+			exit(0);
+		}
+
+		if(i == 0) fread(&NB_read, sizeof(int), 1, fp);
+
+		for (n_read = i * u_stride; n_read < MY_MIN((i + 1) * u_stride, NB_read); n_read++) {
+			//Activate blocks that were active in old grid and put them in new grid-->Store AMR_ACTIVE in new array
+			if (block[n_read][AMR_ACTIVE] == 1) {
+				active_block[n_read] = 1;
+
+				//Read in coordinates in old grid
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD1 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_COORD1]), sizeof(int), 1, fp);
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD2 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_COORD2]), sizeof(int), 1, fp);
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD3 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_COORD3]), sizeof(int), 1, fp);
+
+				//Read in AMR levels in old grid
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL1 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_LEVEL1]), sizeof(int), 1, fp);
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL2 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_LEVEL2]), sizeof(int), 1, fp);
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL3 + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_LEVEL3]), sizeof(int), 1, fp);
+				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL + 1 * (i == 0)) * int_size, SEEK_SET);
+				fread(&(block_read[n_read][READ_AMR_LEVEL]), sizeof(int), 1, fp);
+			}
+			else {
+				active_block[n_read] = 0;
+			}
+		}
+
+		//Close file
+		fclose(fp);
+	}
+
+	//Reset block hierarchy in new grid
+	for (n_read = 0; n_read < NB; n_read++) {
+		block[n_read][AMR_ACTIVE] = 0;
+	}
+
+	for (n_read = 0; n_read < NB; n_read++) {
+		if (active_block[n_read] == 1) {
+			//Find index in new grid
+			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
+			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
+
+			//Activate block in new grid
+			block[n][AMR_ACTIVE] = 1;
+			block[n][AMR_NODE] = -1;
+			block[n][AMR_TIMELEVEL] = 1;
+
+			//Store old block number for later
+			n_old[n] = n_read;
+
+			//Check if grid conversion was succesfull
+			if (block[n][AMR_COORD1] != block_read[n_read][READ_AMR_COORD1] || block[n][AMR_COORD2] != block_read[n_read][READ_AMR_COORD2] || block[n][AMR_COORD3] != block_read[n_read][READ_AMR_COORD3]
+				|| block[n][AMR_LEVEL1] != block_read[n_read][READ_AMR_LEVEL1] || block[n][AMR_LEVEL2] != block_read[n_read][READ_AMR_LEVEL2] || block[n][AMR_LEVEL3] != block_read[n_read][READ_AMR_LEVEL3]) {
+				fprintf(stderr, "Error reading in reduced rdumps!\n");
+				exit(0);
+			}
+		}
+	}
+}
+
 void gdump_grid(FILE *fp)
 {
 	int n, k;
@@ -517,7 +672,7 @@ void gdump_grid(FILE *fp)
 
 	fwrite(&array_gdumpgrid[0], sizeof(int), 1, fp);
 	for (n = 0; n <= n_max; n++){
-		for (k = 0; k < 120; k++){
+		for (k = 0; k < NV; k++){
 			fwrite(&block[n][k],sizeof(int), 1, fp);
 		}
 	}
@@ -549,12 +704,13 @@ void gdump_grid_read(FILE* fp)
 	//Exit if error during read
 	if (NV_read != NV) {
 		if(rank==0)fprintf(stderr, "You are trying to read an erronous block file probably generated by another version of the code! \n");
-		NV_read = 120;		
+		NV_read = NV;		
 		//exit(0);
 	}
+	if(rank==0)fprintf(stderr, "test: %d %d %d \n",NB_read, NV_read, filesize);
 
 	//Allocate memory for block read
-	block_read = (int(*)[8])calloc((NB + 1), sizeof(int[8]));
+	block_read = (int(*)[10])malloc((NB + 1)*sizeof(int[10]));
 
 	//Read in required variables
 	for (n_read = 0; n_read < NB; n_read++) {
@@ -565,7 +721,6 @@ void gdump_grid_read(FILE* fp)
 			//Read in coordinates in old grid
 			fseek(fp, (n_read * NV_read + AMR_COORD1 + 1) * int_size, SEEK_SET);
 			fread(&(block_read[n_read][READ_AMR_COORD1]), sizeof(int), 1, fp);
-
 			fseek(fp, (n_read * NV_read + AMR_COORD2 + 1) * int_size, SEEK_SET);
 			fread(&(block_read[n_read][READ_AMR_COORD2]), sizeof(int), 1, fp);
 			fseek(fp, (n_read * NV_read + AMR_COORD3 + 1) * int_size, SEEK_SET);
@@ -591,20 +746,11 @@ void gdump_grid_read(FILE* fp)
 		block[n_read][AMR_ACTIVE] = 0;
 	}
 
-	MPI_Barrier(mpi_cartcomm);
-	if(rank==0)fprintf(stderr, "test2.5: %d %d %d \n",NB_read, NV_read, filesize);
-
 	for (n_read = 0; n_read < NB; n_read++) {
 		if(active_block[n_read] == 1) {
-
 			//Find index in new grid
 			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
-			//if(rank==0)fprintf(stderr, "test2: %d %d \n", n_read,n);
 			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
-			//if(rank==0)fprintf(stderr, "test3 \n");
-
-			if(!(n>=0 && n<NB)) fprintf(stderr, "n smaller than 0: %d \n", n);
-			if(n>NB-1) fprintf(stderr, "n bigger than NB: %d \n", n);
 
 			//Activate block in new grid
 			block[n][AMR_ACTIVE] = 1;
@@ -622,9 +768,6 @@ void gdump_grid_read(FILE* fp)
 			}
 		}
 	}
-
-	MPI_Barrier(mpi_cartcomm);
-	if(rank==0)fprintf(stderr, "test3: %d %d %d \n",NB_read, NV_read, filesize);
 }
 
 void gdump_block(MPI_File  *fp, int n)
