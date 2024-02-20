@@ -43,7 +43,7 @@ Physical Parameters section
 #define SPHERICAL_GR (1)
 
 /*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
-#define CALC_MDOT (0)
+#define CALC_MDOT (1)
 #define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
 #define MDOT_START (1.0e-8) //Mdot in Eddington units at start of run
 #define T_DOUBLE (10000.0) //Time during which Mdot doubles
@@ -95,8 +95,8 @@ Physical Parameters section
 #define ROUT (10000.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILTED (1)
+#define TILT_ANGLE (45.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -273,14 +273,17 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 10
+#define NB_2 6
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 200
+#define BS_1 56
+#define BS_2 32
+#define BS_3 48
+
+/*Set the maximum number of refinement levels*/
+#define N_LEVELS_3D 5
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -321,10 +324,10 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -337,16 +340,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 1
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Use entropy evolution in jet*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (2400)
+#define DUMPFACTOR (24)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -373,7 +376,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TMETRIC (10.0)
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.9)
+#define COUR (0.8)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -515,7 +518,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
-#define HIGH_MDOT (1)
+#define HIGH_MDOT (0)
 
 /* number of species evolved */
 #define NU_SPECIES (3)       
@@ -548,16 +551,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STOP_SCALEHEIGHT (0.02)
 
 /*Enalbe Comptonization*/
-#define COMPTON (0)
+#define COMPTON (1)
 
 /*Enable advenced opacities*/
 #define OP_EXTRA (0)
 
 /*Set AGN opacity scaling for OP_EXTRA*/
-#define AGN (0)
+#define AGN (1)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
@@ -570,13 +573,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (1)
+#define CONSTANTGAMMA (0)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (0)
+#define VARGAMMA (1)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -655,7 +658,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (4.0) /* Solar masses */
 #endif
 #else 
-#define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#define M_SGRA_SOLAR (6.4e9) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -716,8 +719,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (244475423533.749)
 #endif
 #else
-#define MASS_DENSITY_SCALE (1.0)
-//#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
+//#define MASS_DENSITY_SCALE (1.0)
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
 //#define MASS_DENSITY_SCALE (1e12)
 #endif
 #endif

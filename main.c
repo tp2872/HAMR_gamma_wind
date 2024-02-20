@@ -76,9 +76,9 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 300.0;
-	DTd = 100.;
-	DTd_reduced = 5.0;
+	DTl = 100.0;
+	DTd = 25.0;
+	DTd_reduced = 10.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced;
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
 				fprintf(stderr, "ZCPS/GPU: %f \n", (double)(n_active_total) * (double)(BS_1 * BS_2 * BS_3) * (double)(DUMPFACTOR * AMR_SWITCHTIMELEVEL) * 0.5 / (double)(end1 - begin1) / (double)(numtasks));
 				#if(CALC_MDOT)
-				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(-MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
+				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
 				#endif
 				fflush(stderr);
 			}
