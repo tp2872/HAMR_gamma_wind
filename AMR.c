@@ -3502,7 +3502,80 @@ double calc_refcrit(int n){
 		ref_val = 0.6 * REFINEMENT_CUTOFF;
 	}
 	#elif(REFINE_GIBWA)
-	if (block[n][AMR_LEVEL2] == 0) {
+#define R_MIN (80.0)
+#define R_MAX (1000000.0)
+#define H_MIN (80.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+#define H_MAX (100.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+#define PH_MIN1 (350.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+#define PH_MAX1 (10.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+#define PH_MIN2 (170.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+#define PH_MAX2 (190.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
+	if (block[n][AMR_NODE] == rank) {
+		double r_min, r_max, h_min, h_max, ph_min, ph_max;
+		double ph_min_local, ph_max_local, delta;
+
+		//Check for r boundary
+		coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE1, X);
+		bl_coord(X, &r_min, &th, &phi);
+		coord(n, N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N3_GPU_offset[n], FACE1, X);
+		bl_coord(X, &r_max, &th, &phi);
+		if (r_max > R_MIN && r_min < R_MAX) {
+			//Check for theta boundary
+			coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE2, X);
+			bl_coord(X, &r, &h_min, &phi);
+			coord(n, N1_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], FACE2, X);
+			bl_coord(X, &r, &h_max, &phi);
+			if (h_max > H_MIN && h_min < H_MAX) {
+				coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE3, X);
+				bl_coord(X, &r, &th, &ph_min);
+				coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n] + BS_3, FACE3, X);
+				bl_coord(X, &r, &th, &ph_max);
+
+				//First jet
+				if ((PH_MIN1 > PH_MAX1)) {
+					delta = MY_MAX(2.0 * M_PI - PH_MIN1, (ph_max + M_PI / 180.0 - ph_min));
+
+					if ((delta < 0.0) || (PH_MIN1 + delta - 2.0 * M_PI) < 0.0 || (PH_MAX1 + delta - 2.0 * M_PI) > 2.0 * M_PI) fprintf(stderr, "Catastrophic error in refinement criterion! \n");
+					ph_min_local = ph_min + delta;
+					ph_max_local = ph_max + delta;
+
+					if (ph_min_local > 2.0 * M_PI) ph_min_local = ph_min_local - 2.0 * M_PI;
+					if (ph_max_local > 2.0 * M_PI) ph_max_local = ph_max_local - 2.0 * M_PI;
+
+					if ((ph_max_local > (PH_MIN1 + delta - 2.0 * M_PI)) && (ph_min_local < (PH_MAX1 + delta))) {
+						ref_val = 1.1 * REFINEMENT_CUTOFF;
+					}
+				}
+				else {
+					if ((ph_max > PH_MIN1 && ph_min < PH_MAX1)) {
+						ref_val = 1.1 * REFINEMENT_CUTOFF;
+					}
+				}
+
+				//Second jet
+				if ((PH_MIN2 > PH_MAX2)) {
+					delta = MY_MAX(2.0 * M_PI - PH_MIN2, (ph_max + M_PI / 180.0 - ph_min));
+
+					if ((delta < 0.0) || (PH_MIN2 + delta - 2.0 * M_PI) < 0.0 || (PH_MAX2 + delta) > 2.0 * M_PI) fprintf(stderr, "Catastrophic error in refinement criterion! \n");
+					ph_min_local = ph_min + delta;
+					ph_max_local = ph_max + delta;
+
+					if (ph_min_local > 2.0 * M_PI) ph_min_local = ph_min_local - 2.0 * M_PI;
+					if (ph_max_local > 2.0 * M_PI) ph_max_local = ph_max_local - 2.0 * M_PI;
+
+					if ((ph_max_local > (PH_MIN2 + delta - 2.0 * M_PI)) && (ph_min_local < (PH_MAX2 + delta))) {
+						ref_val = 1.1 * REFINEMENT_CUTOFF;
+					}
+				}
+				else {
+					if ((ph_max > PH_MIN2 && ph_min < PH_MAX2)) {
+						ref_val = 1.1 * REFINEMENT_CUTOFF;
+					}
+				}
+			}
+		}
+	}
+	/*if (block[n][AMR_LEVEL2] == 0) {
 		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] < 7) {
 			if (block[n][AMR_COORD2] == 5 || block[n][AMR_COORD2] == 6)ref_val = 100.0;
 		}
@@ -3519,7 +3592,7 @@ double calc_refcrit(int n){
 		if (block[n][AMR_COORD1] >= 8 && block[n][AMR_COORD1] < 20) {
 			if (block[n][AMR_COORD2] >= 22 && block[n][AMR_COORD2] < 26) ref_val = 0.6 * REFINEMENT_CUTOFF;
 		}
-	}
+	}*/
 	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
