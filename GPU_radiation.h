@@ -63,18 +63,55 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 	else {
 		#if (HIGH_MDOT)
-		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(COOL_STOP)
-			, r
-			#endif
-			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
-			#endif
-		);
-		
+		if (pb_i[UU_RAD] / pb_i[UU] >= 0.1) {	
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+		}
+		else {
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+			if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+		}
+		/*
 		if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
 			, gpu_eos_table
@@ -108,7 +145,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#if(CALC_MDOT)
 			, mass_density_scale, magnetic_density_scale
 			#endif
-		);
+		);*/
 		#else
 		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 			#if(DOHELM)
@@ -796,6 +833,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 			#endif
 
 			n_iter_jacob++;
+			break;
 		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
 		if (flag) {
@@ -1051,7 +1089,7 @@ __device__ int implicit_rad_solve_PMHD_fast(double* pb, double* U_n, double* U_i
 		}
 
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 20)) {
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 0)) {
 			keep_iterating = 0;
 		}
 
@@ -1145,6 +1183,15 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	#else
 	double T_GAS;
 	#endif
+	int flag_uu = 0;
+	#if(TWO_T)
+	int flag_entre = 0;
+	int flag_kappa = 0;
+	#endif
+	#if(P_NUM)
+	int flag_photon = 0;
+	#endif
+	int flag_ratio=0;
 
 	//Set error to previous value
 	for (k = 0; k < 5; k++) {
@@ -1253,8 +1300,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					//Set for 2T fluid entropy of ions based on electron entropy
 					#if(CONSTANTGAMMA || FIXEDGAMMA)
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
-					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
-					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					if (ue > (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU]) {
+						ue = (1.0 - 0.5 * FLOOR_ENTROPY) * pb_new[UU];
+					}
+					if (ue < 0.5 * FLOOR_ENTROPY * pb_new[UU]) {
+						ue = 0.5 * FLOOR_ENTROPY * pb_new[UU];
+					}
 					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
@@ -1421,6 +1472,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 
 			n_iter_jacob++;
+			break;
 		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
 		if (flag) return 1;
@@ -1507,16 +1559,34 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#endif
 
 		//Make sure that internal energy stays positive
-		if (pb_new[UU] < 0.0) pb_new[UU] = 0.5 * fabs(pb_new[UU]);
+		if (pb_new[UU] < 0.0) {
+			pb_new[UU] = 0.5 * fabs(pb_new[UU]);
+			flag_uu++;
+		}
+		else {
+			flag_uu = 0;
+		}
 		
 		//Make sure that electron entropy stays positive
 		#if(TWO_T)
-		if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+		if (U_new[ENTRE] < 0.0) {
+			U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+			flag_entre++;
+		}
+		else {
+			flag_entre = 0;
+		}
 		#endif
 		
 		//Make sure that photon number stays positive
 		#if(P_NUM)
-		if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+		if (U_new[PHOTON] < 0.0) {
+			U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+			flag_photon++;
+		}
+		else {
+			flag_photon = 0;
+		}
 		#endif
 
 		//Obtain new conserved quantaties from MHD variables
@@ -1534,11 +1604,16 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 			if (ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) {
 				ue = (1.0 - FLOOR_ENTROPY) * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
+				flag_kappa++;
 			}
 			if (ue < FLOOR_ENTROPY * pb_new[UU]) {
 				ue = FLOOR_ENTROPY * pb_new[UU];
-				flag_floor_kappa = 1;
+				//flag_floor_kappa = 1;
+				flag_kappa++;
+			}
+			if (!(ue > (1.0 - FLOOR_ENTROPY) * pb_new[UU]) && !(ue < FLOOR_ENTROPY * pb_new[UU])) {
+				flag_kappa = 0;
 			}
 			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
@@ -1729,20 +1804,34 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				error_new[n_iter % 5 + 5] += 0.25 * (fabs(U_old_prev[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 			}
 		}
-		norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
-		norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_new[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
-		norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_new[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
-		if (norm == 0.0) norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
-		error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
-		error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
-		error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+		if (flag_rad == 0) {
+			norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
+			norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_new[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
+			norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_new[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
+			if (norm == 0.0) norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+		}
+		else {
+			norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_old_prev[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
+			norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_old_prev[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
+			norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_old_prev[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
+			if (norm == 0.0) norm = (fabs(U_i[UU_RAD]) + fabs(U_old_prev[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_old_prev[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_old_prev[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
+			error_new[n_iter % 5 + 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_old_prev[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+		}
 		//double bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-12)|| (n_iter >= 20)) {
+		if ((fabs(error_new[n_iter % 5 + 5]) <= 1.e-10)|| (n_iter >= 20)) {
 			keep_iterating = 0;
 		}
-
+		//double error1[21], error2[21];
+		//error1[n_iter] = error_new[n_iter % 5];
+		//error2[n_iter] = error_new[n_iter % 5 + 5];
+		
 		//If residual drops below bound exit
 		//double residual = 0.;
 		//for (k = 0; k < NPR; k++)residual += fabs(pb_new[k]/pb_old[k]-1.0);
@@ -1764,6 +1853,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
 			if (count_increase >= 5) keep_iterating = 0;
+		}
+
+		//Exit if other errors pop up
+		if ((flag_uu>2) || (flag_entre>2) || (flag_kappa>2)){
+			keep_iterating = 0;
+		}
+
+		//Exit if scale seperation between radiation energy density and gas internal energy density becomes too large
+		if (pb_new[UU_RAD] / pb_new[UU] < 0.001) {
+			flag_ratio++;
+			if(flag_ratio>2) keep_iterating = 0;
 		}
 
 		//If iterated error increased more than 4 times stop iterating
@@ -1793,6 +1893,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				dU[k] = dU_new[k];
 			}
 		}
+
+		//if (n_iter >= 4 && keep_iterating==0) {
+			//for (i = 0; i <= n_iter; i++) {
+				//printf("n_iter: %d error: %f  error_tot: %f pressure_rat: %f flag_rad: %d flag_ug: %d flag_entre: %d flag_kappa: %d \n", i, log10(error1[i]), log10(error2[i]), log10(pb_new[UU]/pb_new[UU_RAD]), flag_rad, flag_uu, flag_entre, flag_kappa);
+			//}
+		//}
 
 		//Reset variables if Newton step succesfull
 		if (keep_iterating) {
@@ -3080,6 +3186,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 	#else
 	double T_GAS;
 	#endif
+	int flag_ratio = 0;
 
 	//Set variables to previously iterated values
 	for (k = 0; k < NPR; k++) {
@@ -3630,6 +3737,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					}
 				}
 
+				if (pb_new[UU] / pb_new[UU_RAD] < 0.001) {
+					flag_ratio++;
+					if (flag_ratio > 2) keep_iterating = 0;
+				}
+
 				//If error decreased compared to start value, update variables
 				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
@@ -3654,7 +3766,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			}
 			else {
 				n_iter_fail++;
-				if (n_iter_fail == 5) return(1);
+				if (n_iter_fail == 3) return(1);
 			}
 		}
 		n_iter++;
@@ -4389,7 +4501,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[3] *= f;
 
 		//if (y < 1. - 100. * NUMEPSILON) {
-		if (lim==TYPE2) {
+		if ((lim==TYPE2) && (Qdotn < 0.0)) {
 			// Get Ebar and p_rad as usual
 			//if (y > 1. - 100. * NUMEPSILON || Qdotn > 0.0) {
 			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
