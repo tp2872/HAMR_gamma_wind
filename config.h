@@ -71,7 +71,7 @@ Physical Parameters section
 #define FORNAX_IC (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
+#define GAMMA	(5./3.)
 #if (WHICHPROBLEM == POSTMERGER_PROBLEM)
 #if (BHNSQ2_1)
 #define BH_SPIN (0.86)
@@ -92,11 +92,11 @@ Physical Parameters section
 #define BETA (100.)
 
 /*Select grid outer radius*/
-#define ROUT (10000.0)
+#define ROUT (100.0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (45.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -273,17 +273,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 10
-#define NB_2 6
+#define NB_1 6
+#define NB_2 3
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 56
-#define BS_2 32
+#define BS_1 32
+#define BS_2 24
 #define BS_3 48
-
-/*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 5
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -324,7 +321,7 @@ Numerical Parameters section
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
 #define N_LEVELS_1D_INT (3)
@@ -349,7 +346,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (24)
+#define DUMPFACTOR (120)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -376,7 +373,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TMETRIC (10.0)
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -446,7 +443,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #endif
 
 /*Use smaller than usual cutout of 10^-13*/
-#define TRANS_BOUND_SMALL (0)
+#define TRANS_BOUND_SMALL (1)
 
 /* A numerical convenience to represent a small non-zero quantity compared to unity:*/
 #define SMALL	(1.e-20)
@@ -518,7 +515,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RAD_M1 (1)
 
 /*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
-#define HIGH_MDOT (0)
+#define HIGH_MDOT (1)
 
 /* number of species evolved */
 #define NU_SPECIES (3)       
@@ -557,10 +554,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Set AGN opacity scaling for OP_EXTRA*/
-#define AGN (1)
+#define AGN (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
@@ -573,13 +570,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HEAT_ROWAN (1)
 
 /*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
-#define CONSTANTGAMMA (0)
+#define CONSTANTGAMMA (1)
 
 /*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
 #define FIXEDGAMMA (0)
 
 /*Wheter to use variable gamma as in Sadowski+2017*/
-#define VARGAMMA (1)
+#define VARGAMMA (0)
 
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #if(CONSTANTGAMMA)
@@ -658,7 +655,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (4.0) /* Solar masses */
 #endif
 #else 
-#define M_SGRA_SOLAR (6.4e9) /* Solar masses */
+#define M_SGRA_SOLAR (10.0) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
@@ -719,8 +716,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (244475423533.749)
 #endif
 #else
-//#define MASS_DENSITY_SCALE (1.0)
-#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
+#define MASS_DENSITY_SCALE (1.0)
+//#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
 //#define MASS_DENSITY_SCALE (1e12)
 #endif
 #endif

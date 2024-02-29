@@ -75,7 +75,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, mass_density_scale, magnetic_density_scale
 				#endif
 			);
-			if (pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -99,7 +99,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 				, mass_density_scale, magnetic_density_scale
 				#endif
 			);
-			if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -147,29 +147,54 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			#endif
 		);*/
 		#else
-		if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(COOL_STOP)
-			, r
-			#endif
-			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
-			#endif
-		);
-
-		if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-			#if(COOL_STOP)
-			, r
-			#endif
-			#if(CALC_MDOT)
-			, mass_density_scale, magnetic_density_scale
-			#endif
-		);
+		if (pb_i[UU_RAD] / pb_i[UU] < 100.0) {
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+			if (error_t[1] > 1.e-9 || pflag_rad[0]) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+		}
+		else {
+			if (error_t[1] > 1.e-9 || pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+			if (error_t[1] > 1.e-9 || pflag_rad[0]) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+				#if(CALC_MDOT)
+				, mass_density_scale, magnetic_density_scale
+				#endif
+			);
+		}
 		#endif
 		/*if (pflag_rad[0])implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, U_prev, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 1, 0
 			#if(DOHELM)
@@ -199,7 +224,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			struct of_state_rad q_rad;
 
 			//Invert using basic limiter
-			Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_i, y_max, BASIC
+			Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_i, y_max, TYPE2
 				#if(CALC_MDOT)
 				, mass_density_scale, magnetic_density_scale
 				#endif
@@ -1939,6 +1964,14 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 	#else
 	double T_GAS;
 	#endif
+	int flag_uu = 0;
+	#if(TWO_T)
+	int flag_entre = 0;
+	#endif
+	#if(P_NUM)
+	int flag_photon = 0;
+	#endif
+	int flag_ratio = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) {
@@ -2291,6 +2324,37 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 			U_new[PHOTON] = U_old[PHOTON] + dUb;
 			#endif
 
+			//Make sure that internal energy stays positive
+			if (U_new[UU] < 0.0) {
+				U_new[UU] = 0.5 * fabs(U_new[UU]);
+				flag_uu++;
+			}
+			else {
+				flag_uu = 0;
+			}
+		
+			//Make sure that electron entropy stays positive
+			#if(TWO_T)
+			if (U_new[ENTRE] < 0.0) {
+				U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+				flag_entre++;
+			}
+			else {
+				flag_entre = 0;
+			}
+			#endif
+		
+			//Make sure that photon number stays positive
+			#if(P_NUM)
+			if (U_new[PHOTON] < 0.0) {
+				U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				flag_photon++;
+			}
+			else {
+				flag_photon = 0;
+			}
+			#endif
+
 			//Estimate conserved entropy using prior primitives
 			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
@@ -2495,6 +2559,17 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					if (count_increase >= 5) keep_iterating = 0;
 				}
 
+				//Exit if other errors pop up
+				if ((flag_uu > 2) || (flag_entre > 2)) {
+					keep_iterating = 0;
+				}
+
+				//Exit if scale seperation between radiation energy density and gas internal energy density becomes too large
+				if (pb_new[UU_RAD] / pb_new[UU] < 0.001) {
+					flag_ratio++;
+					if (flag_ratio > 2) keep_iterating = 0;
+				}
+
 				//Reset variables if Newton step succesfull
 				if (keep_iterating) {
 					for (k = 0; k < NPR; k++) {
@@ -2565,6 +2640,14 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 	#else
 	double T_GAS;
 	#endif
+	int flag_uu = 0;
+	#if(TWO_T)
+	int flag_entre = 0;
+	#endif
+	#if(P_NUM)
+	int flag_photon = 0;
+	#endif
+	int flag_ratio = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) {
@@ -2931,6 +3014,47 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 			U_new[PHOTON] = U_old[PHOTON] + dUb;
 			#endif
 
+			//Make sure that internal energy stays positive
+			#if(TWO_T)
+			if (U_new[ENTRI] < 0.0) {
+				U_new[ENTRI] = 0.5 * fabs(U_new[ENTRI]);
+				flag_uu++;
+			}
+			else {
+				flag_uu = 0;
+			}
+			#else
+			if (U_new[KTOT] < 0.0) {
+				U_new[KTOT] = 0.5 * fabs(U_new[KTOT]);
+				flag_uu++;
+			}
+			else {
+				flag_uu = 0;
+			}
+			#endif
+		
+			//Make sure that electron entropy stays positive
+			#if(TWO_T)
+			if (U_new[ENTRE] < 0.0) {
+				U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+				flag_entre++;
+			}
+			else {
+				flag_entre = 0;
+			}
+			#endif
+		
+			//Make sure that photon number stays positive
+			#if(P_NUM)
+			if (U_new[PHOTON] < 0.0) {
+				U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				flag_photon++;
+			}
+			else {
+				flag_photon = 0;
+			}
+			#endif
+
 			//Invert conserved MHD quantities using entropy based methods
 			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC, FULL_ENTROPY
 				#if (DOHELM)
@@ -3120,6 +3244,17 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					if (count_increase >= 5) keep_iterating = 0;
 				}
 
+				//Exit if other errors pop up
+				if ((flag_uu > 2) || (flag_entre > 2)) {
+					keep_iterating = 0;
+				}
+
+				//Exit if scale seperation between radiation energy density and gas internal energy density becomes too large
+				if (pb_new[UU_RAD] / pb_new[UU] < 0.001) {
+					flag_ratio++;
+					if (flag_ratio > 2) keep_iterating = 0;
+				}
+
 				//Reset variables if Newton step succesfull
 				if (keep_iterating) {
 					for (k = 0; k < NPR; k++) {
@@ -3185,6 +3320,13 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 		#endif
 	#else
 	double T_GAS;
+	#endif
+	int flag_ur = 0;
+	#if(TWO_T)
+	int flag_entre = 0;
+	#endif
+	#if(P_NUM)
+	int flag_photon = 0;
 	#endif
 	int flag_ratio = 0;
 
@@ -3527,6 +3669,38 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			U_new[PHOTON] = U_old[PHOTON] + dUb;
 			#endif
 
+			//Make sure that internal energy stays positive
+			if (U_new[UU_RAD] < 0.0) {
+				U_new[UU_RAD] = 0.5 * fabs(U_new[UU_RAD]);
+				flag_ur++;
+			}
+			else {
+				flag_ur = 0;
+			}
+		
+			//Make sure that electron entropy stays positive
+			#if(TWO_T)
+			if (U_new[ENTRE] < 0.0) {
+				U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+				flag_entre++;
+			}
+			else {
+				flag_entre = 0;
+			}
+			#endif
+		
+			//Make sure that photon number stays positive
+			#if(P_NUM)
+			if (U_new[PHOTON] < 0.0) {
+				U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				flag_photon++;
+			}
+			else {
+				flag_photon = 0;
+			}
+			#endif
+
+
 			//Derive new conserved quantaties for MHD variables
 			U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
 			U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
@@ -3722,11 +3896,16 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					if (count_increase >= 5) keep_iterating = 0;
 				}
 
-				//If gas negative more than 2 times stop iterating
-				//if (pb_new[UU] < 0.) {
-				//	count_increase_gas++;
-					//if (count_increase > 2) keep_iterating = 0;
-				//}
+				//Exit if other errors pop up
+				if ((flag_ur > 2) || (flag_entre > 2)) {
+					keep_iterating = 0;
+				}
+
+				//Exit if scale seperation between radiation energy density and gas internal energy density becomes too large
+				if (pb_new[UU] / pb_new[UU_RAD] < 0.001) {
+					flag_ratio++;
+					if (flag_ratio > 2) keep_iterating = 0;
+				}
 
 				//Reset variables if Newton step succesfull
 				if (keep_iterating) {
@@ -3799,6 +3978,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	#else
 	double T_GAS;
 	#endif
+	int flag_ur = 0;
+	#if(TWO_T)
+	int flag_entre = 0;
+	#endif
+	#if(P_NUM)
+	int flag_photon = 0;
+	#endif
+	int flag_ratio = 0;
 
 	//Set variables to previously iterated values
 	for (k = 0; k < NPR; k++) {
@@ -4138,16 +4325,36 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			U_new[PHOTON] = U_old[PHOTON] + dpb;
 			#endif
 
-			//Make sure that radiation internal energy stays positive
-			if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
-
+			//Make sure that internal energy stays positive
+			if (pb_new[UU_RAD] < 0.0) {
+				pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
+				flag_ur++;
+			}
+			else {
+				flag_ur = 0;
+			}
+		
 			//Make sure that electron entropy stays positive
-			//#if(TWO_T)
-			//if (U_new[ENTRE] < 0.0) U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
-			//#endif
-
+			#if(TWO_T)
+			if (U_new[ENTRE] < 0.0) {
+				U_new[ENTRE] = 0.5 * fabs(U_new[ENTRE]);
+				flag_entre++;
+			}
+			else {
+				flag_entre = 0;
+			}
+			#endif
+		
 			//Make sure that photon number stays positive
-			//if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+			#if(P_NUM)
+			if (U_new[PHOTON] < 0.0) {
+				U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
+				flag_photon++;
+			}
+			else {
+				flag_photon = 0;
+			}
+			#endif
 
 			//Obtain new radiation conserved quantaties from radiation primitive variables
 			get_state_rad(pb_new, geom, &q_rad);
@@ -4337,11 +4544,16 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					if (count_increase >= 5) keep_iterating = 0;
 				}
 
-				//If gas negative more than 2 times stop iterating
-				//if (pb_new[UU] < 0.) {
-				//	count_increase_gas++;
-				//	if (count_increase > 2) keep_iterating = 0;
-				//}
+				//Exit if other errors pop up
+				if ((flag_ur > 2) || (flag_entre > 2)) {
+					keep_iterating = 0;
+				}
+
+				//Exit if scale seperation between radiation energy density and gas internal energy density becomes too large
+				if (pb_new[UU_RAD] / pb_new[UU] < 0.001) {
+					flag_ratio++;
+					if (flag_ratio > 2) keep_iterating = 0;
+				}
 
 				//Reset variables if Newton step succesfull
 				if (keep_iterating) {
