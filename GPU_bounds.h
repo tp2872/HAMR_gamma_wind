@@ -882,7 +882,387 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, cons
 	}
 }
 
-__device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int dir)
+
+
+__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE)
+{
+#if(NEUTRON_STAR)
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	int k, ii;
+	int zcurr = global_id % (BS_3 + 2 * N3G);
+	int jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
+	struct of_geom geom;
+
+
+	// inner r boundary condition: u, gdet extrapolation
+	if (jcurr >= 0 && jcurr < BS_2 + 2 * N2G && zcurr >= 0 && zcurr < BS_3 + 2 * N3G && NBR_4 == -1) {
+
+
+#if(STAGGERED)
+		ps[1 * (ksize)+0 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
+		ps[1 * (ksize)+1 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
+		ps[2 * (ksize)+0 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
+		ps[2 * (ksize)+1 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
+#if(N1G==3)
+		ps[1 * (ksize)+2 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
+		ps[2 * (ksize)+2 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
+#endif
+#endif
+
+
+#pragma unroll NPR
+		for (k = 0; k < NPR; k++) {
+			prim5[k] = pv[k * (ksize)+N1G * isize + global_id]; //pFAZ
+		}
+		get_geometry(N1G, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		int accreting, forcefree, useForcefreeBC;
+		double ucon[NDIM], gamma, qsq;
+		qsq = geom.gcov[4] * prim5[U1] * prim5[U1] + geom.gcov[7] * prim5[U2] * prim5[U2] + geom.gcov[9] * prim5[U3] * prim5[U3] + 2. * (geom.gcov[5] * prim5[U1] * prim5[U2] + geom.gcov[6] * prim5[U1] * prim5[U3] + geom.gcov[8] * prim5[U2] * prim5[U3]);
+		gamma = sqrt(1. + qsq);
+		ucon[0] = gamma * sqrt(-geom.gcon[0]);
+		for (k = 1; k < NDIM; k++) {
+			ucon[k] = prim5[k + U1 - 1] + ucon[0] * geom.gcon[k] / geom.gcon[0];
+		}
+		if (ucon[1] < 0.0)
+			accreting = 1;
+		else
+			accreting = 0;
+
+		if (prim5[FLRFRAC] > FFE_ZONE_FLRFRAC_THRESHOLD)
+			forcefree = 1;
+		else
+			forcefree = 0;
+
+		if (forcefree || (accreting == 0))
+			useForcefreeBC = 1;
+		else
+			useForcefreeBC = 0;
+
+		if (useForcefreeBC)
+		{
+
+			//basic_hydroStatic_atm(r_ghost1, &rho_temp, &uu_temp);
+			pv[RHO * (ksize)+(N1G - 1) * isize + global_id] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G-1] / R_NS, -1.0 / (GAMMA - 1.0));
+			pv[UU * (ksize)+(N1G - 1) * isize + global_id] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G-1] / R_NS, GAMMA / (1.0 - GAMMA));
+
+			//basic_hydroStatic_atm(r_ghost2, &rho_temp, &uu_temp);
+			for (ii = 0; ii < N1G-1; ii++) {
+				pv[RHO * (ksize)+ii * isize + global_id] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G - 2] / R_NS, -1.0 / (GAMMA - 1.0));
+				pv[UU * (ksize)+ii * isize + global_id] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G - 2] / R_NS, GAMMA / (1.0 - GAMMA));
+			}
+		}
+#pragma unroll N1G
+		for (ii = 0; ii < N1G; ii++)
+		{
+#if OBLIQUE_NS
+			prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(i, j, k, CENT, &geom);
+
+#else /* aligned rotator: can store normal field */ 
+
+			/*Here*/
+			pv[B1 * (ksize)+ii * isize + global_id] = pv[B1 * (ksize)+N1G * isize + global_id] * scaleCENT[ii* isize + global_id];
+
+			/*usually we do not set a bounds condition on ps[1]*/
+			ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id] * scaleFACE[ii * isize + global_id];
+#endif
+			if (useForcefreeBC) {
+				pv[FLR * (ksize)+ii * isize + global_id] = 1.0;
+				pv[FLRFRAC * (ksize)+ii * isize + global_id] = 1.0;
+				pv[KTOT * (ksize)+ii * isize + global_id] = 0.0;
+			}
+			else {
+				pv[FLR * (ksize)+ii * isize + global_id] = pv[FLR * (ksize)+N1G * isize + global_id];
+				pv[FLRFRAC * (ksize)+ii * isize + global_id] = pv[FLRFRAC * (ksize)+N1G * isize + global_id];
+				pv[KTOT * (ksize)+ii * isize + global_id] = pv[KTOT * (ksize)+N1G * isize + global_id];
+			}
+
+		}
+
+		//simple_extrap_prim(j, k, B2, prim);
+		//simple_extrap_prim(j, k, B3, prim);
+
+		double df;
+		df = pv[B2 * (ksize)+(N1G+1)* isize + global_id] - pv[B2 * (ksize)+(N1G) * isize + global_id];
+		pv[B2 * (ksize)+(N1G - 1) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - df;
+		pv[B2 * (ksize)+(N1G - 2) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - 2.0 * df;
+		pv[B2 * (ksize)+(N1G - 3) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - 3.0 * df;
+
+		df = pv[B3 * (ksize)+(N1G + 1) * isize + global_id] - pv[B3 * (ksize)+(N1G)*isize + global_id];
+		pv[B3 * (ksize)+(N1G - 1) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - df;
+		pv[B3 * (ksize)+(N1G - 2) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - 2.0 * df;
+		pv[B3 * (ksize)+(N1G - 3) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - 3.0 * df;
+
+		/* Now do velocities */
+
+		if (useForcefreeBC)
+		{
+			double bncon[NDIM], bscon[NDIM], uscon[NDIM], etacon[NDIM], etacov[NDIM];
+			double bccon[NDIM], bccov[NDIM], uperpcon[NDIM], uperpcov[NDIM];
+			double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq;
+			/*set_boundary_velocities_FFE_4Dmethod(n, i, j, k, CENT, prim[nl[n]][index_3D(n, i, j, z)]);*/
+#pragma unroll 3
+			for (ii = 0; ii < N1G; ii++) {
+				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+				bncon[0] = 0.0;
+//#pragma unroll 3 //may test unroll later
+				for (k = 1; k < NDIM; k++) {
+					bncon[k] = pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / sqrt(-geom.gcon[0]); 
+				}
+				/* Surface-observer 4-velocity and magnetic field */
+				get_surface_4velocity(gcov, uscon);
+				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
+
+				/* Coordinate-observer 4-velocity and magnetic field */
+				etacon[0] = sqrt(-1.0 / geom.gcov[0]); // i.e. eta = u_c
+
+				for (k = 1; k < NDIM; k++) {
+					etacon[k] = 0.0;
+				}
+				lower_KC(etacon, gcov, etacov);
+
+				bs_dot_eta = dot(bscon, etacov);
+				us_dot_eta = dot(uscon, etacov);
+
+
+				for (k = 0; k < NDIM; k++) {
+					bccon[k] = uscon[k] * bs_dot_eta - bscon[k] * us_dot_eta;
+				}
+				lower_KC(bccon, gcov, bccov);
+				bcsq = dot(bccon, bccov);
+
+				/* Project surface velocity us orthogonal to coordinate-observer magnetic field bc */
+				bc_dot_us = dot(bccov, uscon);
+
+
+				for (k = 0; k < NDIM; k++) {
+					uperpcon[k] = uscon[k] - bccon[k] * bc_dot_us / bcsq;
+				}
+
+				/* Normalize: u = u_p / sqrt(- u_p^2) */
+				lower_KC(uperpcon, gcov, uperpcov);
+				uperpsq = dot(uperpcon, uperpcov);
+
+
+				for (k = 0; k < NDIM; k++) {
+					ucon[k] = uperpcon[k] / sqrt(-uperpsq);
+				}
+
+				/* Just use surface 4-velocity directly */
+				//DLOOPA
+				//    ucon[j] = uscon[j] ;
+
+				for (k = 1; k < NDIM; k++) {
+					pv[(U1 + k - 1) * (ksize)+ii * isize + global_id] = ucon[k] - geom.gcon[k] * ucon[0] / geom.gcon[0];
+				}
+			}
+
+
+		}
+		else
+		{
+			double bncon[NDIM], bscon[NDIM], bscov[NDIM], uscon[NDIM], bsmag;
+			double uprllcon[NDIM], uprllsq;
+			double udotb[3], d_udotb, udotb_ghost[N1G], beta_NS;
+			//find_udotb_first3(n, j, k, prim, udotb);
+#pragma unroll 3
+			for (ii = 0; ii < 3; ii++) {
+				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+				for (k = 0; k < NPR; k++) {
+					prim1[k] = pv[k * (ksize)+ii * isize + global_id]; 
+				}
+				ucon_calc(prim1, &geom, ucon);
+				/* Normal-observer magnetic field */
+				bncon[0] = 0.0;
+				for (k = 1; k < NDIM; k++) {
+					bncon[k] = -1.0 * pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / (geom.gcon[0]);
+				}
+				get_surface_4velocity(gcov, uscon);
+				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
+				lower_KC(bscon, gcov, bscov);
+				bsmag = sqrt(dot(bscon, bscov));
+				udotb[ii] = dot(ucon, bscov) / bsmag;  // Store u.b/|b|
+			}
+			d_udotb = slope_lim(udotb[0], udotb[1], udotb[2], 0);
+#pragma unroll N1G
+			for (ii = 0; ii < N1G; ii++)
+				udotb_ghost[ii] = udotb[0] + (ii - N1G) * d_udotb;
+			//udotb_surface[j][k] = udotb[0] - 0.5 * d_udotb;
+
+#pragma unroll N1G
+			for (ii = 0; ii < N1G; ii++) {
+				// set_boundary_velocities_surfaceFrame_4Dmethod(n, i, j, k, CENT, prim[i][j][k], udotb_ghost[i + N1G]);
+				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+				bncon[0] = 0.0;
+				for (k = 1; k < NDIM; k++) {
+					bncon[k] = -1.0 * pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / (geom.gcon[0]);
+				}
+				/* Surface-observer 4-velocity and magnetic field */
+				get_surface_4velocity(gcov, uscon);
+				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
+				lower_KC(bscon, gcov, bscov);
+				bsmag = sqrt(dot(bscon, bscov));
+				beta_NS = udotb_ghost[ii] / sqrt(1.0 + udotb_ghost[ii] * udotb_ghost[ii]);
+				for (k = 0; k < NDIM; k++) {
+					ucon[k] = (uscon[k] + beta_NS * bscon[k] / bsmag) / sqrt(1.0 - beta_NS * beta_NS);
+				}
+
+				for (k = 1; k < NDIM; k++) {
+					pv[(U1 + k - 1) * (ksize)+ii * isize + global_id] = ucon[k] - geom.gcon[k] * ucon[0] / geom.gcon[0];
+				}
+			}
+		}
+
+#pragma unroll NPR
+		for (k = 0; k < NPR; k++) {
+			prim1[k] = pv[k * (ksize)+1 * isize + global_id];
+			prim2[k] = pv[k * (ksize)+global_id];
+#if(N1G==3)
+			prim3[k] = pv[k * (ksize)+2 * isize + global_id];
+#endif
+		}
+		/*Make sure there is no inflow at inner boundary*/
+		inflow_check(prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+#if(N1G==3)
+		inflow_check(prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+#endif
+		inflow_check(prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+#if(N1G==3)
+		inflow_check(prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+#endif
+
+		/*Write primitives back to global memory*/
+#pragma unroll NPR
+		for (k = 0; k < NPR; k++) {
+			pv[k * (ksize)+global_id] = prim2[k];
+			pv[k * (ksize)+1 * isize + global_id] = prim1[k];
+#if(N1G==3)
+			pv[k * (ksize)+2 * isize + global_id] = prim3[k];
+#endif
+		}
+
+
+
+		global_id = -10;
+		jcurr = -10;
+		zcurr = -10;
+	}
+
+	if (global_id < isize) {
+		global_id = -10;
+		jcurr = -10;
+		zcurr = -10;
+	}
+	else if (global_id >= isize) {
+		global_id = global_id - isize;
+		zcurr = global_id % (BS_3 + 2 * N3G);
+		jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	}
+
+	// outer r BC: outflow
+#if(!CONSTANT_BC)
+	if (jcurr >= 0 && jcurr < BS_2 + 2 * N2G && zcurr >= 0 && zcurr < BS_3 + 2 * N3G && NBR_2 == -1) {
+#pragma unroll 9
+		for (k = 0; k < NPR; k++) {
+			prim6[k] = pv[k * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+		}
+
+#pragma unroll 9
+		for (k = 0; k < NPR; k++) {
+			prim3[k] = prim6[k];
+			prim4[k] = prim6[k];
+			prim5[k] = prim6[k];
+		}
+
+		//Make sure there is no inflow at outer boundary
+		inflow_check(prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+#if(N1G==3)
+		inflow_check(prim5, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+#endif
+		inflow_check(prim3, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim4, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+#if(N1G==3)
+		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+#endif
+
+#pragma unroll 9
+		for (k = 0; k < NPR; k++) {
+			pv[k * (ksize)+(BS_1 + N1G) * isize + global_id] = prim3[k];
+			pv[k * (ksize)+(BS_1 + N1G + 1) * isize + global_id] = prim4[k];
+#if(N1G==3)
+			pv[k * (ksize)+(BS_1 + N1G + 2) * isize + global_id] = prim5[k];
+#endif
+		}
+#if(STAGGERED)
+		ps[1 * (ksize)+(BS_1 + N1G) * isize + global_id] = ps[1 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+		ps[1 * (ksize)+(BS_1 + N1G + 1) * isize + global_id] = ps[1 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+		ps[2 * (ksize)+(BS_1 + N1G) * isize + global_id] = ps[2 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+		ps[2 * (ksize)+(BS_1 + N1G + 1) * isize + global_id] = ps[2 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+#if(N1G==3)
+		ps[1 * (ksize)+(BS_1 + N1G + 2) * isize + global_id] = ps[1 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+		ps[2 * (ksize)+(BS_1 + N1G + 2) * isize + global_id] = ps[2 * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
+#endif
+#endif
+	}
+#endif
+#endif
+}
+
+
+
+/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
+__device__ void get_surface_4velocity(const  double* __restrict__ gcov, double uscon[NDIM])
+{
+	double omega, omega0, t0, delta_t;
+	t0 = SPINUP_START_TIME_NS;
+	delta_t = SPINUP_TIME_NS;
+	omega0 = OMEGA_NS;
+	#if(0)
+	if (t < t0)
+		omega = 0.0;
+	else if (t > t0 + delta_t)
+		omega = omega0;
+	else
+		omega = omega0 * (t - t0) / delta_t;
+	//omega = 0.5 * (1.0 - cos((t-t0)*M_PI/delta_t)) * omega0 ;
+	#else
+	omega = omega0;
+	#endif
+
+	uscon[0] = 1.0 / sqrt(-(gcov[0] + 2.0 * gcov[3] * omega + gcov[9] * omega * omega));
+	uscon[1] = 0.0;
+	uscon[2] = 0.0;
+	uscon[3] = omega * uscon[0];
+
+	return;
+}
+
+__device__ void get_surface_magneticField(const  double* __restrict__ gcov, const  double* __restrict__ gcon, double bncon[NDIM], double uscon[NDIM], double bscon[NDIM])
+{
+	double lapse, us_dot_n, bn_dot_us, bncov[NDIM];
+	int j;
+
+	lower_KC(bncon, gcov, bncov);
+
+	lapse = sqrt(-1.0 / gcon[0]);
+	us_dot_n = -lapse * uscon[0]; // Since normal observer n_mu = (-lapse, 0, 0, 0)
+	bn_dot_us = dot(bncov, uscon);
+
+	for (j = 0; j < NDIM; j++) {
+		bscon[j] = -(bncon[j] + uscon[j] * bn_dot_us) / us_dot_n;
+	}
+
+	return;
+}
+
+
+__device__ void inflow_check(double* pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int dir)
 {
 	struct of_geom geom;
 	double ucon[NDIM];
@@ -897,21 +1277,21 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 		pr[U2] /= gamma;
 		pr[U3] /= gamma;
 		alpha = 1. / sqrt(-geom.gcon[0]);
-		beta1 = geom.gcon[dir] * alpha*alpha;
+		beta1 = geom.gcon[dir] * alpha * alpha;
 
 		// reset radial velocity so radial 4-velocity is zero
-		pr[UU+dir] = beta1 / alpha;
+		pr[UU + dir] = beta1 / alpha;
 
 		// now find new gamma and put it back in
 		vsq = geom.gcov[4] * pr[UTCON1 + 1 - 1] * pr[UTCON1 + 1 - 1]; //1,1
-		vsq += 2.*geom.gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
-		vsq += 2.*geom.gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
+		vsq += 2. * geom.gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
+		vsq += 2. * geom.gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
 		vsq += geom.gcov[7] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 2 - 1]; //2,2
 		vsq += 2 * geom.gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 2 - 1]; //2,3
 		vsq += geom.gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //3,3
-		vsq = MY_MAX(1.e-13,vsq);
+		vsq = MY_MAX(1.e-13, vsq);
 		if (vsq >= 1.) {
-			vsq = 1. - 1. / (GAMMAMAX*GAMMAMAX);
+			vsq = 1. - 1. / (GAMMAMAX * GAMMAMAX);
 		}
 		gamma = 1. / sqrt(1. - vsq);
 		pr[U1] *= gamma;
@@ -919,7 +1299,7 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 		pr[U3] *= gamma;
 	}
 
-	#if(0)
+#if(0)
 	double ucon_rad[NDIM], gamma_rad, vsq_rad;
 	ucon_calc_rad(pr, &geom, ucon_rad);
 	if (((ucon_rad[dir] > 0.) && (type == 0)) || ((ucon_rad[dir] < 0.) && (type == 1))) {
@@ -927,12 +1307,12 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 		gamma_calc_rad(pr, &geom, &gamma_rad);
 		pr[U1_RAD] /= gamma_rad;
 		pr[U2_RAD] /= gamma_rad;
-		pr[U3_RAD] /= gamma_rad;		
+		pr[U3_RAD] /= gamma_rad;
 		alpha = 1. / sqrt(-geom.gcon[0]);
 		beta1 = geom.gcon[dir] * alpha * alpha;
 
 		/* reset radial velocity so radial 4-velocity is zero */
-		pr[UU_RAD+dir] = beta1 / alpha;
+		pr[UU_RAD + dir] = beta1 / alpha;
 
 		// now find new gamma and put it back in 		
 		vsq_rad = geom.gcov[4] * pr[U1_RAD + 1 - 1] * pr[U1_RAD + 1 - 1]; //1,1
@@ -953,45 +1333,45 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 
 		/* done */
 	}
-	#endif
+#endif
 
-	#if(0)
-    double ucon_nu[NDIM], gamma_nu, vsq_nu;
-    for (int sp = 0; sp < NU_SPECIES; sp++) {
-        ucon_calc_nu(pr, &geom, ucon_nu, sp);
-        if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
-            /* find gamma and remove it from primitives */
-            gamma_calc_nu(pr, &geom, &gamma_nu, sp);
-            pr[index_nu(U1_NU, sp)] /= gamma_nu;
-            pr[index_nu(U2_NU, sp)] /= gamma_nu;
-            pr[index_nu(U3_NU, sp)] /= gamma_nu;
-            alpha = 1. / sqrt(-geom.gcon[0]);
-            beta1 = geom.gcon[1] * alpha * alpha;
-    
-            /* reset radial velocity so radial 4-velocity is zero */
-            pr[index_nu(U1_NU, sp)] = beta1 / alpha;
-    
-            // now find new gamma and put it back in 		
-            vsq_nu = geom.gcov[4] * pr[index_nu(U1_NU, sp) + 1 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,1
-            vsq_nu += 2. * geom.gcov[5] * pr[index_nu(U1_NU, sp) + 2 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,2
-            vsq_nu += 2. * geom.gcov[6] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,3
-            vsq_nu += geom.gcov[7] * pr[index_nu(U1_NU, sp) + 2 - 1] * pr[index_nu(U1_NU, sp) + 2 - 1]; //2,2
-            vsq_nu += 2 * geom.gcov[8] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 2 - 1]; //2,3
-            vsq_nu += geom.gcov[9] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 3 - 1]; //3,3
-    
-            vsq_nu = MY_MAX(1.e-13, vsq_nu);
-            if (vsq_nu >= 1.) {
-                vsq_nu = 1. - 1. / (GAMMAMAX_NU * GAMMAMAX_NU);
-            }
-            gamma_nu = 1. / sqrt(1. - vsq_nu);
-            pr[index_nu(U1_NU, sp)] *= gamma_nu;
-            pr[index_nu(U2_NU, sp)] *= gamma_nu;
-            pr[index_nu(U3_NU, sp)] *= gamma_nu;
-    
-            /* done */
-        }
-    }
-    #endif
+#if(0)
+	double ucon_nu[NDIM], gamma_nu, vsq_nu;
+	for (int sp = 0; sp < NU_SPECIES; sp++) {
+		ucon_calc_nu(pr, &geom, ucon_nu, sp);
+		if (((ucon_nu[1] > 0.) && (type == 0)) || ((ucon_nu[1] < 0.) && (type == 1))) {
+			/* find gamma and remove it from primitives */
+			gamma_calc_nu(pr, &geom, &gamma_nu, sp);
+			pr[index_nu(U1_NU, sp)] /= gamma_nu;
+			pr[index_nu(U2_NU, sp)] /= gamma_nu;
+			pr[index_nu(U3_NU, sp)] /= gamma_nu;
+			alpha = 1. / sqrt(-geom.gcon[0]);
+			beta1 = geom.gcon[1] * alpha * alpha;
+
+			/* reset radial velocity so radial 4-velocity is zero */
+			pr[index_nu(U1_NU, sp)] = beta1 / alpha;
+
+			// now find new gamma and put it back in 		
+			vsq_nu = geom.gcov[4] * pr[index_nu(U1_NU, sp) + 1 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,1
+			vsq_nu += 2. * geom.gcov[5] * pr[index_nu(U1_NU, sp) + 2 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,2
+			vsq_nu += 2. * geom.gcov[6] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 1 - 1]; //1,3
+			vsq_nu += geom.gcov[7] * pr[index_nu(U1_NU, sp) + 2 - 1] * pr[index_nu(U1_NU, sp) + 2 - 1]; //2,2
+			vsq_nu += 2 * geom.gcov[8] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 2 - 1]; //2,3
+			vsq_nu += geom.gcov[9] * pr[index_nu(U1_NU, sp) + 3 - 1] * pr[index_nu(U1_NU, sp) + 3 - 1]; //3,3
+
+			vsq_nu = MY_MAX(1.e-13, vsq_nu);
+			if (vsq_nu >= 1.) {
+				vsq_nu = 1. - 1. / (GAMMAMAX_NU * GAMMAMAX_NU);
+			}
+			gamma_nu = 1. / sqrt(1. - vsq_nu);
+			pr[index_nu(U1_NU, sp)] *= gamma_nu;
+			pr[index_nu(U2_NU, sp)] *= gamma_nu;
+			pr[index_nu(U3_NU, sp)] *= gamma_nu;
+
+			/* done */
+		}
+	}
+#endif
 }
 
 __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const double gdet_B, const double gdet_ghost, double dr_over_r)
@@ -1011,11 +1391,11 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 	// Theta, phi velocity 
 	pr_ghost[B2] = pr_B[B2] * (1. - dr_over_r);
 	pr_ghost[B3] = pr_B[B3] * (1. - dr_over_r);
-	#if(DO_YE)
+#if(DO_YE)
 	pr_ghost[YE] = pr_B[YE] * gdet_B / gdet_ghost;
-	#endif
+#endif
 
-	#if(NEUTRINOS_M1)
+#if(NEUTRINOS_M1)
 	for (int sp = 0; sp < NU_SPECIES; sp++) {
 		pr_ghost[index_nu(UU_NU, sp)] = pr_B[index_nu(UU_NU, sp)] * gdet_B / gdet_ghost;
 		pr_ghost[index_nu(U1_NU, sp)] = pr_B[index_nu(U1_NU, sp)] * (1. + dr_over_r);
@@ -1023,6 +1403,23 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 		pr_ghost[index_nu(U3_NU, sp)] = pr_B[index_nu(U3_NU, sp)] * (1. - dr_over_r);
 		pr_ghost[index_nu(NUMBER_NU, sp)] = pr_B[index_nu(NUMBER_NU, sp)] * gdet_B / gdet_ghost;
 	}
-	#endif
+#endif
+#endif
+}
+
+/* Lowers a contravariant rank-1 tensor to a covariant one */
+__device__ void lower_KC(double ucon[NDIM], const  double* __restrict__ gcov, double ucov[NDIM])
+{
+#if AMD
+	ucov[0] = fma(gcov[0], ucon[0], fma(gcov[1], ucon[1], fma(gcov[2], ucon[2], gcov[3] * ucon[3])));
+	ucov[1] = fma(gcov[1], ucon[0], fma(gcov[4], ucon[1], fma(gcov[5], ucon[2], gcov[6] * ucon[3])));
+	ucov[2] = fma(gcov[2], ucon[0], fma(gcov[5], ucon[1], fma(gcov[7], ucon[2], gcov[8] * ucon[3])));
+	ucov[3] = fma(gcov[3], ucon[0], fma(gcov[6], ucon[1], fma(gcov[8], ucon[2], gcov[9] * ucon[3])));
+	return;
+#else
+	ucov[0] = gcov[0] * ucon[0] + gcov[1] * ucon[1] + gcov[2] * ucon[2] + gcov[3] * ucon[3];
+	ucov[1] = gcov[1] * ucon[0] + gcov[4] * ucon[1] + gcov[5] * ucon[2] + gcov[6] * ucon[3];
+	ucov[2] = gcov[2] * ucon[0] + gcov[5] * ucon[1] + gcov[7] * ucon[2] + gcov[8] * ucon[3];
+	ucov[3] = gcov[3] * ucon[0] + gcov[6] * ucon[1] + gcov[8] * ucon[2] + gcov[9] * ucon[3];
 #endif
 }

@@ -104,7 +104,12 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		prim[ENTRI] = S[1];
 		#endif
 	}
-
+#if(DOFLR)
+	prim[FLR] = U[FLR] / U[RHO];
+#endif
+#if (NEUTRON_STAR)
+	prim[FLRFRAC] = U[FLRFRAC] / U[RHO];
+#endif
 	return(ret);
 }
 

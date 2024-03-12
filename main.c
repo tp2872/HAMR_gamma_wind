@@ -75,10 +75,17 @@ int main(int argc, char *argv[])
 	#endif
 	dump_cnt0 = dump_cnt;
 
+	//Set radial boundary for moving RBOUN
+#if(NEUTRON_STAR && !(DO_RBOUND))
+	for (n = 0; n < n_active; n++) {
+		set_pflag_rbound(n_ord[n]);
+	}
+#endif	
+
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 25.0;
-	DTd_reduced = 10.0;
+	DTl = 1.0;
+	DTd = 5.0;
+	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
 		tdump_reduced = dump_cnt_reduced*DTd_reduced;
@@ -139,7 +146,7 @@ int main(int argc, char *argv[])
 			#endif
 			bound_prim(p, 1);
 
-			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND))
+			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND || NEUTRON_STAR))
 			if (dt > 0.5) {
 				if(rank==0) fprintf(stderr, "\n dt too big \n");
 				exit(0);
@@ -177,10 +184,10 @@ int main(int argc, char *argv[])
 			#endif
 
 			//Calculate exit criterion
-			if (runtime > (RUNTIME * 3600.0)) {
-				if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
-				break;
-			}
+			//if (runtime > (RUNTIME * 3600.0)) {
+			//	if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
+			//	break;
+			//}
 
 			tlog += DTl;
 		}
@@ -218,7 +225,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
 				fprintf(stderr, "ZCPS/GPU: %f \n", (double)(n_active_total) * (double)(BS_1 * BS_2 * BS_3) * (double)(DUMPFACTOR * AMR_SWITCHTIMELEVEL) * 0.5 / (double)(end1 - begin1) / (double)(numtasks));
 				#if(CALC_MDOT)
-				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
+				fprintf(stderr, "Mdot: %f Density scale: %f \n", log10(-MDOT_START * pow(2.0, (t - T_INIT) / T_DOUBLE)), log10(mass_density_scale_cpu));
 				#endif
 				fflush(stderr);
 			}

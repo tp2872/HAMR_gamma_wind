@@ -279,7 +279,7 @@ void dump_block(MPI_File *fp, int n)
 	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
 	struct of_geom geom;
 
-    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad)
+    #pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom, ucon, ucon_rad, ucon_nu)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + RHO] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + UU] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
@@ -359,10 +359,10 @@ void dump_block_reduced(MPI_File *fp, int n){
 	int i, j, z, k;
 	int i1, j1, z1;
 	struct of_geom geom;
-	double ucon[NDIM], ucon_rad[NDIM];
+	double ucon[NDIM], ucon_rad[NDIM], ucon_nu[NDIM];
 	float factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
 
-    #pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom, ucon,ucon_rad)
+    #pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom, ucon,ucon_rad, ucon_nu)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++)for (z = 0; z < BS_3 / REDUCE_FACTOR3; z++) {
         for (k = 0; k < 9; k++) array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)* NPRDUMP + k] = 0;
 		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++)for (z1 = 0; z1 < 1; z1++) {
@@ -410,6 +410,28 @@ void dump_block_reduced(MPI_File *fp, int n){
 			#if(P_NUM)
 			array_reduced[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (PHOTON + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][PHOTON] * factor;
 			#endif
+
+			#if(DO_YE)
+			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (YE + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][YE];
+			#endif
+
+			#if(DONUCLEAR)
+			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP * NPRDUMP + (XALPHA + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][XALPHA];
+			array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (XATM + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][XATM];
+			#endif
+
+			#if(NEUTRINOS_M1)
+			for (int sp = 0; sp < NU_SPECIES; sp++) {
+				ucon_calc_nu(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_nu, sp);
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][index_nu(UU_NU, sp)];
+				//fprintf(stderr, "%d %d %d [sp=%d] [ind_nu=%d] %e\n", i, j, z, sp, index_nu(UU_NU, sp), p[nl[n]][index_3D(n, i, j, z)][index_nu(UU_NU, sp)]);
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 1)] = (float)ucon_nu[0];
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 2)] = (float)ucon_nu[1];
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 3)] = (float)ucon_nu[2];
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 4)] = (float)ucon_nu[3];
+				array[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (index_nu(UU_NU, sp) + sp + !DOKTOT + 5)] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][index_nu(NUMBER_NU, sp)];
+			}
+			#endif
 		}
 	}
 	#if(PARALLEL_IO)
@@ -446,12 +468,11 @@ void gdump_new(void){
 	char filename[100];
 	
 	FILE *grid, *file;
-	if (rank == 1 % numtasks){
-		//sprintf(filename, "gdumps/grid");
-		//grid = fopen(filename, "wb");
-		//gdump_grid(grid);
-		//fclose(grid);
-		gdump_grid_new(0);
+	if (rank == 1 % numtasks && nstep==0){
+		sprintf(filename, "gdumps/grid");
+		grid = fopen(filename, "wb");
+		gdump_grid(grid);
+		fclose(grid);
 	}
 
 	for (n = 0; n < n_active_total; n++){
@@ -484,12 +505,11 @@ void gdump_new_reduced(void) {
 	char filename[100];
 
 	FILE *grid;
-	if (rank == 1 % numtasks) {
-		//sprintf(filename, "reduced/gdumps/grid");
-		//grid = fopen(filename, "wb");
-		//gdump_grid(grid);
-		//fclose(grid);
-		gdump_grid_new(1);
+	if (rank == 1 % numtasks && nstep == 0) {
+		sprintf(filename, "reduced/gdumps/grid");
+		grid = fopen(filename, "wb");
+		gdump_grid(grid);
+		fclose(grid);
 	}
 
 	for (n = 0; n < n_active_total; n++) {
@@ -508,159 +528,6 @@ void gdump_new_reduced(void) {
 				MPI_File_close(&gdump_reduced[nl[n_ord_total[n]]]);
 			}
 			block[n_ord_total[n]][GDUMP_WRITTEN_REDUCED] = 1;
-		}
-	}
-}
-
-void gdump_grid_new(int flag) {
-	int i, n, k;
-	int u_stride = 2000000;
-	int u_max = (NB - NB % u_stride) / u_stride;
-	if (NB % u_stride != 0) u_max++;
-	char filename[100];
-	array_gdumpgrid[0] = NB;
-	FILE* grid;
-
-	for (i = 0; i < u_max; i++) {
-		//Open file
-		if (i == 0) {
-			if(flag == 0) sprintf(filename, "gdumps/grid");
-			else sprintf(filename, "reduced/gdumps/grid");
-		}
-		else {
-			if (flag == 0) sprintf(filename, "gdumps/grid%d", i);
-			else sprintf(filename, "reduced/gdumps/grid%d", i);
-		}
-		grid = fopen(filename, "wb");
-
-		//Write number of blocks
-		if (i == 0) fwrite(&array_gdumpgrid[0], sizeof(int), 1, grid);
-
-		//Write block data
-		for (n = i*u_stride; n < MY_MIN((i+1)*u_stride,NB); n++) {
-			for (k = 0; k < NV; k++) {
-				fwrite(&block[n][k], sizeof(int), 1, grid);
-			}
-		}
-
-		//Close file
-		fclose(grid);
-	}
-}
-
-void gdump_grid_read_new(int flag) {
-	int n, i, n_read, j0;
-	int trash, NB_read, NV_read=NV, filesize;
-	int int_size = sizeof(int);
-	int active_block[NB];
-	FILE* fp;
-	char filename[100];
-	int u_stride = 2000000;
-
-	//Open file
-	if (flag == 0) sprintf(filename, "rdumps0/grid");
-	else sprintf(filename, "rdumps1/grid");
-	fp = fopen(filename, "rb");
-
-	//Exit if NULL pointer
-	if (fp == NULL) {
-		fprintf(stderr, "You are trying to read a non-existent block file! \n");
-		exit(0);
-	}
-
-	//Read in NB_read
-	fread(&NB_read, sizeof(int), 1, fp);
-
-	//Close file
-	fclose(fp);
-
-	int u_max = (NB_read - NB_read % u_stride) / u_stride;
-	if (NB_read % u_stride != 0) u_max++;
-
-	//Reset active-block array
-	for (n_read = 0; n_read < NB; n_read++) active_block[n_read] = 0;
-
-	//Allocate memory for block read
-	block_read = (int(*)[10])malloc((NB + 1) * sizeof(int[10]));
-
-	//Read in required variables
-	for (i = 0; i < u_max; i++) {
-		//Open file
-		if (i == 0) {
-			if (flag == 0) sprintf(filename, "rdumps0/grid");
-			else sprintf(filename, "rdumps1/grid");
-		}
-		else {
-			if (flag == 0) sprintf(filename, "rdumps0/grid%d", i);
-			else sprintf(filename, "rdumps1/grid%d", i);
-		}
-		fp = fopen(filename, "rb");
-
-		//Exit if NULL pointer
-		if (fp == NULL) {
-			fprintf(stderr, "You are trying to read a non-existent block file! \n");
-			exit(0);
-		}
-
-		if(i == 0) fread(&NB_read, sizeof(int), 1, fp);
-
-		for (n_read = i * u_stride; n_read < MY_MIN((i + 1) * u_stride, NB_read); n_read++) {
-			//Activate blocks that were active in old grid and put them in new grid-->Store AMR_ACTIVE in new array
-			if (block[n_read][AMR_ACTIVE] == 1) {
-				active_block[n_read] = 1;
-
-				//Read in coordinates in old grid
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD1 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_COORD1]), sizeof(int), 1, fp);
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD2 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_COORD2]), sizeof(int), 1, fp);
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_COORD3 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_COORD3]), sizeof(int), 1, fp);
-
-				//Read in AMR levels in old grid
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL1 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_LEVEL1]), sizeof(int), 1, fp);
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL2 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_LEVEL2]), sizeof(int), 1, fp);
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL3 + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_LEVEL3]), sizeof(int), 1, fp);
-				fseek(fp, ((n_read - i * u_stride) * NV_read + AMR_LEVEL + 1 * (i == 0)) * int_size, SEEK_SET);
-				fread(&(block_read[n_read][READ_AMR_LEVEL]), sizeof(int), 1, fp);
-			}
-			else {
-				active_block[n_read] = 0;
-			}
-		}
-
-		//Close file
-		fclose(fp);
-	}
-
-	//Reset block hierarchy in new grid
-	for (n_read = 0; n_read < NB; n_read++) {
-		block[n_read][AMR_ACTIVE] = 0;
-	}
-
-	for (n_read = 0; n_read < NB; n_read++) {
-		if (active_block[n_read] == 1) {
-			//Find index in new grid
-			j0 = (int)(block_read[n_read][READ_AMR_COORD2] / pow(1 + REF_2, block_read[n_read][READ_AMR_LEVEL2]));
-			n = AMR_coord_linear2(block_read[n_read][READ_AMR_LEVEL], j0, block_read[n_read][READ_AMR_COORD1], block_read[n_read][READ_AMR_COORD2], block_read[n_read][READ_AMR_COORD3]);
-
-			//Activate block in new grid
-			block[n][AMR_ACTIVE] = 1;
-			block[n][AMR_NODE] = -1;
-			block[n][AMR_TIMELEVEL] = 1;
-
-			//Store old block number for later
-			n_old[n] = n_read;
-
-			//Check if grid conversion was succesfull
-			if (block[n][AMR_COORD1] != block_read[n_read][READ_AMR_COORD1] || block[n][AMR_COORD2] != block_read[n_read][READ_AMR_COORD2] || block[n][AMR_COORD3] != block_read[n_read][READ_AMR_COORD3]
-				|| block[n][AMR_LEVEL1] != block_read[n_read][READ_AMR_LEVEL1] || block[n][AMR_LEVEL2] != block_read[n_read][READ_AMR_LEVEL2] || block[n][AMR_LEVEL3] != block_read[n_read][READ_AMR_LEVEL3]) {
-				fprintf(stderr, "Error reading in reduced rdumps!\n");
-				exit(0);
-			}
 		}
 	}
 }
@@ -703,11 +570,9 @@ void gdump_grid_read(FILE* fp)
 
 	//Exit if error during read
 	if (NV_read != NV) {
-		if(rank==0)fprintf(stderr, "You are trying to read an erronous block file probably generated by another version of the code! \n");
-		NV_read = NV;		
-		//exit(0);
+		fprintf(stderr, "You are trying to read an erronous block file probably generated by another version of the code! \n");
+		exit(0);
 	}
-	if(rank==0)fprintf(stderr, "test: %d %d %d \n",NB_read, NV_read, filesize);
 
 	//Allocate memory for block read
 	block_read = (int(*)[10])malloc((NB + 1)*sizeof(int[10]));

@@ -36,8 +36,9 @@ double(*restrict F2[NB_LOCAL])[NPR];
 double(*restrict F3[NB_LOCAL])[NPR];
 int(*restrict pflag[NB_LOCAL]);
 int(*restrict pflag_cart[NB_LOCAL]);
-int(*restrict pflag_rbound[NB_LOCAL]);
+int(*restrict pflag_rbound[NB_LOCAL]); 
 int(*restrict pflag_rad[NB_LOCAL]);
+double(*restrict Bx1_surface[NB_LOCAL]);
 double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
@@ -97,7 +98,10 @@ int *pflag_GPU[NB_LOCAL];
 int* pflag_CART_GPU[NB_LOCAL];
 int* pflag_RBOUND_GPU[NB_LOCAL];
 int *failimage_GPU[NB_LOCAL];
+double* Bx1_surface_GPU[NB_LOCAL];
 double* radius_GPU[NB_LOCAL];
+double* NS_scaling_CENT[NB_LOCAL];
+double* NS_scaling_FACE[NB_LOCAL];
 int failimage_counter[NFAIL];
 
 /*MPI arrays*/
@@ -270,6 +274,8 @@ double* BufferU_n[NB_LOCAL];
 double* BufferU_0[NB_LOCAL];
 double* BufferU_1[NB_LOCAL];
 double * Bufferradius[NB_LOCAL];
+double * BufferNS_scaling_CENT[NB_LOCAL];
+double * BufferNS_scaling_FACE[NB_LOCAL];
 double * Bufferstorage1[NB_LOCAL];
 double * Bufferstorage2[NB_LOCAL];
 double * Bufferstorage3[NB_LOCAL];
@@ -287,6 +293,7 @@ int * Bufferpflag_CART[NB_LOCAL];
 int * Bufferpflag_RBOUND[NB_LOCAL];
 int * Bufferpflag_RAD[NB_LOCAL];
 int * Bufferpflag_NU[NB_LOCAL];
+double * BufferBx1_surface[NB_LOCAL];
 #if (NEUTRINOS_DEBUG)
 double* Bufferallflags_NU[NB_LOCAL];
 double(*restrict allflags_NU[NB_LOCAL])[NU_SPECIES];

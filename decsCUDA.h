@@ -66,8 +66,11 @@ __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
 	, int* __restrict__ pflag_rbound
+	#endif
+	#if(NEUTRON_STAR)
+	, double* __restrict__ Bx1_surface
 	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
@@ -109,7 +112,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if (DO_RBOUND)
+	#if (DO_RBOUND || NEUTRON_STAR)
     	, int* pflag_rbound
 	#endif
 );
@@ -160,8 +163,11 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
 	, int* pflag_rbound
+	#endif
+	#if(NEUTRON_STAR)
+	, double* Bx1_surface
 	#endif
 );
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
@@ -196,5 +202,6 @@ __global__ void boundprim3_outflow(double* pv, const  double* __restrict__ gcov,
 __global__ void boundprim_cart(double* pv, double* ps, int* pflag_cart, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void boundprim_rbound(double* pv, double* ps, int* pflag_rbound, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
+__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE);
 
 		

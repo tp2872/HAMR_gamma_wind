@@ -19,33 +19,33 @@ void diag(int call_code)
 		jmax = 0;
 		zmax = 0.;
 		nmax = 0;
-		for (n = 0; n < n_active; n++){
-			#pragma omp parallel for schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(divb,i,j,z)
+		for (n = 0; n < n_active; n++) {
+#pragma omp parallel for schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(divb,i,j,z)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-				#if(CARTESIAN_GR)
+#if(CARTESIAN_GR)
 				divb = divb_calc(n_ord[n], i, j, z);
-				#pragma omp critical
-				if (pflag_cart[nl[n_ord[n]]][index_3D(n_ord[n],i,j,z)]==0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
+#pragma omp critical
+				if (pflag_cart[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)] == 0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
 					imax = i;
 					jmax = j;
 					zmax = z;
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
-				#elif(DO_RBOUND)
+#elif(DO_RBOUND || NEUTRON_STAR)
 				divb = divb_calc(n_ord[n], i, j, z);
-				#pragma omp critical
-				if (pflag_rbound[nl[n_ord[n]]][index_3D(n_ord[n],i,j,z)]==0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
+#pragma omp critical
+				if (pflag_rbound[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)] == 0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
 					imax = i;
 					jmax = j;
 					zmax = z;
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
-				#else
+#else
 				divb = divb_calc(n_ord[n], i, j, z);
 
-				#pragma omp critical
+#pragma omp critical
 				if (divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
 					imax = i;
 					jmax = j;
@@ -53,18 +53,18 @@ void diag(int call_code)
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
-				#endif
+#endif
 				//#pragma omp critical
 				//if (divb > 0.0000001 && numtasks<100){
 				//	fprintf(stderr, "n: %d divb:  (%d)x(%d %d %d)x(%d %d %d)x(%d %d %d) %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
 				//}
 			}
 		}
-	
-		#if (MPI_enable)
+
+#if (MPI_enable)
 		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-		#endif
+#endif
 		if (divbmax == divbmax_local) {
 			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
 		}

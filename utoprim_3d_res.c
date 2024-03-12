@@ -118,7 +118,12 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	//Update B fields regardless to preserve Div.B==0 regardless if inversion is succesful
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
-
+#if(DOFLR)
+	prim[FLR] = U[FLR] / U[RHO];
+#endif
+#if (NEUTRON_STAR)
+	prim[FLRFRAC] = U[FLRFRAC] / U[RHO];
+#endif
 	return(retval);
 }
 

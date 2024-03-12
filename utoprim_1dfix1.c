@@ -132,7 +132,12 @@ int Utoprim_1dfix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][N
             prim[i] = prim_tmp[i];
         }
     }
-
+#if(DOFLR)
+    prim[FLR] = U[FLR] / U[RHO];
+#endif
+#if (NEUTRON_STAR)
+    prim[FLRFRAC] = U[FLRFRAC] / U[RHO];
+#endif
     return(ret);
 }
 

@@ -251,11 +251,7 @@ void rdump_block_read(FILE *fp, int n)
 			reduce_factor = 1.0 / (double)(red_1 * red_3);
 			double fractheta_old = 1.e-2;
 			if (N2 != 1) {
-				#if(TRANS_BOUND_SMALL)
-				fractheta_old = 1.0 - 1.0e-13;
-				#else
-				fractheta_old = 1.0 - 2.0 / ((double)N2 * red_2) * (BOUND_TYPE2 == TRANSMISSIVE);
-				#endif
+				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (BOUND_TYPE2==TRANSMISSIVE);
 			}
 			#if(SPHERICAL || SPHERICAL_GR)			
 			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
@@ -527,9 +523,8 @@ int restart_read_param(void)
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
 			if (param != NULL) {
-				//gdump_grid_read(param);
+				gdump_grid_read(param);
 				fclose(param);
-				gdump_grid_read_new(0);
 			}
 			t0 = t;
 			restart_number = 0;
@@ -554,9 +549,8 @@ int restart_read_param(void)
 				sprintf(filename, "rdumps1/grid");
 				param = fopen(filename, "rb");
 				if (param != NULL) {
-					//gdump_grid_read(param);
+					gdump_grid_read(param);
 					fclose(param);
-					gdump_grid_read_new(1);
 				}
 				restart_number = 1;
 			}
@@ -573,9 +567,8 @@ int restart_read_param(void)
 			sprintf(filename, "rdumps0/grid");
 			param = fopen(filename, "rb");
 			if (param != NULL) {
-				//gdump_grid_read(param);
+				gdump_grid_read(param);
 				fclose(param);
-				gdump_grid_read_new(0);
 			}
 			restart_number = 0;
 		}
@@ -839,12 +832,14 @@ double calc_Mdot() {
 	for (n = 0; n < n_active; n++) {
 		//Set index at which to calculate mdot
 		icalc = (int)((log(rcalc) - log(Rin))) / dx[nl[n_ord[n]]][1];
+		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
-		if ((icalc >= N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
 			#if(GPU_ENABLED)
 			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 			gpuDeviceSynchronize();
+
 			#pragma omp parallel private(i, j, z, k)
 			{
 				#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
@@ -979,8 +974,84 @@ double calc_MBH(void) {
 
 //Sets density scale of metric as function of time
 void set_metric_scale(void) {
+	double MBH;
+	int n;
+
+	//Calculate mass of black hole
+	if (!isfinite(metric_scale_cpu))metric_scale_cpu = 1.0;
+	MBH = calc_MBH();
+
+	//Calculate Mdot
+	if (t > 0) metric_scale_cpu = MBH;
+	else metric_scale_cpu = 1.0;
+
+	//Recalculate metric when necessary
+	for (n = 0; n < n_active; n++) {
+		recalculate_metric(n_ord[n]);
+	}
 }
 
 //Recalculate metric for increased black hole mass
 void recalculate_metric(int n) {
+	int i, j, z, k;
+
+	//Copy data from GPU to CPU
+	#if(GPU_ENABLED || GPU_DEBUG )
+	gpuMemcpyAsync(ps_1[nl[n]], Bufferps_1[nl[n]], (int)(3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	gpuDeviceSynchronize();
+
+	#pragma omp parallel private(i, j, z, k)
+	{
+		#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+			for (k = 1; k < NDIM; k++) {
+				ps[nl[n]][index_3D(n, i, j, z)][k] = ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+			}
+		}
+	}
+	#endif
+
+	//Normalize staggered magnetic field components
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		psh[nl[n]][index_3D(n, i, j, z)][1] = gdet[nl[n]][index_2D(n, i, j, z)][FACE1] * ps[nl[n]][index_3D(n, i, j, z)][1];
+		psh[nl[n]][index_3D(n, i, j, z)][2] = gdet[nl[n]][index_2D(n, i, j, z)][FACE2] * ps[nl[n]][index_3D(n, i, j, z)][2];
+		psh[nl[n]][index_3D(n, i, j, z)][3] = gdet[nl[n]][index_2D(n, i, j, z)][FACE3] * ps[nl[n]][index_3D(n, i, j, z)][3];
+	}
+
+	//Recalculate metric and connection coefficients
+	set_grid(n);
+
+	//De-normalize staggered magnetic field components
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		ps[nl[n]][index_3D(n, i, j, z)][1] = psh[nl[n]][index_3D(n, i, j, z)][1] / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+		ps[nl[n]][index_3D(n, i, j, z)][2] = psh[nl[n]][index_3D(n, i, j, z)][2] / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+		ps[nl[n]][index_3D(n, i, j, z)][3] = psh[nl[n]][index_3D(n, i, j, z)][3] / gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+	}
+
+	//Reset half step variables
+	ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		psh[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, z)][1];
+		psh[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, z)][2];
+		psh[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, j, z)][3];
+	}
+
+	//Copy data back to GPU
+	#if(GPU_ENABLED || GPU_DEBUG )
+	GPU_write_metric(n); //Matthew: Can be done faster
+	#pragma omp parallel private(i, j, z, k)
+	{
+		#pragma omp for collapse(2) schedule(dynamic)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+			#if(STAGGERED)
+			for (k = 1; k < NDIM; k++) {
+				ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[nl[n]][index_3D(n, i, j, z)][k];
+			}
+			#endif
+		}
+	}
+		#if(STAGGERED)
+		gpuMemcpyAsync(Bufferps_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+		gpuMemcpyAsync(Bufferpsh_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+		#endif
+	#endif
 }

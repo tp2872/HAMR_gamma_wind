@@ -1663,7 +1663,7 @@ void set_AMR(void){
 	max_blocks = (int)(n_active_total + (numtasks * CPU_MEM - total_mem) / mem_per_block);
 
 	if (max_blocks< n_active_total) {
-		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d %d %f Quiting! \n", max_blocks, n_active, total_mem);
+		if (rank == 0) fprintf(stderr, "Too little CPU memory. Max_blocks: %d Quiting! \n", max_blocks);
 	}
 	#endif
 
@@ -1982,46 +1982,44 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, n_active_local_min, n_active_local_max);
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
+	#if(GPU_ENABLED)
+	//Calculate memory consumption on each GPU
 	double max_mem = 0.;
 	double min_mem = 0.;
 	double total_mem = 0.;
 	double mem = 0.;
-	double mem_per_block;
-
-	//Calculate memory consumption on each GPU
-	#if(GPU_ENABLED)
-		#if(CUDA_MEMCALC)
-		size_t mem_int, mem_tot;
-		gpuMemGetInfo(&mem_int, &mem_tot);
-		mem = (double)(mem_tot - mem_int) / pow(10., 9.);
+	#if(CUDA_MEMCALC)
+	size_t mem_int, mem_tot;
+	gpuMemGetInfo(&mem_int, &mem_tot);
+	mem = (double)(mem_tot - mem_int) / pow(10., 9.);
+	max_mem += mem;
+	min_mem += mem;
+	total_mem += mem;
+	#else
+	for (n = 0; n < n_active; n++) {
+		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
 		max_mem += mem;
 		min_mem += mem;
 		total_mem += mem;
-		#else
-		for (n = 0; n < n_active; n++) {
-			mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
-			max_mem += mem;
-			min_mem += mem;
-			total_mem += mem;
-		}
-		#endif
+	}
+	#endif
 	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	mem_per_block = total_mem / n_active_total;
-		#if(CUDA_MEMCALC)
-		max_blocks = (int)(n_active_total + (gpu_mem * numtasks - total_mem) / mem_per_block);
-		#else
-		max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
-		#endif
-	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	double mem_per_block = total_mem / n_active_total;
+	#if(CUDA_MEMCALC)
+	max_blocks = (int)(n_active_total + (gpu_mem * numtasks - total_mem) / mem_per_block);
+	#else
+	max_blocks = (int)(n_active_total + (GPU_MEM * numtasks - total_mem) / mem_per_block);
 	#endif
-
+	if (rank == 0) fprintf(stderr, "GPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
+	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#else
 	//Calculate memory consumption on each CPU
-	max_mem = 0.;
-	min_mem = 0.;
-	total_mem = 0.;
-	mem = 0.;
+	double max_mem = 0.;
+	double min_mem = 0.;
+	double total_mem = 0.;
+	double mem = 0.;
 	for (n = 0; n < n_active; n++) {
 		mem = calc_mem_gpu(n_ord[n]) / pow(10., 9.);
 		max_mem += mem;
@@ -2031,20 +2029,14 @@ void balance_load(void){
 	MPI_Allreduce(MPI_IN_PLACE, &min_mem, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &max_mem, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &total_mem, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	mem_per_block = total_mem / n_active_total;
-	#if(GPU_ENABLED)
-	max_blocks = MY_MIN(max_blocks, (int)(n_active_total + (CPU_MEM * numtasks - total_mem) / mem_per_block));
-	#else
+	double mem_per_block = total_mem / n_active_total;
 	max_blocks = (int)(n_active_total + (CPU_MEM * numtasks - total_mem) / mem_per_block);
-	#endif
+
 	if (rank == 0) fprintf(stderr, "CPU memory consumption in GB (total, min, max): %f %f %f \n", total_mem, min_mem, max_mem);
-
-	//Print max blocks
 	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
+	#endif
 
-	//Transfer boundary cells
 	bound_prim(p, 1);
-
 	//Copy the B-field to make the code resilient against two bit ECC errors
 	#if(GPU_ENABLED)
 	for (n = 0; n < n_active; n++){
@@ -3502,80 +3494,7 @@ double calc_refcrit(int n){
 		ref_val = 0.6 * REFINEMENT_CUTOFF;
 	}
 	#elif(REFINE_GIBWA)
-#define R_MIN (80.0)
-#define R_MAX (1000000.0)
-#define H_MIN (80.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-#define H_MAX (100.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-#define PH_MIN1 (350.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-#define PH_MAX1 (10.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-#define PH_MIN2 (170.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-#define PH_MAX2 (190.0 * M_PI / 180.0) //Allways selct angle between [0,2pi] radians
-	if (block[n][AMR_NODE] == rank) {
-		double r_min, r_max, h_min, h_max, ph_min, ph_max;
-		double ph_min_local, ph_max_local, delta;
-
-		//Check for r boundary
-		coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE1, X);
-		bl_coord(X, &r_min, &th, &phi);
-		coord(n, N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N3_GPU_offset[n], FACE1, X);
-		bl_coord(X, &r_max, &th, &phi);
-		if (r_max > R_MIN && r_min < R_MAX) {
-			//Check for theta boundary
-			coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE2, X);
-			bl_coord(X, &r, &h_min, &phi);
-			coord(n, N1_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], FACE2, X);
-			bl_coord(X, &r, &h_max, &phi);
-			if (h_max > H_MIN && h_min < H_MAX) {
-				coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n], FACE3, X);
-				bl_coord(X, &r, &th, &ph_min);
-				coord(n, N1_GPU_offset[n], N2_GPU_offset[n], N3_GPU_offset[n] + BS_3, FACE3, X);
-				bl_coord(X, &r, &th, &ph_max);
-
-				//First jet
-				if ((PH_MIN1 > PH_MAX1)) {
-					delta = MY_MAX(2.0 * M_PI - PH_MIN1, (ph_max + M_PI / 180.0 - ph_min));
-
-					if ((delta < 0.0) || (PH_MIN1 + delta - 2.0 * M_PI) < 0.0 || (PH_MAX1 + delta - 2.0 * M_PI) > 2.0 * M_PI) fprintf(stderr, "Catastrophic error in refinement criterion! \n");
-					ph_min_local = ph_min + delta;
-					ph_max_local = ph_max + delta;
-
-					if (ph_min_local > 2.0 * M_PI) ph_min_local = ph_min_local - 2.0 * M_PI;
-					if (ph_max_local > 2.0 * M_PI) ph_max_local = ph_max_local - 2.0 * M_PI;
-
-					if ((ph_max_local > (PH_MIN1 + delta - 2.0 * M_PI)) && (ph_min_local < (PH_MAX1 + delta))) {
-						ref_val = 1.1 * REFINEMENT_CUTOFF;
-					}
-				}
-				else {
-					if ((ph_max > PH_MIN1 && ph_min < PH_MAX1)) {
-						ref_val = 1.1 * REFINEMENT_CUTOFF;
-					}
-				}
-
-				//Second jet
-				if ((PH_MIN2 > PH_MAX2)) {
-					delta = MY_MAX(2.0 * M_PI - PH_MIN2, (ph_max + M_PI / 180.0 - ph_min));
-
-					if ((delta < 0.0) || (PH_MIN2 + delta - 2.0 * M_PI) < 0.0 || (PH_MAX2 + delta) > 2.0 * M_PI) fprintf(stderr, "Catastrophic error in refinement criterion! \n");
-					ph_min_local = ph_min + delta;
-					ph_max_local = ph_max + delta;
-
-					if (ph_min_local > 2.0 * M_PI) ph_min_local = ph_min_local - 2.0 * M_PI;
-					if (ph_max_local > 2.0 * M_PI) ph_max_local = ph_max_local - 2.0 * M_PI;
-
-					if ((ph_max_local > (PH_MIN2 + delta - 2.0 * M_PI)) && (ph_min_local < (PH_MAX2 + delta))) {
-						ref_val = 1.1 * REFINEMENT_CUTOFF;
-					}
-				}
-				else {
-					if ((ph_max > PH_MIN2 && ph_min < PH_MAX2)) {
-						ref_val = 1.1 * REFINEMENT_CUTOFF;
-					}
-				}
-			}
-		}
-	}
-	/*if (block[n][AMR_LEVEL2] == 0) {
+	if (block[n][AMR_LEVEL2] == 0) {
 		if (block[n][AMR_COORD1] >= 1 && block[n][AMR_COORD1] < 7) {
 			if (block[n][AMR_COORD2] == 5 || block[n][AMR_COORD2] == 6)ref_val = 100.0;
 		}
@@ -3592,7 +3511,7 @@ double calc_refcrit(int n){
 		if (block[n][AMR_COORD1] >= 8 && block[n][AMR_COORD1] < 20) {
 			if (block[n][AMR_COORD2] >= 22 && block[n][AMR_COORD2] < 26) ref_val = 0.6 * REFINEMENT_CUTOFF;
 		}
-	}*/
+	}
 	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {

@@ -526,6 +526,7 @@ __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * tran
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
+__device__ void lower_KC(double ucon[NDIM], const  double* __restrict__ gcovKC, double ucov[NDIM]);
 
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt
@@ -541,7 +542,7 @@ __device__ double calc_entropy(double* pr
 	, double gamma_g
 	#endif
 );
-__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3, int dir);
+__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoB2, const  double* __restrict__ gdet3, int dir);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double readImageDouble(int a);
@@ -752,6 +753,12 @@ __device__ void calc_Gcon_nu(double* ph, double Gcon[NDIM], double ucon[NDIM], d
 //Moved up by Matthew
 __device__ void eos_NR_temp_guess(double rho, double u, double* temp);
 __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const double gdet_B, const double gdet_ghost, double dr_over_r);
+
+//Neutron star BCs
+#if(NEUTRON_STAR)
+__device__ void get_surface_magneticField(const  double* __restrict__ gcovNS, const  double* __restrict__ gconNS, double bncon[NDIM], double uscon[NDIM], double bscon[NDIM]);
+__device__ void get_surface_4velocity(const  double* __restrict__ gcovNS2, double uscon[NDIM]);
+#endif
 
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 __device__ double calc_fermiint2(double x);

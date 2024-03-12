@@ -529,8 +529,15 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	);
 	#endif
 
-	#pragma unroll 9
-	for (k = 0; k < NPR_U;k++) flux[k] *= geom->g;
+#if(DOFLR)
+	flux[FLR] = flux[RHO] * pr[FLR];
+#endif
+#if NEUTRON_STAR
+	flux[FLRFRAC] = flux[RHO] * pr[FLRFRAC];
+#endif
+
+	#pragma unroll 11
+	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR));k++) flux[k] *= geom->g;
 	#if(TWO_T)
 	flux[ENTRE] *= geom->g;
 	flux[ENTRI] *= geom->g;

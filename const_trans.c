@@ -91,6 +91,14 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 				E_corn[nl[n]][ind0][3] = 0.0;
 			}
 			#endif
+
+#if(NEUTRON_STAR)
+			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+				E_corn[nl[n]][ind0][1] = 0.0;
+				//E_corn[nl[n]][ind0][2] = OMEGA_NS * Bx1_surface[index_3D(n, i - D1, j, z)];
+				E_corn[nl[n]][ind0][3] = 0.0;
+			}
+#endif
 			#endif
 		}
 	}
@@ -188,6 +196,13 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 				E_corn[nl[n]][ind0][3] = 0.0;
 			}
 			#endif
+#if(NEUTRON_STAR)
+			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+				E_corn[nl[n]][ind0][1] = 0.0;
+				//E_corn[nl[n]][ind0][2] = OMEGA_NS * Bx1_surface[index_3D(n, i - D1, j, z)];
+				E_corn[nl[n]][ind0][3] = 0.0;
+			}
+#endif
 		}
 	}
 }
@@ -621,6 +636,8 @@ void flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])
 			dq[nl[n]][ind0][3] = 0.25*(F1[nl[n]][ind0][B2] + F1[nl[n]][index_3D(n, i, j - 1, z)][B2]);
 			#endif
 		}
+
+		/*set_stellar_boundary_emfs here for NEUTRON_STAR*/
 
 		/* rewrite EMFs as fluxes, after Toth */
 		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)

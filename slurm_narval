@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --account=rrg-dhaggard
+#SBATCH --job-name="rb_1000_rc_30_a_0.94_notilt"
+#SBATCH --gres=gpu:4                       # Number of GPUs per node
+#SBATCH --nodes=8                         # Number of nodes
+#SBATCH --ntasks-per-node=4                # Number of tasks per node
+#SBATCH --cpus-per-task=12                 # CPU cores per MPI process (number of threads)
+#SBATCH --mem=440G                         # memory per node
+#SBATCH --time=0-16:00                     # time (DD-HH:MM)
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+module load intel
+module load intelmpi
+module load cuda
+
+make clean
+make -j
+
+mkdir -p restart_dumps
+
+if test -e rdumps0; then
+    cp -r rdumps0 restart_dumps/rdumps0-$SLURM_JOB_ID
+    cp -r rdumps1 restart_dumps/rdumps1-$SLURM_JOB_ID
+fi
+
+srun ./harm

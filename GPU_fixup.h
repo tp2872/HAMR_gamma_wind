@@ -234,8 +234,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			, radius[icurr * (SPHERICAL || SPHERICAL_GR) + global_id * (CARTESIAN || CARTESIAN_GR)]
 			#endif
 			#if(CALC_MDOT)
-			, mass_density_scale
-			, magnetic_density_scale
+			,  mass_density_scale, magnetic_density_scale
 			#endif
 		);
 		#elif(NEUTRINOS_M1)
@@ -418,7 +417,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
 	, int* pflag_rbound
 	#endif
 )
@@ -506,7 +505,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 
 	/* Check if cell is marked for inflow because it is within RBOUND. */
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
     if (k == 1 && pflag_rbound[global_id] == 1) k = 0;
     #endif
 
@@ -964,7 +963,17 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		double Theta, gam, C;
 		#endif
 	#endif
-	int dofloor=0, flag = 0, m, k;
+#if(NEUTRON_STAR)
+	double Rlc, rho_b, rho_g, smooth, smooth_geom;
+	double etacon[NDIM], bhatcon[NDIM], bhatcov[NDIM];
+	double uprllcon[NDIM], uperpcon[NDIM], uprllcov[NDIM], uperpcov[NDIM];
+	double uDotEta, bDotEta, bhatsq, uDotBhat, uprllsq, uperpsq;
+	double rhopre, uintpre, rhopost, uintpost;
+	double Kprll, Kcal, K2, uprllDotBhat;
+	double XNS, YNS, ZNS, aminusNS, aplusNS, aNS, normalizerNS;
+	double u1con[NDIM], beta[NDIM];
+#endif
+	int dofloor=0, flag = 0, m, k, j;
 
 	rhoscal = pow(MY_MAX(r, 1.0), -POWRHO);
 	uuscal = pow(rhoscal, GAMMA);
@@ -1020,6 +1029,65 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
     u = pf[UU];
     #endif
 
+	//Store old values
+#pragma unroll (NPR_U+NEUTRON_STAR*(1+DOFLR))
+	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR)); k++) pf_prefloor[k] = pf[k];
+
+#if (NEUTRON_STAR && NS_TAPERED_FLOORS)
+	if (OMEGA_NS > 0.0)
+		Rlc = 1.0 / OMEGA_NS;
+	else
+		Rlc = 10.0;
+
+
+	double rho0 = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0);
+	double alpha1_NS, alpha2_NS, n_NS, rb_NS, constant_NS;
+	rb_NS = 1.0 * Rlc; // break radius for smooth broken power law
+	n_NS = 2.0;       // smaller n = smoother break
+	alpha2_NS = 6.0;    // At large r, want rho, u to be propto r^(-alpha2)
+					  // For hydrostatic atmosphere to large radii, set alpha2 = alpha1
+					  // in each case below.
+
+	/* Density */
+	alpha1_NS = 1.0 / (GAMMA - 1.0);
+	constant_NS = rho0 * pow(R_NS, alpha1_NS);
+	/* Function for smooth broken power law */
+	rhoflr = constant_NS * pow(rb_NS, -alpha1_NS) * pow(pow(r / rb_NS, alpha1_NS * n_NS) + pow(r / rb_NS, alpha2_NS * n_NS), -1.0 / n_NS);
+
+	/* Internal energy */
+	alpha1_NS = GAMMA / (GAMMA - 1.0);
+	constant_NS = (rho0 / GAMMA) * (1.0 / R_NS) * pow(R_NS, alpha1_NS);
+	uuflr = constant_NS * pow(rb_NS, -alpha1_NS) * pow(pow(r / rb_NS, alpha1_NS * n_NS) + pow(r / rb_NS, alpha2_NS * n_NS), -1.0 / n_NS);
+	double mod_bsq_over_rho_max, mod_bsq_over_uu_max;
+	double log_mod_bsq_rho, log_mod_bsq_uu, log_bsq_rho, log_bsq_uu, log_profile;
+	/*** Dynamic floors ***/
+	/* Use dynamis floor everywhere, but increase acceptable bsq/rho and bsq/u inside the light-sphere,
+	 * so that the hydrostatic region doesn't trigger this unless bsq increases enormously              */
+	 //double bsq_over_rho_surf = 1e6;
+	 //double bsq_over_uu_surf  = 1e7;
+	if (r < Rlc)
+	{
+		log_bsq_rho = log10(MAX_BSQ_OVER_RHO);
+		log_bsq_uu = log10(MAX_BSQ_OVER_UINT);
+		log_profile = pow((Rlc - r) / (Rlc - R_NS), 2.0);
+		log_mod_bsq_rho = log_bsq_rho + (SURF_MAX_BSQ_RHO_LOG - log_bsq_rho) * log_profile;
+		log_mod_bsq_uu = log_bsq_uu + (SURF_MAX_BSQ_UINT_LOG - log_bsq_uu) * log_profile;
+		mod_bsq_over_rho_max = pow(10.0, log_mod_bsq_rho);
+		mod_bsq_over_uu_max = pow(10.0, log_mod_bsq_uu);
+	}
+	else
+	{
+		mod_bsq_over_rho_max = MAX_BSQ_OVER_RHO;
+		mod_bsq_over_uu_max = MAX_BSQ_OVER_UINT;
+	}
+	/* tie floors to the local values of magnetic field and internal energy density */
+	if (rhoflr < bsq / mod_bsq_over_rho_max)
+		rhoflr = bsq / mod_bsq_over_rho_max;
+
+	if (uuflr < bsq / mod_bsq_over_uu_max)
+		uuflr = bsq / mod_bsq_over_uu_max;
+#else
+
     //tie floors to the local values of magnetic field and internal energy density
     if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
     if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
@@ -1036,10 +1104,40 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
     #endif
     if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
     if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+#endif
 
-	//Store old values
-	#pragma unroll 9
-	for (k = 0; k < NPR_U; k++) pf_prefloor[k] = pf[k];
+
+#if(NEUTRON_STAR)
+
+	if (OMEGA_NS > 0.0)
+		Rlc = 1.0 / OMEGA_NS;
+	else
+		Rlc = 10.0;
+
+	if (pf[FLRFRAC] < 0.0)
+		pf[FLRFRAC] = 0.0;
+	else if (pf[FLRFRAC] > 1.0)
+		pf[FLRFRAC] = 1.0;
+
+	rho_b = pf[RHO] * pf[FLRFRAC];
+	rho_g = pf[RHO] - rho_b;
+
+	//if (pf[RHO] < 1.0001 * rhoflr)
+	//	pf[FLRFRAC] = 1.0;
+	//else
+	//	pf[FLRFRAC] = 0.0;
+
+	if (r > Rlc)
+		smooth_geom = 1.0;
+	else if (r < R_NS)
+		smooth_geom = 0.0;
+	else
+		smooth_geom = pow((1.0) * 0.5 * (1.0 - cos(M_PI * (r - R_NS) / (Rlc - R_NS))), 2.0);
+	smooth_geom = pow(smooth_geom, 0.5); //fixupWeight=0.5 always
+	/* This variable is 1 beyond Rlc, or if FLRFRAC = 0 */
+	smooth = 1.0 - pf[FLRFRAC] * (1.0 - smooth_geom);  // Don't want to do anything to real gas
+#endif
+
 	#if(TWO_T)
 	pf_prefloor[ENTRE] = pf[ENTRE];
 	pf_prefloor[ENTRI] = pf[ENTRI];
@@ -1047,9 +1145,18 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//floor on density 
 	if (pf[RHO] < rhoflr) {
+#if(NEUTRON_STAR)
+		rho_b = rhoflr - rho_g;
+#endif
 		pf[RHO] = rhoflr;
 		dofloor = 1;
 	}
+#if(NEUTRON_STAR)
+	else if (rho_b > rhoflr && r < Rlc)
+	{
+		pf[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
+	}
+#endif
 
 	#if (DONUCLEAR)
 	validate_abund(&pf[XALPHA]);
@@ -1057,6 +1164,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
     #endif
 
 	//Internal energy floor
+
+#if(NEUTRON_STAR)
+/*** Cool rapidly in high-floor zones inside the LC ***/
+	if (pf[UU] > uuflr && r < Rlc)
+		pf[UU] = uuflr + smooth * (pf[UU] - uuflr); // Full smoothing fn: don't cool good gas
+#endif
+
 	#if(RAD_M1)
 	if (u + pf[UU_RAD] < uuflr) {
 		pf[UU] = uuflr - pf[UU_RAD];
@@ -1207,8 +1321,104 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		#endif
 	}
 	#endif
+#if(NEUTRON_STAR)
+	//kyles_unified_4D_velocityAdjust(pv_prefloor,  pv, &geom, smooth)
 
-	#if(DRIFT_FLOOR)
+	get_state(pf_prefloor, geom, &q
+#if(CALC_MDOT)
+		, magnetic_density_scale
+#endif
+	);
+	if (pf_prefloor[RHO] < pf[RHO] || pf_prefloor[UU] < pf[UU] || smooth < 1.0) {
+		/* 4-velocity of observer which is static wrt the coordinates */
+		etacon[0] = sqrt(-1.0 / geom->gcov[0]);
+		#pragma unroll 3
+		SLOOPA etacon[j] = 0.0;
+
+		uDotEta = dot(q.ucov, etacon);
+		bDotEta = dot(q.bcov, etacon);
+
+		/* Construct B-field 4-vector in coordinate-static frame */
+		#pragma unroll 4
+		DLOOPA bhatcon[j] = bDotEta * q.ucon[j] - uDotEta * q.bcon[j];
+		lower(bhatcon, geom->gcov, bhatcov);
+		bhatsq = dot(bhatcov, bhatcon);
+
+		/* Construct parallel and perpendicular (unnormalized) 4-velocities by projection */
+		uDotBhat = dot(q.ucov, bhatcon);
+		#pragma unroll 4
+		DLOOPA
+		{
+			uprllcon[j] = (uDotBhat / bhatsq) * bhatcon[j];
+			uperpcon[j] = q.ucon[j] - uprllcon[j]; // identical to using projection tensor
+		}
+		lower(uprllcon, geom->gcov, uprllcov);
+		lower(uperpcon, geom->gcov, uperpcov);
+		uprllsq = dot(uprllcov, uprllcon);
+		uperpsq = dot(uperpcov, uperpcon);
+
+		rhopre = pf_prefloor[RHO];
+		uintpre = pf_prefloor[UU];
+
+		/***** Modification due to flooring ******/
+		if (pf[RHO] >= rhopre || pf[UU] >= uintpre)
+		{
+			/* Find final enthalpy */
+			if (pf[RHO] > rhopre)
+				rhopost = pf[RHO];
+			else
+				rhopost = rhopre;
+
+			if (pf[UU] > uintpre)
+				uintpost = pf[UU];
+			else
+				uintpost = uintpre;
+
+			// Conserved mom'm along coord-static frame magnetic field
+			Kprll = (rhopre + uintpre + (GAMMA - 1.0) * uintpre) * q.ucon[0] * dot(bhatcon, q.ucov) + (GAMMA - 1.0) * uintpre * bhatcon[0];
+
+			// Calligraphic K from notes: subtract off pressure term with *post-floor* value
+			Kcal = Kprll - (GAMMA - 1.0) * uintpost * bhatcon[0];
+
+			uprllDotBhat = dot(uprllcov, bhatcon);
+
+			// Final form: K_2
+			K2 = Kcal / ((rhopost + uintpost + (GAMMA - 1.0) * uintpost) * uprllDotBhat);
+
+			/* X a^2 + Y a + Z = 0 */
+			XNS = uprllcon[0] + K2 * uprllsq;
+			YNS = uperpcon[0];
+			ZNS = K2 * uperpsq;
+
+			aminusNS = (-YNS - sqrt(YNS * YNS - 4 * XNS * ZNS)) / (2 * XNS);
+			aplusNS = (-YNS + sqrt(YNS * YNS - 4 * XNS * ZNS)) / (2 * XNS);
+
+			// Want a to be positive
+			if ((aminusNS >= 0.0 && aminusNS <= 1.0) && (aplusNS < 0 || aplusNS > 1))
+				aNS = aminusNS;
+			else if ((aplusNS >= 0.0 && aplusNS <= 1.0) && (aminusNS < 0 || aminusNS > 1))
+				aNS = aplusNS;
+			else            // Both or neither values in range --- always seems to be neither
+				aNS = 1.0;   // Seems to happen when the "true" solution is just over 1 due to numerical errors
+				//fprintf(stderr, "BOTH or NEITHER A VALUES IN RANGE: %e   %e\n", aminus, aplus);
+		}
+		else
+			aNS = 1.0;
+
+		/***** Modification due to reduce parallel velocity inside the light-sphere *****/
+		if (smooth < 1.0)
+			aNS *= smooth;
+
+		/***** Construct final 4-velocity *****/
+		normalizerNS = sqrt(-(aNS * aNS * uprllsq + uperpsq));
+		#pragma unroll 4
+		DLOOPA ucon[j] = (aNS * uprllcon[j] + uperpcon[j]) / normalizerNS;
+
+		#pragma unroll 3
+		SLOOPA	pf[j + U1 - 1] = ucon[j] - ucon[0] * geom->gcon[j] / geom->gcon[0];
+
+	}
+	#elif(DRIFT_FLOOR)
 	trans = 10. * bsq / MY_MIN(pf[RHO], u) - 1.;
 	if (dofloor && (trans) > 0.) {
 		if (trans > 1.) trans = 1.;
@@ -1420,7 +1630,16 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		}
 	}
 	#endif
+	#if(NEUTRON_STAR)
+	/*** Reset floor fraction following either flooring or draining ***/
+	pf[FLRFRAC] = rho_b / (rho_b + rho_g);
 
+	/*** Enforce some sanity ***/
+	if (pf[FLRFRAC] < 0.0)
+		pf[FLRFRAC] = 0.0;
+	else if (pf[FLRFRAC] > 1.0)
+		pf[FLRFRAC] = 1.0;
+	#endif
 	// limit gamma wrt normal observer 
 	if (gamma_calc(pf, geom, &gamma)) {
 		flag = 4;

@@ -149,6 +149,11 @@ void vofx_matthewcoords(double *X, double *V){
 	else{
 		V[1] = (X[1] - Xtrans)*RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP) + RTRANS;
 	}
+
+#if(NEUTRON_STAR)
+	V[1] -= R_NS_OFFSET;
+#endif
+
 	double A1 = 1. / (1. + pow(CHARLIE*(log(V[1]) / log(10.)), DELTA));
 	double A2 = BRAVO*(log(V[1]) / log(10.)) + TANGO;
 	double A3 = pow(0.5, 1. - A2);
@@ -320,7 +325,7 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin =  0.90 * (1. + sqrt(1. - a * a)); 	
+	Rin = R_NS; //0.90 * (1. + sqrt(1. - a * a)); 	
 	Rout = ROUT;
 	lim = MC;
 	failed = 0;

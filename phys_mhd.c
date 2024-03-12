@@ -58,6 +58,13 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 		#endif
 	);
 	#endif
+
+#if(DOFLR)
+	flux[FLR] = flux[RHO] * pr[FLR];
+#endif
+#if NEUTRON_STAR
+	flux[FLRFRAC] = flux[RHO] * pr[FLRFRAC];
+#endif
     
 	for (k = 0; k < NPR; k++) flux[k] *= geom->g;
 }

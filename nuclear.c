@@ -6,11 +6,11 @@
 //  Copyright (c) 2015 Home. All rights reserved.
 //
 //  Edited by Danat Issa on 10/17/19
-#include "include.h"
+
 #include "decs.h"
 #include "nuclear.h"
 
-#if(DONUCLEAR == 2)
+#if(DONUCLEAR)
 double D4rodrigo(double eta, double Xn, double Xp);
 double D5rodrigo(double eta, double Xn, double Xp);
 double F4m(double x);

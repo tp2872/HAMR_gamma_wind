@@ -510,6 +510,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 	double fel;
+	int was_floor_activated = 0;
 
 	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, fel, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3, gamma_g)
 	{
@@ -628,14 +629,26 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 							failimage[nl[n]][ind0][2]++;
 						}
 					}
+					was_floor_activated = 1;
+				}
+				else {
+					was_floor_activated = 0;
 				}
 				#endif
 			#endif
+
+
 
 			#if(CALC_MDOT)
 			pf[nl[n]][ind0][B1] /= magnetic_density_scale_cpu;
 			pf[nl[n]][ind0][B2] /= magnetic_density_scale_cpu;
 			pf[nl[n]][ind0][B3] /= magnetic_density_scale_cpu;
+			#endif
+
+#			if(DOFLR)
+			if (was_floor_activated) {
+				pf[nl[n]][ind0][FLR] = 1.;
+			}
 			#endif
 		}
 	}

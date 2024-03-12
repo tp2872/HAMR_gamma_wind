@@ -5,6 +5,7 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 
 /* bound array containing entire set of primitive variables */
 void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
@@ -13,7 +14,12 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	double temp=nstep;
 	if (bound_force == 1) nstep = -1;
 
-	#if(BOUND_TYPE1==OUTFLOW)
+	#if(BOUND_TYPE1==NEUTRON_STAR_BC)	
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1_NS(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1_NS(ph, psh, n_ord[n]);
+	}
+	#elif(BOUND_TYPE1==OUTFLOW)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1_outflow(p,ps, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1_outflow(ph, psh, n_ord[n]);
@@ -834,6 +840,13 @@ void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 				prim[nl[n]][index_3D(n, i, j, z)][UU_RAD] = 1.e-30;
 				#endif
 
+				#if(NEUTRON_STAR)
+				prim[nl[n]][index_3D(n, i, j, z)][FLR] = 1.0;
+				#if(DOFLR)
+				prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = 1.0;
+				#endif
+				#endif
+
 				//Set fluid velocities to 0
 				prim[nl[n]][index_3D(n, i, j, z)][U1] = 0;
 				prim[nl[n]][index_3D(n, i, j, z)][U2] = 0;
@@ -974,4 +987,368 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type,
 	}
 	#endif
 }
+
+double angleRotated(double t)
+{
+	double phi, omega0, t0, delta_t;
+	t0 = SPINUP_START_TIME_NS;
+	delta_t = SPINUP_TIME_NS;
+	omega0 = OMEGA_NS;
+
+	if (t < t0)
+		phi = 0.0;
+	else if (t > t0 + delta_t)
+		phi = omega0 * (t - t0 - 0.5 * delta_t);
+	else
+		phi = 0.5 * omega0 * (t - t0) * (t - t0) / delta_t;
+
+	return phi;
+}
+
+
+
+/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
+static void get_surface_4velocity(struct of_geom* geom, double* uscon)
+{
+	double omega, omega0, t0, delta_t;
+	t0 = SPINUP_START_TIME_NS;
+	delta_t = SPINUP_TIME_NS;
+	omega0 = OMEGA_NS;
+
+	if (t < t0)
+		omega = 0.0;
+	else if (t > t0 + delta_t)
+		omega = omega0;
+	else
+		omega = omega0 * (t - t0) / delta_t;
+	//omega = 0.5 * (1.0 - cos((t-t0)*M_PI/delta_t)) * omega0 ;
+
+	uscon[0] = 1.0 / sqrt(-(geom->gcov[0][0] + 2.0 * geom->gcov[0][3] * omega + geom->gcov[3][3] * omega * omega));
+	uscon[1] = 0.0;
+	uscon[2] = 0.0;
+	uscon[3] = omega * uscon[0];
+
+	return;
+}
+
+static void get_surface_magneticField(struct of_geom* geom, double* bncon, double* uscon, double* bscon)
+{
+	double lapse, us_dot_n, bn_dot_us, bncov[NDIM];
+	int j;
+
+	lower(bncon, geom, bncov);
+
+	lapse = sqrt(-1.0 / geom->gcon[0][0]);
+	us_dot_n = -lapse * uscon[0]; // Since normal observer n_mu = (-lapse, 0, 0, 0)
+	bn_dot_us = dot(bncov, uscon);
+
+	DLOOPA
+		bscon[j] = -(bncon[j] + uscon[j] * bn_dot_us) / us_dot_n;
+
+	return;
+}
+
+
+void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n) {
+	int i, j, z, k;
+	double r, th, phi, X[NDIM];
+	struct of_geom geom;
+	int accreting, forcefree, useForcefreeBC;
+	double ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM];
+	double ucon_FAZ[NDIM], vcon_FAZ[NDIM]; // "FAZ" : first active zone
+	double* pFAZ;
+	double dxdxp_FAZ[NDIM][NDIM], dxdxp_surf[NDIM][NDIM], dxpdx_surf[NDIM][NDIM];
+	double r0, r_ghost1, r_ghost2, r0_rg[2];
+	double rs0, rs_ghost1, rs_ghost2;
+	//double rho_temp, uu_temp;
+	
+	coord(n_ord[n], 0, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	r0 = r;
+	dxdxp_func(X, dxdxp_FAZ);
+	coord(n_ord[n], -1, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	r_ghost1 = r;
+	coord(n_ord[n], -2, 0, 0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	r_ghost2 = r;
+	r0_rg[0] = r0 / r_ghost2;
+	r0_rg[1] = r0 / r_ghost1;
+	// inner r boundary condition: u, gdet extrapolation
+	if (block[n][AMR_NBR4] == -1) {
+#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
+		{
+#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
+			for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
+				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++) {
+					//#pragma omp   simd
+					for (i = -N1G; i < 0; i++) {
+						for (k = 0; k < NPR; k++) {
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, 0, j, z)][k];
+						}
+#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, 0, j, z)][2];
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, 0, j, z)][3];
+#endif
+						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, 0, j, z)];
+					}
+					get_geometry(n, 0, j, z, CENT, &geom);
+					pFAZ = prim[nl[n]][index_3D(n, 0, j, z)];
+					ucon_calc(prim[nl[n]][index_3D(n, 0, j, z)], &geom, ucon_FAZ);
+					for (k = 1; k < NDIM; k++) {
+						vcon_FAZ[k] = ucon_FAZ[k] / ucon_FAZ[0];
+					}
+					if (vcon_FAZ[1] < 0.0)
+						accreting = 1;
+					else
+						accreting = 0;
+
+					if (pFAZ[FLRFRAC] > FFE_ZONE_FLRFRAC_THRESHOLD)
+						forcefree = 1;
+					else
+						forcefree = 0;
+
+					if (forcefree || (accreting == 0))
+						useForcefreeBC = 1;
+					else
+						useForcefreeBC = 0;
+
+					/* Extrapolated primitives */
+					//slopelim_extrap_prim(j, k, RHO, prim);
+					//slopelim_extrap_prim(j, k, UU, prim);
+
+
+					if (useForcefreeBC)
+					{
+
+						//basic_hydroStatic_atm(r_ghost1, &rho_temp, &uu_temp);
+						prim[nl[n]][index_3D(n, -1, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r_ghost1 / R_NS, -1.0 / (GAMMA - 1.0));
+						prim[nl[n]][index_3D(n, -1, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r_ghost1 / R_NS, GAMMA / (1.0 - GAMMA));
+
+						//basic_hydroStatic_atm(r_ghost2, &rho_temp, &uu_temp);
+						for (i = -N1G; i < -1; i++) {
+							prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r_ghost2 / R_NS, -1.0 / (GAMMA - 1.0));
+							prim[nl[n]][index_3D(n, i, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r_ghost2 / R_NS, GAMMA / (1.0 - GAMMA));
+						}
+					}
+					for (int i = -N1G; i < 0; i++)
+					{
+#if OBLIQUE_NS
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(i, j, k, CENT, &geom);
+
+#else /* aligned rotator: can store normal field */ 
+						coord(n_ord[n], i, j, z, CENT, X);
+						bl_coord(X, &r, &th, &phi);
+						dxdxp_func(X, dxdxp_surf);
+						invert_matrix(dxdxp_surf, dxpdx_surf);
+
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, 0, j, z)][B1] *pow(r0 / r, 4.0)* dxpdx_surf[1][1] * dxdxp_FAZ[1][1];
+						
+						coord(n_ord[n], i, j, z, FACE1, X);
+						bl_coord(X, &r, &th, &phi);
+						dxdxp_func(X, dxdxp_surf);
+						invert_matrix(dxdxp_surf, dxpdx_surf);
+
+						/*usually we do not set a bounds condition on ps[1]*/
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, 0, j, z)][1] *pow(r0 / r, 4.0)* dxpdx_surf[1][1] * dxdxp_FAZ[1][1];
+#endif
+						//if (i < 5 && z == 0 && (j<5) && r < 4.2) {
+						//	fprintf(stderr, "ps1: %g at r=%g(%d), th=%g(%d), phi=%g(%d) \n", ps[nl[n]][index_3D(n, i, j, z)][1],r, i, th, j, phi, z);
+						//}
+
+						if (useForcefreeBC) {
+							prim[nl[n]][index_3D(n, i, j, z)][FLR] = 1.0;
+							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = 1.0;
+							prim[nl[n]][index_3D(n, i, j, z)][KTOT] = 0.0;
+						}
+						else {
+							prim[nl[n]][index_3D(n, i, j, z)][FLR] = prim[nl[n]][index_3D(n, 0, j, z)][FLR];
+							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = prim[nl[n]][index_3D(n, 0, j, z)][FLRFRAC];
+							prim[nl[n]][index_3D(n, i, j, z)][KTOT] = prim[nl[n]][index_3D(n, 0, j, z)][KTOT];
+						}
+
+					}
+
+					//simple_extrap_prim(j, k, B2, prim);
+					//simple_extrap_prim(j, k, B3, prim);
+
+
+					/* Now do velocities */
+
+					if (useForcefreeBC)
+					{	
+						double bncon[NDIM], bscon[NDIM], uscon[NDIM], etacon[NDIM], etacov[NDIM];
+						double bccon[NDIM], bccov[NDIM], uperpcon[NDIM], uperpcov[NDIM];
+						double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq;
+						/*set_boundary_velocities_FFE_4Dmethod(n, i, j, k, CENT, prim[nl[n]][index_3D(n, i, j, z)]);*/
+						for (i = -N1G; i < 0; i++) {
+							get_geometry(n, i, j, z, CENT, &geom);
+							bncon[0] = 0.0;
+							for (k = 1; k < NDIM; k++) {
+								bncon[k] = prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
+							}
+							/* Surface-observer 4-velocity and magnetic field */
+							get_surface_4velocity(&geom, uscon);
+							get_surface_magneticField(&geom, bncon, uscon, bscon);
+
+							/* Coordinate-observer 4-velocity and magnetic field */
+							etacon[0] = sqrt(-1.0 / geom.gcov[0][0]); // i.e. eta = u_c
+							for (k = 1; k < NDIM; k++) {
+								etacon[k] = 0.0;
+							}
+							lower(etacon, &geom, etacov);
+
+							bs_dot_eta = dot(bscon, etacov);
+							us_dot_eta = dot(uscon, etacov);
+
+							for (k = 0; k < NDIM; k++) {
+								bccon[k] = uscon[k] * bs_dot_eta - bscon[k] * us_dot_eta;
+							}
+							lower(bccon, &geom, bccov);
+							bcsq = dot(bccon, bccov);
+
+							/* Project surface velocity us orthogonal to coordinate-observer magnetic field bc */
+							bc_dot_us = dot(bccov, uscon);
+							for (k = 0; k < NDIM; k++) {
+								uperpcon[k] = uscon[k] - bccon[k] * bc_dot_us / bcsq;
+							}
+
+							/* Normalize: u = u_p / sqrt(- u_p^2) */
+							lower(uperpcon, &geom, uperpcov);
+							uperpsq = dot(uperpcon, uperpcov);
+							for (k = 0; k < NDIM; k++) {
+								ucon[k] = uperpcon[k] / sqrt(-uperpsq);
+							}
+
+							/* Just use surface 4-velocity directly */
+							//DLOOPA
+							//    ucon[j] = uscon[j] ;
+
+							for (k = 1; k < NDIM; k++) {
+								prim[nl[n]][index_3D(n, i, j, z)][U1 + k - 1] = ucon[k] - geom.gcon[0][k] * ucon[0] / geom.gcon[0][0];
+							}
+						}
+							
+							
+					}
+					else 
+					{
+						double bncon[NDIM], bscon[NDIM], bscov[NDIM], uscon[NDIM], bsmag;
+						double uprllcon[NDIM], uprllsq;
+						double udotb[3], d_udotb, udotb_ghost[N1G], beta_NS;
+						//find_udotb_first3(n, j, k, prim, udotb);
+						for (i = 0; i < 3; i++) {
+							get_geometry(n, i, j, z, CENT, &geom);
+							ucon_calc(prim[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
+							/* Normal-observer magnetic field */
+							bncon[0] = 0.0;
+							for (k = 1; k < NDIM; k++) {
+								bncon[k] = prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
+							}
+							get_surface_4velocity(&geom, uscon);
+							get_surface_magneticField(&geom, bncon, uscon, bscon);
+							lower(bscon, &geom, bscov);
+							bsmag = sqrt(dot(bscon, bscov));
+							udotb[i] = dot(ucon, bscov) / bsmag;  // Store u.b/|b|
+						}
+						d_udotb = slope_lim(udotb[0], udotb[1], udotb[2]);
+						for (i = -N1G; i < 0; i++)
+							udotb_ghost[i + N1G] = udotb[0] + i * d_udotb;
+						//udotb_surface[j][k] = udotb[0] - 0.5 * d_udotb;
+
+
+						for (i = -N1G; i < 0; i++) {
+							// set_boundary_velocities_surfaceFrame_4Dmethod(n, i, j, k, CENT, prim[i][j][k], udotb_ghost[i + N1G]);
+							get_geometry(n, i, j, z, CENT, &geom);
+							bncon[0] = 0.0;
+							for (k = 1; k < NDIM; k++) {
+								bncon[k] = -1.0 * prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / (geom.gcon[0][0]);
+							}
+							/* Surface-observer 4-velocity and magnetic field */
+							get_surface_4velocity(&geom, uscon);
+							get_surface_magneticField(&geom, bncon, uscon, bscon);
+							lower(bscon, &geom, bscov);
+							bsmag = sqrt(dot(bscon, bscov));
+							beta_NS = udotb_ghost[i + N1G] / sqrt(1.0 + udotb_ghost[i + N1G] * udotb_ghost[i + N1G]);
+							for (k = 0; k < NDIM; k++) {
+								ucon[k] = (uscon[k] + beta_NS * bscon[k] / bsmag) / sqrt(1.0 - beta_NS * beta_NS);
+							}
+
+							for (k = 1; k < NDIM; k++) {
+								prim[nl[n]][index_3D(n, i, j, z)][U1 + k - 1] = ucon[k] - geom.gcon[0][k] * ucon[0] / geom.gcon[0][0];
+							}
+						}
+					}
+				}
+			}
+		}
+
+#if(!CONSTANT_BC)
+		if (block[n][AMR_NBR2] == -1) {
+			// outer r BC: outflow 		
+#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
+			{
+#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
+				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
+					for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++) {
+						for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i < N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G; i++) {
+							PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
+							pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)];
+#if(STAGGERED)
+							ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][2];
+							ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][3];
+#endif
+						}
+					}
+				}
+			}
+		}
+#endif
+
+		// make sure there is no inflow at the inner boundary 
+		if (block[n][AMR_NBR4] == -1) {
+			for (i = -N1G; i <= -1; i++) {
+#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
+				{
+#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
+					for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
+						for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+							inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 0, 1);
+							inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 0, 1);
+#if(N1G==3)
+							inflow_check(prim[nl[n]][index_3D(n, -3, j, z)], n, i, j, z, 0, 1);
+#endif
+						}
+					}
+				}
+			}
+		}
+
+		// make sure there is no inflow at the outer boundary
+#if(!CONSTANT_BC)
+		if (block[n][AMR_NBR2] == -1) {
+			for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i <= N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G - 1; i++) {
+#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
+				{
+#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
+					for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
+						for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+							inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]), j, z)], n, i, j, z, 1, 1);
+							inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 1, j, z)], n, i, j, z, 1, 1);
+#if(N1G==3)
+							inflow_check(prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + 2, j, z)], n, i, j, z, 1, 1);
+#endif
+						}
+					}
+				}
+			}
+		}
+#endif
+	}
+}
+
+
+
+
+
 

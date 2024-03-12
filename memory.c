@@ -87,8 +87,11 @@ void set_arrays(int n)
 	#if(CARTESIAN_GR)
 	pflag_cart[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
 	#endif
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
 	pflag_rbound[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
+	#endif
+	#if(NEUTRON_STAR)
+	Bx1_surface[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double));
 	#endif
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
@@ -704,8 +707,11 @@ void free_arrays(int n){
 	#if(CARTESIAN_GR)
 	free(pflag_cart[nl[n]]);
 	#endif
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || NEUTRON_STAR)
 	free(pflag_rbound[nl[n]]);
+	#endif
+	#if(NEUTRON_STAR)
+	free(Bx1_surface[nl[n]]);
 	#endif
 	free(U[nl[n]]);
 	free(dq[nl[n]]);
@@ -2679,7 +2685,11 @@ void set_pflag_rbound(int n) {
 		bl_coord(X, &r, &th, &phi);
 
 		//Flag cells that are smaller than rmin
+#if(NEUTRON_STAR)
+		if (r < 1.01 * R_NS) {
+#else
 		if (r<(rmin - t/1000.0)) {
+#endif
 			pflag_rbound[nl[n]][index_3D(n, i, j, z)] = 1;
 			block[n][AMR_RBOUNDFLAG] = 1;
 		}
@@ -2691,11 +2701,17 @@ void set_pflag_rbound(int n) {
 		#if(GPU_ENABLED)
 		pflag_RBOUND_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pflag_rbound[nl[n]][index_3D(n, i, j, z)];
 		#endif
+		#if(GPU_ENABLED && NEUTRON_STAR)
+		Bx1_surface_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = Bx1_surface[nl[n]][index_3D(n, i, j, z)];
+		#endif
 	}
 
 	#if(GPU_ENABLED)
-		#if(DO_RBOUND)
+		#if(DO_RBOUND || NEUTRON_STAR)
 		gpuMemcpyAsync(Bufferpflag_RBOUND[nl[n]], pflag_RBOUND_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 		#endif
+	#endif
+	#if(GPU_ENABLED && NEUTRON_STAR)
+		gpuMemcpyAsync(BufferBx1_surface[nl[n]], Bx1_surface_GPU[nl[n]], ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	#endif
 }

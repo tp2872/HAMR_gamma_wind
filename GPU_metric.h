@@ -88,3 +88,4 @@ __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  g
 	geom->g = gdet_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
 	#endif
 }
+

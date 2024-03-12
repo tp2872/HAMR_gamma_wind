@@ -92,6 +92,13 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
         #endif
     }
 
+#if(DOFLR)
+    prim[FLR] = U[FLR] / U[RHO];
+#endif
+#if (NEUTRON_STAR)
+    prim[FLRFRAC] = U[FLRFRAC] / U[RHO];
+#endif
+
     return(ret);
 }
 
