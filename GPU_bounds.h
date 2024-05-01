@@ -1,4 +1,4 @@
-
+#include "config.h"
 
 __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps
     #if(DANAT_GDET_INTERP)	
@@ -31,13 +31,13 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 		get_geometry(N1G, jcurr, zcurr, CENT, &geom5, gcov, gcon, gdet);
 		#endif
 
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim5[k] = pv[k*(ksize)+N1G*isize + global_id];
 		}
 
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim1[k] = prim5[k];
 			prim2[k] = prim5[k];
 			#if(N1G==3)
@@ -67,15 +67,15 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
         #endif
 
 		/*Write primitives back to global memory*/
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			pv[k*(ksize)+global_id] = prim2[k];
 			pv[k*(ksize)+1 * isize + global_id] = prim1[k];
 			#if(N1G==3)
 			pv[k*(ksize)+2 * isize + global_id] = prim3[k];
 			#endif
 		}
-
+		
 		#if(STAGGERED)
 		ps[1 * (ksize)+0 * isize + global_id] = ps[1 * (ksize)+N1G*isize + global_id];
 		ps[1 * (ksize)+1 * isize + global_id] = ps[1 * (ksize)+N1G*isize + global_id];
@@ -86,6 +86,7 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 		ps[2 * (ksize)+2 * isize + global_id] = ps[2 * (ksize)+N1G*isize + global_id];
 		#endif
 		#endif
+		
 
 		global_id = -10;
 		jcurr = -10;
@@ -106,13 +107,13 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 	// outer r BC: outflow
 	#if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim6[k] = pv[k*(ksize)+(BS_1 + N1G - 1)*isize + global_id];
 		}
 
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			prim3[k] = prim6[k];
 			prim4[k] = prim6[k];
 			prim5[k] = prim6[k];
@@ -130,8 +131,8 @@ __global__ void boundprim1_outflow(double *   pv, const  double* __restrict__ gc
 		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 		#endif
 
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			pv[k*(ksize)+(BS_1 + N1G)*isize + global_id] = prim3[k];
 			pv[k*(ksize)+(BS_1 + N1G + 1)*isize + global_id] = prim4[k];
 		#if(N1G==3)
@@ -166,13 +167,13 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 
 	// inner r boundary condition: u, gdet extrapolation
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1){
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim5[k] = pv[k * (ksize)+icurr * isize + N3G * (BS_3 + 2 * N3G) + zcurr];
 		}
 
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim1[k] = prim5[k];
 			prim2[k] = prim5[k];
 			#if(N1G==3)
@@ -193,8 +194,8 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		#endif
 
 		/*Write primitives back to global memory*/
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			pv[k * (ksize)+icurr * isize + 0 * (BS_3 + 2 * N3G) + zcurr] = prim2[k];
 			pv[k * (ksize)+icurr * isize + 1 * (BS_3 + 2 * N3G) + zcurr] = prim1[k];
 			#if(N2G==3)
@@ -231,13 +232,13 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 
 	// outer r BC: outflow
 	if (icurr >= 0 && icurr < BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1){
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k< NPR - USE_PS1START; k++){
 			prim6[k] = pv[k * (ksize) + icurr * isize + (BS_2 + N2G - 1) * (BS_3 + 2 * N3G) + zcurr];
 		}
 
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			prim3[k] = prim6[k];
 			prim4[k] = prim6[k];
 			prim5[k] = prim6[k];
@@ -255,8 +256,8 @@ __global__ void boundprim2_outflow(double * pv, const  double* __restrict__ gcov
 		inflow_check(prim5, icurr, BS_2 + N2G + 1, zcurr, 1, gcov, gcon, gdet, 2);
 		#endif
 
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			pv[k * (ksize)+icurr * isize + (BS_2 + N2G) * (BS_3 + 2 * N3G) + zcurr] = prim3[k];
 			pv[k * (ksize)+icurr * isize + (BS_2 + N2G + 1) * (BS_3 + 2 * N3G) + zcurr] = prim4[k];
 			#if(N2G==3)
@@ -337,8 +338,8 @@ __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ 
 			pv[PHOTON * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[PHOTON * (ksize)+isize * icurr + (jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR - USE_PS1START; k++){
 			pv[k*(ksize)+isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
 			pv[k*(ksize)+isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
 			#if(N2G==3)
@@ -440,8 +441,8 @@ __global__ void boundprim2_reflective(double *  pv, const  double* __restrict__ 
 			pv[PHOTON * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[PHOTON * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
-		#pragma unroll 9
-		for (k = 0; k<NPR; k++){
+		#pragma unroll 11
+		for (k = 0; k<NPR-USE_PS1START; k++){
 			pv[k*(ksize)+isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
 			pv[k*(ksize)+isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
 			#if(N2G==3)
@@ -494,8 +495,8 @@ __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet,
 	// polar BCs
 	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == 1) {
 		for (j = -N2G; j < 0; j++){
-			#pragma unroll 9
-			for (k = 0; k < NPR; k++){
+			#pragma unroll 11
+			for (k = 0; k < NPR - USE_PS1START; k++){
 				pv[k*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			}
 			pv[U2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
@@ -544,8 +545,8 @@ __global__ void boundprim2_trans(double *  pv, const  double* __restrict__ gdet,
 
 	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == 1) {
 		for (j = BS_2; j < BS_2 + N2G; j++){
-			#pragma unroll 9
-			for (k = 0; k < NPR; k++){
+			#pragma unroll 11
+			for (k = 0; k < NPR - USE_PS1START; k++){
 				pv[k*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			}
 			pv[U2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
@@ -884,7 +885,15 @@ __global__ void boundprim_cart(double * pv, double *  ps, int * pflag_cart, cons
 
 
 
-__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE)
+__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4
+#if(STAGGERED)
+	, double* ps
+#endif
+	, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE, double t
+#if(TWISTED_OMEGA || OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ th , const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1
+#endif
+)
 {
 #if(NEUTRON_STAR)
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
@@ -897,28 +906,46 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 	struct of_geom geom;
 
-
 	// inner r boundary condition: u, gdet extrapolation
 	if (jcurr >= 0 && jcurr < BS_2 + 2 * N2G && zcurr >= 0 && zcurr < BS_3 + 2 * N3G && NBR_4 == -1) {
 
+		#if(SIMPLE_NS_BC_EXTRAPOLATE)
+		//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
+		double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
+		df_B1 = pv[B1 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id] - pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
+		df_B2 = pv[B2 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id] - pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
+		df_B3 = pv[B3 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id] - pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
 
-#if(STAGGERED)
-		ps[1 * (ksize)+0 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
-		ps[1 * (ksize)+1 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
-		ps[2 * (ksize)+0 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
-		ps[2 * (ksize)+1 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
-#if(N1G==3)
-		ps[1 * (ksize)+2 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];
-		ps[2 * (ksize)+2 * isize + global_id] = ps[2 * (ksize)+N1G * isize + global_id];
-#endif
-#endif
+		if ((pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B1) < 0.0)) df_B1 = 0.0;
+		if ((pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B2) < 0.0)) df_B2 = 0.0;
+		if ((pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B3) < 0.0)) df_B3 = 0.0;
+		#endif 
+
+		#if(SLOPELIM_NS_BC_EXTRAPOLATE)
+		//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
+		double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
+		df_B1 = slope_lim_BC(pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id], pv[B1 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id], pv[B1 * (ksize)+(N1G + CELLS_IN_STAR + 2) * isize + global_id]);
+		df_B2 = slope_lim_BC(pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id], pv[B2 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id], pv[B2 * (ksize)+(N1G + CELLS_IN_STAR + 2) * isize + global_id]);
+		df_B3 = slope_lim_BC(pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id], pv[B3 * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id], pv[B3 * (ksize)+(N1G + CELLS_IN_STAR + 2) * isize + global_id]);
+
+		if ((pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B1) < 0.0)) df_B1 = 0.0;
+		if ((pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B2) < 0.0)) df_B2 = 0.0;
+		if ((pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_B3) < 0.0)) df_B3 = 0.0;
+		#endif 
+
+		double df_RHO = 0.0, df_UU = 0.0;
+		df_RHO = slope_lim_BC(pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id], pv[RHO * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id], pv[RHO * (ksize)+(N1G + CELLS_IN_STAR + 2) * isize + global_id]);
+		df_UU = slope_lim_BC(pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id], pv[UU * (ksize)+(N1G + CELLS_IN_STAR + 1) * isize + global_id], pv[UU * (ksize)+(N1G + CELLS_IN_STAR + 2) * isize + global_id]);
+
+		if ((pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_RHO)) < 0.0 || (pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_RHO) < 0.0)) df_RHO = 0.0;
+		if ((pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR) * df_UU)) < 0.0 || (pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * (pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - df_UU) < 0.0)) df_UU = 0.0;
 
 
-#pragma unroll NPR
-		for (k = 0; k < NPR; k++) {
-			prim5[k] = pv[k * (ksize)+N1G * isize + global_id]; //pFAZ
+#pragma unroll 11
+		for (k = 0; k < NPR - USE_PS1START; k++) {
+			prim5[k] = pv[k * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id]; //pFAZ
 		}
-		get_geometry(N1G, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		int accreting, forcefree, useForcefreeBC;
 		double ucon[NDIM], gamma, qsq;
 		qsq = geom.gcov[4] * prim5[U1] * prim5[U1] + geom.gcov[7] * prim5[U2] * prim5[U2] + geom.gcov[9] * prim5[U3] * prim5[U3] + 2. * (geom.gcov[5] * prim5[U1] * prim5[U2] + geom.gcov[6] * prim5[U1] * prim5[U3] + geom.gcov[8] * prim5[U2] * prim5[U3]);
@@ -942,59 +969,65 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 		else
 			useForcefreeBC = 0;
 
-		if (useForcefreeBC)
-		{
-
-			//basic_hydroStatic_atm(r_ghost1, &rho_temp, &uu_temp);
-			pv[RHO * (ksize)+(N1G - 1) * isize + global_id] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G-1] / R_NS, -1.0 / (GAMMA - 1.0));
-			pv[UU * (ksize)+(N1G - 1) * isize + global_id] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G-1] / R_NS, GAMMA / (1.0 - GAMMA));
-
-			//basic_hydroStatic_atm(r_ghost2, &rho_temp, &uu_temp);
-			for (ii = 0; ii < N1G-1; ii++) {
-				pv[RHO * (ksize)+ii * isize + global_id] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G - 2] / R_NS, -1.0 / (GAMMA - 1.0));
-				pv[UU * (ksize)+ii * isize + global_id] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(radius[N1G - 2] / R_NS, GAMMA / (1.0 - GAMMA));
-			}
-		}
-#pragma unroll N1G
-		for (ii = 0; ii < N1G; ii++)
-		{
-#if OBLIQUE_NS
-			prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(i, j, k, CENT, &geom);
-
-#else /* aligned rotator: can store normal field */ 
-
-			/*Here*/
-			pv[B1 * (ksize)+ii * isize + global_id] = pv[B1 * (ksize)+N1G * isize + global_id] * scaleCENT[ii* isize + global_id];
-
-			/*usually we do not set a bounds condition on ps[1]*/
-			ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id] * scaleFACE[ii * isize + global_id];
-#endif
-			if (useForcefreeBC) {
+		if (useForcefreeBC) {
+#pragma unroll 3
+			for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++) {
+				pv[RHO * (ksize)+ii * isize + global_id] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(radius[ii] / R_NS, -1.0 / (GAMMA - 1.0));
+				pv[UU * (ksize)+ii * isize + global_id] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(radius[ii] / R_NS, GAMMA / (1.0 - GAMMA));
 				pv[FLR * (ksize)+ii * isize + global_id] = 1.0;
 				pv[FLRFRAC * (ksize)+ii * isize + global_id] = 1.0;
 				pv[KTOT * (ksize)+ii * isize + global_id] = 0.0;
 			}
-			else {
-				pv[FLR * (ksize)+ii * isize + global_id] = pv[FLR * (ksize)+N1G * isize + global_id];
-				pv[FLRFRAC * (ksize)+ii * isize + global_id] = pv[FLRFRAC * (ksize)+N1G * isize + global_id];
-				pv[KTOT * (ksize)+ii * isize + global_id] = pv[KTOT * (ksize)+N1G * isize + global_id];
+		}
+		else {
+#pragma unroll 3
+			for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++) {
+				pv[RHO * (ksize)+ii * isize + global_id] = pv[RHO * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_RHO;
+				pv[UU * (ksize)+ii * isize + global_id] = pv[UU * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_UU;
+				pv[FLR * (ksize)+ii * isize + global_id] = pv[FLR * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
+				pv[FLRFRAC * (ksize)+ii * isize + global_id] = pv[FLRFRAC * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
+				pv[KTOT * (ksize)+ii * isize + global_id] = pv[KTOT * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
 			}
-
 		}
 
-		//simple_extrap_prim(j, k, B2, prim);
-		//simple_extrap_prim(j, k, B3, prim);
-
-		double df;
-		df = pv[B2 * (ksize)+(N1G+1)* isize + global_id] - pv[B2 * (ksize)+(N1G) * isize + global_id];
-		pv[B2 * (ksize)+(N1G - 1) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - df;
-		pv[B2 * (ksize)+(N1G - 2) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - 2.0 * df;
-		pv[B2 * (ksize)+(N1G - 3) * isize + global_id] = pv[B2 * (ksize)+(N1G) * isize + global_id] - 3.0 * df;
-
-		df = pv[B3 * (ksize)+(N1G + 1) * isize + global_id] - pv[B3 * (ksize)+(N1G)*isize + global_id];
-		pv[B3 * (ksize)+(N1G - 1) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - df;
-		pv[B3 * (ksize)+(N1G - 2) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - 2.0 * df;
-		pv[B3 * (ksize)+(N1G - 3) * isize + global_id] = pv[B3 * (ksize)+(N1G)*isize + global_id] - 3.0 * df;
+#pragma unroll 3
+		for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++)
+		{
+#if(STAGGERED)
+#if(OBLIQUE_NS)
+			get_geometry(ii, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			ps[0 * (ksize)+ii * isize + global_id] = calcRadialField(radiusF1[ii], th[jcurr], phi[zcurr], dxpdx11_F1[ii * isize + global_id], geom.g, t);
+#else /* aligned rotator: can store normal field */ 
+			ps[0 * (ksize)+ii * isize + global_id] = pv[PS1START * (ksize)+ii * isize + global_id];
+#endif
+#endif
+			//pv[B1 * (ksize)+ii * isize + global_id] = pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleCENT[ii * isize + global_id];
+			
+#if(SIMPLE_NS_BC_EXTRAPOLATE || SLOPELIM_NS_BC_EXTRAPOLATE) 
+			//pv[B1 * (ksize)+ii * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[ii * isize + global_id];
+			pv[B1 * (ksize)+ii * isize + global_id] = pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_B1;
+			pv[B2 * (ksize)+ii * isize + global_id] = pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_B2;
+			pv[B3 * (ksize)+ii * isize + global_id] = pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_B3;
+#if(STAGGERED)
+			ps[1 + ii * isize + global_id] = ps[1 + (N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_B2;
+			ps[2 + ii * isize + global_id] = ps[2 + (N1G + CELLS_IN_STAR) * isize + global_id] - (double)(N1G + CELLS_IN_STAR - ii) * df_B3;
+#endif 
+#else
+			pv[B1 * (ksize)+ii * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[ii * isize + global_id];
+			pv[B2 * (ksize)+ii * isize + global_id] = pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0);
+			pv[B3 * (ksize)+ii * isize + global_id] = pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 2.0);
+#if(STAGGERED)
+			//double gcon0_N1G = 0.0;
+			//get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			//gcon0_N1G = geom.gcon[0];
+			//get_geometry(ii, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			//get_geometry(ii, jcurr, zcurr, FACE2, &geom, gcov, gcon, gdet);
+			ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0); // *pow(geom.gcon[0] / gcon0_N1G, 3. / 2.);
+			//get_geometry(ii, jcurr, zcurr, FACE3, &geom, gcov, gcon, gdet);
+			ps[2 * (ksize)+ii * isize + global_id] = ps[2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 2.0);
+#endif
+#endif			
+		}
 
 		/* Now do velocities */
 
@@ -1005,15 +1038,18 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 			double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq;
 			/*set_boundary_velocities_FFE_4Dmethod(n, i, j, k, CENT, prim[nl[n]][index_3D(n, i, j, z)]);*/
 #pragma unroll 3
-			for (ii = 0; ii < N1G; ii++) {
+			for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++) {
 				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 				bncon[0] = 0.0;
-//#pragma unroll 3 //may test unroll later
 				for (k = 1; k < NDIM; k++) {
 					bncon[k] = pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / sqrt(-geom.gcon[0]); 
 				}
 				/* Surface-observer 4-velocity and magnetic field */
-				get_surface_4velocity(gcov, uscon);
+				get_surface_4velocity(gcov, uscon, t
+#if(TWISTED_OMEGA)
+					, th[jcurr]
+#endif
+				);
 				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
 
 				/* Coordinate-observer 4-velocity and magnetic field */
@@ -1032,7 +1068,7 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 					bccon[k] = uscon[k] * bs_dot_eta - bscon[k] * us_dot_eta;
 				}
 				lower_KC(bccon, gcov, bccov);
-				bcsq = dot(bccon, bccov);
+				bcsq = dot(bccon, bccov) + SMALL;
 
 				/* Project surface velocity us orthogonal to coordinate-observer magnetic field bc */
 				bc_dot_us = dot(bccov, uscon);
@@ -1044,7 +1080,7 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 
 				/* Normalize: u = u_p / sqrt(- u_p^2) */
 				lower_KC(uperpcon, gcov, uperpcov);
-				uperpsq = dot(uperpcon, uperpcov);
+				uperpsq = dot(uperpcon, uperpcov) + SMALL;
 
 
 				for (k = 0; k < NDIM; k++) {
@@ -1052,8 +1088,9 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 				}
 
 				/* Just use surface 4-velocity directly */
-				//DLOOPA
-				//    ucon[j] = uscon[j] ;
+				for (k = 0; k < NDIM; k++) {
+					ucon[k] = uscon[k];
+				}
 
 				for (k = 1; k < NDIM; k++) {
 					pv[(U1 + k - 1) * (ksize)+ii * isize + global_id] = ucon[k] - geom.gcon[k] * ucon[0] / geom.gcon[0];
@@ -1066,46 +1103,55 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 		{
 			double bncon[NDIM], bscon[NDIM], bscov[NDIM], uscon[NDIM], bsmag;
 			double uprllcon[NDIM], uprllsq;
-			double udotb[3], d_udotb, udotb_ghost[N1G], beta_NS;
+			double udotb[3], d_udotb, udotb_ghost[N1G + CELLS_IN_STAR], beta_NS;
 			//find_udotb_first3(n, j, k, prim, udotb);
 #pragma unroll 3
 			for (ii = 0; ii < 3; ii++) {
-				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+				get_geometry(ii+ N1G + CELLS_IN_STAR, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 				for (k = 0; k < NPR; k++) {
-					prim1[k] = pv[k * (ksize)+ii * isize + global_id]; 
+					prim1[k] = pv[k * (ksize)+(ii + N1G + CELLS_IN_STAR) * isize + global_id];
 				}
 				ucon_calc(prim1, &geom, ucon);
 				/* Normal-observer magnetic field */
 				bncon[0] = 0.0;
 				for (k = 1; k < NDIM; k++) {
-					bncon[k] = -1.0 * pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / (geom.gcon[0]);
+					bncon[k] = pv[(B1 + k - 1) * (ksize)+(ii + N1G + CELLS_IN_STAR) * isize + global_id] / sqrt(-geom.gcon[0]);
 				}
-				get_surface_4velocity(gcov, uscon);
+				get_surface_4velocity(gcov, uscon, t
+#if(TWISTED_OMEGA)
+					, th[jcurr]
+#endif
+				);
 				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
 				lower_KC(bscon, gcov, bscov);
-				bsmag = sqrt(dot(bscon, bscov));
+				bsmag = sqrt(dot(bscon, bscov)) + SMALL;
 				udotb[ii] = dot(ucon, bscov) / bsmag;  // Store u.b/|b|
 			}
-			d_udotb = slope_lim(udotb[0], udotb[1], udotb[2], 0);
-#pragma unroll N1G
-			for (ii = 0; ii < N1G; ii++)
-				udotb_ghost[ii] = udotb[0] + (ii - N1G) * d_udotb;
+			d_udotb = slope_lim_BC(udotb[0], udotb[1], udotb[2]);
+#pragma unroll 3
+			for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++)
+				udotb_ghost[ii] = udotb[0] - (N1G + CELLS_IN_STAR - ii) * d_udotb;
 			//udotb_surface[j][k] = udotb[0] - 0.5 * d_udotb;
 
-#pragma unroll N1G
-			for (ii = 0; ii < N1G; ii++) {
+#pragma unroll 3
+			for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++) {
 				// set_boundary_velocities_surfaceFrame_4Dmethod(n, i, j, k, CENT, prim[i][j][k], udotb_ghost[i + N1G]);
 				get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 				bncon[0] = 0.0;
 				for (k = 1; k < NDIM; k++) {
-					bncon[k] = -1.0 * pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / (geom.gcon[0]);
+					bncon[k] = pv[(B1 + k - 1) * (ksize)+ii * isize + global_id] / sqrt(-geom.gcon[0]);
 				}
 				/* Surface-observer 4-velocity and magnetic field */
-				get_surface_4velocity(gcov, uscon);
+				get_surface_4velocity(gcov, uscon, t
+#if(TWISTED_OMEGA)
+					, th[jcurr]
+#endif
+				);
 				get_surface_magneticField(gcov, gcon, bncon, uscon, bscon);
 				lower_KC(bscon, gcov, bscov);
-				bsmag = sqrt(dot(bscon, bscov));
+				bsmag = sqrt(dot(bscon, bscov)) + SMALL;
 				beta_NS = udotb_ghost[ii] / sqrt(1.0 + udotb_ghost[ii] * udotb_ghost[ii]);
+				//if (beta_NS > 1.0) printf("beta NS error!!\n");
 				for (k = 0; k < NDIM; k++) {
 					ucon[k] = (uscon[k] + beta_NS * bscon[k] / bsmag) / sqrt(1.0 - beta_NS * beta_NS);
 				}
@@ -1116,8 +1162,8 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 			}
 		}
 
-#pragma unroll NPR
-		for (k = 0; k < NPR; k++) {
+#pragma unroll 11
+		for (k = 0; k < NPR - USE_PS1START; k++) {
 			prim1[k] = pv[k * (ksize)+1 * isize + global_id];
 			prim2[k] = pv[k * (ksize)+global_id];
 #if(N1G==3)
@@ -1137,8 +1183,8 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 #endif
 
 		/*Write primitives back to global memory*/
-#pragma unroll NPR
-		for (k = 0; k < NPR; k++) {
+#pragma unroll 11
+		for (k = 0; k < NPR - USE_PS1START; k++) {
 			pv[k * (ksize)+global_id] = prim2[k];
 			pv[k * (ksize)+1 * isize + global_id] = prim1[k];
 #if(N1G==3)
@@ -1164,16 +1210,31 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 		jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	}
 
+	/*if (jcurr == N2G && zcurr == N3G) {
+		printf("icurr 0 jcurr %d : ps[1] %0.3g ps[2] %0.3g ps[3] %0.3g \n", jcurr, ps[1 * (ksize)+0 * isize + global_id], ps[2 * (ksize)+0 * isize + global_id], ps[3 * (ksize)+0 * isize + global_id]);
+		printf("icurr 1 jcurr %d : ps[1] %0.3g ps[2] %0.3g ps[3] %0.3g \n", jcurr, ps[1 * (ksize)+1 * isize + global_id], ps[2 * (ksize)+1 * isize + global_id], ps[3 * (ksize)+1 * isize + global_id]);
+		printf("icurr 2 jcurr %d : ps[1] %0.3g ps[2] %0.3g ps[3] %0.3g \n", jcurr, ps[1 * (ksize)+2 * isize + global_id], ps[2 * (ksize)+2 * isize + global_id], ps[3 * (ksize)+2 * isize + global_id]);
+		printf("icurr 3 jcurr %d : ps[1] %0.3g ps[2] %0.3g ps[3] %0.3g \n", jcurr, ps[1 * (ksize)+3 * isize + global_id], ps[2 * (ksize)+3 * isize + global_id], ps[3 * (ksize)+3 * isize + global_id]);
+		printf("icurr 4 jcurr %d : ps[1] %0.3g ps[2] %0.3g ps[3] %0.3g \n\n", jcurr, ps[1 * (ksize)+4 * isize + global_id], ps[2 * (ksize)+4 * isize + global_id], ps[3 * (ksize)+4 * isize + global_id]);
+
+		printf("icurr 0 jcurr %d : utu[1] %0.3g utu[2] %0.3g utu[3] %0.3g \n", jcurr, pv[U1 * (ksize)+0 * isize + global_id], pv[U2 * (ksize)+0 * isize + global_id], pv[U3 * (ksize)+0 * isize + global_id]);
+		printf("icurr 1 jcurr %d : utu[1] %0.3g utu[2] %0.3g utu[3] %0.3g \n", jcurr, pv[U1 * (ksize)+1 * isize + global_id], pv[U2 * (ksize)+1 * isize + global_id], pv[U3 * (ksize)+1 * isize + global_id]);
+		printf("icurr 2 jcurr %d : utu[1] %0.3g utu[2] %0.3g utu[3] %0.3g \n", jcurr, pv[U1 * (ksize)+2 * isize + global_id], pv[U2 * (ksize)+2 * isize + global_id], pv[U3 * (ksize)+2 * isize + global_id]);
+		printf("icurr 3 jcurr %d : utu[1] %0.3g utu[2] %0.3g utu[3] %0.3g \n", jcurr, pv[U1 * (ksize)+3 * isize + global_id], pv[U2 * (ksize)+3 * isize + global_id], pv[U3 * (ksize)+3 * isize + global_id]);
+		printf("icurr 4 jcurr %d : utu[1] %0.3g utu[2] %0.3g utu[3] %0.3g \n\n", jcurr, pv[U1 * (ksize)+4 * isize + global_id], pv[U2 * (ksize)+4 * isize + global_id], pv[U3 * (ksize)+4 * isize + global_id]);
+	
+	}*/
+
 	// outer r BC: outflow
 #if(!CONSTANT_BC)
 	if (jcurr >= 0 && jcurr < BS_2 + 2 * N2G && zcurr >= 0 && zcurr < BS_3 + 2 * N3G && NBR_2 == -1) {
-#pragma unroll 9
-		for (k = 0; k < NPR; k++) {
+#pragma unroll 11
+		for (k = 0; k < NPR - USE_PS1START; k++) {
 			prim6[k] = pv[k * (ksize)+(BS_1 + N1G - 1) * isize + global_id];
 		}
 
-#pragma unroll 9
-		for (k = 0; k < NPR; k++) {
+#pragma unroll 11
+		for (k = 0; k < NPR-USE_PS1START; k++) {
 			prim3[k] = prim6[k];
 			prim4[k] = prim6[k];
 			prim5[k] = prim6[k];
@@ -1191,8 +1252,8 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 #endif
 
-#pragma unroll 9
-		for (k = 0; k < NPR; k++) {
+#pragma unroll 11
+		for (k = 0; k < NPR-USE_PS1START; k++) {
 			pv[k * (ksize)+(BS_1 + N1G) * isize + global_id] = prim3[k];
 			pv[k * (ksize)+(BS_1 + N1G + 1) * isize + global_id] = prim4[k];
 #if(N1G==3)
@@ -1216,24 +1277,94 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 
 
 
-/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
-__device__ void get_surface_4velocity(const  double* __restrict__ gcov, double uscon[NDIM])
+/* Assume that radial coord lines are straight at and inside the stellar surface */
+/* i.e. dxpdx[1][2] = 0                                                          */
+/* Schwarzschild static coords only for now                                      */
+#if(OBLIQUE_NS)
+
+__device__ double dfluxns(double r, double Omega, double phi, double th1, double th2, double t, double dt)
 {
-	double omega, omega0, t0, delta_t;
-	t0 = SPINUP_START_TIME_NS;
-	delta_t = SPINUP_TIME_NS;
-	omega0 = OMEGA_NS;
-	#if(0)
-	if (t < t0)
-		omega = 0.0;
-	else if (t > t0 + delta_t)
-		omega = omega0;
-	else
-		omega = omega0 * (t - t0) / delta_t;
+	double phi2 = phi - angleRotated(t);
+	double phi1 = phi2 - Omega * dt;
+
+	double alpha = OBL_ANGLE_NS;
+	double sinth1 = sin(th1);
+	double sinth2 = sin(th2);
+	double sinth1sq = sinth1 * sinth1;
+	double sinth2sq = sinth2 * sinth2;
+	double int_Ath_dth = -((th2 - th1) * (sin(phi2) - sin(phi1)) * sin(alpha));
+	double int_Aph_dph = ((phi2 - phi1) * (sinth2sq - sinth1sq) * cos(alpha)
+		- (sin(2 * th2) - sin(2 * th1)) * (sin(phi2) - sin(phi1)) * sin(alpha) * 0.5);
+
+	double z = 2.0 / r;
+	double zinv = 1.0 / z;
+
+	double schwFactor = 0.5 + zinv + zinv * zinv * log(1.0 - z);
+	double radFactor = -schwFactor * 3.0 * MU_NS / 2.0;
+
+	return(radFactor * (-int_Ath_dth + int_Aph_dph));
+}
+
+__device__ double calcRadialField(double r, double theta, double phi, double dxpdx11_F1, double gdet , double t)
+{
+	double Br, B1_code;
+
+	double phiRot, Br_ang;
+	double z, zinv, g_11_Schw;
+	//double rdetg_IEF, rdetg_KS, rdetg_ratio ;
+	double schwFactor, lapse;
+	double dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM];
+	double X[NDIM];
+
+	//get_KS_metric(i, j, k, geom, CENT) ;
+
+	z = 2.0 / r;
+	zinv = 1.0 / z;
+	g_11_Schw = 1.0 / (1.0 - z);
+	lapse = sqrt(1.0 - z); // Schw.; lapse function of metric actually in use: Schw, BL, ...
+
+	//rdetg_IEF = sqrt(g_11_IEF) * r*r * sin(theta) ;  // These are sqrts of the spatial metric determinant
+	//rdetg_KS  = geom.g / lapse ; // code gdet is sqrt(abs(g)), g = - alpha^2 gamma
+
+
+	/* Magnetic fields as measured by the Schwarzschild normal observer (fido) */
+	schwFactor = zinv * zinv * (zinv * log(1.0 - z) + 1.0 + 0.5 * z);
+	phiRot = angleRotated(t);
+	Br_ang = cos(OBL_ANGLE_NS) * cos(theta) + sin(OBL_ANGLE_NS) * sin(theta) * cos(phi - phiRot);
+	Br = -(6.0 * MU_NS * Br_ang / (r * r * r * sqrt(g_11_Schw))) * schwFactor;
+
+	/* Modify so that the field has zero divergence in KS coordinates: *
+	 * gives field as measured by the KS normal observer               */
+	 //rdetg_ratio = rdetg_IEF / rdetg_KS ;
+	 //Br *= rdetg_ratio;
+
+	 /* Take account of factor of lapse,                                *
+	  * since code uses B^i = *F^it = B^i_fido / alpha                  */
+	Br *= 1.0 / lapse;
+
+	/* transform to code coords                                         */
+	/* dr^\mu/dx^\nu jacobian, where x^\nu are internal coords          */
+
+	B1_code = dxpdx11_F1 * Br;
+
+	return (B1_code);
+}
+#endif /* OBLIQUE_NS */
+
+#if(NEUTRON_STAR)
+/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
+__device__ void get_surface_4velocity(const  double* __restrict__ gcov, double uscon[NDIM], double t
+#if(TWISTED_OMEGA)
+	, double th
+#endif
+)
+{
+	double omega = omega_star(t
+#if(TWISTED_OMEGA)
+		, th
+#endif
+	);
 	//omega = 0.5 * (1.0 - cos((t-t0)*M_PI/delta_t)) * omega0 ;
-	#else
-	omega = omega0;
-	#endif
 
 	uscon[0] = 1.0 / sqrt(-(gcov[0] + 2.0 * gcov[3] * omega + gcov[9] * omega * omega));
 	uscon[1] = 0.0;
@@ -1260,7 +1391,7 @@ __device__ void get_surface_magneticField(const  double* __restrict__ gcov, cons
 
 	return;
 }
-
+#endif
 
 __device__ void inflow_check(double* pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int dir)
 {
@@ -1423,3 +1554,47 @@ __device__ void lower_KC(double ucon[NDIM], const  double* __restrict__ gcov, do
 	ucov[3] = gcov[3] * ucon[0] + gcov[6] * ucon[1] + gcov[8] * ucon[2] + gcov[9] * ucon[3];
 #endif
 }
+
+#if(NEUTRON_STAR)
+__device__ double omega_star(double t
+#if(TWISTED_OMEGA)
+	, double th
+#endif
+)
+{
+	double omega, omega0, t0, delta_t;
+	t0 = SPINUP_START_TIME_NS;
+	delta_t = SPINUP_TIME_NS;
+	omega0 = OMEGA_NS;
+	if (t <= t0)
+		omega = 0.0;
+	else if (t > t0 + delta_t)
+		omega = omega0;
+	else
+		omega = omega0 * (t - t0) / delta_t;
+#if(TWISTED_OMEGA)
+	double twist = cos(4.0 * th);
+	if (t > START_TWIST) omega = omega0 * twist;
+#endif
+
+
+	return omega;
+}
+
+__device__ double angleRotated(double t)
+{
+	double phi, omega0, t0, delta_t;
+	t0 = SPINUP_START_TIME_NS;
+	delta_t = SPINUP_TIME_NS;
+	omega0 = OMEGA_NS;
+
+	if (t < t0)
+		phi = 0.0;
+	else if (t > t0 + delta_t)
+		phi = omega0 * (t - t0 - 0.5 * delta_t);
+	else
+		phi = 0.5 * omega0 * (t - t0) * (t - t0) / delta_t;
+
+	return phi;
+}
+#endif

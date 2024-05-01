@@ -2036,7 +2036,7 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Max blocks set to: %d \n", max_blocks);
 	#endif
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	//Copy the B-field to make the code resilient against two bit ECC errors
 	#if(GPU_ENABLED)
 	for (n = 0; n < n_active; n++){
@@ -2441,6 +2441,12 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 			#endif
 			#if(P_NUM)
 			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PHOTON]);
+			#endif
+			#if(DOFLR)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][FLRFRAC] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][FLRFRAC]);
+			#endif
+			#if(NEUTRON_STAR && USE_PS1START)
+			prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PS1START] = fabs(prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][PS1START]);
 			#endif
 
 			//Enforce strict conservation of conservative quantitites during refinement
@@ -2961,7 +2967,7 @@ void post_refine(void){
 	#endif
 
 	//Set boundary conditions
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	#if(GPU_ENABLED || GPU_DEBUG)
 	//GPU_boundprim(1);
 	MPI_Barrier(mpi_cartcomm);
@@ -3734,6 +3740,27 @@ double calc_refcrit(int n){
 			else if((cells_per_scaleheight >= CELLS_PER_SCALEHEIGHT) && (cells_per_scaleheight < 3.0*CELLS_PER_SCALEHEIGHT) && (rho > 0.05 * density_midplane[(int)(i / pow(1 + REF_1, block[n][AMR_LEVEL1]))]) && (rho>0.05) && (bsq / rho < 2.0) && (r<400.0)) ref_val = MY_MAX(ref_val, 0.51 * REFINEMENT_CUTOFF);
 		}
 	}
+	#elif(REFINE_PULSAR)
+	//Loop over grid and determine cell-by-cell if to refine
+	if (block[n][AMR_NODE] == rank) {
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			get_geometry(n, i, j, z, CENT, &geom);
+			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			//Real refinement criterion
+			double Rlc = 0.0;
+			if (OMEGA_NS == 0.0) Rlc = 1.0e6;
+			else Rlc = 1. / OMEGA_NS;
+			#if(OBLIQUE_NS)
+            bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+            if ((r > 0.75 * Rlc) && (bsq/(p[nl[n]][index_3D(n, i, j, z)][RHO])<1.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+            #else
+			if ((r > 0.75 * Rlc) && (fabs(th - M_PI_2) < 10.0 * M_PI_2 / 180.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+            #endif
+			//if ((r < 15.0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
+			}
+		}
 	#elif(WHICHPROBLEM==DISRUPTION_PROBLEM)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {

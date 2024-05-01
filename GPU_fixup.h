@@ -1,3 +1,5 @@
+#include "config.h"
+
 
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
@@ -19,6 +21,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
+	#endif
+	#if(NEUTRON_STAR)
+	, double fixupWeight
+	#if(!NS_TAPERED_FLOORS)
+	, const  double* __restrict__ theta
+	#endif
 	#endif
 )
 {
@@ -179,7 +187,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		);
 		#endif
 
-		#pragma unroll 9
+		#pragma unroll 12
 		for (k = 0; k < NPR; k++) {
 			U[k] += Dt * (dU[k]);
 		}
@@ -209,6 +217,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 		#endif
 		#endif
+
+		#if(NEUTRON_STAR && USE_PS1START)
+		U[PS1START] = 0.0;
+		dU[PS1START] = 0.0;
+		#endif
 	
 		#if(CALC_MDOT)
 		U[B1] *= magnetic_density_scale;
@@ -223,6 +236,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#if(RAD_M1)
 		double U_0[NPR];
 		PLOOP dU[k] = 0.;
+
+
 
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
@@ -388,6 +403,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#if(CALC_MDOT)
 			, magnetic_density_scale
 			#endif
+			#if(NEUTRON_STAR)
+			, fixupWeight
+			#if(!NS_TAPERED_FLOORS)
+			, Dt, theta[jcurr]
+			#endif
+			#endif
 		)) {
 			pflag[global_id] = -333;
 			pflag[0] = global_id;
@@ -417,8 +438,14 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if(DO_RBOUND || NEUTRON_STAR)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
 	, int* pflag_rbound
+	#endif
+	#if(NEUTRON_STAR)
+	, double fixupWeight
+	#if(!NS_TAPERED_FLOORS)
+	, const  double* __restrict__ theta
+	#endif
 	#endif
 )
 {
@@ -505,7 +532,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#endif
 
 	/* Check if cell is marked for inflow because it is within RBOUND. */
-	#if(DO_RBOUND || NEUTRON_STAR)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
     if (k == 1 && pflag_rbound[global_id] == 1) k = 0;
     #endif
 
@@ -662,6 +689,12 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				#if(CALC_MDOT)
 				, magnetic_density_scale
 				#endif
+				#if(NEUTRON_STAR)
+				, fixupWeight
+				#if(!NS_TAPERED_FLOORS)
+				, Dt, theta[jcurr]
+				#endif
+				#endif
 			)){
 				pflag[global_id] = -333;
 				pflag[0] = global_id;;
@@ -707,6 +740,12 @@ __global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, c
 	, double mass_density_scale
 	, double magnetic_density_scale
 	#endif
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#if(!NS_TAPERED_FLOORS)
+	, double Dt, const  double* __restrict__ theta
+#endif
+#endif
 )
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -749,6 +788,12 @@ __global__ void fixuputoprim(double *  pv, const  double* __restrict__ radius, c
 				#endif
 				#if(CALC_MDOT)
 				, magnetic_density_scale
+				#endif
+				#if(NEUTRON_STAR)
+				, fixupWeight
+				#if(!NS_TAPERED_FLOORS)
+				, Dt, theta[jcurr]
+				#endif
 				#endif
 				);
 
@@ -948,6 +993,12 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if(CALC_MDOT)
 	, double magnetic_density_scale
 	#endif
+	#if(NEUTRON_STAR)
+	, double fixupWeight
+	#if(!NS_TAPERED_FLOORS)
+	, double dt, double th
+	#endif
+	#endif
 ) {
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
@@ -964,22 +1015,15 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		#endif
 	#endif
 #if(NEUTRON_STAR)
-	double Rlc, rho_b, rho_g, smooth, smooth_geom;
-	double etacon[NDIM], bhatcon[NDIM], bhatcov[NDIM];
-	double uprllcon[NDIM], uperpcon[NDIM], uprllcov[NDIM], uperpcov[NDIM];
-	double uDotEta, bDotEta, bhatsq, uDotBhat, uprllsq, uperpsq;
-	double rhopre, uintpre, rhopost, uintpost;
-	double Kprll, Kcal, K2, uprllDotBhat;
-	double XNS, YNS, ZNS, aminusNS, aplusNS, aNS, normalizerNS;
-	double u1con[NDIM], beta[NDIM];
+		double Rlc, rho_b, rho_g;
 #endif
 	int dofloor=0, flag = 0, m, k, j;
 
 	rhoscal = pow(MY_MAX(r, 1.0), -POWRHO);
 	uuscal = pow(rhoscal, GAMMA);
 
-	rhoflr = RHOMIN * rhoscal;
-	uuflr = UUMIN * uuscal;
+	rhoflr = 1.e-5 * RHOMIN * rhoscal;
+	uuflr = 1.e-5 * UUMIN * uuscal;
 
 	#if(RESISTIVE)
 	get_state_res(pf, geom, &q
@@ -1030,14 +1074,25 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
     #endif
 
 	//Store old values
-#pragma unroll (NPR_U+NEUTRON_STAR*(1+DOFLR))
-	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR)); k++) pf_prefloor[k] = pf[k];
+#pragma unroll 12
+	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR + USE_PS1START)); k++) pf_prefloor[k] = pf[k];
 
-#if (NEUTRON_STAR && NS_TAPERED_FLOORS)
+#if (NEUTRON_STAR)
+#if(NS_TAPERED_FLOORS)
+
+	double smooth, smooth_geom;
+	double etacon[NDIM], bhatcon[NDIM], bhatcov[NDIM];
+	double uprllcon[NDIM], uperpcon[NDIM], uprllcov[NDIM], uperpcov[NDIM];
+	double uDotEta, bDotEta, bhatsq, uDotBhat, uprllsq, uperpsq;
+	double rhopre, uintpre, rhopost, uintpost;
+	double Kprll, Kcal, K2, uprllDotBhat;
+	double XNS, YNS, ZNS, aminusNS, aplusNS, aNS, normalizerNS;
+	double u1con[NDIM], beta[NDIM];
+
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 10.0;
+		Rlc = 1.0e6;
 
 
 	double rho0 = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0);
@@ -1087,7 +1142,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (uuflr < bsq / mod_bsq_over_uu_max)
 		uuflr = bsq / mod_bsq_over_uu_max;
 #else
-
+	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+#endif
+#else
     //tie floors to the local values of magnetic field and internal energy density
     if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
     if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
@@ -1112,15 +1170,36 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 10.0;
+		Rlc = 1.e6; //10.0; //maybe move to a large value for omega=0
 
 	if (pf[FLRFRAC] < 0.0)
 		pf[FLRFRAC] = 0.0;
-	else if (pf[FLRFRAC] > 1.0)
+	if (pf[FLRFRAC] > 1.0)
 		pf[FLRFRAC] = 1.0;
 
 	rho_b = pf[RHO] * pf[FLRFRAC];
 	rho_g = pf[RHO] - rho_b;
+
+#if(!NS_TAPERED_FLOORS)
+
+	double r1 = 0.5 * Rlc;
+	double r2 = 1.0 * Rlc;
+	double Period = 2. * M_PI * Rlc;
+	double tau0 = 0.005 * Period;
+	double tau = tau0 * pow((r - r1) * (r2 - R_NS) / (((r2 - r1) * (r2 - r))), 1.0);
+	double rho_t = bsq / FREEZE_BSQORHO;
+	double uu_t = 0.2 * rho_t;
+	double b2 = fabs(cos(th)) / (tau + SMALL);
+	if (r <= 0.5 * Rlc) {
+		pf[RHO] = rho_t;
+		pf[UU] = uu_t;
+	}
+	if (r > 0.5 * Rlc && r < Rlc) {
+		pf[RHO] = rho_t + (pf[RHO] - rho_t) * exp(-dt * fixupWeight * b2);
+		pf[UU] = uu_t + (pf[UU] - uu_t) * exp(-dt * fixupWeight * b2);
+	}
+
+#else
 
 	//if (pf[RHO] < 1.0001 * rhoflr)
 	//	pf[FLRFRAC] = 1.0;
@@ -1133,9 +1212,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		smooth_geom = 0.0;
 	else
 		smooth_geom = pow((1.0) * 0.5 * (1.0 - cos(M_PI * (r - R_NS) / (Rlc - R_NS))), 2.0);
-	smooth_geom = pow(smooth_geom, 0.5); //fixupWeight=0.5 always
+	smooth_geom = pow(smooth_geom, fixupWeight); //fixupWeight=0.5 or 1
 	/* This variable is 1 beyond Rlc, or if FLRFRAC = 0 */
 	smooth = 1.0 - pf[FLRFRAC] * (1.0 - smooth_geom);  // Don't want to do anything to real gas
+#endif
 #endif
 
 	#if(TWO_T)
@@ -1145,13 +1225,13 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//floor on density 
 	if (pf[RHO] < rhoflr) {
-#if(NEUTRON_STAR)
+#if(NEUTRON_STAR && NS_TAPERED_FLOORS)
 		rho_b = rhoflr - rho_g;
 #endif
 		pf[RHO] = rhoflr;
 		dofloor = 1;
 	}
-#if(NEUTRON_STAR)
+#if(NEUTRON_STAR && NS_TAPERED_FLOORS)
 	else if (rho_b > rhoflr && r < Rlc)
 	{
 		pf[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
@@ -1165,7 +1245,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//Internal energy floor
 
-#if(NEUTRON_STAR)
+#if(NEUTRON_STAR && NS_TAPERED_FLOORS)
 /*** Cool rapidly in high-floor zones inside the LC ***/
 	if (pf[UU] > uuflr && r < Rlc)
 		pf[UU] = uuflr + smooth * (pf[UU] - uuflr); // Full smoothing fn: don't cool good gas
@@ -1322,6 +1402,56 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	}
 	#endif
 #if(NEUTRON_STAR)
+#if(!NS_TAPERED_FLOORS)
+	get_state(pf, geom, &q
+#if(CALC_MDOT)
+		, magnetic_density_scale
+#endif
+	);
+	Bcon[0] = 0.;
+	for (k = 1; k < NDIM; k++) {
+		Bcon[k] = pf[B1 - 1 + k];
+	}
+
+	Bcov[1] = geom->gcov[1] * Bcon[0] + geom->gcov[4] * Bcon[1] + geom->gcov[5] * Bcon[2] + geom->gcov[6] * Bcon[3];
+	Bcov[2] = geom->gcov[2] * Bcon[0] + geom->gcov[5] * Bcon[1] + geom->gcov[7] * Bcon[2] + geom->gcov[8] * Bcon[3];
+	Bcov[3] = geom->gcov[3] * Bcon[0] + geom->gcov[6] * Bcon[1] + geom->gcov[8] * Bcon[2] + geom->gcov[9] * Bcon[3];
+
+	udotB = dot(q.ucon, Bcov);
+	Bsq = dot(Bcon, Bcov);
+
+	double ucon_old[NDIM], ucon_par_old[NDIM];
+
+	for (k = 0; k < NDIM; k++) {
+		ucon_old[k] = q.ucon[k];
+	}
+	for (k = 0; k < NDIM; k++) {
+		ucon_par_old[k] = udotB * Bcon[k] / (Bsq + SMALL);
+	}
+
+	//new parallel velocity
+	if (r <= 0.5 * Rlc) {
+		for (k = 0; k < NDIM; k++) {
+			ucon[k] = ucon_old[k] - ucon_par_old[k];
+		}
+	}
+	else if (r > 0.5 * Rlc && r < Rlc) {
+		for (k = 0; k < NDIM; k++) {
+			ucon[k] = ucon_old[k] - ucon_par_old[k] + ucon_par_old[k] * exp(-fixupWeight * dt / (tau + SMALL));
+		}
+	}
+	else {
+		for (k = 0; k < NDIM; k++) {
+			ucon[k] = ucon_old[k];
+		}
+	}
+
+	#pragma unroll 3
+	SLOOPA	pf[j + U1 - 1] = ucon[j] - ucon[0] * geom->gcon[j] / geom->gcon[0];
+
+#else
+
+
 	//kyles_unified_4D_velocityAdjust(pv_prefloor,  pv, &geom, smooth)
 
 	get_state(pf_prefloor, geom, &q
@@ -1417,7 +1547,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		#pragma unroll 3
 		SLOOPA	pf[j + U1 - 1] = ucon[j] - ucon[0] * geom->gcon[j] / geom->gcon[0];
 
+
 	}
+#endif
 	#elif(DRIFT_FLOOR)
 	trans = 10. * bsq / MY_MIN(pf[RHO], u) - 1.;
 	if (dofloor && (trans) > 0.) {
@@ -1650,6 +1782,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[U1] *= f;
 			pf[U2] *= f;
 			pf[U3] *= f;
+			//pf[FLRFRAC] = 1.0;
 		}
 	}
 

@@ -80,7 +80,9 @@ extern int(*restrict pflag[NB_LOCAL]);
 extern int(*restrict pflag_rad[NB_LOCAL]);
 extern int(*restrict pflag_cart[NB_LOCAL]);
 extern int(*restrict pflag_rbound[NB_LOCAL]);
+#if(!USE_PS1START)
 extern double(*restrict Bx1_surface[NB_LOCAL]);
+#endif
 extern double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
@@ -141,6 +143,14 @@ extern double *Katm_GPU[NB_LOCAL];
 extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
 extern double* radius_GPU[NB_LOCAL];
+extern double* radiusF1_GPU[NB_LOCAL];
+extern double* theta_GPU[NB_LOCAL];
+extern double* phi_GPU[NB_LOCAL];
+extern double* dxpdx11_F1_GPU[NB_LOCAL];
+extern double* r_CORN2_GPU[NB_LOCAL];
+extern double* th_CORN3_GPU[NB_LOCAL];
+extern double* th_CORN3_2_GPU[NB_LOCAL];
+extern double* phi_CORN2_GPU[NB_LOCAL];
 extern double* NS_scaling_CENT[NB_LOCAL];
 extern double* NS_scaling_FACE[NB_LOCAL];
 extern int* pflag_CART_GPU[NB_LOCAL];
@@ -318,6 +328,14 @@ extern double* BufferU_n[NB_LOCAL];
 extern double* BufferU_0[NB_LOCAL];
 extern double* BufferU_1[NB_LOCAL];
 extern double * Bufferradius[NB_LOCAL];
+extern double* BufferradiusF1[NB_LOCAL];
+extern double* Buffertheta[NB_LOCAL];
+extern double* Bufferphi[NB_LOCAL];
+extern double* Bufferdxpdx11_F1[NB_LOCAL];
+extern double* Bufferr_CORN2[NB_LOCAL];
+extern double* Bufferth_CORN3[NB_LOCAL];
+extern double* Bufferth_CORN3_2[NB_LOCAL];
+extern double* Bufferphi_CORN2[NB_LOCAL];
 extern double * BufferNS_scaling_CENT[NB_LOCAL];
 extern double * BufferNS_scaling_FACE[NB_LOCAL];
 extern double * Bufferstorage1[NB_LOCAL];
@@ -876,7 +894,7 @@ extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-extern int read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
+extern int read_NS, read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_Ye, read_nuclear, read_neutrinos;
 extern int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/
@@ -930,13 +948,21 @@ void set_2T_entropy(double pi[NPR], double bsq);
 void set_E_init(double p[NPR], struct of_geom geom);
 double advance(int flag);
 double advance_GPU(void);
-void bound_prim(double(*restrict pr[NB_LOCAL])[NPR], int MPI);
+void bound_prim(double(*restrict pr[NB_LOCAL])[NPR], int MPI, double t);
 void bound_prim_cart(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n);
 void bound_prim_rbound(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int dir, int n);
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 void   flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
-void const_transport1(double(*restrict p[NB_LOCAL])[NPR], int n);
-void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n);
+void const_transport1(double(*restrict p[NB_LOCAL])[NPR], int n
+#if(NEUTRON_STAR)
+	, int NBR_4
+#endif
+);
+void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n
+#if(NEUTRON_STAR)
+	, int NBR_4
+#endif
+);
 void const_transport_bound(void);
 void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
@@ -1120,10 +1146,25 @@ void GPU_write(int n);
 void GPU_write_metric(int n);
 void GPU_finish(int n, int force_delete);
 void GPU_hcor(int n);
-void GPU_fixup(int flag, int n, double Dt);
-void GPU_fixup_post(int n, double Dt);
+void GPU_fixup(int flag, int n, double Dt
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#endif
+);
+void GPU_fixup_post(int n, double Dt
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#endif
+);
 void GPU_cleanup_post(int n);
-void GPU_fixuputoprim(int flag, int n);
+void GPU_fixuputoprim(int flag, int n
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#if(!NS_TAPERED_FLOORS)
+	, double dt
+#endif
+#endif
+);
 void GPU_fixuputoprim_rad(int flag, int n);
 void GPU_fixuputoprim_nu(int flag, int n);
 void GPU_Utoprim_M1_0(int n, double Dt);
@@ -1137,7 +1178,7 @@ void GPU_flux_ct2(int n);
 void GPU_fix_flux(int n);
 void GPU_boundprim(int bound_force);
 void GPU_boundprim1_outflow(int flag, int n);
-void GPU_boundprim1_NS(int flag, int n);
+void GPU_boundprim1_NS(int flag, int n, double t);
 void GPU_boundprim2_outflow(int flag, int n);
 void GPU_boundprim2_reflective(int flag, int n);
 void GPU_boundprim2_trans(int flag, int n);
@@ -1201,6 +1242,7 @@ double gdet_func(double lgcov[][NDIM]);
 double mink(int j, int k);
 double ranc(int seed);
 double slope_lim(double y1, double y2, double y3);
+double slope_lim_BC(double y1, double y2, double y3);
 void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
 void area_map(int i, int j, int n, double(*restrict prim[NB_LOCAL])[NPR]);
 void blgset(int n, int i, int j, int z, struct of_geom *geom);
@@ -1645,6 +1687,7 @@ void init_collapsar();
 void init_NSM();
 void init_NS();
 void init_postmerger();
+
 
 extern double global_kappa, aphipow;
 

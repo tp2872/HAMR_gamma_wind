@@ -40,7 +40,7 @@ void step_ch()
 		}
 		#endif
 
-		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+		bound_prim(ph, 0, t);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 		nstep++;
 	}
 
@@ -80,7 +80,7 @@ void step_ch()
 	//#endif
 
 	//Set radial boundary for moving RBOUN
-	#if(DO_RBOUND)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
 	for (n = 0; n < n_active; n++) {
 		set_pflag_rbound(n_ord[n]);
 	}
@@ -213,13 +213,37 @@ double advance(int flag)
 	#else
 	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+			const_transport1_M1_2(ph, n_ord[n]
+				#if(NEUTRON_STAR)
+				, block[n_ord[n]][AMR_NBR4]
+				#endif
+			);
+		}
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+			const_transport1(p, n_ord[n]
+				#if(NEUTRON_STAR)
+				, block[n_ord[n]][AMR_NBR4]
+				#endif
+			);
+		}
 	}
 	#else
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+			const_transport1(ph, n_ord[n]
+			#if(NEUTRON_STAR)
+				, block[n_ord[n]][AMR_NBR4]
+			#endif
+			);
+		}
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+			const_transport1(p, n_ord[n]
+#if(NEUTRON_STAR)
+				, block[n_ord[n]][AMR_NBR4]
+#endif
+			);
+		}
 	}
 	#endif
 
@@ -573,6 +597,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#endif
 
+			#if(NEUTRON_STAR && USE_PS1START)
+			U[PS1START] = 0.0;
+			dU[PS1START] = 0.0;
+			#endif
+
 			#if(CALC_MDOT)
 			U[B1] *= magnetic_density_scale_cpu;
 			U[B2] *= magnetic_density_scale_cpu;
@@ -726,6 +755,10 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					PLOOP{
 						p_l[k] = pr[nl[n]][ind1][k] + 0.5*dq[nl[n]][ind1][k];
 						p_r[k] = pr[nl[n]][ind0][k] - 0.5*dq[nl[n]][ind0][k];
+						#if(NEUTRON_STAR && USE_PS1START)
+						p_l[PS1START] = pr[nl[n]][ind1][PS1START];
+						p_r[PS1START] = pr[nl[n]][ind0][PS1START];
+						#endif
 						#if(STAGGERED)
 						if ((dir == 1 && k == B1)){
 							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
@@ -743,6 +776,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 							p_r[k] = p_l[k];
 						}
 						#endif
+						
 					}
 
 					#if(STAGGERED)
@@ -1239,8 +1273,19 @@ double advance_GPU(void)
 	#else
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){
-			GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
-			//GPU_fixuputoprim(1, n_ord[n]);
+			GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]
+#if(NEUTRON_STAR)
+				, 1.0
+#endif
+			);
+			//GPU_fixuputoprim(1, n_ord[n],
+			#if(NEUTRON_STAR)
+			//, 1.0
+			#if(!NS_TAPERED_FLOORS)
+			//, dt * (double)block[n_ord[n]][AMR_TIMELEVEL]
+			#endif
+			#endif
+			//);
 			#if(RAD_M1)
 			//GPU_fixuputoprim_rad(1, n_ord[n]);
 			#endif
@@ -1249,8 +1294,19 @@ double advance_GPU(void)
 			#endif
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1 ){
-			GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]);
-			//GPU_fixuputoprim(0, n_ord[n]);
+			GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]
+#if(NEUTRON_STAR)
+				, 0.5
+#endif
+			);
+			//GPU_fixuputoprim(0, n_ord[n]
+			#if(NEUTRON_STAR)
+			//, 0.5
+			#if(!NS_TAPERED_FLOORS)
+			//, dt * (double)block[n_ord[n]][AMR_TIMELEVEL]
+			#endif
+			#endif
+			//);
 			#if(RAD_M1)
 			//GPU_fixuputoprim_rad(0, n_ord[n]);
 			#endif
@@ -1331,7 +1387,11 @@ void benchmark_GPU(int n)
 		#if(RAD_M1 && DO_IMEX)
 		GPU_Utoprim_M1_1(n, dt * (double)block[n][AMR_TIMELEVEL]);
 		#else
-		GPU_fixup(0, n, 0.5 * dt * (double)block[n][AMR_TIMELEVEL]);
+		GPU_fixup(0, n, 0.5 * dt * (double)block[n][AMR_TIMELEVEL]
+#if(NEUTRON_STAR)
+			, 0.5
+#endif
+		);
 		#endif
 	}
 	gpuDeviceSynchronize();
@@ -1407,7 +1467,7 @@ void step_ch_debug()
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup(ph, n_ord[n]);
 		}
 
-		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+		bound_prim(ph, 0, t);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 
 		nstep++;
 	}
@@ -1436,7 +1496,7 @@ void step_ch_debug()
 				if (p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] > 1.001 || p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] < 0.999) {
 					// In low-density regions B-field is at ~machine precision, and relative error might be large
 					if (k < 8 && p[n_ord[n]][index_3D(n_ord[n], i, j, z)][0] > 1e-6 * 1e-7) {
-						fprintf(stderr, " i2:%d, j:%d, z: %d, k: %d, rank: %d, value1: %f, value2: %f, rho: %e  \n", i, j, z, k, rank,
+						fprintf(stderr, "step_ch_debug: i2:%d, j:%d, z: %d, k: %d, rank: %d, value1: %f, value2: %f, rho: %e  \n", i, j, z, k, rank,
 							log(p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.),
 							p[n_ord[n]][index_3D(n_ord[n], i, j, z)][0]);
 					}

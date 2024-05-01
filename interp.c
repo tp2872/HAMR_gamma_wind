@@ -5,7 +5,24 @@
 
 double slope_lim(double y1,double y2,double y3) 
 {
-
+#if(NEUTRON_STAR)
+	double Dqm, Dqp, Dqc, s;
+	/* woodward, or monotonized central, slope limiter */
+	double steepener = MC_STEEPENER_NS;
+	Dqm = steepener * (y2 - y1);
+	Dqp = steepener * (y3 - y2);
+	Dqc = 0.5 * (y3 - y1);
+	s = Dqm * Dqp;
+	if (s <= 0.) return 0.;
+	else {
+		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
+			return(Dqm);
+		else if (fabs(Dqp) < fabs(Dqc))
+			return(Dqp);
+		else
+			return(Dqc);
+	}
+#else
 	double Dqm, Dqp, Dqc, s;
 
 	/* woodward, or monotonized central, slope limiter */
@@ -43,6 +60,35 @@ double slope_lim(double y1,double y2,double y3)
 		else if (fabs(Dqm) < fabs(Dqp)) return Dqm;
 		else return Dqp;
 	}
+
+	fprintf(stderr, "unknown slope limiter\n");
+	exit(10);
+
+	return(0.);
+#endif
+}
+
+double slope_lim_BC(double y1, double y2, double y3)
+{
+
+	double Dqm, Dqp, Dqc, s;
+
+	/* woodward, or monotonized central, slope limiter */
+	double steepener = 1.5;
+	Dqm = steepener * (y2 - y1);
+	Dqp = steepener * (y3 - y2);
+	Dqc = 0.5 * (y3 - y1);
+	s = Dqm * Dqp;
+	if (s <= 0.) return 0.;
+	else {
+		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
+			return(Dqm);
+		else if (fabs(Dqp) < fabs(Dqc))
+			return(Dqp);
+		else
+			return(Dqc);
+	}
+	
 
 	fprintf(stderr, "unknown slope limiter\n");
 	exit(10);

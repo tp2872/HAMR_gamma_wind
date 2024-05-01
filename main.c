@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		nulib_init_GPU(0);
 		#endif
 	#endif
-
+	//fprintf(stderr, "restart read \n");
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
 		derefine_pole();
@@ -66,25 +66,19 @@ int main(int argc, char *argv[])
 		}	
 		diag(INIT_OUT);
 	}
-
+	//fprintf(stderr, "bound prim main.c \n");
 	/* do initial diagnostics */
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	#if(GPU_ENABLED || GPU_DEBUG )
+	//fprintf(stderr, "GPU boundprim main.c \n");
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	dump_cnt0 = dump_cnt;
 
-	//Set radial boundary for moving RBOUN
-#if(NEUTRON_STAR && !(DO_RBOUND))
-	for (n = 0; n < n_active; n++) {
-		set_pflag_rbound(n_ord[n]);
-	}
-#endif	
-
 	/*Set dumping frequency*/
-	DTl = 1.0;
-	DTd = 5.0;
+	DTl = 10.0;
+	DTd = 10.0;
 	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
@@ -108,6 +102,7 @@ int main(int argc, char *argv[])
 	begin_rdump = begin1;
 
 	//cuProfilerStart();
+	//tf = 2560.0;
 	while(t < tf) {
 		/*Used for running OpenCL on either GPU or CPU*/
 		#if(GPU_ENABLED && !GPU_DEBUG)
@@ -131,6 +126,11 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Failure of some sort \n");
 			break;
 		}
+
+		if ((N1G + CELLS_IN_STAR >= BS_1) && NEUTRON_STAR) {
+			fprintf(stderr, "Too many cells inside stellar boundary! \n");
+			break;
+		}
 		
 		flag=0;
 
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
-			bound_prim(p, 1);
+			bound_prim(p, 1, t);
 
 			#if(!(CARTESIAN || CARTESIAN_GR || DO_RBOUND || NEUTRON_STAR))
 			if (dt > 0.5) {
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if ((t >= tlog || runtime>(RUNTIME*3600.0)) && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			if(flag==0)set_timelevel(1);			
+			if(flag==0) set_timelevel(1);			
 			restart_write(); //do restart dump simultaneous with log
 			#if(!PARALLEL_IO)
 			close_rdump();

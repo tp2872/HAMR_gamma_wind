@@ -19,7 +19,7 @@ void step_ch_res()
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup(ph, n_ord[n]);
 		}
 
-		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+		bound_prim(ph, 0, t);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 		nstep++;
 	}
 

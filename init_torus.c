@@ -100,8 +100,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 20.0;
-	rmax = 41.;
+	rin = 10.0;
+	rmax = 40.0;
 	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = BETA ;
@@ -116,8 +116,8 @@ void init_torus()
 	bl_coord(X, &r, &th, &phi);
 	if (rank == 0) {
 		fprintf(stderr, "r[5]: %g\n", r);
-		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
-		if (r > 1. + sqrt(1. - a*a)) {
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - BH_SPIN*BH_SPIN)));
+		if (r > 1. + sqrt(1. - BH_SPIN * BH_SPIN)) {
 			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
 		}
 		else {
@@ -400,7 +400,7 @@ void init_torus()
 		fixup(p, n_ord[n]);
 	}
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 	set_mag();
 
@@ -488,7 +488,7 @@ void init_torus()
 	}
 	#endif
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 }
 

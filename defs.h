@@ -38,7 +38,9 @@ int(*restrict pflag[NB_LOCAL]);
 int(*restrict pflag_cart[NB_LOCAL]);
 int(*restrict pflag_rbound[NB_LOCAL]); 
 int(*restrict pflag_rad[NB_LOCAL]);
+#if(!USE_PS1START)
 double(*restrict Bx1_surface[NB_LOCAL]);
+#endif
 double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
@@ -100,6 +102,14 @@ int* pflag_RBOUND_GPU[NB_LOCAL];
 int *failimage_GPU[NB_LOCAL];
 double* Bx1_surface_GPU[NB_LOCAL];
 double* radius_GPU[NB_LOCAL];
+double* radiusF1_GPU[NB_LOCAL];
+double* theta_GPU[NB_LOCAL];
+double* phi_GPU[NB_LOCAL];
+double* dxpdx11_F1_GPU[NB_LOCAL];
+double* r_CORN2_GPU[NB_LOCAL];
+double* th_CORN3_GPU[NB_LOCAL];
+double* th_CORN3_2_GPU[NB_LOCAL];
+double* phi_CORN2_GPU[NB_LOCAL];
 double* NS_scaling_CENT[NB_LOCAL];
 double* NS_scaling_FACE[NB_LOCAL];
 int failimage_counter[NFAIL];
@@ -274,6 +284,14 @@ double* BufferU_n[NB_LOCAL];
 double* BufferU_0[NB_LOCAL];
 double* BufferU_1[NB_LOCAL];
 double * Bufferradius[NB_LOCAL];
+double* BufferradiusF1[NB_LOCAL];
+double* Buffertheta[NB_LOCAL];
+double* Bufferphi[NB_LOCAL];
+double* Bufferdxpdx11_F1[NB_LOCAL];
+double* Bufferr_CORN2[NB_LOCAL];
+double* Bufferth_CORN3[NB_LOCAL];
+double* Bufferth_CORN3_2[NB_LOCAL];
+double* Bufferphi_CORN2[NB_LOCAL];
 double * BufferNS_scaling_CENT[NB_LOCAL];
 double * BufferNS_scaling_FACE[NB_LOCAL];
 double * Bufferstorage1[NB_LOCAL];
@@ -800,7 +818,7 @@ int *array_gdumpgrid, *array_rdumpgrid;
 double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
 int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
 FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
-int read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_nuclear, read_Ye, read_neutrinos;
+int read_NS, read_M1, read_M1_2, read_2T, read_Pnum, read_Res, read_nuclear, read_Ye, read_neutrinos;
 int BS1_read, BS2_read, BS3_read;
 
 /*AMR parameters*/

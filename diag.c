@@ -32,7 +32,7 @@ void diag(int call_code)
 					nmax = n_ord[n];
 					divbmax = divb;
 				}
-#elif(DO_RBOUND || NEUTRON_STAR)
+#elif(DO_RBOUND || (NEUTRON_STAR && 0))
 				divb = divb_calc(n_ord[n], i, j, z);
 #pragma omp critical
 				if (pflag_rbound[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)] == 0 && divb > divbmax && i > 0 && j >= 0 && (z >= 0 || N3 == 1)) {
@@ -66,7 +66,10 @@ void diag(int call_code)
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 #endif
 		if (divbmax == divbmax_local) {
-			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
+			double X[NDIM], r, th, phi;
+			coord(n_ord[n], imax, jmax, zmax, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d)x(r:%g h:%g p:%g) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], r, th, phi, divbmax);
 		}
 		if (divbmax > 0.00003) {
 			if (rank==0) fprintf(stderr, "Divbmax error! Exiting! \n");
@@ -245,5 +248,7 @@ double divb_calc(int n, int i, int j, int z){
 		divb /= (divb_magnitude + SMALL);
 		//now we have gotten the normalized value of divb!
 	#endif
-	return divb;
+		if (i < CELLS_IN_STAR) divb = 0.0;
+		return divb;
+
 }

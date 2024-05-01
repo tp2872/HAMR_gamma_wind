@@ -225,6 +225,12 @@ __device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom
 	#if(CALC_MDOT)
 	,  double magnetic_density_scale
 	#endif
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#if(!NS_TAPERED_FLOORS)
+	, double dt, double th
+#endif
+#endif
 );
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r
 	#if (DOHELM)
@@ -523,7 +529,8 @@ __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma)
 
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
-__device__ double slope_lim(double y1, double y2, double y3, int lim);
+__device__ double slope_lim(double y1, double y2, double y3);
+__device__ double slope_lim_BC(double y1, double y2, double y3);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 __device__ void lower_KC(double ucon[NDIM], const  double* __restrict__ gcovKC, double ucov[NDIM]);
@@ -757,8 +764,21 @@ __device__ void extrapolate_gdet_innerBC(double* pr_B, double* pr_ghost, const d
 //Neutron star BCs
 #if(NEUTRON_STAR)
 __device__ void get_surface_magneticField(const  double* __restrict__ gcovNS, const  double* __restrict__ gconNS, double bncon[NDIM], double uscon[NDIM], double bscon[NDIM]);
-__device__ void get_surface_4velocity(const  double* __restrict__ gcovNS2, double uscon[NDIM]);
+__device__ void get_surface_4velocity(const  double* __restrict__ gcovNS2, double uscon[NDIM], double t
+#if(TWISTED_OMEGA)
+	, double th
 #endif
+);
+__device__ double omega_star(double t
+#if(TWISTED_OMEGA)
+	, double th
+#endif
+);
+__device__ double angleRotated(double t);
+__device__ double calcRadialField(double r, double theta, double phi, double dxpdx11_F1, double gdet, double t);
+__device__ double dfluxns(double r, double Omega, double phi, double th1, double th2, double t, double dt);
+#endif
+
 
 // Fermi integrals from Takahashi, El Eid & Hillebrandt '78
 __device__ double calc_fermiint2(double x);

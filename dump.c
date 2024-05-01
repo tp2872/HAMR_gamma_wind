@@ -204,7 +204,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int rd = dump_reduced;
 	int rt = RTRANS;
 	int rb = RB;
-	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000 + DO_YE * 10000 + NEUTRINOS_M1 * 100000 + DONUCLEAR * 1000000;
+	int docyl = RAD_M1 + RESISTIVE * 10 + TWO_T * 100 + P_NUM * 1000 + DO_YE * 10000 + NEUTRINOS_M1 * 100000 + DONUCLEAR * 1000000 + NEUTRON_STAR * 10000000;
 	int dk = DOKTOT;
 
 	//Print out essential stuff for restart

@@ -367,7 +367,7 @@ void init_collapsar(void)
 		fixup(p, n_ord[n]);
 	}
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 	//set_mag();
 
@@ -423,7 +423,7 @@ void init_collapsar(void)
 	calc_source();
 	#endif
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 }
 

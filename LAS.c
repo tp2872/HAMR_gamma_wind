@@ -331,8 +331,8 @@ void prestep_bound(void){
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#if(BOUND_TYPE1==NEUTRON_STAR_BC)
 	for (n = 0; n < n_active; n++) {
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1_NS(1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1_NS(0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1_NS(1, n_ord[n], t);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1_NS(0, n_ord[n], t);
 	}
 	#elif(BOUND_TYPE1==OUTFLOW)
 	for (n = 0; n < n_active; n++){
@@ -485,7 +485,11 @@ void prestep_bound(void){
 	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
-		GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
+		GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]
+		#if(NEUTRON_STAR)
+			, 1.0
+		#endif
+		);
 	}
 }
 

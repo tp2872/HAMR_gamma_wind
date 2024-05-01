@@ -33,31 +33,43 @@ Physical Parameters section
 #define NEUTRON_STAR (0)
 #endif
 
-#define OBLIQUE_NS                  (0)           // 0: aligned rotator, 1: oblique rotator
-#define OBL_ANGLE_NS                (45.0)         // Obliquity angle, in degrees
+#define OBLIQUE_NS                  (1)           // 0: aligned rotator, 1: oblique rotator
+#define OBL_ANGLE_NS                (15.0 * M_PI /180.0)         // Obliquity angle, in radians
+#define DEFORM_DIPOLE_NS            (0)
 
 #define R_NS                        (4.0)         // Neutron star radius in r_g
 #define OMEGA_NS                    (0.2/R_NS)  //0.05        // Angular velocity in c/r_g
+#define CELLS_IN_STAR               (0)  //grid cells inside the the stellar surface
 #define KERR_SPIN_NS                (0.0)  //(1.0/3.0)
-#define SPINUP_TIME_NS              (2.0)  //40.0        // Needs to be ~> 2 R_LC/c
-#define SPINUP_START_TIME_NS        (2.0)  //50.0//500.0       // When rotation begins
-#define MU_NS                       (1.0)  //10.0
+#define SPINUP_TIME_NS              (40.0)  //40.0        // Needs to be ~> 2 R_LC/c
+#define SPINUP_START_TIME_NS        (20.0)  //50.0//500.0       // When rotation begins
+#define MU_NS                       (1.0)  //10.0   // Set using mu=10, is scaled internally
 #define FFE_ZONE_FLRFRAC_THRESHOLD  (0.0)  //0.5
 #define RHO0_HYDROSTAT_ATM_NS       (8.877e-6)    // 8.877e-6 gives b^2/rho = 1e4 at equator
-                                                // Set using mu=10, is scaled internally
+                                                
 #define R_NS_OFFSET                 (0.0)
-#define NS_TAPERED_FLOORS           (1) 
+#define NS_TAPERED_FLOORS           (1)         // 1= Kyle's tapered floors; 0= Tchekhovskoy+2013 floors (not yet working)
 #define FREEZE_BSQORHO              (100.0)
 #define MAX_BSQ_OVER_RHO            (100.0)       // These two are used in the dynamic flooring
 #define MAX_BSQ_OVER_UINT           (120.0)      // Set the maxima beyond R_LC; inside higher
 #define SURF_MAX_BSQ_RHO_LOG        (2.1)//4.75
-#define SURF_MAX_BSQ_UINT_LOG       (2.1)//5.5   
+#define SURF_MAX_BSQ_UINT_LOG       (2.1)//5.5  
+#define USE_PS1START (1)
+#define REFINE_PULSAR (0)
+#define MC_STEEPENER_NS             (1.95) //1.95
+#define SIMPLE_NS_BC_EXTRAPOLATE    (0)
+#define SLOPELIM_NS_BC_EXTRAPOLATE  (1)
+#define USE_BL_COORDINATES          (1)  //PPM works with BL; remove PPM for KS in NS setup.
+
+
+#define TWISTED_OMEGA               (0)           // Aligned twisted fields
+#define START_TWIST                 (5.0*2.0*M_PI/OMEGA_NS)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
 
 /*Select adiabatic index*/
 #define GAMMA	(4./3.)
                                       
 /*Select grid outer radius*/
-#define ROUT (100.0)
+#define ROUT (200.0)
 
 #define READBINARY (0)
 
@@ -118,13 +130,13 @@ Physical Parameters section
 #elif(WHICHPROBLEM == ISOLATED_NS)
 #define BH_SPIN (KERR_SPIN_NS)
 #else
-#define BH_SPIN (0.9375)
+#define BH_SPIN (0.998)
 #endif
 
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (100.)
+#define BETA (0.1)
 
 
 
@@ -307,14 +319,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
+#define NB_1 10
+#define NB_2 2
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 50
+#define BS_1 54
 #define BS_2 48
-#define BS_3 24
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -380,7 +392,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (4)
+#define DUMPFACTOR (24)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -457,7 +469,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NEUTRON_STAR_BC 5
 
 /*Set boundary conditions in first dimensions; possible options: OUTFLOW, PERIODIC*/
-#if(NEUTRON_STAR && 0)
+#if(NEUTRON_STAR)
 #define BOUND_TYPE1 NEUTRON_STAR_BC
 #else
 #define BOUND_TYPE1 OUTFLOW
@@ -482,7 +494,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #endif
 
 /*Use smaller than usual cutout of 10^-13*/
-#define TRANS_BOUND_SMALL (1)
+#define TRANS_BOUND_SMALL (0)
 
 /* A numerical convenience to represent a small non-zero quantity compared to unity:*/
 #define SMALL	(1.e-20)
@@ -781,31 +793,32 @@ MNEMONICS SECTION
 #define B3	(7)
 #define KTOT (8)
 //whether the evolve the passive scalar, which is 1 whenever the floors are activated (Neutron Star)
-#define DOFLR    (1)
+#define DOFLR    (NEUTRON_STAR)
 #define FLR     (8+DOKTOT)   
 #if DOFLR
 #define FLRFRAC (1+FLR)
 #else
 #define FLRFRAC (FLR)
 #endif
-#define UU_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR))
-#define U1_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+1)
-#define U2_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+2)
-#define U3_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+3)
-#define E1 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4)
-#define E2 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+1)
-#define E3 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+2)
-#define ENTRE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3)
-#define ENTRI (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+1)
-#define PHOTON (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2)
-#define YE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1)
-#define XALPHA  (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+0)
-#define XATM    (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+1)
-#define UU_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2)
-#define U1_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+1)
-#define U2_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+2)
-#define U3_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+3)
-#define NUMBER_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+4)
+#define PS1START (USE_PS1START+FLRFRAC)
+#define UU_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START))
+#define U1_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+1)
+#define U2_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+2)
+#define U3_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+3)
+#define E1 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4)
+#define E2 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+1)
+#define E3 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+2)
+#define ENTRE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3)
+#define ENTRI (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+1)
+#define PHOTON (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2)
+#define YE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1)
+#define XALPHA  (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+0)
+#define XATM    (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+1)
+#define UU_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2)
+#define U1_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+1)
+#define U2_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+2)
+#define U3_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+3)
+#define NUMBER_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+4)
 #define NPR_NU (5)
 #define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2  
    
@@ -821,6 +834,8 @@ MNEMONICS SECTION
 #define CORN	(2)
 #define CENT	(3)
 #define FACE3	(4)
+#define CORN2	(5)
+#define CORN3	(6)
 
 //For variable inversions
 #define UTCON1 	2
@@ -1250,7 +1265,7 @@ Section with derived quantities
 //#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+NEUTRON_STAR*(1+DOFLR)+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+RAD_M1*P_NUM*NPR_PH+RAD_M1*DO_YE*1+RAD_M1*DONUCLEAR*2+RAD_M1*NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
+#define NPR        (NPR_U+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+RAD_M1*P_NUM*NPR_PH+RAD_M1*DO_YE*1+RAD_M1*DONUCLEAR*2+RAD_M1*NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */

@@ -66,11 +66,17 @@ __global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  
 	#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
 	#endif
-	#if(DO_RBOUND || NEUTRON_STAR)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
 	, int* __restrict__ pflag_rbound
 	#endif
 	#if(NEUTRON_STAR)
+	, int NBR_4, double t
+	#if(TWISTED_OMEGA || OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ th, const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1
+	#endif
+	#if(!USE_PS1START)
 	, double* __restrict__ Bx1_surface
+	#endif
 	#endif
 );
 __global__ void fluxcalc2D_FT(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
@@ -98,6 +104,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage_
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
+	#if(NEUTRON_STAR)
+	, double fixupWeight
+	#if(!NS_TAPERED_FLOORS)
+	, const  double* __restrict__ theta
+	#endif
+	#endif
 );
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2	
 	#if (DOHELM)
@@ -112,8 +124,14 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if (DO_RBOUND || NEUTRON_STAR)
+	#if (DO_RBOUND || (NEUTRON_STAR && 0))
     	, int* pflag_rbound
+	#endif
+	#if(NEUTRON_STAR)
+	, double fixupWeight
+	#if(!NS_TAPERED_FLOORS)
+	, const  double* __restrict__ theta
+	#endif
 	#endif
 );
 __global__ void Utoprim_M1_0(double* p_i, double* U_n, double* U_0, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2
@@ -163,12 +181,21 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if(DO_RBOUND || NEUTRON_STAR)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
 	, int* pflag_rbound
 	#endif
-	#if(NEUTRON_STAR)
+#if(NEUTRON_STAR)
+	, int NBR_4, double t
+#if(TWISTED_OMEGA)
+	, const double* __restrict__ th
+#endif
+#if(OBLIQUE_NS)
+	, const double* __restrict__ r_CORN2, const double* __restrict__ phi_CORN2, const double* __restrict__ th_CORN3, const double* __restrict__ th_CORN3_2, double Dt, double dx2
+#endif
+#if(!USE_PS1START)
 	, double* Bx1_surface
 	#endif
+#endif
 );
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
@@ -188,6 +215,12 @@ __global__ void fixuputoprim(double* pv, const  double* __restrict__ radius, con
 	, double mass_density_scale
 	, double magnetic_density_scale
 #endif
+#if(NEUTRON_STAR)
+	, double fixupWeight
+#if(!NS_TAPERED_FLOORS)
+	, double Dt, const  double* __restrict__ theta
+#endif
+#endif
 );
 __global__ void fixuputoprim_rad(double* pv, int* pflag_rad, int* failimage);
 __global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps
@@ -202,6 +235,14 @@ __global__ void boundprim3_outflow(double* pv, const  double* __restrict__ gcov,
 __global__ void boundprim_cart(double* pv, double* ps, int* pflag_cart, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void boundprim_rbound(double* pv, double* ps, int* pflag_rbound, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void fixuputoprim_nu(double* pv, int* pflag_nu, int* failimage);
-__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double* ps, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE);
+__global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4
+#if(STAGGERED)
+	, double* ps
+#endif
+	, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE, double t
+#if(TWISTED_OMEGA || OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ th, const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1
+#endif
+);
 
 		

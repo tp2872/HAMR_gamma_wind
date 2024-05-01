@@ -333,7 +333,7 @@ void init_torus_grb(){
 	}
 
 	//need to bound density before computing vector potential
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 	// first find corner-centered vector potential
 	for (n = 0; n < n_active; n++) ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
@@ -449,7 +449,7 @@ void init_torus_grb(){
 
 	// enforce boundary conditions
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 
 	#if (GPU_ENABLED)
@@ -895,7 +895,7 @@ int normalize_field_local_nodivb(double targbeta, double rhomax, double amax, do
 	int n, i, j, z;
 	double ratc_ij;
 
-	bound_prim(prim, 1);
+	bound_prim(prim, 1, t);
 	for (n = 0; n < n_active; n++){
 		ZLOOP3D_MPI{
 			//cell centered ratio in this cell
@@ -985,7 +985,7 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 	int finalstep;
 
 	//first, bound to ensure consistency of magnetic fields across tiles
-	bound_prim(prim, 1);
+	bound_prim(prim, 1, t);
 
 	if (NB_2 == 1) {
 		//1-cpu version
@@ -1090,7 +1090,7 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 			//just in case, wait until all CPUs get here
 			MPI_Barrier(MPI_COMM_WORLD);
 			//bound here
-			bound_prim(prim, 1);
+			bound_prim(prim, 1, t);
 		}
 	}
 

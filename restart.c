@@ -54,7 +54,10 @@ void rdump_block_write(MPI_File *fp, int n)
 	int i, j, z, k;
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z,k)
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G){
-		for (k = 0; k < NPR; k++) array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[nl[n]][index_3D(n, i, j, z)][k];
+		for (k = 0; k < NPR - NEUTRON_STAR*USE_PS1START; k++) array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[nl[n]][index_3D(n, i, j, z)][k];
+		#if(NEUTRON_STAR && USE_PS1START) 
+		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (PS1START)] = p[nl[n]][index_3D(n, i, j, z)][PS1START] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+		#endif
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (0 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][0];
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (1 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (2 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
@@ -146,7 +149,7 @@ int restart_read(void)
 	}
 
 	#if(INSERT_TOROIDAL)
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	add_toroidal_B();
 		#if (MPI_enable)
 		MPI_Barrier(mpi_cartcomm);
@@ -165,7 +168,7 @@ int restart_read(void)
 	#endif
 
 	/* bound */
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	#endif
@@ -177,44 +180,53 @@ void rdump_block_read(FILE *fp, int n)
 	int i, j, z, k, read_geom=0;
 	int double_size = sizeof(double);
 
-	int npr_local = NPR_U + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_nuclear * DONUCLEAR * 2 + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
-	int npr_file = NPR_U + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_nuclear * 2 + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
+	int npr_local = NPR_U + read_NS* (1 + DOFLR + USE_PS1START)* NEUTRON_STAR + read_M1 * NPR_R * RAD_M1 + read_Res * NPR_E * RESISTIVE + read_2T * NPR_2T * TWO_T + read_Pnum * NPR_PH * P_NUM + read_nuclear * DONUCLEAR * 2 + read_Ye * DO_YE * 1 + read_neutrinos * NPR_NU * NEUTRINOS_M1 * NU_SPECIES;
+	int npr_file = NPR_U + read_NS * (1 + DOFLR + USE_PS1START) + read_M1 * NPR_R + read_Res * NPR_E + read_2T * NPR_2T + read_Pnum * NPR_PH + read_nuclear * 2 + read_Ye * 1 + read_neutrinos * NPR_NU * NU_SPECIES + NDIM * STAGGERED;
 	int red_1, red_2, red_3, i1, j1, z1;
 	double reduce_factor;
-	double read[NPR_U +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + 2 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
+	double read[NPR_U + 3*NEUTRON_STAR +  NPR_R * 1 +  NPR_E * 1 + NPR_2T * 1 + NPR_PH * 1 + 1 + 2 + NPR_NU * NU_SPECIES + NDIM * STAGGERED];
 	struct of_geom geom;
+	#if(NEUTRON_STAR)
+	int flr_NS = (8 + DOKTOT);
+	#if(DOFLR)
+	int flrfrac_NS = (8 + DOKTOT + 1);
+	#endif
+	#if(USE_PS1START)
+	int ps1start = (8 + DOKTOT + 2);
+	#endif
+	#endif
 	#if(RAD_M1)
-	int uu_rad = (8 + DOKTOT);
-	int u1_rad = (8 + DOKTOT + 1);
-	int u2_rad = (8 + DOKTOT + 2);
-	int u3_rad = (8 + DOKTOT + 3);
+	int uu_rad = (8 + DOKTOT + read_NS * 3);
+	int u1_rad = (8 + DOKTOT + read_NS * 3 + 1);
+	int u2_rad = (8 + DOKTOT + read_NS * 3 + 2);
+	int u3_rad = (8 + DOKTOT + read_NS * 3 + 3);
 	#endif
 	#if(RESISTIVE)
-	int e1 = (8 + DOKTOT + read_M1 * 4);
-	int e2 = (8 + DOKTOT + read_M1 * 4 + 1);
-	int e3 = (8 + DOKTOT + read_M1 * 4 + 2);
+	int e1 = (8 + DOKTOT + read_NS * 3 + read_M1 * 4);
+	int e2 = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + 1);
+	int e3 = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + 2);
 	#endif
 	#if(TWO_T)
-	int entre = (8 + DOKTOT + read_M1 * 4 + read_Res * 3);
-	int entri = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + 1);
+	int entre = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3);
+	int entri = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + 1);
 	#endif
 	#if(P_NUM)
-	int photon = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2);
+	int photon = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2);
 	#endif
 
 	#if(DO_YE)
-	int ye = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1);
+	int ye = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1);
 	#endif
 	#if(DONUCLEAR)
-	int xalpha = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
-	int xatm = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
+	int xalpha = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1);
+	int xatm = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + 1);
 	#endif
 	#if(NEUTRINOS_M1)
-	int uu_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2);
-	int u1_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 1);
-	int u2_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 2);
-	int u3_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 3);
-	int number_nu = (8 + DOKTOT + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 4);
+	int uu_nu = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2);
+	int u1_nu = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 1);
+	int u2_nu = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 2);
+	int u3_nu = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 3);
+	int number_nu = (8 + DOKTOT + read_NS * 3 + read_M1 * 4 + read_Res * 3 + read_2T * 2 + read_Pnum * 1 + read_Ye * 1 + read_nuclear * 2 + 4);
 	#endif
 
 	//Set grid reduction factor
@@ -251,7 +263,11 @@ void rdump_block_read(FILE *fp, int n)
 			reduce_factor = 1.0 / (double)(red_1 * red_3);
 			double fractheta_old = 1.e-2;
 			if (N2 != 1) {
+				#if(TRANS_BOUND_SMALL)
+				fractheta_old = 1.0 - 1.0e-13;
+				#else
 				fractheta_old = 1.0 - 2.0 / ((double)N2*red_2) * (BOUND_TYPE2==TRANSMISSIVE);
+				#endif
 			}
 			#if(SPHERICAL || SPHERICAL_GR)			
 			if ((j % red_2 == 0))ps[nl[n]][index_3D(n, i1, j1, z1)][2] += read[npr_file - (NDIM - 2)] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE2] * fractheta / fractheta_old;
@@ -263,6 +279,24 @@ void rdump_block_read(FILE *fp, int n)
 			#endif
 
 			//If file doesn't contain physics, initiliaze the physics just like in ICs
+#if(NEUTRON_STAR)
+			if (!read_NS) {
+				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
+					p[nl[n]][index_3D(n, i1, j1, z1)][FLR] += 0.0;
+					p[nl[n]][index_3D(n, i1, j1, z1)][FLRFRAC] += 0.0;
+					p[nl[n]][index_3D(n, i1, j1, z1)][PS1START] = ps[nl[n]][index_3D(n, i1, j1, z1)][1];
+					//fprintf(stderr, "not read NS \n");
+				}
+			}
+			else {
+				reduce_factor = 1.0 / (double)(red_1 * red_2 * red_3);
+				p[nl[n]][index_3D(n, i1, j1, z1)][FLR] += read[flr_NS];
+				p[nl[n]][index_3D(n, i1, j1, z1)][FLRFRAC] += read[flrfrac_NS];
+				reduce_factor = 1.0 / (double)(red_2 * red_3);
+				if ((i % red_1 == 0)) p[nl[n]][index_3D(n, i1, j1, z1)][PS1START] += read[ps1start] * reduce_factor / gdet[nl[n]][index_2D(n, i1, j1, z1)][FACE1];
+				//fprintf(stderr, "read NS \n");
+			}
+#endif
 			#if(RAD_M1)
 			if (!read_M1) {
 				if ((i % red_1) == (red_1 - 1) && (j % red_2) == (red_2 - 1) && (z % red_3) == (red_3 - 1)) {
@@ -676,6 +710,12 @@ void param_read(FILE *fp) {
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
 
+	if (docyl >= 10000000) {
+		read_NS = 1;
+		docyl -= 10000000;
+	}
+	else read_NS = 0;
+
 	if (docyl >= 1000000) {
 		read_nuclear = 1;
 		docyl -= 1000000;
@@ -835,7 +875,7 @@ double calc_Mdot() {
 		//fprintf(stderr, "test: %d %f \n", icalc, log10(fabs(mdot)));
 
 		//Loop over cells in theta-phi plane
-		if ((icalc > N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
+		if ((icalc >= N1_GPU_offset[n_ord[n]]) && (icalc < N1_GPU_offset[n_ord[n]] + BS_1)) {
 			#if(GPU_ENABLED)
 			gpuMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(5 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]])) * sizeof(double), gpuMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 			gpuDeviceSynchronize();

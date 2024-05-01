@@ -123,8 +123,8 @@ void set_mag(void){
 				#endif
 			#else
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005; //Postmerger problem
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){	
 				#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -464,5 +464,5 @@ void set_mag(void){
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 }

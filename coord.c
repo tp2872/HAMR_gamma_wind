@@ -52,6 +52,37 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
 		X[3] = startx[3] + (z + 0.5)*dx[nl[n]][3];
 	}
+	else if (loc == CORN2) {
+		#if(NB_1*BS_1 > 1)
+		X[1] = startx[1] + (i)*dx[nl[n]][1];
+		#else
+		X[1] = startx[1] + (i + 0.5) * dx[nl[n]][1];
+		#endif
+		X[2] = startx[2] + (j_local + 0.5) * dx[nl[n]][2];
+		#if(NB_3*BS_3 > 1)
+		X[3] = startx[3] + (z) * dx[nl[n]][3];
+		#else
+		X[3] = startx[3] + (z + 0.5) * dx[nl[n]][3];
+		#endif
+	}
+	else if (loc == CORN3) {
+		#if(NB_1*BS_1 > 1)
+		X[1] = startx[1] + (i) * dx[nl[n]][1];
+		#else
+		X[1] = startx[1] + (i + 0.5) * dx[nl[n]][1];
+		#endif
+		#if(NB_2*BS_2 > 1)
+		X[2] = startx[2] + (j_local) * dx[nl[n]][2];
+		#else
+		X[2] = startx[2] + (j_local + 0.5) * dx[nl[n]][2];
+		#endif		
+		X[3] = startx[3] + (z + 0.5) * dx[nl[n]][3];
+	}
+	else if (loc == 99) {
+		X[1] = startx[1] + i * dx[nl[n]][1];
+		X[2] = startx[2] + (j_local + 0.5) * dx[nl[n]][2];
+		X[3] = startx[3] + z * dx[nl[n]][3];
+	}
 	else {
 		X[1] = startx[1] + i*dx[nl[n]][1];
 		X[2] = startx[2] + j_local*dx[nl[n]][2];
@@ -325,7 +356,13 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-	Rin = R_NS; //0.90 * (1. + sqrt(1. - a * a)); 	
+#if(NEUTRON_STAR)
+
+	double cells_pow = (double)(CELLS_IN_STAR) / (double)(N1);
+	Rin = pow(pow(ROUT, cells_pow)/R_NS, 1./(cells_pow - 1.));
+#else
+	Rin = 0.9 * (1. + sqrt(1. - BH_SPIN * BH_SPIN)); 	
+#endif
 	Rout = ROUT;
 	lim = MC;
 	failed = 0;

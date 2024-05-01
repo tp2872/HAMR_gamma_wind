@@ -499,6 +499,10 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 				//Normalize with gdet
 				PLOOP F[nl[n]][ind0][k] = geom.g*F1[k];
 
+				#if(NEUTRON_STAR && USE_PS1START)
+				F[nl[n]][ind0][PS1START] = 0.0;
+				#endif
+
 				// evaluate restriction on timestep
 				dtij = fabs(cour*dx[nl[n]][dir] / ctop);
 				if (dtij < ndt_thread) {

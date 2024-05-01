@@ -54,6 +54,12 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	// Danat addition: 11/18/19 - avoid rhoflr too large`
 	get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); 
+
+	rhoscal = pow(MY_MAX(r, 1.0), -POWRHO);
+	uuscal = pow(rhoscal, GAMMA);
+
+	rhoflr = 1.e-5 * RHOMIN * rhoscal;
+	uuflr = 1.e-5 * UUMIN * uuscal;
     
 	//compute the square of fluid frame magnetic field (twice magnetic pressure)
 	get_geometry(n,i,j,z,CENT,&geom) ;
@@ -80,13 +86,14 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	//printf("floors: %e %e %e\n", pv[RHO], pv[UU], bsq);
-	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR)); k++) pv_prefloor[k] = pv[k];
+	for (k = 0; k < (NPR_U + NEUTRON_STAR * (1 + DOFLR + USE_PS1START)); k++) pv_prefloor[k] = pv[k];
 
-#if (NEUTRON_STAR && NS_TAPERED_FLOORS)
+#if (NEUTRON_STAR)
+#if(NS_TAPERED_FLOORS)
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 10.0;
+		Rlc = 1.0e6;
 
 	double rho0 = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0);
 	double alpha1_NS, alpha2_NS, n_NS, rb_NS, constant_NS;
@@ -136,6 +143,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		uuflr = bsq / mod_bsq_over_uu_max;
 
 #else
+	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+#endif
+#else
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 	#if(RAD_M1)
@@ -166,7 +177,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 10.0;
+		Rlc = 1.0e6;
 
 	if (pv[FLRFRAC] < 0.0)
 		pv[FLRFRAC] = 0.0;
@@ -187,7 +198,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		smooth_geom = 0.0;
 	else
 		smooth_geom = pow((1.0) * 0.5 * (1.0 - cos(M_PI * (r - R_NS) / (Rlc - R_NS))), 2.0);
-	smooth_geom = pow(smooth_geom, 0.5); //fixupWeight=0.5 always //change to time-dependent relaxation
+	smooth_geom = pow(smooth_geom, 0.5); //fixupWeight=0.5 always
 	/* This variable is 1 beyond Rlc, or if FLRFRAC = 0 */
 	smooth = 1.0 - pv[FLRFRAC] * (1.0 - smooth_geom);  // Don't want to do anything to real gas
 #endif
@@ -220,6 +231,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[UU] = uuflr + smooth * (pv[UU] - uuflr); // Full smoothing fn: don't cool good gas
 
 	//printf("floors: %e %e %e %e %e %e\n", rhoflr, pv[RHO], pv_prefloor[RHO], uuflr, pv[UU], pv_prefloor[UU]);
+#endif
+#if(!NS_TAPERED_FLOORS)
+	pv[RHO] = bsq / FREEZE_BSQORHO;
+	pv[UU] = 0.2 * pv[RHO];
 #endif
 	#if(RAD_M1)
 	if (u + pv[UU_RAD] < uuflr) {

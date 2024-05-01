@@ -5,10 +5,10 @@ void bound_prim2_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim3_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
-void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n, double t);
 
 /* bound array containing entire set of primitive variables */
-void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
+void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force, double t)
 {
 	int i, n, flag;
 	double temp=nstep;
@@ -16,8 +16,8 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 
 	#if(BOUND_TYPE1==NEUTRON_STAR_BC)	
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1_NS(p, ps, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1_NS(ph, psh, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1_NS(p, ps, n_ord[n], t);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1_NS(ph, psh, n_ord[n], t);
 	}
 	#elif(BOUND_TYPE1==OUTFLOW)
 	for (n = 0; n < n_active; n++){
@@ -168,7 +168,7 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 				for (z = N3_GPU_offset[n]-N3G; z < N3_GPU_offset[n] + BS_3+N3G; z++){
 					//#pragma omp   simd
 					for (i = -N1G; i < 0; i++){
-						for (k = 0; k < NPR; k++){
+						for (k = 0; k < NPR - USE_PS1START; k++) {
 							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, 0, j, z)][k];
 						}
 						#if(STAGGERED)
@@ -191,7 +191,10 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 			for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++){
 					for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i < N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G; i++){
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
+						for (k = 0; k < NPR - USE_PS1START; k++) {
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
+						}
+						
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)];
 						#if(STAGGERED)
 						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][2];
@@ -353,6 +356,10 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 							//don't touch electric fields
 							continue;
 							#endif
+							#if(NEUTRON_STAR && USE_PS1START)
+							if (k == PS1START)
+								continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
@@ -401,6 +408,10 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 								//don't touch electric fields
 								continue;
 							#endif
+							#if(NEUTRON_STAR && USE_PS1START)
+							if (k == PS1START)
+								continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
@@ -443,7 +454,7 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					//#pragma omp   simd
-					PLOOP{
+					for (k = 0; k < NPR - USE_PS1START;k++) {
 						prim[nl[n]][index_3D(n, i, -1, z)][k] = prim[nl[n]][index_3D(n, i, 0, z)][k];
 						prim[nl[n]][index_3D(n, i, -2, z)][k] = prim[nl[n]][index_3D(n, i, 1, z)][k];
 						#if(N1G==3)
@@ -479,7 +490,7 @@ void bound_prim2_reflective(double(*restrict prim[NB_LOCAL])[NPR], double(*restr
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					//#pragma omp   simd
-					PLOOP{
+					for (k = 0; k < NPR - USE_PS1START; k++) {
 						prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]), z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z)][k];
 						prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 2, z)][k];
 						#if(N1G==3)
@@ -571,7 +582,9 @@ void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					for (j = -N2G; j < 0; j++){
 						//#pragma omp   simd
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][k];
+						for (k = 0; k < NPR - USE_PS1START; k++) {
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][k];
+						}
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
 						#if(RAD_M1)
@@ -611,7 +624,9 @@ void bound_prim2_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict p
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G; j++){
 						//#pragma omp   simd
-						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1 , (z + BS_3 / 2) % BS_3)][k];
+						for (k = 0; k < NPR - USE_PS1START; k++) {
+							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1, (z + BS_3 / 2) % BS_3)][k];
+						}
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
 						#if(RAD_M1)
@@ -1005,10 +1020,99 @@ double angleRotated(double t)
 	return phi;
 }
 
+/* Assume that radial coord lines are straight at and inside the stellar surface */
+/* i.e. dxpdx[1][2] = 0                                                          */
+/* Schwarzschild static coords only for now                                      */
+#if(OBLIQUE_NS)
+
+double vpotns_flux(double r, double th1, double th2, double ph1, double ph2)
+{
+	double alpha = OBL_ANGLE_NS;
+	double sinth1 = sin(th1);
+	double sinth2 = sin(th2);
+	double sinth1sq = sinth1 * sinth1;
+	double sinth2sq = sinth2 * sinth2;
+	double int_Ath_dth = -((th2 - th1) * (sin(ph2) - sin(ph1)) * sin(alpha));
+	double int_Aph_dph = ((ph2 - ph1) * (sinth2sq - sinth1sq) * cos(alpha)
+		- (sin(2 * th2) - sin(2 * th1)) * (sin(ph2) - sin(ph1)) * sin(alpha) * 0.5);
 
 
-/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
-static void get_surface_4velocity(struct of_geom* geom, double* uscon)
+	double radFactor;
+	double z = 2.0 / r;
+	double zinv = 1.0 / z;
+
+	double schwFactor = 0.5 + zinv + zinv * zinv * log(1.0 - z);
+
+
+	radFactor = -schwFactor * 3.0 * MU_NS / 2.0;
+
+
+
+	return(radFactor * (-int_Ath_dth + int_Aph_dph));
+	//return( (-int_Ath_dth + int_Aph_dph)/r );
+}
+
+double dfluxns(double r, double Omega, double phi, double th1, double th2, double t, double dt)
+{
+	double vpotns_flux(double r, double th1, double th2, double ph1, double ph2);
+	double phi2 = phi - angleRotated(t);
+	double phi1 = phi2 - Omega * dt;
+	return(vpotns_flux(r, th1, th2, phi1, phi2));
+}
+
+double calcRadialField(int n, int i, int j, int z, int loc, struct of_geom* geom, double t)
+{
+	double Br, B1_code;
+
+	double r, theta, phi, phiRot, Br_ang;
+	double zmetric, zinv, g_11_Schw;
+	//double rdetg_IEF, rdetg_KS, rdetg_ratio ;
+	double schwFactor, lapse;
+	double dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM];
+	double X[NDIM];
+
+	//get_KS_metric(i, j, k, geom, CENT) ;
+
+	coord(n_ord[n], i, j, z, loc, X);
+	bl_coord(X, &r, &theta, &phi);
+
+	zmetric = 2.0 / r;
+	zinv = 1.0 / zmetric;
+	g_11_Schw = 1.0 / (1.0 - zmetric);
+	lapse = sqrt(1.0 - zmetric); // Schw.; lapse function of metric actually in use: Schw, BL, ...
+
+	//rdetg_IEF = sqrt(g_11_IEF) * r*r * sin(theta) ;  // These are sqrts of the spatial metric determinant
+	//rdetg_KS  = geom.g / lapse ; // code gdet is sqrt(abs(g)), g = - alpha^2 gamma
+
+
+	/* Magnetic fields as measured by the Schwarzschild normal observer (fido) */
+	schwFactor = zinv * zinv * (zinv * log(1.0 - zmetric) + 1.0 + 0.5 * z);
+	phiRot = angleRotated(t);
+	Br_ang = cos(OBL_ANGLE_NS) * cos(theta) + sin(OBL_ANGLE_NS) * sin(theta) * cos(phi - phiRot);
+	Br = -(6.0 * MU_NS * Br_ang / (r * r * r * sqrt(g_11_Schw))) * schwFactor;
+
+	/* Modify so that the field has zero divergence in KS coordinates: *
+	 * gives field as measured by the KS normal observer               */
+	 //rdetg_ratio = rdetg_IEF / rdetg_KS ;
+	 //Br *= rdetg_ratio;
+
+	 /* Take account of factor of lapse,                                *
+	  * since code uses B^i = *F^it = B^i_fido / alpha                  */
+	Br *= 1.0 / lapse;
+
+	/* transform to code coords                                         */
+	/* dr^\mu/dx^\nu jacobian, where x^\nu are internal coords          */
+	dxdxp_func(X, dxdxp);
+	invert_matrix(dxdxp, dxpdx);
+
+	B1_code = dxpdx[1][1] * Br;
+
+
+	return B1_code;
+}
+#endif /* OBLIQUE_NS */
+
+static double omega_star(double t)
 {
 	double omega, omega0, t0, delta_t;
 	t0 = SPINUP_START_TIME_NS;
@@ -1022,6 +1126,14 @@ static void get_surface_4velocity(struct of_geom* geom, double* uscon)
 	else
 		omega = omega0 * (t - t0) / delta_t;
 	//omega = 0.5 * (1.0 - cos((t-t0)*M_PI/delta_t)) * omega0 ;
+
+	return omega;
+}
+
+/*** Find the contravariant components of the 4-velocity of the rotating stellar surface */
+static void get_surface_4velocity(struct of_geom* geom, double* uscon, double t)
+{
+	double omega = omega_star(t);
 
 	uscon[0] = 1.0 / sqrt(-(geom->gcov[0][0] + 2.0 * geom->gcov[0][3] * omega + geom->gcov[3][3] * omega * omega));
 	uscon[1] = 0.0;
@@ -1049,7 +1161,7 @@ static void get_surface_magneticField(struct of_geom* geom, double* bncon, doubl
 }
 
 
-void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n) {
+void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n, double t) {
 	int i, j, z, k;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
@@ -1058,22 +1170,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 	double ucon_FAZ[NDIM], vcon_FAZ[NDIM]; // "FAZ" : first active zone
 	double* pFAZ;
 	double dxdxp_FAZ[NDIM][NDIM], dxdxp_surf[NDIM][NDIM], dxpdx_surf[NDIM][NDIM];
-	double r0, r_ghost1, r_ghost2, r0_rg[2];
-	double rs0, rs_ghost1, rs_ghost2;
-	//double rho_temp, uu_temp;
-	
-	coord(n_ord[n], 0, 0, 0, CENT, X);
-	bl_coord(X, &r, &th, &phi);
-	r0 = r;
-	dxdxp_func(X, dxdxp_FAZ);
-	coord(n_ord[n], -1, 0, 0, CENT, X);
-	bl_coord(X, &r, &th, &phi);
-	r_ghost1 = r;
-	coord(n_ord[n], -2, 0, 0, CENT, X);
-	bl_coord(X, &r, &th, &phi);
-	r_ghost2 = r;
-	r0_rg[0] = r0 / r_ghost2;
-	r0_rg[1] = r0 / r_ghost1;
+
 	// inner r boundary condition: u, gdet extrapolation
 	if (block[n][AMR_NBR4] == -1) {
 #pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
@@ -1092,7 +1189,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 #endif
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, 0, j, z)];
 					}
-					get_geometry(n, 0, j, z, CENT, &geom);
+					get_geometry(n, CELLS_IN_STAR, j, z, CENT, &geom);
 					pFAZ = prim[nl[n]][index_3D(n, 0, j, z)];
 					ucon_calc(prim[nl[n]][index_3D(n, 0, j, z)], &geom, ucon_FAZ);
 					for (k = 1; k < NDIM; k++) {
@@ -1113,49 +1210,103 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 					else
 						useForcefreeBC = 0;
 
-					/* Extrapolated primitives */
-					//slopelim_extrap_prim(j, k, RHO, prim);
-					//slopelim_extrap_prim(j, k, UU, prim);
-
 
 					if (useForcefreeBC)
 					{
-
-						//basic_hydroStatic_atm(r_ghost1, &rho_temp, &uu_temp);
-						prim[nl[n]][index_3D(n, -1, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r_ghost1 / R_NS, -1.0 / (GAMMA - 1.0));
-						prim[nl[n]][index_3D(n, -1, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r_ghost1 / R_NS, GAMMA / (1.0 - GAMMA));
-
-						//basic_hydroStatic_atm(r_ghost2, &rho_temp, &uu_temp);
-						for (i = -N1G; i < -1; i++) {
-							prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r_ghost2 / R_NS, -1.0 / (GAMMA - 1.0));
-							prim[nl[n]][index_3D(n, i, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r_ghost2 / R_NS, GAMMA / (1.0 - GAMMA));
+						//basic_hydroStatic_atm
+						for (i = -N1G; i < CELLS_IN_STAR; i++) {
+							coord(n_ord[n], i, 0, 0, CENT, X);
+							bl_coord(X, &r, &th, &phi);
+							prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, -1.0 / (GAMMA - 1.0));
+							prim[nl[n]][index_3D(n, i, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, GAMMA / (1.0 - GAMMA));
 						}
 					}
-					for (int i = -N1G; i < 0; i++)
+					for (int i = -N1G; i < CELLS_IN_STAR; i++)
 					{
 #if OBLIQUE_NS
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(i, j, k, CENT, &geom);
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(n, i, j, k, CENT, &geom, t);
+						ps[nl[n]][index_3D(n, i, j, z)][1] = calcRadialField(n, i, j, k, FACE1, &geom, t);
 
 #else /* aligned rotator: can store normal field */ 
-						coord(n_ord[n], i, j, z, CENT, X);
-						bl_coord(X, &r, &th, &phi);
-						dxdxp_func(X, dxdxp_surf);
-						invert_matrix(dxdxp_surf, dxpdx_surf);
+#if(SIMPLE_NS_BC_EXTRAPOLATE)
+						//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
+						double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
+						df_B1 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B1] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1];
+						df_B2 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B2] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2];
+						df_B3 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B3] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3];
 
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, 0, j, z)][B1] *pow(r0 / r, 4.0)* dxpdx_surf[1][1] * dxdxp_FAZ[1][1];
-						
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - df_B1) < 0.0)) df_B1 = 0.0;
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - df_B2) < 0.0)) df_B2 = 0.0;
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - df_B3) < 0.0)) df_B3 = 0.0;
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(CELLS_IN_STAR - i) * df_B1;
+						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(CELLS_IN_STAR - i) * df_B2;
+						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(CELLS_IN_STAR - i) * df_B3;
+
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] - (double)(CELLS_IN_STAR - i) * df_B1;
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] - (double)(CELLS_IN_STAR - i) * df_B2;
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] - (double)(CELLS_IN_STAR - i) * df_B3;
+						#endif
+
+#elif(SLOPELIM_NS_BC_EXTRAPOLATE)
+						//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
+						double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
+						df_B1 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B1]);
+						df_B2 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B2], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B2]);
+						df_B3 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B3], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B3]);
+
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - df_B1) < 0.0)) df_B1 = 0.0;
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - df_B2) < 0.0)) df_B2 = 0.0;
+						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - df_B3) < 0.0)) df_B3 = 0.0;
+
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(CELLS_IN_STAR - i) * df_B1;
+						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(CELLS_IN_STAR - i) * df_B2;
+						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(CELLS_IN_STAR - i) * df_B3;
+
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] - (double)(CELLS_IN_STAR - i) * df_B1;
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] - (double)(CELLS_IN_STAR - i) * df_B2;
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] - (double)(CELLS_IN_STAR - i) * df_B3;
+						#endif	
+#else			
+						double r_N1G = 0.0, gcon_N1G = 0.0;
+#if(STAGGERED)
+						coord(n_ord[n], 0 + CELLS_IN_STAR, j, z, FACE1, X);
+						bl_coord(X, &r, &th, &phi);
+						r_N1G = r;
+						get_geometry(n, 0 + CELLS_IN_STAR, j, z, FACE1, &geom);
+						gcon_N1G = geom.gcon[0][0];
+						ps[nl[n]][index_3D(n, 0, j, z)][1] = prim[nl[n]][index_3D(n, 0, j, z)][PS1START];
 						coord(n_ord[n], i, j, z, FACE1, X);
 						bl_coord(X, &r, &th, &phi);
-						dxdxp_func(X, dxdxp_surf);
-						invert_matrix(dxdxp_surf, dxpdx_surf);
-
-						/*usually we do not set a bounds condition on ps[1]*/
-						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, 0, j, z)][1] *pow(r0 / r, 4.0)* dxpdx_surf[1][1] * dxdxp_FAZ[1][1];
+						get_geometry(n, i, j, z, FACE1, &geom);
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][1] * pow(r_N1G / r, 4.0) * pow(geom.gcon[0][0] / gcon_N1G, 3. / 4.);
+						coord(n_ord[n], i, j, z, FACE2, X);
+						bl_coord(X, &r, &th, &phi);
+						get_geometry(n, i, j, z, FACE2, &geom);
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][2] * pow(r_N1G / r, 4.0) * pow(geom.gcon[0][0] / gcon_N1G, 3. / 2.);
+						coord(n_ord[n], i, j, z, FACE3, X);
+						bl_coord(X, &r, &th, &phi);
+						get_geometry(n, i, j, z, FACE3, &geom);
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][3] * pow(r_N1G / r, 2.0);
+#endif
+						coord(n_ord[n], 0 + CELLS_IN_STAR, j, z, CENT, X);
+						bl_coord(X, &r, &th, &phi);
+						r_N1G = r;
+						get_geometry(n, 0 + CELLS_IN_STAR, j, z, CENT, &geom);
+						gcon_N1G = geom.gcon[0][0];
+						coord(n_ord[n], i, j, z, CENT, X);
+						bl_coord(X, &r, &th, &phi);
+						get_geometry(n, i, j, z, CENT, &geom);
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][B1] * pow(r_N1G / r, 4.0) * pow(geom.gcon[0][0] / gcon_N1G, 3. / 4.);
+						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][B2] * pow(r_N1G / r, 4.0) * pow(geom.gcon[0][0] / gcon_N1G, 3. / 2.);
+						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, 0 + CELLS_IN_STAR, j, z)][B3] * pow(r_N1G / r, 2.0);
+#endif
 #endif
 						//if (i < 5 && z == 0 && (j<5) && r < 4.2) {
 						//	fprintf(stderr, "ps1: %g at r=%g(%d), th=%g(%d), phi=%g(%d) \n", ps[nl[n]][index_3D(n, i, j, z)][1],r, i, th, j, phi, z);
 						//}
-
+						#if(NEUTRON_STAR)
 						if (useForcefreeBC) {
 							prim[nl[n]][index_3D(n, i, j, z)][FLR] = 1.0;
 							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = 1.0;
@@ -1166,11 +1317,9 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = prim[nl[n]][index_3D(n, 0, j, z)][FLRFRAC];
 							prim[nl[n]][index_3D(n, i, j, z)][KTOT] = prim[nl[n]][index_3D(n, 0, j, z)][KTOT];
 						}
+						#endif
 
 					}
-
-					//simple_extrap_prim(j, k, B2, prim);
-					//simple_extrap_prim(j, k, B3, prim);
 
 
 					/* Now do velocities */
@@ -1181,14 +1330,14 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 						double bccon[NDIM], bccov[NDIM], uperpcon[NDIM], uperpcov[NDIM];
 						double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq;
 						/*set_boundary_velocities_FFE_4Dmethod(n, i, j, k, CENT, prim[nl[n]][index_3D(n, i, j, z)]);*/
-						for (i = -N1G; i < 0; i++) {
+						for (i = -N1G; i < 0 + CELLS_IN_STAR; i++) {
 							get_geometry(n, i, j, z, CENT, &geom);
 							bncon[0] = 0.0;
 							for (k = 1; k < NDIM; k++) {
 								bncon[k] = prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
 							}
 							/* Surface-observer 4-velocity and magnetic field */
-							get_surface_4velocity(&geom, uscon);
+							get_surface_4velocity(&geom, uscon, t);
 							get_surface_magneticField(&geom, bncon, uscon, bscon);
 
 							/* Coordinate-observer 4-velocity and magnetic field */
@@ -1205,7 +1354,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 								bccon[k] = uscon[k] * bs_dot_eta - bscon[k] * us_dot_eta;
 							}
 							lower(bccon, &geom, bccov);
-							bcsq = dot(bccon, bccov);
+							bcsq = dot(bccon, bccov) + SMALL;
 
 							/* Project surface velocity us orthogonal to coordinate-observer magnetic field bc */
 							bc_dot_us = dot(bccov, uscon);
@@ -1215,7 +1364,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 
 							/* Normalize: u = u_p / sqrt(- u_p^2) */
 							lower(uperpcon, &geom, uperpcov);
-							uperpsq = dot(uperpcon, uperpcov);
+							uperpsq = dot(uperpcon, uperpcov) + SMALL;
 							for (k = 0; k < NDIM; k++) {
 								ucon[k] = uperpcon[k] / sqrt(-uperpsq);
 							}
@@ -1235,37 +1384,37 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 					{
 						double bncon[NDIM], bscon[NDIM], bscov[NDIM], uscon[NDIM], bsmag;
 						double uprllcon[NDIM], uprllsq;
-						double udotb[3], d_udotb, udotb_ghost[N1G], beta_NS;
+						double udotb[3], d_udotb, udotb_ghost[N1G + CELLS_IN_STAR], beta_NS;
 						//find_udotb_first3(n, j, k, prim, udotb);
 						for (i = 0; i < 3; i++) {
-							get_geometry(n, i, j, z, CENT, &geom);
-							ucon_calc(prim[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
+							get_geometry(n, i + CELLS_IN_STAR, j, z, CENT, &geom);
+							ucon_calc(prim[nl[n]][index_3D(n, i + CELLS_IN_STAR, j, z)], &geom, ucon);
 							/* Normal-observer magnetic field */
 							bncon[0] = 0.0;
 							for (k = 1; k < NDIM; k++) {
-								bncon[k] = prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
+								bncon[k] = prim[nl[n]][index_3D(n, i + CELLS_IN_STAR, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
 							}
-							get_surface_4velocity(&geom, uscon);
+							get_surface_4velocity(&geom, uscon, t);
 							get_surface_magneticField(&geom, bncon, uscon, bscon);
 							lower(bscon, &geom, bscov);
 							bsmag = sqrt(dot(bscon, bscov));
 							udotb[i] = dot(ucon, bscov) / bsmag;  // Store u.b/|b|
 						}
-						d_udotb = slope_lim(udotb[0], udotb[1], udotb[2]);
-						for (i = -N1G; i < 0; i++)
-							udotb_ghost[i + N1G] = udotb[0] + i * d_udotb;
+						d_udotb = slope_lim_BC(udotb[0], udotb[1], udotb[2]);
+						for (i = -N1G; i < 0 + CELLS_IN_STAR; i++)
+							udotb_ghost[i + N1G] = udotb[0] - (CELLS_IN_STAR - i) * d_udotb;
 						//udotb_surface[j][k] = udotb[0] - 0.5 * d_udotb;
 
 
-						for (i = -N1G; i < 0; i++) {
+						for (i = -N1G; i < 0 + CELLS_IN_STAR; i++) {
 							// set_boundary_velocities_surfaceFrame_4Dmethod(n, i, j, k, CENT, prim[i][j][k], udotb_ghost[i + N1G]);
 							get_geometry(n, i, j, z, CENT, &geom);
 							bncon[0] = 0.0;
 							for (k = 1; k < NDIM; k++) {
-								bncon[k] = -1.0 * prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / (geom.gcon[0][0]);
+								bncon[k] = prim[nl[n]][index_3D(n, i, j, z)][B1 + k - 1] / sqrt(-geom.gcon[0][0]);
 							}
 							/* Surface-observer 4-velocity and magnetic field */
-							get_surface_4velocity(&geom, uscon);
+							get_surface_4velocity(&geom, uscon, t);
 							get_surface_magneticField(&geom, bncon, uscon, bscon);
 							lower(bscon, &geom, bscov);
 							bsmag = sqrt(dot(bscon, bscov));

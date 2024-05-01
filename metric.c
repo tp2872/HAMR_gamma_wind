@@ -130,6 +130,17 @@ void gcov_func_spherical(double *X, double gcovp[][NDIM])
 	gcov[3][0] = gcov[0][3];
 	gcov[3][1] = gcov[1][3];
 	gcov[3][3] = s2 * r * r;
+	#elif(SPHERICAL_GR && NEUTRON_STAR && USE_BL_COORDINATES) //Boyer-Lindquist coordinates
+	double Delta_BL = r * r - 2.0 * r + a * a;
+	gcov[0][0] = (-1. + 2. * r / rho2);
+	gcov[0][3] = (-2. * a * r * s2 / rho2);
+
+	gcov[1][1] = (rho2/ Delta_BL);
+
+	gcov[2][2] = rho2;
+
+	gcov[3][0] = gcov[0][3];
+	gcov[3][3] = s2 * ((r * r + a * a) * (r * r + a * a) - a * a * Delta_BL * s2) / rho2;
 	#else
 	gcov[0][0] = (-1. + 2.*r / rho2);
 	gcov[0][1] = (2.*r / rho2);

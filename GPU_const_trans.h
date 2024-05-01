@@ -1,3 +1,5 @@
+#include "config.h"
+
 __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
@@ -16,10 +18,10 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, in
 				F3[B2*(ksize)+icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 9
+				#pragma unroll 12
 				PLOOP F2[k*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.;
 				#endif
-				#pragma unroll 9
+				#pragma unroll 12
 				for (k = 0; k<NPR; k++){
 					F2[k*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
@@ -30,10 +32,10 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, in
 				F3[B2*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 9
+				#pragma unroll 12
 				PLOOP F2[k*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.;
 				#endif
-				#pragma unroll 9
+				#pragma unroll 12
 				for (k = 0; k<NPR; k++){
 					F2[k*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
@@ -124,11 +126,20 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	#if(CARTESIAN_GR)
 	, int* pflag_cart
 	#endif
-	#if(DO_RBOUND || NEUTRON_STAR)
+	#if(DO_RBOUND || (NEUTRON_STAR && 0))
 	, int* pflag_rbound
 	#endif
 	#if(NEUTRON_STAR)
+	, int NBR_4, double t
+#if(TWISTED_OMEGA)
+	, const double* __restrict__ th
+#endif
+#if(OBLIQUE_NS)
+	, const double * __restrict__ r_CORN2, const double* __restrict__ phi_CORN2, const double* __restrict__ th_CORN3, const double* __restrict__ th_CORN3_2, double Dt, double dx2
+#endif
+	#if(!USE_PS1START)
 	, double* Bx1_surface
+	#endif
 	#endif
 )
 {
@@ -153,8 +164,8 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	double factor = 1.0;
 	#endif
 
-	if (k==1){
-		#if(RESISTIVE || CARTESIAN)
+	if (k == 1) {
+#if(RESISTIVE || CARTESIAN)
 		double dE_LEFT_13_1 = 0.0;
 		double dE_LEFT_13_2 = 0.0;
 		double dE_RIGHT_13_1 = 0.0;
@@ -179,7 +190,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		double dE_LEFT_32_2 = 0.0;
 		double dE_RIGHT_32_1 = 0.0;
 		double dE_RIGHT_32_2 = 0.0;
-		#else
+#else
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - factor * F3[B2 * (ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - factor * F3[B2 * (ksize)+global_id - jsize * D2];
 		double dE_RIGHT_13_1 = factor * F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
@@ -204,35 +215,35 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - factor * F2[B1 * (ksize)+global_id - D1 * isize];
 		double dE_RIGHT_32_1 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
 		double dE_RIGHT_32_2 = factor * F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		#endif
+#endif
 
-		emf[1 * (ksize)+global_id] = 0.25*((-factor * F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
-			+(factor * F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*(ksize)+global_id - D2*jsize]>0.0))));
-		emf[2 * (ksize)+global_id] = 0.25*((-factor * F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (factor * F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*(ksize)+global_id - D3]>0.0))));
-		emf[3 * (ksize)+global_id] = 0.25*((factor * F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
-			+ (factor * F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*(ksize)+global_id - D1*isize]>0.0)))
-			+ (-factor * F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
-			+ (-factor * F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*(ksize)+global_id - D2*jsize] >0.0))));
+		emf[1 * (ksize)+global_id] = 0.25 * ((-factor * F2[B3 * (ksize)+global_id] - (dE_LEFT_13_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_13_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+			+ (-factor * F2[B3 * (ksize)+global_id - D3] + (dE_RIGHT_13_1 * (double)(F2[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2 * (double)(F2[RHO * (ksize)+global_id - D3] > 0.0))) +
+			+(factor * F3[B2 * (ksize)+global_id] - (dE_LEFT_12_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_12_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+			+ (factor * F3[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_12_1 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_12_2 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+		emf[2 * (ksize)+global_id] = 0.25 * ((-factor * F3[B1 * (ksize)+global_id] - (dE_LEFT_21_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_21_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+			+ (-factor * F3[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_21_1 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_21_2 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+			+ (factor * F1[B3 * (ksize)+global_id] - (dE_LEFT_23_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_23_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+			+ (factor * F1[B3 * (ksize)+global_id - D3] + (dE_RIGHT_23_1 * (double)(F1[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2 * (double)(F1[RHO * (ksize)+global_id - D3] > 0.0))));
+		emf[3 * (ksize)+global_id] = 0.25 * ((factor * F2[B1 * (ksize)+global_id] - (dE_LEFT_31_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_31_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+			+ (factor * F2[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_31_1 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_31_2 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+			+ (-factor * F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+			+ (-factor * F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
 
-		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
+		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
 			emf[3 * (ksize)+global_id] = 0.;
 			emf[1 * (ksize)+global_id] = -0.5 * factor * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 
-		#if(DO_RBOUND)
+#if(DO_RBOUND)
 		if (pflag_rbound[global_id - isize * D1] == 1) {
 			emf[3 * (ksize)+global_id] = 0.;
 			emf[2 * (ksize)+global_id] = 0.;
 		}
-		#endif
+#endif
 
 
-		#if(CARTESIAN_GR)
+#if(CARTESIAN_GR)
 		/*if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D1 * isize] == 1 || pflag_cart[global_id - D1 * isize - D2 * jsize] == 1) {
 			emf[3 * (ksize)+global_id] = 0.;
 		}
@@ -242,24 +253,83 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		if (pflag_cart[global_id] == 1 || pflag_cart[global_id - D3] == 1 || pflag_cart[global_id - D2 * jsize] == 1 || pflag_cart[global_id - D2 * jsize + D3] == 1) {
 			emf[1 * (ksize)+global_id] = 0.;
 		}*/
-		#endif
+#endif
 
 #if(NEUTRON_STAR)
-		/*get_geometry(0, j, k, FACE1, &geom) ; // emf[2] almost defined at FACE1: shifted in phi only
+		// emf[2] almost defined at FACE1: shifted in phi only
 
-        #if OBLIQUE_NS
-        Br = calcRadialField(0, j, k, 99, &geom);
-        #else
-        Br = Br_stellar_surface[j] ;
-        #endif
-        
-        //emf[2] = - E_theta = sqrt(-g) Omega B^r                  *
-         //where g is determinant of 4-metric and B is primitive B  
-		emf[2][0][j][k] = geom.g * omega_star() * Br;
-		emf[3][0][j][k] = 0.0; 
-		*/
-		if (pflag_rbound[global_id - isize * D1] == 1) {
+		//if (pflag_rbound[global_id - isize * D1] == 1) {
+		if (NBR_4 == -1 && icurr < N1G + 1 + CELLS_IN_STAR) {
+			#if(USE_PS1START)
+			struct of_geom geom;
+			
+			double omega = omega_star(t
+#if(TWISTED_OMEGA)
+				, th[jcurr]
+#endif
+			);
+			
+#if(0)
+			double pb1;
+			get_geometry(icurr, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			pb1 = geom.g * pb_i[PS1START * (ksize)+global_id];
+
+			if (jcurr == 0 || zcurr == 0) {
+				emf[2 * (ksize)+global_id] = omega* pb1;
+			} 
+			else {
+				double pb2, pb3, pb4;
+				get_geometry(icurr, jcurr, zcurr - 1, FACE1, &geom, gcov, gcon, gdet);
+				pb2 = geom.g * pb_i[PS1START * (ksize)+global_id - D3];
+				get_geometry(icurr, jcurr - 1, zcurr, FACE1, &geom, gcov, gcon, gdet);
+				pb3 = geom.g * pb_i[PS1START * (ksize)+global_id - isize * D1];
+				get_geometry(icurr, jcurr - 1, zcurr - 1, FACE1, &geom, gcov, gcon, gdet);
+				pb4 = geom.g * pb_i[PS1START * (ksize)+global_id - isize * D1 - D3];
+
+				emf[2 * (ksize)+global_id] = 0.25 * omega * (pb1 + pb2 + pb3 + pb4);
+			} 
+#else
+#if(OBLIQUE_NS)
+			double r_ph1 = r_CORN2[icurr];
+			double phi_ph1 = phi_CORN2[zcurr];
+			double theta_th1 = th_CORN3[jcurr];
+			double theta_th2 = th_CORN3_2[jcurr];
+		
+			double phi2 = phi_ph1 - angleRotated(t);
+			double phi1 = phi2 - omega * Dt;
+
+			double alpha = OBL_ANGLE_NS;
+			double sinth1 = sin(theta_th1);
+			double sinth2 = sin(theta_th2);
+			double sinth1sq = sinth1 * sinth1;
+			double sinth2sq = sinth2 * sinth2;
+			double int_Ath_dth = -((theta_th2 - theta_th1) * (sin(phi2) - sin(phi1)) * sin(alpha));
+			double int_Aph_dph = ((phi2 - phi1) * (sinth2sq - sinth1sq) * cos(alpha) - (sin(2 * theta_th2) - sin(2 * theta_th1)) * (sin(phi2) - sin(phi1)) * sin(alpha) * 0.5);
+
+			double zmetric = 2.0 / (r_ph1);
+			double zinv = 1.0 / zmetric;
+
+			double schwFactor = 0.5 + zinv + zinv * zinv * log(1.0 - zmetric);
+			double radFactor = -schwFactor * 3.0 * MU_NS / 2.0;
+
+			double dflux = radFactor * (-int_Ath_dth + int_Aph_dph);
+			// rotation, E_2 = (-[v x B])_2 = - v^3 B^1
+			emf[2 * (ksize)+global_id] = -1.0*dflux / (dx2 * Dt);
+
+			/*old method
+			get_geometry(0, j, k, FACE1, &geom);
+			Br = calcRadialField(0, j, k, 99, &geom);
+			emf[2][0][j][k] = -1.0 * geom.g * omega_star()*Br ;
+			*/
+#else
+			get_geometry(icurr, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			emf[2 * (ksize)+global_id] = -1.0 * omega * geom.g * pb_i[PS1START * (ksize)+global_id];
+#endif
+#endif	
+			#else
 			emf[2 * (ksize)+global_id] = OMEGA_NS * Bx1_surface[global_id - isize * D1];
+			#endif
+			//emf[1 * (ksize)+global_id] = 0.;
 			emf[3 * (ksize)+global_id] = 0.;
 		}
 #endif

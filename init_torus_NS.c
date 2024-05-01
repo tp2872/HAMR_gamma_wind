@@ -14,7 +14,9 @@ void init_NS()
 	double tilt, eccentricity;
 	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es;
 	struct of_geom geom;
-
+	if (rank == 0) {
+		fprintf(stderr, "start init NS\n");
+	}
 	/* for disk interior */
 	double l, rin, lnh, expm2chi, up1;
 	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
@@ -263,7 +265,9 @@ void init_NS()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
-
+			#if(NEUTRON_STAR*USE_PS1START)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][PS1START] = 0.;
+			#endif	
 			// initialize neutrinos
 #if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
@@ -363,7 +367,9 @@ void init_NS()
 	//}
 
 	//bound_prim(p, 1);
-
+	if (rank == 0) {
+		fprintf(stderr, "start set mag NS\n");
+	}
 	set_mag_NS();
 
 	sourceflag = 0.;
@@ -450,17 +456,37 @@ void init_NS()
 	}
 #endif
 
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 	fprintf(stderr, "after boundprim \n");
 #if(GPU_ENABLED && NEUTRON_STAR)
 	for (n = 0; n < n_active; n++) {
 		/*Radial magentic field at the face center of surface cell; nope save the initial face center B field*/
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3) {
+			//coord(n_ord[n], i, j, z, FACE1, X);
+			//bl_coord(X, &r, &th, &phi);
+			//get_geometry(n_ord[n], i, j, z, FACE1, &geom);
+#if(USE_PS1START && STAGGERED)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][PS1START] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][PS1START] = geom.g * ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
+#else
+			double dxdxp_FAZ[NDIM][NDIM], dxdxp_surf[NDIM][NDIM], dxpdx_surf[NDIM][NDIM];
+			double r_surf, r_FAZ;
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			r_FAZ = r;
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			dxdxp_func(X, dxdxp_FAZ);
 			coord(n_ord[n], i, j, z, FACE1, X);
 			bl_coord(X, &r, &th, &phi);
+			r_surf = r;
 			get_geometry(n_ord[n], i, j, z, FACE1, &geom);
-			Bx1_surface[nl[n]][index_3D(n, i, j, z)] = geom.g * ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
+			dxdxp_func(X, dxdxp_surf);                                         
+			invert_matrix(dxdxp_surf, dxpdx_surf);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][PS1START] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] * pow(r_FAZ / r_surf, 4) * dxpdx_surf[1][1] * dxdxp_FAZ[1][1];
+			//Bx1_surface[nl[n]][index_3D(n, i, j, z)] = geom.g * ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
 			//Bx1_surface_GPU[nl[n_ord[n]]][(j - N2_GPU_offset[n_ord[n]] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n_ord[n]] + N3G)] = geom.gdet * ps[nl[n_ord[n]]][index_3D(n_ord[n], 0, j, z)][1];
+#endif
+			
 		}
 	}
 #endif
@@ -502,10 +528,12 @@ void set_mag_NS(void) {
 			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
 			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
 			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+#if(STAGGERED)
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+#endif
 		}
 	}
 
@@ -528,13 +556,47 @@ void set_mag_NS(void) {
 			z1 = 2.0 / r;
 			z1inv = 1.0 / z1;
 			schwFactor = 0.5 + z1inv + z1inv * z1inv * log(1.0 - z1);
-			A_schw = -schwFactor * 3.0 * MU_NS * sin(th) * sin(th) / 2.0;
-			q = A_schw;
-			//q = 1.0 - cos(th); // Monopole
+			A_schw = -schwFactor * 3.0 * MU_NS / 2.0;
+#if(SPHERICAL_GR && OBLIQUE_NS)
+			double sin_chi, cos_chi;
+#if(DEFORM_DIPOLE_NS)
+			/*** Makes an aligned dipole beyond some radius r1,  ***
+			 *** and a misaligned one inside another radius r0.  ***/
+			double f;
+			f = f_misalignment(r);
+			sin_chi = sin(f * OBL_ANGLE_NS);
+			cos_chi = cos(f * OBL_ANGLE_NS);
 #else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax * pow(r / 20. * sin(th), 3.) * exp(-r / 400.) - 0.2; //code comparison
+			sin_chi = sin(OBL_ANGLE_NS);
+			cos_chi = cos(OBL_ANGLE_NS);
+#endif /* DEFORM_DIPOLE_NS */
+			/* Change of basis: magnetic --> grid/rotational */
+			double Atheta_ang = -sin_chi * sin(phi);
+			double Aphi_ang = sin(th) * (cos_chi * sin(th) - sin_chi * cos(th) * cos(phi));
+
+			/***
+			if ( i==0 && r < 4.5 && k == 8 )
+			  fprintf(stderr, "j: %d  theta: %.5e  Atheta: %.5e  Aphi: %.5e \n", j,
+						  theta, Atheta_ang, Aphi_ang) ;
+			 ***/
+
+			 /* transform to code coords                                         */
+			 /* dr^\mu/dx^\nu jacobian, where x^\nu are internal coords          */
+			double dxdxp[NDIM][NDIM];
+			dxdxp_func(X, dxdxp);
+
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.0;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = (dxdxp[1][2] * Atheta_ang + dxdxp[1][3] * Aphi_ang) * A_schw;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = (dxdxp[2][2] * Atheta_ang + dxdxp[2][3] * Aphi_ang) * A_schw;
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = (dxdxp[3][2] * Atheta_ang + dxdxp[3][3] * Aphi_ang) * A_schw;
+#else
+#if(SPHERICAL_GR)
+			q = A_schw * sin(th) * sin(th);
+#else
+			q = MU_NS * sin(th) * sin(th) / r; // Flat spacetime dipole
 #endif
+			//q = 1.0 - cos(th); // Monopole
+
 			if (q > 0.) {
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //SANE+CODE_COMPARISON
 				
@@ -543,7 +605,8 @@ void set_mag_NS(void) {
 			else {
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.0;
 			}
-
+#endif
+#endif
 
 #if (TILTED)
 			V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
@@ -564,7 +627,7 @@ void set_mag_NS(void) {
 			}
 #endif
 
-#if(SPHERICAL || SPHERICAL_GR )
+#if(SPHERICAL || SPHERICAL_GR && !(OBLIQUE_NS) )
 			if (j < 0 || j >= N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2])) {
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= -1.0;
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= -1.0;
@@ -573,7 +636,7 @@ void set_mag_NS(void) {
 			//if (block[n_ord[n]][AMR_NBR4] == -1 && i == 0 && (j < 3 || j > N2 - 4) && z == 0) {
 			//	fprintf(stderr, "B dq[1]: %g dq[2]: %g dq[3]: %g for r=%g %d, th=%g %d, phi=%g %d\n", dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1], dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2], dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], r, i, th, j, phi, z);
 			//}
-#if(1)
+#if(!(OBLIQUE_NS && NEUTRON_STAR))  //not sure about this
 			double dxdxp[NDIM][NDIM], dq_temp[NDIM];
 			int k1, k2;
 			dxdxp_func(X, dxdxp);
@@ -626,7 +689,7 @@ void set_mag_NS(void) {
 					for (int k2 = -N2G; k2 < N2G; k2++) {
 						coord(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z, FACE2, X);
 						bl_coord(X, &r, &th, &phi);
-						fprintf(stderr, "B Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + k2, phi, z);
+						//fprintf(stderr, "B Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + k2, phi, z);
 					}
 				}
 				#if(NEUTRON_STAR && 0)
@@ -663,7 +726,7 @@ void set_mag_NS(void) {
 					for (int k2 = -N2G; k2 < N2G; k2++) {
 						coord(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z, FACE2, X);
 						bl_coord(X, &r, &th, &phi);
-						fprintf(stderr, "A Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + k2, phi, z);
+						//fprintf(stderr, "A Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + k2, phi, z);
 					}
 				}
 			}
@@ -675,7 +738,7 @@ void set_mag_NS(void) {
 					for (int k2 = -N2G; k2 < N2G; k2++) {
 						coord(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z, FACE2, X);
 						bl_coord(X, &r, &th, &phi);
-						fprintf(stderr, "B Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + BS_2 - k2, phi, z);
+						//fprintf(stderr, "B Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + BS_2 - k2, phi, z);
 					}
 				}
 				#if(NEUTRON_STAR && 0)
@@ -734,7 +797,7 @@ void set_mag_NS(void) {
 					for (int k2 = -N2G; k2 < N2G; k2++) {
 						coord(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z, FACE2, X);
 						bl_coord(X, &r, &th, &phi);
-						fprintf(stderr, "A Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + BS_2 - k2, phi, z);
+						//fprintf(stderr, "A Ecorn[3] FACE2: %g for r=%g %d, th=%g %d, phi=%g %d\n", E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2 - k2, z)][3], r, i, th, N2_GPU_offset[n_ord[n]] + BS_2 - k2, phi, z);
 					}
 				}
 			}
@@ -831,7 +894,7 @@ void set_mag_NS(void) {
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			//fprintf(stderr, "initial B1 B2 B3 bsq_ij: %g %g %g %g\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3], bsq_ij);
 #if(NEUTRON_STAR)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]=0.01*bsq_ij / FREEZE_BSQORHO;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]=0.01*bsq_ij / MAX_BSQ_OVER_RHO;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.2 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
 #endif
 			beta_ij = 2.0 * (gam - 1.0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
@@ -862,7 +925,7 @@ void set_mag_NS(void) {
 			if (block[n_ord[n]][AMR_NBR4] == -1 && i == 0 && (j < 3 || j > N2 - 4) && z == 0) {
 				coord(n_ord[n], i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
-				fprintf(stderr, "B: AMR_NBR4: ps[1]: %g for r=%g %d, th=%g %d, phi=%g %d\n", ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1],r,i,th,j,phi,z);
+				//fprintf(stderr, "B: AMR_NBR4: ps[1]: %g for r=%g %d, th=%g %d, phi=%g %d\n", ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1],r,i,th,j,phi,z);
 			}
 			//if (block[n_ord[n]][AMR_NBR4] == -1 && i <5 && j==0 && z == 0) {
 			//	coord(n_ord[n], i, j, z, CENT, X);
@@ -900,7 +963,7 @@ void set_mag_NS(void) {
 		//}
 		fixup(p, n_ord[n]);
 	}
-	bound_prim(p, 1);
+	bound_prim(p, 1, t);
 
 
 #if(NEUTRON_STAR)
@@ -921,10 +984,9 @@ void set_mag_NS(void) {
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] *= norm;
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= norm;
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= norm;
-
+#endif
 		}
 	}
-#endif
 
 #if(RESISTIVE)
 	for (n = 0; n < n_active; n++) {
@@ -987,7 +1049,22 @@ void set_mag_NS(void) {
 
 }
 
+double f_misalignment(double r)
+{
+	double r0, r1; // radii between which to realign
+	double f; // 1 inside r0, 0 outside r1
+	r0 = 4.5;
+	r1 = 8.5;
 
+	if (r < r0)
+		f = 1.0;
+	else if (r > r1)
+		f = 0.0;
+	else
+		f = 0.5 * (1.0 + cos(M_PI * (r - r0) / (r1 - r0)));
+
+	return f;
+}
 
 
 

@@ -193,7 +193,7 @@ void init_disruption()
   for (n = 0; n < n_active; n++){
     fixup(p, n_ord[n]);
   }
-  bound_prim(p,1);
+  bound_prim(p,1, t);
 
   //set_mag();
 

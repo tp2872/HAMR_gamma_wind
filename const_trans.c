@@ -2,7 +2,11 @@
 #include "decs_MPI.h"
 
 #if(STAGGERED)
-void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
+void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n
+#if(NEUTRON_STAR)
+	, int NBR_4
+#endif
+){
 	int i, j, z, k, ind0;
 	double E_cent[NDIM];
 	struct of_state q;
@@ -93,9 +97,10 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 			#endif
 
 #if(NEUTRON_STAR)
-			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+			//if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+			if(NBR_4 == -1 && icurr < N1_GPU_offset[n] * D1 + CELLS_IN_STAR + 1){
 				E_corn[nl[n]][ind0][1] = 0.0;
-				//E_corn[nl[n]][ind0][2] = OMEGA_NS * Bx1_surface[index_3D(n, i - D1, j, z)];
+				E_corn[nl[n]][ind0][2] = 0.0;//OMEGA_NS * pb[nl[n]][index_3D(n, i, j, z)][PS1START];
 				E_corn[nl[n]][ind0][3] = 0.0;
 			}
 #endif
@@ -104,7 +109,11 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 	}
 }
 
-void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
+void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n
+#if(NEUTRON_STAR)
+	, int NBR_4
+#endif
+) {
 	int i, j, z, k, ind0;
 	double E_cent[NDIM];
 	struct of_state q;
@@ -197,9 +206,10 @@ void const_transport1_M1_2(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 			}
 			#endif
 #if(NEUTRON_STAR)
-			if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+			//if (pflag_rbound[nl[n]][index_3D(n, i - D1, j, z)] == 1) {
+			if (NBR_4 == -1 && icurr < N1_GPU_offset[n] * D1 + 1 + CELLS_IN_STAR) {
 				E_corn[nl[n]][ind0][1] = 0.0;
-				//E_corn[nl[n]][ind0][2] = OMEGA_NS * Bx1_surface[index_3D(n, i - D1, j, z)];
+				E_corn[nl[n]][ind0][2] = 0.0; // OMEGA_NS* pb[nl[n]][index_3D(n, i, j, z)][PS1START];
 				E_corn[nl[n]][ind0][3] = 0.0;
 			}
 #endif

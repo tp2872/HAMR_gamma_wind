@@ -181,7 +181,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			x2 = p[MY_MAX(k*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
 			x3 = p[k*(ksize)+global_id + z3*zdel];
 			x4 = p[MY_MIN(k*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			temp=0.5*slope_lim(x2, x3, x4, 0);
+			temp=0.5*slope_lim(x2, x3, x4);
 			dq1[k*(ksize)+global_id] = x3-temp;
 			dq2[k*(ksize)+global_id] = x3+temp;
 		}
@@ -189,96 +189,108 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	}
 }
 
-__global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
-	#if (DOHELM)
+__global__ void fluxcalc2D2(double* F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir, double cour, double* dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
+#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
-	#endif
-	#if (NEUTRINOS_M1)
-    , const  double* __restrict__ gpu_nulib_table
-    #endif
-	#if(CALC_MDOT)
+#endif
+#if (NEUTRINOS_M1)
+	, const  double* __restrict__ gpu_nulib_table
+#endif
+#if(CALC_MDOT)
 	, double mass_density_scale, double magnetic_density_scale
-	#endif
-	#if (DO_RBOUND || NEUTRON_STAR)
-    	, int* __restrict__ pflag_rbound
-	#endif
-	#if(NEUTRON_STAR)
+#endif
+#if (DO_RBOUND || (NEUTRON_STAR && 0))
+	, int* __restrict__ pflag_rbound
+#endif
+#if(NEUTRON_STAR)
+	, int NBR_4, double t
+#if(TWISTED_OMEGA || OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ th, const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1
+#endif
+#if(!USE_PS1START)
 	, double* __restrict__ Bx1_surface   //gdet_face*Bx1 at surface
-	#endif
+#endif
+#endif
 ) {
-	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
 	int group_id = blockIdx.x;
 	int local_size = blockDim.x;
 	__shared__ double local_dtij[LOCAL_WORK_SIZE];
 	int k = 0, ii = 0;
 	int isize, icurr, jcurr, zcurr;
-	isize = (BS_3 + 2 * D3 - (dir == 3))*(BS_2 + 2 * D2 - (dir == 2));
+	isize = (BS_3 + 2 * D3 - (dir == 3)) * (BS_2 + 2 * D2 - (dir == 2));
 	zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - (dir == 3));
 	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - (dir == 3));
-	icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - (dir == 3)) + zcurr)) / (isize);
-	zcurr += (N3G - 1)*D3 + (dir == 3);
-	jcurr += (N2G - 1)*D2 + (dir == 2);
-	icurr += (N1G - 1)*D1 + (dir == 1);
-	if (global_id<(BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) k = 1;
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
-	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	icurr = (global_id - (jcurr * (BS_3 + 2 * D3 - (dir == 3)) + zcurr)) / (isize);
+	zcurr += (N3G - 1) * D3 + (dir == 3);
+	jcurr += (N2G - 1) * D2 + (dir == 2);
+	icurr += (N1G - 1) * D1 + (dir == 1);
+	if (global_id < (BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel, i, face;
-	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
 	double factor;
 	double cmax_r, cmin_r, cmax, cmin, cmax_l, cmin_l, ctop;
 	double temp1[NPR], temp2[NPR], temp3[NPR], temp4[NPR], p[NPR];
 	struct of_geom geom;
-	#if (NEUTRON_STAR)
+#if (NEUTRON_STAR)
 	struct of_state state_l, state_r;
-	#elif(RESISTIVE)
+
+#elif(RESISTIVE)
 	struct of_state_res state;
-	#else
+#else
 	struct of_state state;
-	#endif
-	#if(RAD_M1)
+#endif
+#if(RAD_M1)
 	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad, ctop_rad;
 	struct of_state_rad state_rad;
-	#endif
-	#if(NEUTRINOS_M1)
-    double cmax_r_nu[NU_SPECIES], cmin_r_nu[NU_SPECIES], cmax_l_nu[NU_SPECIES], cmin_l_nu[NU_SPECIES], cmax_nu[NU_SPECIES], cmin_nu[NU_SPECIES], ctop_nu[NU_SPECIES];
-    struct of_state_nu state_nu[NU_SPECIES];
-    int sp;
-    #endif
-	#if(TWO_T)
+#endif
+#if(NEUTRINOS_M1)
+	double cmax_r_nu[NU_SPECIES], cmin_r_nu[NU_SPECIES], cmax_l_nu[NU_SPECIES], cmin_l_nu[NU_SPECIES], cmax_nu[NU_SPECIES], cmin_nu[NU_SPECIES], ctop_nu[NU_SPECIES];
+	struct of_state_nu state_nu[NU_SPECIES];
+	int sp;
+#endif
+#if(TWO_T)
 	double gamma_g;
-	#endif
+#endif
 
 	local_dtij[local_id] = 1.e9;
 	int zsize = 1, zoffset = 0;
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
-	zsize = (int)(0.001+pow(2.0, (double)zlevel));
+	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
 	zoffset = (zcurr - N3G) % zsize;
-	#endif
+#endif
 
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx; }
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx; }
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx*((double)zsize); }
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour * dx; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour * dx; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour * dx * ((double)zsize); }
 
 #if(NEUTRON_STAR)
 	double p_r[NPR], p_l[NPR];
+	double omega = omega_star(t
+#if(TWISTED_OMEGA)
+		, th[jcurr]
+#endif
+	);
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
 		//Get left state
 		if (zoffset != 0 && dir == 3){
-			#pragma unroll 9
+			#pragma unroll 12
 			for (k = 0; k < NPR; k++){
 				p[k] = 0.5 * (pv[k * (ksize)+global_id] + pv[k * (ksize)+global_id - D3]);
 			}
 		}
 		else{
-			#pragma unroll 9
+			#pragma unroll 12
 			for (k = 0; k < NPR; k++){
 				p[k] = dq2[k * (ksize)+global_id - idel * isize - jdel * (BS_3 + 2 * N3G) - zdel];
 			}
@@ -305,13 +317,13 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		//Get right state
 		if (zoffset != 0 && dir == 3){
-			#pragma unroll 9
+			#pragma unroll 12
 			for (k = 0; k < NPR; k++){
 				p[k] = 0.5 * (pv[k * (ksize)+global_id] + pv[k * (ksize)+global_id - D3]);
 			}
 		}
 		else{
-			#pragma unroll 9
+			#pragma unroll 12
 			for (k = 0; k < NPR; k++){
 				p[k] = dq1[k*(ksize)+global_id];
 			}
@@ -335,11 +347,20 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			p_r[k] = p[k];
 		}
 
-		/*set_stellar_boundary_primitives*/
-		if (dir == 1 && icurr == 0 && pflag_rbound[global_id] == 1) {
+		/*set_stellar_boundary_primitives*//*next reuse pfalg_rbound to have >6 inside the star*/
+		if (dir == 1 && icurr == N1G + CELLS_IN_STAR && NBR_4 == -1){//pflag_rbound[global_id] == 1) {
+#if(OBLIQUE_NS)
+			get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			p_l[B1] = p_r[B1] = calcRadialField(radiusF1[N1G + CELLS_IN_STAR], th[jcurr], phi[zcurr], dxpdx11_F1[(N1G + CELLS_IN_STAR) * isize + global_id], geom.g, t);
+#else
+			//get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+			#if(USE_PS1START)
+			p_l[B1] = p_r[B1] = (pv[PS1START * (ksize)+global_id]);
 
+			#else
 			p_l[B1] = p_r[B1] = Bx1_surface[global_id] / geom.g;
-
+			#endif
+#endif
 			int accreting, forcefree, useForcefreeBC;
 			double ucon_bound[NDIM], gamma_bound, qsq_bound;
 
@@ -371,11 +392,12 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			}
 
 
+
 			if (useForcefreeBC)
 			{				
 				double bncon[NDIM], bncov[NDIM], bscon[NDIM], uscon[NDIM], etacon[NDIM], etacov[NDIM];
 				double bccon[NDIM], bccov[NDIM], uperpcon[NDIM], uperpcov[NDIM];
-				double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq, omega;
+				double bs_dot_eta, us_dot_eta, bcsq, bc_dot_us, uperpsq;
 				/*set_boundary_velocities_FFE_4Dmethod(0, j, k, FACE1, p_r);*/
 
 				if(1) {
@@ -385,7 +407,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 						bncon[k] = p_r[B1 + k - 1] / sqrt(-geom.gcon[0]);
 					}
 					/* Surface-observer 4-velocity and magnetic field */
-					omega = OMEGA_NS;
 					uscon[0] = 1.0 / sqrt(-(geom.gcov[0] + 2.0 * geom.gcov[3] * omega + geom.gcov[9] * omega * omega));
 					uscon[1] = 0.0;
 					uscon[2] = 0.0;
@@ -405,7 +426,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 #endif
 					#pragma unroll 4
 					for (k = 0; k < NDIM; k++) {
-						bscon[k] = -(bncon[k] + uscon[k] * (bncov[0] * uscon[0] + bncov[1] * uscon[1] + bncov[2] * uscon[2] + bncov[3] * uscon[3])) / (-sqrt(-1.0 / geom.gcon[0]) * uscon[0]);
+						bscon[k] = -(bncon[k] + uscon[k] * (bncov[0] * uscon[0] + bncov[1] * uscon[1] + bncov[2] * uscon[2] + bncov[3] * uscon[3])) / (-sqrt(-1.0 / geom.gcon[0]) * uscon[0] + SMALL);
 					}
 
 					/* Coordinate-observer 4-velocity and magnetic field */
@@ -447,7 +468,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 					bccov[3] = geom.gcov[3] * bccon[0] + geom.gcov[6] * bccon[1] + geom.gcov[8] * bccon[2] + geom.gcov[9] * bccon[3];
 #endif
 
-					bcsq = (bccon[0] * bccov[0] + bccon[1] * bccov[1] + bccon[2] * bccov[2] + bccon[3] * bccov[3]);
+					bcsq = (bccon[0] * bccov[0] + bccon[1] * bccov[1] + bccon[2] * bccov[2] + bccon[3] * bccov[3]) + SMALL;
 
 					/* Project surface velocity us orthogonal to coordinate-observer magnetic field bc */
 					bc_dot_us = (uscon[0] * bccov[0] + uscon[1] * bccov[1] + uscon[2] * bccov[2] + uscon[3] * bccov[3]);
@@ -470,7 +491,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 					uperpcov[2] = geom.gcov[2] * uperpcon[0] + geom.gcov[5] * uperpcon[1] + geom.gcov[7] * uperpcon[2] + geom.gcov[8] * uperpcon[3];
 					uperpcov[3] = geom.gcov[3] * uperpcon[0] + geom.gcov[6] * uperpcon[1] + geom.gcov[8] * uperpcon[2] + geom.gcov[9] * uperpcon[3];
 #endif
-					uperpsq = (uperpcon[0] * uperpcov[0] + uperpcon[1] * uperpcov[1] + uperpcon[2] * uperpcov[2] + uperpcon[3] * uperpcov[3]);
+					uperpsq = (uperpcon[0] * uperpcov[0] + uperpcon[1] * uperpcov[1] + uperpcon[2] * uperpcov[2] + uperpcon[3] * uperpcov[3]) + SMALL;
 
 					#pragma unroll 4
 					for (k = 0; k < NDIM; k++) {
@@ -478,8 +499,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 					}
 
 					/* Just use surface 4-velocity directly */
-					//DLOOPA
-					//    ucon_bound[j] = uscon[j] ;
+					for (k = 0; k < NDIM; k++) {
+						ucon_bound[k] = uscon[k]; 
+					}
 
 					#pragma unroll 4
 					for (k = 1; k < NDIM; k++) {
@@ -492,28 +514,27 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 				//set_boundary_velocities_surfaceFrame_4Dmethod(0, j, k, FACE1, p_r, udotb_surface[j][k]);
 				double bncon[NDIM], bncov[NDIM], bscon[NDIM], bscov[NDIM], uscon[NDIM], bsmag;
 				double uprllcon[NDIM], uprllsq, ucon_udotb[NDIM], utildecon_udotb[NDIM];
-				double udotb[3], d_udotb, beta_NS, udotb_surface, omega;
+				double udotb[3], d_udotb, beta_NS, udotb_surface;
 				for (ii = 0; ii < 3; ii++) {
 #pragma unroll 3
 					for (k = 1; k < NDIM; k++) {
-						utildecon_udotb[k] = pv[(U1 + k - 1) * (ksize)+ isize * (icurr + ii) + (BS_3 + 2 * N3G) * jcurr + zcurr];
+						utildecon_udotb[k] = pv[(U1 + k - 1) * (ksize)+ isize * (N1G + CELLS_IN_STAR + ii) + (BS_3 + 2 * N3G) * jcurr + zcurr];
 					}
 					
-					get_geometry(icurr+ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+					get_geometry(N1G + CELLS_IN_STAR +ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 					qsq_bound = geom.gcov[4] * utildecon_udotb[1] * utildecon_udotb[1] + geom.gcov[7] * utildecon_udotb[2] * utildecon_udotb[2] + geom.gcov[9] * utildecon_udotb[3] * utildecon_udotb[3] + 2. * (geom.gcov[5] * utildecon_udotb[1] * utildecon_udotb[2] + geom.gcov[6] * utildecon_udotb[1] * utildecon_udotb[3] + geom.gcov[8] * utildecon_udotb[2] * utildecon_udotb[3]);
 					gamma_bound = sqrt(1. + qsq_bound);
 					ucon_udotb[0] = gamma_bound * sqrt(-geom.gcon[0]);
 #pragma unroll 3
 					for (k = 1; k < NDIM; k++) {
-						ucon_udotb[k] = p_r[k + U1 - 1] + ucon_udotb[0] * geom.gcon[k] / geom.gcon[0];
+						ucon_udotb[k] = utildecon_udotb[k] + ucon_udotb[0] * geom.gcon[k] / geom.gcon[0];
 					}
 					bncon[0] = 0.0;
 #pragma unroll 3
 					for (k = 1; k < NDIM; k++) {
-						bncon[k] = p_r[B1 + k - 1] / sqrt(-geom.gcon[0]);
+						bncon[k] = pv[(B1 + k - 1) * (ksize)+isize * (N1G + CELLS_IN_STAR + ii) + (BS_3 + 2 * N3G) * jcurr + zcurr] / sqrt(-geom.gcon[0]);
 					}
 					/* Surface-observer 4-velocity and magnetic field */
-					omega = OMEGA_NS;
 					uscon[0] = 1.0 / sqrt(-(geom.gcov[0] + 2.0 * geom.gcov[3] * omega + geom.gcov[9] * omega * omega));
 					uscon[1] = 0.0;
 					uscon[2] = 0.0;
@@ -533,12 +554,12 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 #endif
 #pragma unroll 4
 					for (k = 0; k < NDIM; k++) {
-						bscon[k] = -(bncon[k] + uscon[k] * (bncov[0] * uscon[0] + bncov[1] * uscon[1] + bncov[2] * uscon[2] + bncov[3] * uscon[3])) / (-sqrt(-1.0 / geom.gcon[0]) * uscon[0]);
+						bscon[k] = -(bncon[k] + uscon[k] * (bncov[0] * uscon[0] + bncov[1] * uscon[1] + bncov[2] * uscon[2] + bncov[3] * uscon[3])) / (-sqrt(-1.0 / geom.gcon[0]) * uscon[0] + SMALL);
 					}
-					bsmag = sqrt(bncov[0] * bscon[0] + bncov[1] * bscon[1] + bncov[2] * bscon[2] + bncov[3] * bscon[3]);
+					bsmag = sqrt(bncov[0] * bscon[0] + bncov[1] * bscon[1] + bncov[2] * bscon[2] + bncov[3] * bscon[3]) + SMALL;
 					udotb[ii] = (bncov[0] * ucon_udotb[0] + bncov[1] * ucon_udotb[1] + bncov[2] * ucon_udotb[2] + bncov[3] * ucon_udotb[3]) / bsmag;  // Store u.b/|b|
 				}
-				d_udotb = slope_lim(udotb[0], udotb[1], udotb[2], 0);
+				d_udotb = slope_lim_BC(udotb[0], udotb[1], udotb[2]);
 				//for (ii = 0; ii < N1G; ii++)
 				//	udotb_ghost[ii] = udotb[0] + (ii - N1G) * d_udotb;
 				udotb_surface = udotb[0] - 0.5 * d_udotb;
@@ -758,9 +779,12 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
         #endif
         local_dtij[local_id] = factor / ctop;
 
-		if (pflag_rbound[global_id] == 1){
+
+		#if(DO_RBOUND || (NEUTRON_STAR && 0))
+		if (pflag_rbound[global_id] == 1) {
 			local_dtij[local_id] = 1e9;
 		}
+		#endif
 
 
 	}
