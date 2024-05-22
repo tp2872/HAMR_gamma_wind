@@ -390,23 +390,31 @@ void GPU_write(int n)
 			Bx1_surface_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = Bx1_surface[nl[n]][index_3D(n, i, j, z)];
 #endif
 			double dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM];
-			double dxdxp_surf;
-			coord(n, N1G + CELLS_IN_STAR, 0, 0, FACE1, X);
+			struct of_geom geom;
+			coord(n, CELLS_IN_STAR, j, z, FACE1, X);
 			bl_coord(X, &r, &th, &phi);
 			double r_surf = r;
+			//fprintf(stderr, "rsurf=, %g \n", r_surf);
+			get_geometry(n, CELLS_IN_STAR, j, z, FACE1, &geom);
+			double gcon_surf = geom.gcon[0][0];
 			dxdxp_func(X, dxdxp);
-			dxdxp_surf = dxdxp[1][1];
+			double dxdxp_surf = dxdxp[1][1];
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
+			double r_cell = r;
+			get_geometry(n, i, j, z, CENT, &geom);
 			dxdxp_func(X, dxdxp);
 			invert_matrix(dxdxp, dxpdx);			
-			NS_scaling_CENT[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pow(r_surf / r, 4.0) * dxpdx[1][1] * dxdxp_surf;
-					
+			NS_scaling_CENT[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pow(r_surf / r_cell, 3.0) * dxpdx[1][1] * dxdxp_surf;// *pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
+			dxpdx11_CENT_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = dxpdx[1][1];
+
 			coord(n, i, j, z, FACE1, X);
 			bl_coord(X, &r, &th, &phi);
+			r_cell = r;
+			get_geometry(n, i, j, z, FACE1, &geom);
 			dxdxp_func(X, dxdxp);
 			invert_matrix(dxdxp, dxpdx);
-			NS_scaling_FACE[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pow(r_surf / r, 4.0) * dxpdx[1][1] * dxdxp_surf;
+			NS_scaling_FACE[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = pow(r_surf / r_cell, 3.0) * dxpdx[1][1] * dxdxp_surf;// * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
 			dxpdx11_F1_GPU[nl[n]][(i - N1_GPU_offset[n] + N1G) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = dxpdx[1][1];
 			#endif
 		}
@@ -451,6 +459,7 @@ void GPU_write(int n)
 	gpuMemcpyAsync(Buffertheta[nl[n]], theta_GPU[nl[n]], (BS_2 + 2 * N2G) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	gpuMemcpyAsync(Bufferphi[nl[n]], phi_GPU[nl[n]], (BS_3 + 2 * N3G) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	gpuMemcpyAsync(Bufferdxpdx11_F1[nl[n]], dxpdx11_F1_GPU[nl[n]], ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+	gpuMemcpyAsync(Bufferdxpdx11_CENT[nl[n]], dxpdx11_CENT_GPU[nl[n]], ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	gpuMemcpyAsync(BufferNS_scaling_CENT[nl[n]], NS_scaling_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	gpuMemcpyAsync(BufferNS_scaling_FACE[nl[n]], NS_scaling_FACE[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
 	gpuMemcpyAsync(Bufferr_CORN2[nl[n]], r_CORN2_GPU[nl[n]], (BS_1 + 2 * N1G) * sizeof(double), gpuMemcpyHostToDevice, commandQueueGPU[nl[n]]);
@@ -2431,7 +2440,7 @@ void GPU_boundprim1_NS(int flag, int n, double t)
 #endif
 				, Bufferradius[nl[n]], BufferNS_scaling_CENT[nl[n]], BufferNS_scaling_FACE[nl[n]], t
 #if(TWISTED_OMEGA || OBLIQUE_NS)
-				, BufferradiusF1[nl[n]], Buffertheta[nl[n]], Bufferphi[nl[n]], Bufferdxpdx11_F1[nl[n]]
+				, BufferradiusF1[nl[n]], Buffertheta[nl[n]], Bufferphi[nl[n]], Bufferdxpdx11_F1[nl[n]], Bufferdxpdx11_CENT[nl[n]]
 #endif
 				);
 #endif
@@ -2446,7 +2455,7 @@ void GPU_boundprim1_NS(int flag, int n, double t)
 #endif
 				, Bufferradius[nl[n]], BufferNS_scaling_CENT[nl[n]], BufferNS_scaling_FACE[nl[n]], t
 #if(TWISTED_OMEGA || OBLIQUE_NS)
-				, BufferradiusF1[nl[n]], Buffertheta[nl[n]], Bufferphi[nl[n]], Bufferdxpdx11_F1[nl[n]]
+				, BufferradiusF1[nl[n]], Buffertheta[nl[n]], Bufferphi[nl[n]], Bufferdxpdx11_F1[nl[n]], Bufferdxpdx11_CENT[nl[n]]
 #endif
 				);
 #endif

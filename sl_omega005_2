@@ -1,0 +1,21 @@
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P AST198
+#BSUB -W 02:00
+#BSUB -nnodes 60
+#BSUB -alloc_flags "smt1"
+#BSUB -w ended(3466052)
+#BSUB -N kchatt@umd.edu
+#BSUB -J NS_omega005
+#BSUB -o NS_omega005.%J
+#BSUB -e NS_omega005.%J
+
+module load xl
+module load cuda
+module list
+export OMP_NUM_THREADS=7
+//ulimit -a
+//ulimit -u unlimited
+cd /gpfs/alpine2/ast198/scratch/kchatterj/oblique_code_new/aligned_omega005_sr_test1
+
+jsrun --smpiargs "-gpu" -n60 -a6 -g6 -c42 -bpacked:7 ./harm

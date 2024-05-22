@@ -3750,14 +3750,9 @@ double calc_refcrit(int n){
 			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 			//Real refinement criterion
 			double Rlc = 0.0;
-			if (OMEGA_NS == 0.0) Rlc = 1.0e6;
+			if (OMEGA_NS == 0.0) Rlc = 50.0*R_NS;
 			else Rlc = 1. / OMEGA_NS;
-			#if(OBLIQUE_NS)
-            bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
-            if ((r > 0.75 * Rlc) && (bsq/(p[nl[n]][index_3D(n, i, j, z)][RHO])<1.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-            #else
-			if ((r > 0.75 * Rlc) && (fabs(th - M_PI_2) < 10.0 * M_PI_2 / 180.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
-            #endif
+			if ((r > 0.75 * Rlc) && (fabs(th - M_PI_2) < 5.0 * M_PI_2 / 90.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
 			//if ((r < 15.0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}

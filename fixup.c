@@ -58,8 +58,8 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	rhoscal = pow(MY_MAX(r, 1.0), -POWRHO);
 	uuscal = pow(rhoscal, GAMMA);
 
-	rhoflr = 1.e-5 * RHOMIN * rhoscal;
-	uuflr = 1.e-5 * UUMIN * uuscal;
+	rhoflr = RHOMINLIMIT; //1.e-5 * RHOMIN * rhoscal;
+	uuflr = UUMINLIMIT; // 1.e-5 * UUMIN * uuscal;
     
 	//compute the square of fluid frame magnetic field (twice magnetic pressure)
 	get_geometry(n,i,j,z,CENT,&geom) ;
@@ -93,7 +93,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 1.0e6;
+		Rlc = 50.*R_NS;
 
 	double rho0 = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0);
 	double alpha1_NS, alpha2_NS, n_NS, rb_NS, constant_NS;
@@ -173,11 +173,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 
 #if(NEUTRON_STAR)
-
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 1.0e6;
+		Rlc = 50. * R_NS;
 
 	if (pv[FLRFRAC] < 0.0)
 		pv[FLRFRAC] = 0.0;
@@ -222,7 +221,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	{
 		pv[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
 	}
+	if (r < R_NS) {
+		pv[RHO] = bsq / mod_bsq_over_rho_max;
+	}
 #endif
+	
 	//Internal energy floor
 
 #if(NEUTRON_STAR)
@@ -273,7 +276,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 	//printf("3 floors: %e %e\n", rhoflr, uuflr);
-
+#if(NEUTRON_STAR)
+	if (r < R_NS) {
+		pv[UU] = bsq / mod_bsq_over_uu_max;
+	}
+#endif
 	// Floor on Ye
 	#if (DO_YE)
 	pv[YE] = MY_MAX(nulib_ylo, pv[YE]);

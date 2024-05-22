@@ -142,6 +142,7 @@ void set_arrays_GPU(int n, int device){
 	gpuMallocHost((void**)&NS_scaling_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&NS_scaling_FACE[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&dxpdx11_F1_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	gpuMallocHost((void**)&dxpdx11_CENT_GPU[nl[n]], ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&r_CORN2_GPU[nl[n]], ((BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&th_CORN3_GPU[nl[n]], ((BS_2 + 2 * N2G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&th_CORN3_2_GPU[nl[n]], ((BS_2 + 2 * N2G) + fix_mem[nl[n]]) * sizeof(double));
@@ -177,6 +178,7 @@ void set_arrays_GPU(int n, int device){
 	gpuMalloc((void**)&Buffertheta[nl[n]], (BS_2 + 2 * N2G) * sizeof(double));
 	gpuMalloc((void**)&Bufferphi[nl[n]], (BS_3 + 2 * N3G) * sizeof(double));
 	gpuMalloc((void**)&Bufferdxpdx11_F1[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	gpuMalloc((void**)&Bufferdxpdx11_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferNS_scaling_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferNS_scaling_FACE[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&Bufferr_CORN2[nl[n]], (BS_1 + 2 * N1G) * sizeof(double));
@@ -1325,6 +1327,7 @@ void GPU_finish(int n, int force_delete)
 	status += gpuFreeHost(theta_GPU[nl[n]]);
 	status += gpuFreeHost(phi_GPU[nl[n]]);
 	status += gpuFreeHost(dxpdx11_F1_GPU[nl[n]]);
+	status += gpuFreeHost(dxpdx11_CENT_GPU[nl[n]]);
 	status += gpuFreeHost(NS_scaling_CENT[nl[n]]);
 	status += gpuFreeHost(NS_scaling_FACE[nl[n]]);
 	status += gpuFreeHost(r_CORN2_GPU[nl[n]]);
@@ -1370,6 +1373,7 @@ void GPU_finish(int n, int force_delete)
 	status += gpuFree(Buffertheta[nl[n]]);
 	status += gpuFree(Bufferphi[nl[n]]);
 	status += gpuFree(Bufferdxpdx11_F1[nl[n]]);
+	status += gpuFree(Bufferdxpdx11_CENT[nl[n]]);
 	status += gpuFree(BufferNS_scaling_CENT[nl[n]]);
 	status += gpuFree(BufferNS_scaling_FACE[nl[n]]);
 	status += gpuFree(Bufferr_CORN2[nl[n]]);

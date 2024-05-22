@@ -265,9 +265,7 @@ void init_NS()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
-			#if(NEUTRON_STAR*USE_PS1START)
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][PS1START] = 0.;
-			#endif	
 			// initialize neutrinos
 #if (NEUTRINOS_M1)
 			for (int sp = 0; sp < NU_SPECIES; sp++) {
@@ -457,7 +455,10 @@ void init_NS()
 #endif
 
 	bound_prim(p, 1, t);
-	fprintf(stderr, "after boundprim \n");
+	//for (n = 0; n < n_active; n++) {
+	//	fixup(p, n_ord[n]);
+	//}
+	//fprintf(stderr, "after boundprim \n");
 #if(GPU_ENABLED && NEUTRON_STAR)
 	for (n = 0; n < n_active; n++) {
 		/*Radial magentic field at the face center of surface cell; nope save the initial face center B field*/
@@ -516,7 +517,7 @@ void set_mag_NS(void) {
 		i100++;
 		coord(0, i100, 0, 0, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-	} while (r < 400.0);
+	} while (r < ROUT);
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + D3) {
@@ -556,7 +557,7 @@ void set_mag_NS(void) {
 			z1 = 2.0 / r;
 			z1inv = 1.0 / z1;
 			schwFactor = 0.5 + z1inv + z1inv * z1inv * log(1.0 - z1);
-			A_schw = -schwFactor * 3.0 * MU_NS / 2.0;
+			A_schw = -schwFactor * 3.0 * MU_NS / 2.0 * pow(R_NS / 4.0, 3.0);
 #if(SPHERICAL_GR && OBLIQUE_NS)
 			double sin_chi, cos_chi;
 #if(DEFORM_DIPOLE_NS)
@@ -894,7 +895,7 @@ void set_mag_NS(void) {
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			//fprintf(stderr, "initial B1 B2 B3 bsq_ij: %g %g %g %g\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3], bsq_ij);
 #if(NEUTRON_STAR)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]=0.01*bsq_ij / MAX_BSQ_OVER_RHO;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]= bsq_ij / pow(10.0, SURF_MAX_BSQ_RHO_LOG);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.2 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
 #endif
 			beta_ij = 2.0 * (gam - 1.0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
@@ -967,7 +968,7 @@ void set_mag_NS(void) {
 
 
 #if(NEUTRON_STAR)
-	norm = sqrt(1.0);// / bsq_max);
+	norm = 1.0;// / bsq_max);
 #else
 	norm = sqrt(beta_act / beta);
 #endif
@@ -1053,8 +1054,8 @@ double f_misalignment(double r)
 {
 	double r0, r1; // radii between which to realign
 	double f; // 1 inside r0, 0 outside r1
-	r0 = 4.5;
-	r1 = 8.5;
+	r0 = 4.5*R_NS/4.0;
+	r1 = 8.5*R_NS/4.0;
 
 	if (r < r0)
 		f = 1.0;

@@ -1,0 +1,135 @@
+
+Currently Loaded Modules:
+  1) lsf-tools/2.0   5) xl/16.1.1-13
+  2) hsi/5.0.2.p5    6) spectrum-mpi/10.4.0.6-20230210
+  3) xalt/1.2.1      7) nsight-compute/2023.2.2
+  4) DefApps         8) cuda/11.7.1
+
+ 
+
+core file size          (blocks, -c) unlimited
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 1984745
+max locked memory       (kbytes, -l) unlimited
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 262144
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) unlimited
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 1984745
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+MPICH_RDMA_ENABLED_CUDA not enabled but GPU_DIRECT still turned on!
+Number of MPI tasks: 240 
+Running on: a01n07
+nthreads = 7
+Local rank: 2 Number of devices: 6 Device number: 2 
+Local rank: 6 Number of devices: 6 Device number: 0 
+Local rank: 4 Number of devices: 6 Device number: 4 
+Local rank: 0 Number of devices: 6 Device number: 0 
+Numdevices: 6 
+Local rank: 3 Number of devices: 6 Device number: 3 
+Local rank: 1 Number of devices: 6 Device number: 1 
+Local rank: 7 Number of devices: 6 Device number: 1 
+Local rank: 5 Number of devices: 6 Device number: 5 
+No restart dump available! 
+Load balance started with cutoff balancing level 1! 
+Number of active blocks (total, min,max): 192 0 1 
+Number of active steps (total, min,max): 6144 0 32 
+GPU memory consumption in GB (total, min, max): 102.757368 0.319488 0.457114 
+Max blocks set to: 7222 
+Load balance finished! 
+Derefining in phi by 2 levels! 
+Refining block 0 0 1 0 on node 2
+Refining block 0 0 1 1 on node 3
+Refining block 0 0 2 0 on node 8
+Refining block 0 0 2 1 on node 9
+Refining block 0 0 3 0 on node 10
+Refining block 0 0 3 1 on node 11
+Refining block 0 0 4 0 on node 32
+Refining block 0 0 4 1 on node 33
+Refining block 0 0 5 0 on node 34
+Refining block 0 0 5 1 on node 35
+Refining block 0 0 6 0 on node 40
+Refining block 0 0 6 1 on node 41
+Refining block 0 0 7 0 on node 42
+Refining block 0 0 7 1 on node 43
+Refining block 0 0 8 0 on node 128
+Refining block 0 0 8 1 on node 129
+Refining block 0 0 9 0 on node 130
+Refining block 0 0 9 1 on node 131
+Refining block 0 0 10 0 on node 136
+Refining block 0 0 10 1 on node 137
+Derefinement at level 0 complete! 
+Refining block 1 0 2 0 on node 8
+Refining block 1 0 2 1 on node 8
+Refining block 1 0 2 2 on node 9
+Refining block 1 0 2 3 on node 9
+Refining block 1 0 3 0 on node 10
+Refining block 1 0 3 1 on node 10
+Refining block 1 0 3 2 on node 11
+Refining block 1 0 3 3 on node 11
+Refining block 1 0 4 0 on node 32
+Refining block 1 0 4 1 on node 32
+Refining block 1 0 4 2 on node 33
+Refining block 1 0 4 3 on node 33
+Refining block 1 0 5 0 on node 34
+Refining block 1 0 5 1 on node 34
+Refining block 1 0 5 2 on node 35
+Refining block 1 0 5 3 on node 35
+Refining block 1 0 6 0 on node 40
+Refining block 1 0 6 1 on node 40
+Refining block 1 0 6 2 on node 41
+Refining block 1 0 6 3 on node 41
+Refining block 1 0 7 0 on node 42
+Refining block 1 0 7 1 on node 42
+Refining block 1 0 7 2 on node 43
+Refining block 1 0 7 3 on node 43
+Refining block 1 0 8 0 on node 128
+Refining block 1 0 8 1 on node 128
+Refining block 1 0 8 2 on node 129
+Refining block 1 0 8 3 on node 129
+Refining block 1 0 9 0 on node 130
+Refining block 1 0 9 1 on node 130
+Refining block 1 0 9 2 on node 131
+Refining block 1 0 9 3 on node 131
+Derefinement at level 1 complete! 
+Load balance started with cutoff balancing level 32! 
+Number of active blocks (total, min,max): 608 2 3 
+Number of active steps (total, min,max): 19456 64 96 
+GPU memory consumption in GB (total, min, max): 156.509733 0.579469 0.717160 
+Max blocks set to: 15016 
+Load balance finished! 
+start init NS
+r[5]: 397.814
+r[5]/RNS: 0.994536 
+rhomax: 1e-14
+start set mag NS
+initial bsq_max: 0.00129027
+initial beta: 0.0010545 (should be 0.000444444)
+final bsq_max: 0.00129027
+final beta: 0.00105194 (should be 0.000444444)
+Starting refinement! 
+Load balance started with cutoff balancing level 32! 
+Number of active blocks (total, min,max): 1280 5 6 
+Number of active steps (total, min,max): 40960 160 192 
+GPU memory consumption in GB (total, min, max): 297.154970 1.036648 1.613955 
+Max blocks set to: 16650 
+Load balance finished! 
+Runtime load balance: 6.000000 
+start init NS
+r[5]: 397.814
+r[5]/RNS: 0.994536 
+rhomax: 1e-14
+start set mag NS
+initial bsq_max: 0.00129027
+initial beta: 0.0010545 (should be 0.000444444)
+final bsq_max: 0.00129027
+final beta: 0.00105194 (should be 0.000444444)
+Starting refinement! 
+Load balance started with cutoff balancing level 32! 
+ERROR:  One or more process (first noticed rank 192) terminated with signal 11 (core dumped)

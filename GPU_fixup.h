@@ -1022,8 +1022,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	rhoscal = pow(MY_MAX(r, 1.0), -POWRHO);
 	uuscal = pow(rhoscal, GAMMA);
 
-	rhoflr = 1.e-5 * RHOMIN * rhoscal;
-	uuflr = 1.e-5 * UUMIN * uuscal;
+	rhoflr = RHOMINLIMIT;//1.e-5 * RHOMIN * rhoscal;
+	uuflr = UUMINLIMIT;//1.e-5 * UUMIN * uuscal;
 
 	#if(RESISTIVE)
 	get_state_res(pf, geom, &q
@@ -1092,7 +1092,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 1.0e6;
+		Rlc = 50.0*R_NS;
 
 
 	double rho0 = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0);
@@ -1170,7 +1170,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (OMEGA_NS > 0.0)
 		Rlc = 1.0 / OMEGA_NS;
 	else
-		Rlc = 1.e6; //10.0; //maybe move to a large value for omega=0
+		Rlc = 50.0*R_NS;
 
 	if (pf[FLRFRAC] < 0.0)
 		pf[FLRFRAC] = 0.0;
@@ -1236,6 +1236,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	{
 		pf[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
 	}
+	if (r < R_NS) {
+		pf[RHO] = bsq / mod_bsq_over_rho_max;
+	}
 #endif
 
 	#if (DONUCLEAR)
@@ -1286,7 +1289,11 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		}
 		#endif
 	#endif
-
+#if(NEUTRON_STAR)
+		if (r < R_NS) {
+			pf[UU] = bsq / mod_bsq_over_uu_max;
+		}
+#endif
 	//Floor on radiation energy density
 	#if(RAD_M1)
 	if (pf[UU_RAD] < pow(10., -30.)) {

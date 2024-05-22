@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		nulib_init_GPU(0);
 		#endif
 	#endif
-	//fprintf(stderr, "restart read \n");
+
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
 		derefine_pole();
@@ -66,19 +66,18 @@ int main(int argc, char *argv[])
 		}	
 		diag(INIT_OUT);
 	}
-	//fprintf(stderr, "bound prim main.c \n");
+
 	/* do initial diagnostics */
 	bound_prim(p, 1, t);
 	#if(GPU_ENABLED || GPU_DEBUG )
-	//fprintf(stderr, "GPU boundprim main.c \n");
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 10.0;
-	DTd = 10.0;
+	DTl = 2.5*R_NS;
+	DTd = 2.5*R_NS;
 	DTd_reduced = 5.0;
 	if (dump_cnt > 0) {
 		tdump = dump_cnt*DTd;
@@ -102,7 +101,7 @@ int main(int argc, char *argv[])
 	begin_rdump = begin1;
 
 	//cuProfilerStart();
-	//tf = 2560.0;
+	tf = 1280.0*R_NS/4.0;
 	while(t < tf) {
 		/*Used for running OpenCL on either GPU or CPU*/
 		#if(GPU_ENABLED && !GPU_DEBUG)
@@ -350,7 +349,7 @@ void MPI_initialize(int argc, char *argv[])
 
 	//Killswitch
 	if (rank == 0)fprintf(stderr, "Numdevices: %d \n", numdevices);
-	if (numtasks > 100) exit(0);
+	//if (numtasks > 100) exit(0);
 }
 
 int index_3D(int n, int i, int j, int z)

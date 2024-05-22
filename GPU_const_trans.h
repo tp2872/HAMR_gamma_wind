@@ -259,7 +259,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		// emf[2] almost defined at FACE1: shifted in phi only
 
 		//if (pflag_rbound[global_id - isize * D1] == 1) {
-		if (NBR_4 == -1 && icurr < N1G + 1 + CELLS_IN_STAR) {
+		if (NBR_4 == -1 && icurr == N1G + CELLS_IN_STAR) {
 			#if(USE_PS1START)
 			struct of_geom geom;
 			
@@ -294,8 +294,9 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 			double phi_ph1 = phi_CORN2[zcurr];
 			double theta_th1 = th_CORN3[jcurr];
 			double theta_th2 = th_CORN3_2[jcurr];
-		
-			double phi2 = phi_ph1 - angleRotated(t);
+			double phi2 = 0.0;
+			if (fabs(OBL_ANGLE_NS) > 0.0)	phi2 = phi_ph1 - angleRotated(t);
+			else phi2 = phi_ph1;
 			double phi1 = phi2 - omega * Dt;
 
 			double alpha = OBL_ANGLE_NS;
@@ -310,7 +311,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 			double zinv = 1.0 / zmetric;
 
 			double schwFactor = 0.5 + zinv + zinv * zinv * log(1.0 - zmetric);
-			double radFactor = -schwFactor * 3.0 * MU_NS / 2.0;
+			double radFactor = -schwFactor * 3.0 * MU_NS / 2.0 *pow(R_NS/4.0,3.0);
 
 			double dflux = radFactor * (-int_Ath_dth + int_Aph_dph);
 			// rotation, E_2 = (-[v x B])_2 = - v^3 B^1
