@@ -891,7 +891,10 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 #endif
 	, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE, double t
 #if(TWISTED_OMEGA || OBLIQUE_NS)
-	, const double* __restrict__ radiusF1, const double* __restrict__ th, const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1, const double* __restrict__ dxpdx11_CENT
+	, const double* __restrict__ th, const double* __restrict__ phi
+#endif
+#if(OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ dxpdx11_F1, const double* __restrict__ dxpdx11_CENT
 #endif
 ) 
 {
@@ -960,32 +963,33 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 		//ps[1 * (ksize)+N1G * isize + global_id] = pv[PS1START * (ksize)+N1G * isize + global_id] / (geom.g + SMALL);
 		//get_geometry(N1G, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		//pv[B1 * (ksize)+N1G * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id] * pow(scaleCENT[N1G * isize + global_id], 4.0) * pow(geom.gcon[0] / gcon0_N1G, 3. / 4.);
-
+		ps[0 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
 #pragma unroll 3
 		for (ii = 0; ii < N1G + CELLS_IN_STAR; ii++)
 		{
 #if OBLIQUE_NS
-			prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(i, j, k, CENT, &geom);
+			get_geometry(ii, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			ps[0 * (ksize)+ii * isize + global_id] = calcRadialField(radiusF1[ii], th[jcurr], phi[zcurr], dxpdx11_F1[ii * isize + global_id], geom.g, t);
 
 #else /* aligned rotator: can store normal field */ 
 
 #if(USE_PS1START) ////maybe reconstruct B with geom.g*ps[i]?
-			get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
-			double gcon0_N1G = geom.gcon[0];
-			get_geometry(ii, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			//get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
+			//double gcon0_N1G = geom.gcon[0];
+			//get_geometry(ii, jcurr, zcurr, FACE1, &geom, gcov, gcon, gdet);
 			ps[0 * (ksize)+ii * isize + global_id] = pv[PS1START * (ksize)+ii * isize + global_id];
 			//ps[0 * (ksize)+ii * isize + global_id] = ps[0 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(scaleFACE[ii * isize + global_id], 4.0) * pow(geom.gcon[0] / gcon0_N1G, 3. / 4.);
-			get_geometry(ii, jcurr, zcurr, FACE2, &geom, gcov, gcon, gdet);
-			ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0) * pow(geom.gcon[0] / gcon0_N1G, 3. / 2.);
+			//get_geometry(ii, jcurr, zcurr, FACE2, &geom, gcov, gcon, gdet);
+			ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0);// *pow(geom.gcon[0] / gcon0_N1G, 3. / 2.);
 			//ps[1 * (ksize)+ii * isize + global_id] = ps[1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(scaleFACE[ii * isize + global_id], 4.0) * pow(geom.gcon[0] / gcon0_N1G, 3. / 2.);
-			get_geometry(ii, jcurr, zcurr, FACE3, &geom, gcov, gcon, gdet);
+			//get_geometry(ii, jcurr, zcurr, FACE3, &geom, gcov, gcon, gdet);
 			ps[2 * (ksize)+ii * isize + global_id] = ps[2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 2.0);
 			//ps[2 * (ksize)+ii * isize + global_id] = ps[2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];
 
-			get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
-			gcon0_N1G = geom.gcon[0];
-			get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
-			pv[B1 * (ksize)+ii * isize + global_id] = pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0);
+			//get_geometry(N1G + CELLS_IN_STAR, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+			//gcon0_N1G = geom.gcon[0];
+			//get_geometry(ii, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+			pv[B1 * (ksize)+ii * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(R_NS / radius[ii], 4.0);
 			pv[B2 * (ksize)+ii * isize + global_id] = pv[B2 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 4.0);
 			pv[B3 * (ksize)+ii * isize + global_id] = pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * pow(radius[N1G + CELLS_IN_STAR] / radius[ii], 2.0);
 			//pv[B3 * (ksize)+ii * isize + global_id] = pv[B3 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id];

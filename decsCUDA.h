@@ -241,7 +241,10 @@ __global__ void boundprim1_NS(double* pv, const  double* __restrict__ gcov, cons
 #endif
 	, const double* __restrict__ radius, const double* __restrict__ scaleCENT, const double* __restrict__ scaleFACE, double t
 #if(TWISTED_OMEGA || OBLIQUE_NS)
-	, const double* __restrict__ radiusF1, const double* __restrict__ th, const double* __restrict__ phi, const double* __restrict__ dxpdx11_F1, const double* __restrict__ dxpdx11_CENT
+	, const double* __restrict__ th, const double* __restrict__ phi
+#endif
+#if(OBLIQUE_NS)
+	, const double* __restrict__ radiusF1, const double* __restrict__ dxpdx11_F1, const double* __restrict__ dxpdx11_CENT
 #endif
 );
 

@@ -2789,7 +2789,6 @@ int refine(int n){
 		ref_2 = block[block[n][AMR_CHILD2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + ref_1)*(1 + ref_2)*(1 + REF_3) - 1;
 	}
-
 	if (block[n][AMR_ACTIVE] == 0 && rank == 0) fprintf(stderr, "Watch out: trying to refine non-active block %d \n", n);
 	if (block[n][AMR_ACTIVE] == 1){
 		gpu_local = block[n][AMR_GPU];
@@ -2810,7 +2809,7 @@ int refine(int n){
 					}
 				}
 			}
-
+		
 			if (block[n][AMR_CHILD1] >= 0){
 				set_arrays(block[n][AMR_CHILD1]);
 				set_grid(block[n][AMR_CHILD1]);
@@ -2854,7 +2853,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD3]);
 				#endif
 			}
-
+	
 			ref_2 = block[block[n][AMR_CHILD4]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			ref_3 = block[block[n][AMR_CHILD4]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 			if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
@@ -2870,7 +2869,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD4]);
 				#endif
 			}
-
+	
 			ref_1 = block[block[n][AMR_CHILD5]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
 				set_arrays(block[n][AMR_CHILD5]);
@@ -2885,7 +2884,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD5]);
 				#endif
 			}
-
+		
 			ref_1 = block[block[n][AMR_CHILD6]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			ref_3 = block[block[n][AMR_CHILD6]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 			if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
@@ -2901,7 +2900,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD6]);
 				#endif
 			}
-
+			
 			ref_1 = block[block[n][AMR_CHILD7]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			ref_2 = block[block[n][AMR_CHILD7]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
@@ -2917,7 +2916,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD7]);
 				#endif
 			}
-
+		
 			ref_1 = block[block[n][AMR_CHILD8]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			ref_2 = block[block[n][AMR_CHILD8]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			ref_3 = block[block[n][AMR_CHILD8]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
@@ -2934,7 +2933,7 @@ int refine(int n){
 				GPU_write(block[n][AMR_CHILD8]);
 				#endif
 			}
-
+		
 			//Clean up memory of parent block
 			free_arrays(n);
 			#if(GPU_ENABLED || GPU_DEBUG )
@@ -2951,6 +2950,7 @@ int refine(int n){
 			block[block[n][i]][AMR_GPU] = gpu_local;
 			block[block[n][i]][AMR_ACTIVE] = 1;
 		}
+
 		block[n][AMR_GPU] = -1;
 		block[n][AMR_ACTIVE] = 0;
 		block[n][AMR_TIMELEVEL] = 1;
@@ -3746,13 +3746,13 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			get_geometry(n, i, j, z, CENT, &geom);
-			get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			//get_geometry(n, i, j, z, CENT, &geom);
+			//get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 			//Real refinement criterion
 			double Rlc = 0.0;
 			if (OMEGA_NS == 0.0) Rlc = 50.0*R_NS;
 			else Rlc = 1. / OMEGA_NS;
-			if ((r > 0.75 * Rlc) && (fabs(th - M_PI_2) < 5.0 * M_PI_2 / 90.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
+			if ((r > 0.75 * Rlc) && (fabs(th - M_PI_2) < 10.0 * M_PI_2 / 180.0)) ref_val = MY_MAX(ref_val, 1.01 * REFINEMENT_CUTOFF);
 			//if ((r < 15.0)) ref_val = 0.51 * REFINEMENT_CUTOFF;
 			}
 		}

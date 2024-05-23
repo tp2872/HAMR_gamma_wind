@@ -222,7 +222,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
 	}
 	if (r < R_NS) {
-		pv[RHO] = bsq / mod_bsq_over_rho_max;
+		pv[RHO] = bsq * pow(10.0, -SURF_MAX_BSQ_RHO_LOG);
 	}
 #endif
 	
@@ -278,7 +278,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	//printf("3 floors: %e %e\n", rhoflr, uuflr);
 #if(NEUTRON_STAR)
 	if (r < R_NS) {
-		pv[UU] = bsq / mod_bsq_over_uu_max;
+		pv[UU] = bsq * pow(10.0, -SURF_MAX_BSQ_UINT_LOG);
 	}
 #endif
 	// Floor on Ye

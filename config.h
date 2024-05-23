@@ -37,7 +37,7 @@ Physical Parameters section
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
 #define DEFORM_DIPOLE_NS            (0)
 
-#define R_NS                        (400.0)         // Neutron star radius in r_g
+#define R_NS                        (4.0)         // Neutron star radius in r_g
 #define OMEGA_NS                    (0.2/R_NS)  //0.05        // Angular velocity in c/r_g
 #define CELLS_IN_STAR               (6)  //grid cells inside the the stellar surface
 #define KERR_SPIN_NS                (0.0)  //(1.0/3.0)
@@ -316,7 +316,7 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define NB_LOCAL (1500)
+#define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 8
@@ -361,7 +361,7 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 0
+#define NORMALIZE_DIVB 1
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300

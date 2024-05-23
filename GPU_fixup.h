@@ -1236,9 +1236,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	{
 		pf[RHO] = rhoflr + smooth_geom * (rho_b - rhoflr) + rho_g;
 	}
-	if (r < R_NS) {
-		pf[RHO] = bsq / mod_bsq_over_rho_max;
-	}
+	//if (r < R_NS) {
+	//	pf[RHO] = bsq * pow(10.0, -SURF_MAX_BSQ_RHO_LOG);
+	//}
 #endif
 
 	#if (DONUCLEAR)
@@ -1290,9 +1290,9 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		#endif
 	#endif
 #if(NEUTRON_STAR)
-		if (r < R_NS) {
-			pf[UU] = bsq / mod_bsq_over_uu_max;
-		}
+		//if (r < R_NS) {
+		//	pf[UU] = bsq * pow(10.0, -SURF_MAX_BSQ_UINT_LOG);
+		//}
 #endif
 	//Floor on radiation energy density
 	#if(RAD_M1)

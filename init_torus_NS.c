@@ -462,7 +462,7 @@ void init_NS()
 #if(GPU_ENABLED && NEUTRON_STAR)
 	for (n = 0; n < n_active; n++) {
 		/*Radial magentic field at the face center of surface cell; nope save the initial face center B field*/
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, N1G - 1 + BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + N2G -1, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			//coord(n_ord[n], i, j, z, FACE1, X);
 			//bl_coord(X, &r, &th, &phi);
 			//get_geometry(n_ord[n], i, j, z, FACE1, &geom);

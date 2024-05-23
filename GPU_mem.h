@@ -136,17 +136,19 @@ void set_arrays_GPU(int n, int device){
 	gpuMallocHost((void**)&radius_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	#endif
 	#if(NEUTRON_STAR)
-	gpuMallocHost((void**)&radiusF1_GPU[nl[n]], ((BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&theta_GPU[nl[n]], ((BS_2 + 2 * N2G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&phi_GPU[nl[n]], ((BS_3 + 2 * N3G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&NS_scaling_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&NS_scaling_FACE[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+#if(OBLIQUE_NS)
+	gpuMallocHost((void**)&radiusF1_GPU[nl[n]], ((BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&dxpdx11_F1_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&dxpdx11_CENT_GPU[nl[n]], ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&r_CORN2_GPU[nl[n]], ((BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&th_CORN3_GPU[nl[n]], ((BS_2 + 2 * N2G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&th_CORN3_2_GPU[nl[n]], ((BS_2 + 2 * N2G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMallocHost((void**)&phi_CORN2_GPU[nl[n]], ((BS_3 + 2 * N3G) + fix_mem[nl[n]]) * sizeof(double));
+#endif
 	#endif
 	#if(CARTESIAN_GR)
 	gpuMallocHost((void**)&pflag_CART_GPU[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(int));
@@ -174,17 +176,19 @@ void set_arrays_GPU(int n, int device){
 	gpuMalloc((void**)&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	#endif
 	#if(NEUTRON_STAR)
-	gpuMalloc((void**)&BufferradiusF1[nl[n]], (BS_1 + 2 * N1G) * sizeof(double));
 	gpuMalloc((void**)&Buffertheta[nl[n]], (BS_2 + 2 * N2G) * sizeof(double));
 	gpuMalloc((void**)&Bufferphi[nl[n]], (BS_3 + 2 * N3G) * sizeof(double));
-	gpuMalloc((void**)&Bufferdxpdx11_F1[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	gpuMalloc((void**)&Bufferdxpdx11_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferNS_scaling_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&BufferNS_scaling_FACE[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+#if(OBLIQUE_NS)
+	gpuMalloc((void**)&BufferradiusF1[nl[n]], (BS_1 + 2 * N1G) * sizeof(double));
+	gpuMalloc((void**)&Bufferdxpdx11_F1[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	gpuMalloc((void**)&Bufferdxpdx11_CENT[nl[n]], ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	gpuMalloc((void**)&Bufferr_CORN2[nl[n]], (BS_1 + 2 * N1G) * sizeof(double));
 	gpuMalloc((void**)&Bufferth_CORN3[nl[n]], (BS_2 + 2 * N2G) * sizeof(double));
 	gpuMalloc((void**)&Bufferth_CORN3_2[nl[n]], (BS_2 + 2 * N2G) * sizeof(double));
 	gpuMalloc((void**)&Bufferphi_CORN2[nl[n]], (BS_3 + 2 * N3G) * sizeof(double));
+#endif
 	#endif
 	gpuMalloc((void**)&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(DO_IMEX && (RAD_M1 || NEUTRINOS_M1))
@@ -1322,18 +1326,20 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	status += gpuFreeHost(dq_1[nl[n]]);
 	status += gpuFreeHost(radius_GPU[nl[n]]);
-	#if(NEUTRON_STAR)
-	status += gpuFreeHost(radiusF1_GPU[nl[n]]);
+	#if(NEUTRON_STAR)	
 	status += gpuFreeHost(theta_GPU[nl[n]]);
 	status += gpuFreeHost(phi_GPU[nl[n]]);
-	status += gpuFreeHost(dxpdx11_F1_GPU[nl[n]]);
-	status += gpuFreeHost(dxpdx11_CENT_GPU[nl[n]]);
 	status += gpuFreeHost(NS_scaling_CENT[nl[n]]);
 	status += gpuFreeHost(NS_scaling_FACE[nl[n]]);
+#if(OBLIQUE_NS)
+	status += gpuFreeHost(radiusF1_GPU[nl[n]]);
+	status += gpuFreeHost(dxpdx11_F1_GPU[nl[n]]);
+	status += gpuFreeHost(dxpdx11_CENT_GPU[nl[n]]);
 	status += gpuFreeHost(r_CORN2_GPU[nl[n]]);
 	status += gpuFreeHost(th_CORN3_GPU[nl[n]]);
 	status += gpuFreeHost(th_CORN3_2_GPU[nl[n]]);
 	status += gpuFreeHost(phi_CORN2_GPU[nl[n]]);
+#endif
 	#endif
 	#if(!CLEAN_TEMP_BUFFERS_GPU)
 	status += gpuFreeHost(gcov_GPU[nl[n]]);
@@ -1369,17 +1375,19 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	status += gpuFree(Bufferradius[nl[n]]);
 	#if(NEUTRON_STAR)
-	status += gpuFree(BufferradiusF1[nl[n]]);
 	status += gpuFree(Buffertheta[nl[n]]);
 	status += gpuFree(Bufferphi[nl[n]]);
-	status += gpuFree(Bufferdxpdx11_F1[nl[n]]);
-	status += gpuFree(Bufferdxpdx11_CENT[nl[n]]);
 	status += gpuFree(BufferNS_scaling_CENT[nl[n]]);
 	status += gpuFree(BufferNS_scaling_FACE[nl[n]]);
+#if(OBLIQUE_NS)
+	status += gpuFree(BufferradiusF1[nl[n]]);
+	status += gpuFree(Bufferdxpdx11_F1[nl[n]]);
+	status += gpuFree(Bufferdxpdx11_CENT[nl[n]]);
 	status += gpuFree(Bufferr_CORN2[nl[n]]);
 	status += gpuFree(Bufferth_CORN3[nl[n]]);
 	status += gpuFree(Bufferth_CORN3_2[nl[n]]);
 	status += gpuFree(Bufferphi_CORN2[nl[n]]);
+#endif
 	#endif
 	status += gpuFree(Bufferstorage1[nl[n]]);
 	#if(DO_IMEX && RAD_M1)

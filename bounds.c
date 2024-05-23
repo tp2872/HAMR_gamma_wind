@@ -1162,6 +1162,7 @@ static void get_surface_magneticField(struct of_geom* geom, double* bncon, doubl
 
 
 void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n, double t) {
+
 	int i, j, z, k;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
@@ -1170,44 +1171,31 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 	double ucon_FAZ[NDIM], vcon_FAZ[NDIM]; // "FAZ" : first active zone
 	double* pFAZ;
 	double dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM];
-
+	//fprintf(stderr, "bound prim NS %d \n", n);
 	// inner r boundary condition: u, gdet extrapolation
 	if (block[n][AMR_NBR4] == -1) {
-		/*
-		fprintf(stderr, "Before bounds.c \n");
-		coord(n_ord[n], CELLS_IN_STAR, 500, 0, CENT, X);
-		bl_coord(X, &r, &th, &phi);
-		double r_FAZ = r;
-		for (i = 0; i < CELLS_IN_STAR + 1; i++) {
-			coord(n_ord[n], i, 500, 0, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			//fprintf(stderr, "change: r(%d)=%g, th(%d)=%g, phi(%d)=%g \n", i, r, 500, th, 0, phi);
-			fprintf(stderr, "B1: %g, B1 expected:%g, at r(%d)=%g, th(%d)=%g, phi(%d)=%g \n", prim[nl[n]][index_3D(n, i, 500, 0)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR, 500, 0)][B1] * pow(r_FAZ / r, 4.0), i, r, 500, th, 0, phi);
-		}
-		fprintf(stderr, "change \n");
-		*/
-
-#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
+//#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
-#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
+//#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 			for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
 				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++) {
 					//#pragma omp   simd
-					for (i = -N1G; i < CELLS_IN_STAR; i++) {
-						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)];
-					}
+					//for (i = -N1G; i < 0; i++) {
+					//	pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, 0, j, z)];
+					//}
+					//fprintf(stderr, "before get geom % d %d\n", j, z);
 					get_geometry(n, CELLS_IN_STAR, j, z, CENT, &geom);
 					pFAZ = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)];
 					ucon_calc(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)], &geom, ucon_FAZ);
 					for (k = 1; k < NDIM; k++) {
 						vcon_FAZ[k] = ucon_FAZ[k] / ucon_FAZ[0];
 					}
-					if (vcon_FAZ[1] < 0.0)
+					if (0)
 						accreting = 1;
 					else
 						accreting = 0;
 
-					if (pFAZ[FLRFRAC] > FFE_ZONE_FLRFRAC_THRESHOLD)
+					if (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][FLRFRAC] > FFE_ZONE_FLRFRAC_THRESHOLD)
 						forcefree = 1;
 					else
 						forcefree = 0;
@@ -1220,162 +1208,45 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 
 					if (useForcefreeBC)
 					{
-						//basic_hydroStatic_atm
 						for (i = -N1G; i < 0; i++) {
 							coord(n, i, 0, 0, CENT, X);
 							bl_coord(X, &r, &th, &phi);
-							//prim[nl[n]][index_3D(n, i, j, z)][RHO] = 1.9225588e-4 * pow(10.0, SURF_MAX_BSQ_RHO_LOG - 2.1) * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, -4.0);
-							//prim[nl[n]][index_3D(n, i, j, z)][UU] = 1.9225588e-4 * pow(10.0, SURF_MAX_BSQ_UINT_LOG - 2.1) * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, -4.0);
 							prim[nl[n]][index_3D(n, i, j, z)][RHO] = RHO0_HYDROSTAT_ATM_NS * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, -1.0 / (GAMMA - 1.0));
 							prim[nl[n]][index_3D(n, i, j, z)][UU] = (RHO0_HYDROSTAT_ATM_NS / (GAMMA * R_NS)) * pow(MU_NS / 10.0, 2.0) * pow(r / R_NS, GAMMA / (1.0 - GAMMA));
 						}
 					}
-					//ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] = calcRadialField(n, CELLS_IN_STAR, j, k, FACE1, &geom, t);
-					//prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][PS1START] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1];
 					coord(n, CELLS_IN_STAR, j, z, FACE1, X);
 					bl_coord(X, &r, &th, &phi);
 					double r_surf = r;
-					dxdxp_func(X, dxdxp);
-					double dxdxp_surf = dxdxp[1][1];
-					get_geometry(n, CELLS_IN_STAR, j, z, FACE1, &geom);
-					double gcon_surf = geom.gcon[0][0];
 					coord(n, CELLS_IN_STAR, j, z, CENT, X);
 					bl_coord(X, &r, &th, &phi);
 					double r_FAZ = r;
-					dxdxp_func(X, dxdxp);
-					double dxdxp_FAZ = dxdxp[1][1];
-					get_geometry(n, CELLS_IN_STAR, j, z, CENT, &geom);
-					double gcon_FAZ = geom.gcon[0][0];
 					for (int i = -N1G; i < 0; i++)
-					{						
-						coord(n, i, j, z, CENT, X);
-						bl_coord(X, &r, &th, &phi);
-						double r_cell = r;
-						//if (j == 500 && z == 0) fprintf(stderr, "change: r(%d)=%g %g %g, th(%d)=%g, phi(%d)=%g \n", i, r, r_cell, r_FAZ, j, th, z, phi);
-						//if (j == 500 && z == 0) fprintf(stderr, "chonge: r(%d)=%g %g %g, th(%d)=%g, phi(%d)=%g \n", i, r, r_cell, r_FAZ, j, th, z, phi);
-						dxdxp_func(X, dxdxp);
-						invert_matrix(dxdxp, dxpdx);
-						double dxpdx11 = dxpdx[1][1];
-						get_geometry(n, i, j, z, CENT, &geom);
+					{
 #if OBLIQUE_NS
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(n, i, j, k, CENT, &geom, t);
-						ps[nl[n]][index_3D(n, i, j, z)][1] = calcRadialField(n, i, j, k, FACE1, &geom, t);
-						prim[nl[n]][index_3D(n, i, j, z)][PS1START] = ps[nl[n]][index_3D(n, i, j, z)][1];
+						get_geometry(n, i, j, z, CENT, &geom);
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = calcRadialField(n, CELLS_IN_STAR, j, k, CENT, &geom, t);
+						ps[nl[n]][index_3D(n, i, j, z)][1] = calcRadialField(n, CELLS_IN_STAR, j, k, FACE1, &geom, t);
+						//prim[nl[n]][index_3D(n, i, j, z)][PS1START] = ps[nl[n]][index_3D(n, i, j, z)][1];
 
 #else /* aligned rotator: can store normal field */ 
-
-#if(1)
-						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] * pow(r_surf / r_cell, 3.0) * dxpdx[1][1] * dxdxp_surf;// * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
-						prim[nl[n]][index_3D(n, i, j, z)][PS1START] = ps[nl[n]][index_3D(n, i, j, z)][1];
-
-#if(1)
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] * pow(r_surf / r_cell, 3.0) * dxpdx11 * dxdxp_surf;// * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
-#else
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * pow(r_FAZ / r_cell, 3.0) * dxpdx11 * dxdxp_FAZ *pow(geom.gcon[0][0] / gcon_FAZ, 3. / 4.);
-#endif
-						//if (j == 500 && z == 0) fprintf(stderr, "PS1: %g, PS1 expected:%g, at r(%d)=%g %g, th(%d)=%g, phi(%d)=%g \n", ps[nl[n]][index_3D(n, i, j, z)][1], ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] * pow(r_surf / r_cell, 4.0) * dxpdx[1][1] * dxdxp_surf * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.), i, r, r_cell, j, th, z, phi);
-						//if (j == 500 && z == 0) fprintf(stderr, "B1: %g, B1 expected:%g, at r(%d)=%g %g, th(%d)=%g, phi(%d)=%g \n", prim[nl[n]][index_3D(n, i, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * pow(r_FAZ / r_cell, 4.0), i, r, r_cell, j, th, z, phi);
-#else
-						double df_B1 = 0.0;
-						df_B1 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B1] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1];
-						//df_B1 = ps[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][1] - ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1];
-						//if ((ps[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][1] * (ps[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (ps[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][1] * (ps[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][1] - df_B1) < 0.0)) df_B1 = 0.0;
-						//df_B1 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B1]);
-						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - df_B1) < 0.0)) df_B1 = 0.0;
-						prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						prim[nl[n]][index_3D(n, i, j, z)][PS1START] = ps[nl[n]][index_3D(n, i, j, z)][1];
-#endif
-						
-						//coord(n, i, j, z, FACE1, X);
-						//bl_coord(X, &r, &th, &phi);
-						//double r_cell = r;
-						//if (j == 500 && z == 0) fprintf(stderr, "change: r(%d)=%g %g, th(%d)=%g, phi(%d)=%g \n", i, r, r_cell, j, th, z, phi);
-						//get_geometry(n, i, j, z, FACE1, &geom);
-						//if (j == 500 && z == 0) fprintf(stderr, "chonge: r(%d)=%g %g, th(%d)=%g, phi(%d)=%g \n", i, r, r_cell, j, th, z, phi);
-						//dxdxp_func(X, dxdxp);
-						//invert_matrix(dxdxp, dxpdx);
+						coord(n, i, j, z, FACE1, X);
+						bl_coord(X, &r, &th, &phi);
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] * pow(r_surf / r, 4.0); // *dxpdx[1][1] * dxdxp_surf;// * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
+						coord(n, i, j, z, CENT, X);
+						bl_coord(X, &r, &th, &phi);
+						prim[nl[n]][index_3D(n, i, j, z)][B1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] * pow(r_surf / r, 4.0);// *dxpdx[1][1] * dxdxp_surf;// * pow(geom.gcon[0][0] / gcon_surf, 3. / 4.);
 #endif					
-						//if(j ==500 && z ==0) fprintf(stderr, "B1: %g, B1 expected:%g, at r(%d)=%g, th(%d)=%g, phi(%d)=%g \n", prim[nl[n]][index_3D(n, i, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * pow(r_FAZ / r, 4.0), i, r, j, th, z, phi);
-#if(SIMPLE_NS_BC_EXTRAPOLATE)
-						//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
-						double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
-						//df_B1 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B1] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1];
-						df_B2 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B2] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2];
-						df_B3 = prim[nl[n]][index_3D(n, 1 + CELLS_IN_STAR, j, z)][B3] - prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3];
-
-						//if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - df_B1) < 0.0)) df_B1 = 0.0;
-						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - df_B2) < 0.0)) df_B2 = 0.0;
-						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - df_B3) < 0.0)) df_B3 = 0.0;
-						//prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(CELLS_IN_STAR - i) * df_B2;
-						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(CELLS_IN_STAR - i) * df_B3;
-
 #if(STAGGERED)
-						//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] - (double)(CELLS_IN_STAR - i) * df_B2;
-						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] - (double)(CELLS_IN_STAR - i) * df_B3;
-#endif
-
-#elif(SLOPELIM_NS_BC_EXTRAPOLATE)
-						//pv[B1 * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] = pv[PS1START * (ksize)+(N1G + CELLS_IN_STAR) * isize + global_id] * scaleFACE[(N1G + CELLS_IN_STAR) * isize + global_id];
-						double df_B1 = 0.0, df_B2 = 0.0, df_B3 = 0.0;
-						//df_B1 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B1], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B1]);
-						df_B2 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B2], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B2]);
-						df_B3 = slope_lim_BC(prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 1, j, z)][B3], prim[nl[n]][index_3D(n, CELLS_IN_STAR + 2, j, z)][B3]);
-
-						//if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(N1G + CELLS_IN_STAR) * df_B1)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - df_B1) < 0.0)) df_B1 = 0.0;
-						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(N1G + CELLS_IN_STAR) * df_B2)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - df_B2) < 0.0)) df_B2 = 0.0;
-						if ((prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(N1G + CELLS_IN_STAR) * df_B3)) < 0.0 || (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * (prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - df_B3) < 0.0)) df_B3 = 0.0;
-
-						//prim[nl[n]][index_3D(n, i, j, z)][B1] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] - (double)(CELLS_IN_STAR - i) * df_B2;
-						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] - (double)(CELLS_IN_STAR - i) * df_B3;
-
-#if(STAGGERED)
-						//ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][1] - (double)(CELLS_IN_STAR - i) * df_B1;
-						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] - (double)(CELLS_IN_STAR - i) * df_B2;
-						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] - (double)(CELLS_IN_STAR - i) * df_B3;
-#endif	
-#else			
-#if(STAGGERED)
-						coord(n, CELLS_IN_STAR, j, z, CENT, X);
+						coord(n, i, j, z, CENT, X);
 						bl_coord(X, &r, &th, &phi);
-						r_FAZ = r;
-						get_geometry(n, CELLS_IN_STAR, j, z, CENT, &geom);
-						gcon_FAZ = geom.gcon[0][0];
-						coord(n, CELLS_IN_STAR, j, z, FACE2, X);
-						bl_coord(X, &r, &th, &phi);
-						double r_FACE2 = r;
-						get_geometry(n, CELLS_IN_STAR, j, z, FACE2, &geom);
-						double gcon_FACE2 = geom.gcon[0][0];
-						coord(n, i, j, z, FACE2, X);
-						bl_coord(X, &r, &th, &phi);
-						r_cell = r;
-						get_geometry(n, i, j, z, FACE2, &geom);
-						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] * pow(r_FACE2 / r_cell, 4.0);// * pow(geom.gcon[0][0] / gcon_FACE2, 3. / 2.);
-
-						coord(n, CELLS_IN_STAR, j, z, FACE3, X);
-						bl_coord(X, &r, &th, &phi);
-						double r_FACE3 = r;
-						coord(n_ord[n], i, j, z, FACE3, X);
-						bl_coord(X, &r, &th, &phi);
-						r_cell = r;
-						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] * pow(r_FACE3 / r_cell, 2.0);
-
+						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][2] * pow(r_FAZ / r, 4.0);// * pow(geom.gcon[0][0] / gcon_FACE2, 3. / 2.);
+						ps[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][3] * pow(r_FAZ / r, 2.0);
 #endif
 						coord(n, i, j, z, CENT, X);
 						bl_coord(X, &r, &th, &phi);
-						r_cell = r;
-						get_geometry(n, i, j, z, CENT, &geom);
-						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * pow(r_FAZ / r_cell, 4.0);// * pow(geom.gcon[0][0] / gcon_FAZ, 3. / 2.);
-						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * pow(r_FAZ / r_cell, 2.0);
-#endif
-
-						//if (i < 5 && z == 0 && (j<5) && r < 4.2) {
-						//	fprintf(stderr, "ps1: %g at r=%g(%d), th=%g(%d), phi=%g(%d) \n", ps[nl[n]][index_3D(n, i, j, z)][1],r, i, th, j, phi, z);
-						//}
-
+						prim[nl[n]][index_3D(n, i, j, z)][B2] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B2] * pow(r_FAZ / r, 4.0);// * pow(geom.gcon[0][0] / gcon_FAZ, 3. / 2.);
+						prim[nl[n]][index_3D(n, i, j, z)][B3] = prim[nl[n]][index_3D(n, CELLS_IN_STAR, j, z)][B3] * pow(r_FAZ / r, 2.0);
 						if (useForcefreeBC) {
 							prim[nl[n]][index_3D(n, i, j, z)][FLR] = 1.0;
 							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = 1.0;
@@ -1391,7 +1262,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 
 
 					/* Now do velocities */
-
+#if(1)
 					if (useForcefreeBC)
 					{
 						double bncon[NDIM], bscon[NDIM], uscon[NDIM], etacon[NDIM], etacov[NDIM];
@@ -1496,6 +1367,7 @@ void bound_prim1_NS(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[N
 							}
 						}
 					}
+#endif
 				}
 			}
 			/*

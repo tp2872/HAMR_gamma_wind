@@ -89,7 +89,7 @@ static int gnr2( double x[], void (*funcd) (double [], double [], double [], dou
 
 ******************************************************************/
 
-int Utoprim_1dfix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim
+int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
     #if(TWO_T)
     , double fel
     #endif

@@ -102,15 +102,17 @@ int* pflag_RBOUND_GPU[NB_LOCAL];
 int *failimage_GPU[NB_LOCAL];
 double* Bx1_surface_GPU[NB_LOCAL];
 double* radius_GPU[NB_LOCAL];
-double* radiusF1_GPU[NB_LOCAL];
 double* theta_GPU[NB_LOCAL];
 double* phi_GPU[NB_LOCAL];
+#if(OBLIQUE_NS)
+double* radiusF1_GPU[NB_LOCAL];
 double* dxpdx11_F1_GPU[NB_LOCAL];
 double* dxpdx11_CENT_GPU[NB_LOCAL];
 double* r_CORN2_GPU[NB_LOCAL];
 double* th_CORN3_GPU[NB_LOCAL];
 double* th_CORN3_2_GPU[NB_LOCAL];
 double* phi_CORN2_GPU[NB_LOCAL];
+#endif
 double* NS_scaling_CENT[NB_LOCAL];
 double* NS_scaling_FACE[NB_LOCAL];
 int failimage_counter[NFAIL];
@@ -285,15 +287,17 @@ double* BufferU_n[NB_LOCAL];
 double* BufferU_0[NB_LOCAL];
 double* BufferU_1[NB_LOCAL];
 double * Bufferradius[NB_LOCAL];
-double* BufferradiusF1[NB_LOCAL];
 double* Buffertheta[NB_LOCAL];
 double* Bufferphi[NB_LOCAL];
+#if(OBLIQUE_NS)
+double* BufferradiusF1[NB_LOCAL];
 double* Bufferdxpdx11_F1[NB_LOCAL];
 double* Bufferdxpdx11_CENT[NB_LOCAL];
 double* Bufferr_CORN2[NB_LOCAL];
 double* Bufferth_CORN3[NB_LOCAL];
 double* Bufferth_CORN3_2[NB_LOCAL];
 double* Bufferphi_CORN2[NB_LOCAL];
+#endif
 double * BufferNS_scaling_CENT[NB_LOCAL];
 double * BufferNS_scaling_FACE[NB_LOCAL];
 double * Bufferstorage1[NB_LOCAL];

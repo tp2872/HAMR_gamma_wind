@@ -143,15 +143,17 @@ extern double *Katm_GPU[NB_LOCAL];
 extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
 extern double* radius_GPU[NB_LOCAL];
-extern double* radiusF1_GPU[NB_LOCAL];
 extern double* theta_GPU[NB_LOCAL];
 extern double* phi_GPU[NB_LOCAL];
+#if(OBLIQUE_NS)
+extern double* radiusF1_GPU[NB_LOCAL];
 extern double* dxpdx11_F1_GPU[NB_LOCAL];
 extern double* dxpdx11_CENT_GPU[NB_LOCAL];
 extern double* r_CORN2_GPU[NB_LOCAL];
 extern double* th_CORN3_GPU[NB_LOCAL];
 extern double* th_CORN3_2_GPU[NB_LOCAL];
 extern double* phi_CORN2_GPU[NB_LOCAL];
+#endif
 extern double* NS_scaling_CENT[NB_LOCAL];
 extern double* NS_scaling_FACE[NB_LOCAL];
 extern int* pflag_CART_GPU[NB_LOCAL];
@@ -329,15 +331,17 @@ extern double* BufferU_n[NB_LOCAL];
 extern double* BufferU_0[NB_LOCAL];
 extern double* BufferU_1[NB_LOCAL];
 extern double * Bufferradius[NB_LOCAL];
-extern double* BufferradiusF1[NB_LOCAL];
 extern double* Buffertheta[NB_LOCAL];
 extern double* Bufferphi[NB_LOCAL];
+#if(OBLIQUE_NS)
+extern double* BufferradiusF1[NB_LOCAL];
 extern double* Bufferdxpdx11_F1[NB_LOCAL];
 extern double* Bufferdxpdx11_CENT[NB_LOCAL];
 extern double* Bufferr_CORN2[NB_LOCAL];
 extern double* Bufferth_CORN3[NB_LOCAL];
 extern double* Bufferth_CORN3_2[NB_LOCAL];
 extern double* Bufferphi_CORN2[NB_LOCAL];
+#endif
 extern double * BufferNS_scaling_CENT[NB_LOCAL];
 extern double * BufferNS_scaling_FACE[NB_LOCAL];
 extern double * Bufferstorage1[NB_LOCAL];

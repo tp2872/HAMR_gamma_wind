@@ -199,7 +199,7 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim
+static int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim
 	#if (DO_YE)
 	, double ye
 	#endif

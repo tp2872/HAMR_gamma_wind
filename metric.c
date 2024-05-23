@@ -501,21 +501,21 @@ void raise(double * restrict ucov, struct of_geom * restrict geom, double * rest
 void dxdxp_func(double *X, double dxdxp[][NDIM])
 {
 	#if(1)
-	int i0, j0, k0, l0;
+	int i, j, k, l;
 	double Xh[NDIM], Xl[NDIM];
 	double Vh[NDIM], Vl[NDIM];
 
-	for (k0 = 0; k0<NDIM; k0++) {
-		for (l0 = 0; l0<NDIM; l0++) Xh[l0] = X[l0];
-		for (l0 = 0; l0<NDIM; l0++) Xl[l0] = X[l0];
-		Xh[k0] += 0.00001;
-		Xl[k0] -= 0.00001;
+	for (k = 0; k<NDIM; k++) {
+		for (l = 0; l<NDIM; l++) Xh[l] = X[l];
+		for (l = 0; l<NDIM; l++) Xl[l] = X[l];
+		Xh[k] += 0.00001;
+		Xl[k] -= 0.00001;
 		Vh[0] = Xh[0];
 		Vl[0] = Xl[0];
 		bl_coord(Xh, &Vh[1], &Vh[2], &Vh[3]);
 		bl_coord(Xl, &Vl[1], &Vl[2], &Vl[3]);
-		for (j0 = 0; j0<NDIM; j0++)
-			dxdxp[j0][k0] = (Vh[j0] - Vl[j0]) / (Xh[k0] - Xl[k0]);
+		for (j = 0; j<NDIM; j++)
+			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
 	}
 	#else
 	double r, th, phi, dxdxp_inv[NDIM][NDIM];
