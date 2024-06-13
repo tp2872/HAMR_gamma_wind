@@ -1,0 +1,37 @@
+#!/bin/bash
+### set the number of nodes
+### set the number of PEs per node
+### set the XE/XK feature
+#PBS -q high
+#PBS -l nodes=16:ppn=16:xk
+### set the wallclock time
+#PBS -l walltime=24:00:00
+#PBS -l advres=bady1
+### set the job name
+#PBS -N TDISKS25A93T65S_v
+### set the job stdout and stderr
+#PBS -e $PBS_JOBID.err
+#PBS -o $PBS_JOBID.out
+### set email notification
+#PBS -m bea
+#PBS -M matthewliska92@gmail.com
+
+module load visit
+cd /scratch/sciteam/liska/NEW/TDISKS25A93T65S
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4800 4810 1 > app0.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4810 4820 1 > app1.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4820 4830 1 > app2.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4830 4840 1 > app3.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4840 4850 1 > app4.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4850 4860 1 > app5.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4860 4870 1 > app6.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4880 4890 1 > app7.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 4890 4900 1 > app8.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7300 7320 1 > app9.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7310 7320 1 > app10.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7320 7330 1 > app11.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7330 7340 1 > app12.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7340 7350 1 > app13.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7350 7360 1 > app14.oe 2>&1 &
+visit -cli -nowin -np 16 -nn 1 -l aprun -s render.py 7360 7370 1 > app15.oe 2>&1 &
+wait

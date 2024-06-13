@@ -1,0 +1,59 @@
+#!/bin/bash -l
+#PBS -A PHY129
+#PBS -q batch
+#PBS -l walltime=48:00:00,nodes=1
+#PBS -o jupyter.log
+#PBS -j oe
+
+
+# Change the login and client ports to suitable values.
+# Be aware your preferred login port may be in use by other users. A login port
+# used by another project will cause dire confusion at runtime.
+CLIENT_PORT=8080
+LOGIN_PORT=XXXXX # FIXME: Choose a *RANDOM* unused port number in the range 10k-64k.
+SERVER_PORT=8082
+COMMAND="${HOME}/.jupyter_connect"
+
+# Setup the environment. This block assumes the use of a python virtualenv under
+# which Jupyter and all the python packages needed for your work is installed.
+# It also assumes there is a script `$VENV/bin/setup_environment_modules` that
+# has all the environment module commands needed by packages installed to the
+# virtualenv. Change this block as needed.
+#VENV="$HOME/.venvs/jupyter-on-rhea"
+#source $VENV/bin/setup_environment_modules
+#source $VENV/bin/activate
+module load python/2.7.15-anaconda2-2018.12
+
+cd $HOME
+
+function finish {
+  rm $COMMAND
+}
+
+if [ -f "$COMMAND" ]; then
+  echo "A Jupyter server is already running."
+  echo "See '$COMMAND' for details."
+  exit 1
+fi
+
+cat << EOF > $COMMAND
+#!/bin/bash
+# To open a tunnel to the notebook server/kernels running on the compute node,
+# issue the following command from your local machine:
+#
+# ssh -f -L 127.0.0.1:$CLIENT_PORT:127.0.0.1:$LOGIN_PORT $USER@rhea.ccs.ornl.gov $COMMAND
+#
+# Then, on your local machine, navigate to "https://127.0.0.1:$CLIENT_PORT" in
+# the browser of your choice. It is ill-advised to leave your server unencrypted,
+# but replace 'https' with 'http' in the URL if you have not setup TLS/SSL encryption.
+
+ssh -q -L 127.0.0.1:$LOGIN_PORT:127.0.0.1:$SERVER_PORT \
+  $HOSTNAME.ccs.ornl.gov sleep $PBS_WALLTIME
+EOF
+
+trap finish EXIT
+chmod a+x $COMMAND
+
+# Change the log-level to a preferred value. DEBUG is useful for troubleshooting
+# new server deployments.
+jupyter-notebook --no-browser --port=$SERVER_PORT --log-level='DEBUG'

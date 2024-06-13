@@ -1,0 +1,17 @@
+#!/bin/bash
+# Begin LSF Directives
+#PBS -A PHY129
+#PBS -l nodes=1
+#PBS -l walltime=8:00:00
+#PBS -l partition=rhea
+#PBS -m a
+#PBS -m b
+#PBS -m e
+#PBS -M matthewliska92@gmail.com
+#PBS -N T65TOR_pp
+
+module load python/2.7.15-anaconda2-2018.12
+cd /gpfs/alpine/phy129/proj-shared/T65TOR
+
+setenv OMP_NUM_THREADS 16
+mpirun -n 1 python pp.py build_ext --inplace
