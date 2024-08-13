@@ -22,29 +22,31 @@ Physical Parameters section
 #define SPHERICAL_PROBLEM 18
 #define RAD_PULSE 19
 #define ISOLATED_NS 20
+#define HLA_PULSAR 21
+#define CE_PULSAR 22
 
 /*Set problem*/
-#define WHICHPROBLEM ISOLATED_NS
+#define WHICHPROBLEM CE_PULSAR
 
-#if(WHICHPROBLEM==ISOLATED_NS)
+#if(WHICHPROBLEM==ISOLATED_NS||WHICHPROBLEM==HLA_PULSAR||WHICHPROBLEM==CE_PULSAR)
 /*Neutron star definition*/
 #define NEUTRON_STAR (1)
 #else
 #define NEUTRON_STAR (0)
 #endif
 
-#define OBLIQUE_NS                  (0)           // 0: aligned rotator, 1: oblique rotator
+#define OBLIQUE_NS                  (1)           // 0: aligned rotator, 1: oblique rotator
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
 #define DEFORM_DIPOLE_NS            (0)
 
 #define R_NS                        (4.0)         // Neutron star radius in r_g
-#define OMEGA_NS                    (0.2/R_NS)  //0.05        // Angular velocity in c/r_g
-#define CELLS_IN_STAR               (6)  //grid cells inside the the stellar surface
-#define KERR_SPIN_NS                (0.0)  //(1.0/3.0)
-#define SPINUP_TIME_NS              (10.*R_NS)  //40.0        // Needs to be ~> 2 R_LC/c
-#define SPINUP_START_TIME_NS        (5.0*R_NS)  //50.0//500.0       // When rotation begins
-#define MU_NS                       (1.0)  //10.0   // Set using mu=10, is scaled internally
-#define FFE_ZONE_FLRFRAC_THRESHOLD  (0.0)  //0.5
+#define OMEGA_NS                    (0.05)  //0.05        // Angular velocity in c/r_g
+#define CELLS_IN_STAR               (0)  //grid cells inside the the stellar surface
+#define KERR_SPIN_NS                (1./3.)  //(1.0/3.0)
+#define SPINUP_TIME_NS              (40.0)  //40.0        // Needs to be ~> 2 R_LC/c
+#define SPINUP_START_TIME_NS        (20.0)  //50.0//500.0       // When rotation begins
+#define MU_NS                       (40.0)  //10.0   // Set using mu=10, is scaled internally
+#define FFE_ZONE_FLRFRAC_THRESHOLD  (0.5)  //0.5
 #define RHO0_HYDROSTAT_ATM_NS       (8.877e-6)    // 8.877e-6 gives b^2/rho = 1e4 at equator
                                                 
 #define R_NS_OFFSET                 (0.0)
@@ -55,21 +57,40 @@ Physical Parameters section
 #define SURF_MAX_BSQ_RHO_LOG        (2.1)//4.75
 #define SURF_MAX_BSQ_UINT_LOG       (2.1)//5.5  
 #define USE_PS1START (1)
-#define REFINE_PULSAR (1)
+#define REFINE_PULSAR (0)
 #define MC_STEEPENER_NS             (1.95) //1.95
 #define SIMPLE_NS_BC_EXTRAPOLATE    (0)
-#define SLOPELIM_NS_BC_EXTRAPOLATE  (0)
+#define SLOPELIM_NS_BC_EXTRAPOLATE  (1)
 #define USE_BL_COORDINATES          (1)  //PPM works with BL; remove PPM for KS in NS setup.
+
+#if(WHICHPROBLEM==HLA_PULSAR)
+#define RA_WIND                      (100.)
+#define RHOINFTY                     (1.e-3)
+#define START_WIND                   (-50.)
+#define MACH_WIND                    (2.)
+#define WIND_NO_FIELD                (0)
+#define WHICH_FIELD_WIND WIND_NO_FIELD
+#endif
+
+#if(WHICHPROBLEM==CE_PULSAR)
+#define RA_WIND                      (100.)
+#define RHOINFTY                     (1.e-3)
+#define START_WIND                   (-50.)
+#define EPS_RHO                      (1)
+#define MACH_WIND                    (2.)
+#define WIND_NO_FIELD                (0)
+#define WHICH_FIELD_WIND WIND_NO_FIELD
+#endif
 
 
 #define TWISTED_OMEGA               (0)           // Aligned twisted fields
-#define START_TWIST                 (20.*R_NS)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
-#define RING_TWIST                  (1)        // 1 for ring, 0 for polar cap
+#define START_TWIST                 (5.0*2.0*M_PI/OMEGA_NS)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
+
 /*Select adiabatic index*/
 #define GAMMA	(4./3.)
                                       
 /*Select grid outer radius*/
-#define ROUT (75.0*R_NS)
+#define ROUT (10000.0)
 
 #define READBINARY (0)
 
@@ -127,7 +148,7 @@ Physical Parameters section
 #else 
 #define BH_SPIN (0.8)
 #endif
-#elif(WHICHPROBLEM == ISOLATED_NS)
+#elif(WHICHPROBLEM == ISOLATED_NS||WHICHPROBLEM==HLA_PULSAR)
 #define BH_SPIN (KERR_SPIN_NS)
 #else
 #define BH_SPIN (0.998)
@@ -286,7 +307,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Set to high value to circumvent cross-GPU GPU_DIRECT*/
 #define GPU_SET (10000)
@@ -304,7 +325,7 @@ Numerical Parameters section
 #define CLEAN_TEMP_BUFFERS_GPU (0)
 
 /*Memory of the node*/
-#define CPU_MEM (30.0)
+#define CPU_MEM (40.0)
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -319,17 +340,17 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 8
-#define NB_2 12
+#define NB_1 10
+#define NB_2 2
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 50
-#define BS_2 32
-#define BS_3 48
+#define BS_1 54
+#define BS_2 96
+#define BS_3 96
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 1
 
 /*Use nested Cartesian grid*/
 #define GRID_CARTESIAN (0)
@@ -361,13 +382,13 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
-#define NORMALIZE_DIVB 1
+#define NORMALIZE_DIVB 0
 
 /*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
 #define SMALL_DIVB 1.e-300
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
 #define N_LEVELS_1D_INT (3)
@@ -383,7 +404,7 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 16
@@ -392,7 +413,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define JET_ENTROPY (0)
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (60)
+#define DUMPFACTOR (24)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -413,7 +434,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*The time between refinement(AMR) steps*/
-#define TREF (100.0*R_NS/4.0)
+#define TREF 100.0
 
 //The time between recalculating metric
 #define TMETRIC (10.0)
@@ -494,7 +515,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #endif
 
 /*Use smaller than usual cutout of 10^-13*/
-#define TRANS_BOUND_SMALL (1)
+#define TRANS_BOUND_SMALL (0)
 
 /* A numerical convenience to represent a small non-zero quantity compared to unity:*/
 #define SMALL	(1.e-20)

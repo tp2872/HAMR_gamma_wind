@@ -66,6 +66,12 @@ void init()
 		case ISOLATED_NS:
 			init_NS();
 			break;
+                case HLA_PULSAR:
+                        init_hla_NS();
+                        break;
+                case CE_PULSAR:
+                        init_ce_NS();
+                        break;
 	}
 
 	int n;
