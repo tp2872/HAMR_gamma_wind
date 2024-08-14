@@ -1,0 +1,15 @@
+#!/bin/bash -l
+#SBATCH -A AST20011
+#SBATCH --job-name="NS"
+#SBATCH -t 10:00:00
+#SBATCH -p gpu-a100-small
+#SBATCH -N 1 #Number of nodes
+#SBATCH -n 4 # Number of cores
+#SBATCH --mail-type=all
+#SBATCH --mail-user=doggies012@hotmail.com
+
+module load cuda
+export OMP_NUM_THREADS=10
+export MY_SPECTRUM_OPTIONS="--gpu"
+
+ibrun -np 4 ./harm

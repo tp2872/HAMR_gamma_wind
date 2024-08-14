@@ -1,0 +1,1462 @@
+/*************************************************************************
+Physical Parameters section
+*************************************************************************/
+/*Select Desired problem, see init.c for implementation*/
+#define MONOPOLE_PROBLEM_1D 1
+#define MONOPOLE_PROBLEM_2D 2
+#define BZ_MONOPOLE_2D 3
+#define TORUS_PROBLEM 4
+#define DISRUPTION_PROBLEM 5
+#define BONDI_PROBLEM_1D 6
+#define BONDI_PROBLEM_2D 7
+#define TORUS_PROBLEM_GRB 8
+#define THIN_PROBLEM 9
+#define SOUND_WAVE 10
+#define ENT_WAVE 11
+#define TRUNC_PROBLEM 12
+#define POSTMERGER_PROBLEM 13
+#define COLLAPSAR 14
+#define NSM 15
+#define BLAST_WAVE 16
+#define SHOCK_TUBE 17
+#define SPHERICAL_PROBLEM 18
+#define RAD_PULSE 19
+#define ISOLATED_NS 20
+
+/*Set problem*/
+#define WHICHPROBLEM ISOLATED_NS
+
+#if(WHICHPROBLEM==ISOLATED_NS)
+/*Neutron star definition*/
+#define NEUTRON_STAR (1)
+#else
+#define NEUTRON_STAR (0)
+#endif
+
+#define OBLIQUE_NS                  (0)           // 0: aligned rotator, 1: oblique rotator
+#define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
+#define DEFORM_DIPOLE_NS            (0)
+
+#define R_NS                        (4.0)         // Neutron star radius in r_g
+#define OMEGA_NS                    (0.2/R_NS)  //0.05        // Angular velocity in c/r_g
+#define CELLS_IN_STAR               (6)  //grid cells inside the the stellar surface
+#define KERR_SPIN_NS                (0.0)  //(1.0/3.0)
+#define SPINUP_TIME_NS              (10.*R_NS)  //40.0        // Needs to be ~> 2 R_LC/c
+#define SPINUP_START_TIME_NS        (5.0*R_NS)  //50.0//500.0       // When rotation begins
+#define MU_NS                       (1.0)  //10.0   // Set using mu=10, is scaled internally
+#define FFE_ZONE_FLRFRAC_THRESHOLD  (0.0)  //0.5
+#define RHO0_HYDROSTAT_ATM_NS       (8.877e-6)    // 8.877e-6 gives b^2/rho = 1e4 at equator
+                                                
+#define R_NS_OFFSET                 (0.0)
+#define NS_TAPERED_FLOORS           (1)         // 1= Kyle's tapered floors; 0= Tchekhovskoy+2013 floors (not yet working)
+#define FREEZE_BSQORHO              (100.0)
+#define MAX_BSQ_OVER_RHO            (100.0)       // These two are used in the dynamic flooring
+#define MAX_BSQ_OVER_UINT           (120.0)      // Set the maxima beyond R_LC; inside higher
+#define SURF_MAX_BSQ_RHO_LOG        (2.1)//4.75
+#define SURF_MAX_BSQ_UINT_LOG       (2.1)//5.5  
+#define USE_PS1START (1)
+#define REFINE_PULSAR (1)
+#define MC_STEEPENER_NS             (1.95) //1.95
+#define SIMPLE_NS_BC_EXTRAPOLATE    (0)
+#define SLOPELIM_NS_BC_EXTRAPOLATE  (0)
+#define USE_BL_COORDINATES          (1)  //PPM works with BL; remove PPM for KS in NS setup.
+
+
+#define TWISTED_OMEGA               (0)           // Aligned twisted fields
+#define START_TWIST                 (20.*R_NS)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
+#define RING_TWIST                  (1)        // 1 for ring, 0 for polar cap
+/*Select adiabatic index*/
+#define GAMMA	(4./3.)
+                                      
+/*Select grid outer radius*/
+#define ROUT (75.0*R_NS)
+
+#define READBINARY (0)
+
+// DIMARK: rad.pulse kappa_es
+#define KAPPARADPULSE (0.)
+
+/*Set Cartesian grid for test problems*/
+#define CARTESIAN (0)
+
+/*Set Cartesian GR grid for test problems*/
+#define CARTESIAN_GR (0)
+
+/*Use spherical grid with no GR effects; spacing is logarithmic in r by default*/
+#define SPHERICAL (0)
+
+/*Use spherical grid with GR effects; spacing is logarithmic in r by default*/
+#define SPHERICAL_GR (1)
+
+/*Normalize MASS_DENSITY_SCALE by accretion rate in previous 1000 rg/c*/
+#define CALC_MDOT (0)
+#define T_INIT (10000.0) //Time in rg/c before which to set mass density scale to standard value
+#define MDOT_START (1.0e-8) //Mdot in Eddington units at start of run
+#define T_DOUBLE (10000.0) //Time during which Mdot doubles
+#define T_MDOT (1.0) //Interval to read mdot from GPU
+
+/*Calculate variable metric*/
+#define CALC_METRIC (0)
+
+/*Enable special refinement criterion for large scale jet simulations*/
+#define REFINE_JET (0)
+
+/*Enable special refinement criterion for large scale jet simulations*/
+#define REFINE_THIN (0)
+
+/*refinement for GRB jets*/
+#define REFINE_GRB (0)
+
+/*Gibwa's refinement criterion*/
+#define REFINE_GIBWA (0)
+
+// Postmerger problem, ICs from SpEC
+#define BHNSQ2 (1)
+#define BHNSQ2_1 (1)
+#define BHNSQ2_2 (0)
+#define FORNAX_IC (0)
+
+/*Select BH spin*/
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2_1)
+#define BH_SPIN (0.86)
+#elif (BHNSQ2_2)
+#define BH_SPIN (0.677376)
+#elif (FORNAX_IC)
+#define BH_SPIN (0.168)
+#else 
+#define BH_SPIN (0.8)
+#endif
+#elif(WHICHPROBLEM == ISOLATED_NS)
+#define BH_SPIN (KERR_SPIN_NS)
+#else
+#define BH_SPIN (0.998)
+#endif
+
+/*For Aris's ICs*/
+#define R_BONDI (1e2)
+#define R_CIRC (3e1)
+#define BETA (0.1)
+
+
+
+/*Wheter or not to tilt the disk*/
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
+
+/*Wheter to activate an untilted elliptical disk*/
+#define ELLIPTICAL (0)
+#define ELLIPTICAL2 (0)
+
+/*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
+#define COOL_DISK (0)
+#define H_OVER_R (0.02)
+
+/*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
+#define FULL_DISP (0)
+
+// Collapsar problem
+#define COLLAPSAR_GR1D (0)
+
+/* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
+#define DOHELM (0)
+#if (WHICHPROBLEM == COLLAPSAR)
+#define DOHELM_LOWTEMP (1)
+#else
+#define DOHELM_LOWTEMP (0)
+#endif
+
+#define NEUTRINOS_M1 (0)
+#define NU_EXPLICIT (0)
+#define NU_COOLING (0)
+#define NU_SUBCYCLING (0)
+#define NU_DEBUG (0)
+#define NEUTRINOS_DEBUG (0)
+#define NEUTRINOS_DEBUG_NFLAGS (3)
+#define DUMP_EACH_STEP (0)
+#define ZERO_TAU_MODE (0)
+#define DANAT_GDET_INTERP (0)
+#define NU_INNER_STOP (0)
+#define RAD_NU_STOP (1. + sqrt(1. - BH_SPIN * BH_SPIN))
+#define NU_PREDICTOR (0)
+#define NU_KEEP_COEFF_CONST (0)
+#define NULIB_YE_CORRECTION (0)
+
+// Whether electron fraction is evolved
+#if (NEUTRINOS_M1)
+#define DO_YE (1)
+#define DONUCLEAR (1)
+#else 
+#define DO_YE (0)
+#define DONUCLEAR (0)
+#endif
+
+// Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
+#if (DOHELM)
+#if (NEUTRINOS_M1)
+#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+#else
+#define DOHELM_TEMPERATURE (1) 
+#endif
+#else
+#define DOHELM_TEMPERATURE (0) 
+#endif
+
+#define USE_3D_INV (0)
+
+#define EOS_DEBUG (0)
+#define DOHELM_FULLENTROPY (1) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
+#define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
+#define inversion_w_edits   (1)
+#define enable_input_check  (0)
+#define revert_gamma        (1)
+#define eos_nr_debug        (0)
+#define HELMEOS_INPUT_CHECK (0)
+
+// subcycling testing
+#define RADM1_SUBCYCLING (0)
+#define EOS_BISECTION (0)
+#define low_rho_correction (0) // Leave it at 0, breaks 2d inversion
+
+/** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
+#if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
+#if (DOHELM)
+// Danat: otherwise EOS fails, since the densities are too low outside the torus
+#define RHOMIN      (1.e-14)    
+#define UUMIN       (1.e-16)     
+#define RHOMINLIMIT (1.e-20)
+#define UUMINLIMIT  (1.e-20) 
+#else
+#define RHOMIN      (1.e-26)
+#define UUMIN       (1.e-27)
+#define RHOMINLIMIT (1.e-40)
+#define UUMINLIMIT  (1.e-40)
+#endif
+#elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
+#define RHOMIN    (1.e-14)
+#define UUMIN    (1.e-16)
+#define RHOMINLIMIT (1.e-30)
+#define UUMINLIMIT  (1.e-30)
+#else
+#define RHOMIN    (1.e-7) 
+#define UUMIN    (1.e-9)
+#define RHOMINLIMIT (1.e-20)
+#define UUMINLIMIT  (1.e-20)
+#endif
+
+#define POWRHO (2.0)
+#define FLOORFACTOR (1.0)
+#define BSQORHOMAX (25.*FLOORFACTOR)
+#define BSQOUMAX (750.*FLOORFACTOR)
+#define UORHOMAX (150.*FLOORFACTOR)
+
+/* Max. value of gamma, the lorentz factor */
+#define GAMMAMAX (80.)
+#define GAMMAMAX_RAD (50.)
+#if (NEUTRINOS_M1)
+#define GAMMAMAX_NU (50.)
+#endif
+
+/*Max value of electron temperature in Kelvin*/
+#define TMAX (1.e15)
+
+/*Runtime in hours*/
+#define RUNTIME (24.0)
+
+/*************************************************************************
+Numerical Parameters section
+*************************************************************************/
+/*Whether or not to use the 3D version of the code*/
+#define ThreeD (1)
+
+/*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
+#define GPU_ENABLED 1
+#define GPU_DEBUG 0
+#define CPU_OPENMP 0
+#define TIMER 1
+
+/*Set CUDA or HIP*/
+#define SHIP (0)
+#define SCUDA (1)
+
+/*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
+#define AMD (0)
+
+/*Enable if running on the new VOLTA GPUs*/
+#define V100 (1)
+
+/*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
+#define GPU_DIRECT 1
+
+/*Set to high value to circumvent cross-GPU GPU_DIRECT*/
+#define GPU_SET (10000)
+
+/*Memory of each GPU in GB. Not relevant when CUDA_MEM_CALC is enabled*/
+#define GPU_MEM (11.0)
+
+/*Calculate memory directly using embedded CUDA functions; Overrides GPU_MEM */
+#define CUDA_MEMCALC (1)
+
+/*Clean memory at refinement: Decreases memory consumption and speed at refinement*/
+#define MEM_CLEAN (1)
+
+/*Clean temporary GPU transfer buffers*/
+#define CLEAN_TEMP_BUFFERS_GPU (0)
+
+/*Memory of the node*/
+#define CPU_MEM (30.0)
+
+/*Maximum tag number for MPI messages so not to overflow*/
+#define MPI_TAG_MAX 1264576
+
+/*Enable parallel I/0*/
+#define PARALLEL_IO (0)
+
+/*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
+#define COPY_BFIELD 1
+
+/*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
+#define NB_LOCAL (1000)
+
+/*Define number of blocks for the first AMR level in all three dimensions*/
+#define NB_1 8
+#define NB_2 12
+#define NB_3 2
+
+/*Set block size in each dimension*/
+#define BS_1 50
+#define BS_2 32
+#define BS_3 48
+
+/*Set the maximum number of refinement levels*/
+#define N_LEVELS_3D 3
+
+/*Use nested Cartesian grid*/
+#define GRID_CARTESIAN (0)
+
+/*Set the number of *extra* base layers in Cartesian grid*/
+#define N_LEVELS_CART (0)
+
+/*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
+#if(BS_1==1)
+#define REF_1 0
+#else
+#define REF_1 1
+#endif
+#if(BS_2==1)
+#define REF_2 0
+#else
+#define REF_2 1
+#endif
+#if(BS_3==1)
+#define REF_3 0
+#else
+#define REF_3 1
+#endif
+
+/*Number of GPUs per MPI rank*/
+#define N_GPU 1
+
+/*If you want to call multiple blocks from multiple threads. Will not *allways* improve performance and SLOWS down performance of workstation, so not recommended for non-cluster use!*/
+#define GPU_OPENMP 0
+
+/*Define if you want divb to be renormalized by the local magnitude of the magnetic fields, divb_magnitude*/
+#define NORMALIZE_DIVB 1
+
+/*Define SMALL_DIVB so that it's a small positive number you add at the calculation of divb_magnitude*/
+#define SMALL_DIVB 1.e-300
+
+/*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
+#define DEREFINE_POLE (1)
+
+/*Number of internal derefinement levels*/
+#define N_LEVELS_1D_INT (3)
+
+/*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
+#define TIMESTEP_JET 0
+
+//Use Z-order at 0-level for load balancing
+#define Z_ORDER 1
+
+/*Set the maximum weight for load balancing of a heavy block around the pole*/
+#define MAX_WEIGHT (1)
+
+/*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
+If a very high value is needed, lowerin Courant factor may increase stability*/
+#define AMR_MAXTIMELEVEL 32
+
+/*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
+#define AMR_SWITCHTIMELEVEL 16
+
+/*Use entropy evolution in jet*/
+#define JET_ENTROPY (0)
+
+/*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
+#define DUMPFACTOR (60)
+
+/*Use prestepping for load balancing with HTS*/
+#define PRESTEP 0
+
+/*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
+#define PRESTEP2 0
+
+/*Wheter ot not to smooth out fluxes at AMR boundaries*/
+#define AVG_FLUXES (0)
+
+/*Wheter ot not to smooth out EMFs at AMR boundaries*/
+#define AVG_EMF (0)
+
+/*Use advanced reconstruction for internal derefinement*/
+#define RECONSTRUCT_INTERNAL (0)
+
+/*Used for loading in old data files. Do not touch!*/
+#define REVERSE_ORDERING 0
+
+/*The time between refinement(AMR) steps*/
+#define TREF (100.0*R_NS/4.0)
+
+//The time between recalculating metric
+#define TMETRIC (10.0)
+
+/*Select the courant factor for the timestep*/
+#define COUR (0.8)
+
+/*Evolve entropy for more stability*/
+#define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
+#define DOKTOT 1  //Evolve entropy to do the above even more accurately
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY_VARGAMMA (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma for electrons in case of 2T fluid
+
+/*Enable/disable PPM spatial reconstruction. Never enable both*/
+#define PPM (1)
+#define PPM_FLATTENER (0)
+
+/*Enable/disable van Leer spatial reconstruction. Never enable both*/
+#define LEER (0) //Not working
+
+/*Wheter to set floors in ZAMO frame*/
+#define ZAMO_FLOOR (0)
+
+/*Wheter to set floors in drift frame*/
+#define DRIFT_FLOOR (1)
+
+/*Whether or not to allow inflow for fluxes (see fix_flux())*/
+#define INFLOW 0
+
+/*Enable or disable the HLLC solver.*/
+#define HLLC (0)
+
+/*Enable or disable the HLLD solver. Does not work yet!*/
+#define HLLD (0)
+
+/*Whether or not to use a stagger magnetic field*/
+#define STAGGERED (1)
+
+/*Whether or not to use a stagger electric field*/
+#define STAGGERED_E (0)
+
+/*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
+#define NSY (0)
+
+/* how many cells near the poles to stabilize, choose 0 for no stabilization */
+#define POLEFIX 2
+
+/*Set values for periodic, reflective and transmissive boundary conditions*/
+#define PERIODIC 1
+#define REFLECTIVE 2
+#define TRANSMISSIVE 3
+#define OUTFLOW 4
+#define NEUTRON_STAR_BC 5
+
+/*Set boundary conditions in first dimensions; possible options: OUTFLOW, PERIODIC*/
+#if(NEUTRON_STAR)
+#define BOUND_TYPE1 NEUTRON_STAR_BC
+#else
+#define BOUND_TYPE1 OUTFLOW
+#endif
+
+/*Set boundary conditions in second dimensions; possible options: OUTFLOW, TRANSMISSIVE, PERIODIC*/
+#if(((BS_3*NB_3)>1) && (SPHERICAL || SPHERICAL_GR))
+#define BOUND_TYPE2 TRANSMISSIVE
+#elif(SPHERICAL || SPHERICAL_GR)
+#define BOUND_TYPE2 REFLECTIVE
+#else
+#define BOUND_TYPE2 OUTFLOW
+#endif
+
+/*Set boundary conditions in third dimensions; possible options: OUTFLOW and PERIODIC*/
+#if(BS_3*NB_3==1)
+#define BOUND_TYPE3 -1
+#elif(SPHERICAL || SPHERICAL_GR)
+#define BOUND_TYPE3 PERIODIC
+#else
+#define BOUND_TYPE3 OUTFLOW
+#endif
+
+/*Use smaller than usual cutout of 10^-13*/
+#define TRANS_BOUND_SMALL (1)
+
+/* A numerical convenience to represent a small non-zero quantity compared to unity:*/
+#define SMALL	(1.e-20)
+
+/* maximum fractional increase in timestep per timestep */
+#define SAFE	(1.3)
+
+/*Use a small excission around the pole*/
+#if(SPHERICAL || SPHERICAL_GR)
+#define COORDSINGFIX 1
+#else
+#define COORDSINGFIX 0
+#endif
+
+// whether to move polar axis to a bit larger theta
+// theta value where singularity is displaced to
+#define SINGSMALL (1.E-20)
+
+/*Define local work size for GPU, for NVIDIA Kepler,Pascal, Volta and AMD GCN chose 64*/
+#define LOCAL_WORK_SIZE 64
+
+/*Set grid parameters X1*/
+#define RADEXP 1.0
+#define RTRANS 5000000.
+#define RB  0.
+
+/*Set grid parameters X2*/
+//Big torus, very strongly collimating
+//#define BRAVO (0.6)
+//#define TANGO (1.0)
+//#define CHARLIE (0.8)
+//#define DELTA (3.0)
+
+//Uniform Grid
+#define BRAVO (0.0)
+#define TANGO (1.0)
+#define CHARLIE (0.0)
+#define DELTA (3.0)
+
+/*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
+#define DOCYLINDRIFYCOORDS (0)
+
+/*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
+#define ZIRI_DUMP 0
+
+/*Whether to output a reduced resolution file*/
+#define DUMP_SMALL (0)
+#define REDUCE_FACTOR1 (2)
+#define REDUCE_FACTOR2 (2)
+#define REDUCE_FACTOR3 (2)
+
+/*Whether to dump diag file*/
+#define DUMP_DIAG (0)
+#define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
+#define NDIAG (3) // number of diagnostic variables
+
+/*Enable MPI; Old remnant do not touch!*/
+#define MPI_enable 1
+
+/*For variable radial boundary*/
+#define DO_RBOUND (0)
+#define RBOUND_INFLOW (0)
+#define RBOUND (20.)
+
+/*Enable constant boundary conditions*/
+#define CONSTANT_BC (0)
+
+/*Enable Radiation*/
+#define RAD_M1 (0)
+
+/*Enable radiation ICs with gamma=4/3. Suitable for high M_eddington sources. Disable for LLAGN*/
+#define HIGH_MDOT (0)
+
+/* number of species evolved */
+#define NU_SPECIES (3)       
+
+/* number of Nulib table entries for each variable */
+#define NULIB_RHO   (82) //(70)
+#define NULIB_TEMP  (65) //(60)
+#define NULIB_YE    (51) //(50)
+
+/* Nulib table variable bounds  */
+#define nulib_dhi (14.0) 
+#define nulib_dlo (6.0) //(8.0) 
+#define nulib_thi (12.24) //(13.0)
+#define nulib_tlo (8.76) //(9.763594473254775)
+#define nulib_yhi (0.6) //(0.55)
+#define nulib_ylo (0.01)
+
+#define nulib_yelo_threshold (nulib_ylo + (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
+#define nulib_yehi_threshold (nulib_yhi - (nulib_yhi - nulib_ylo) / (NULIB_YE - 1.))
+
+/* Nulib table coefficients mnemonics */
+#define NULIB_VARS (4)
+#define NU_EMISSIVITY (1)
+#define NU_ABSORPTION (2)
+#define NU_SCATTERING (3)
+#define NU_EMISSIVITY_N (4)
+
+/*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
+#define COOL_STOP (0)
+#define STOP_SCALEHEIGHT (0.02)
+
+/*Enalbe Comptonization*/
+#define COMPTON (1)
+
+/*Enable advenced opacities*/
+#define OP_EXTRA (0)
+
+/*Set AGN opacity scaling for OP_EXTRA*/
+#define AGN (1)
+
+/*Enable photon number evolution*/
+#define P_NUM (0)
+
+/*Enable 2-temperature evolution*/
+#define TWO_T (0)
+
+/*Fractional floor on entropy*/
+#define FLOOR_ENTROPY (0.0001)
+
+/*Choose heating model. Only one can be selected. If both are set to 0, delta_e=0.5*/
+#define HEAT_HOWES (0)
+#define HEAT_ROWAN (1)
+
+/*Wheter to use constant GAMMA: game=GAMMA gami=GAMMA*/
+#define CONSTANTGAMMA (1)
+
+/*Wheter to use fixed gamma: game=GAMMAE and gami=GAMMAE*/
+#define FIXEDGAMMA (0)
+
+/*Wheter to use variable gamma as in Sadowski+2017*/
+#define VARGAMMA (0)
+
+/*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
+#if(CONSTANTGAMMA)
+#define GAMMAE (GAMMA)
+#else
+#define GAMMAE (4./3.)
+#endif
+
+/*Enable or disable library with Bessel functions*/
+#define GSL_ENABLED (0)
+
+/*Enable Resistivity*/
+#define RESISTIVE (0) 
+
+/*Set resistivity coefficient*/
+#define ETA (0.0)
+
+/*Enable IMEX*/
+#if (RADM1_SUBCYCLING)
+#define DO_IMEX (0)
+#else 
+#define DO_IMEX (0) // as ML said: disable IMEX for now; source terms might be broken 
+#endif 
+
+/*Wheter to use dynamical load balancing*/
+#define DYNAMIC_LOADBALANCE (0)
+
+/*Wheter to use task-based parallelism*/
+#define TASK_BASED (0)
+
+/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
+#if(RESISTIVE || RAD_M1)
+#define HLLF  (0)
+#define LAXF  (1)
+#else
+#define HLLF  (1)
+#define LAXF  (0)
+#endif
+
+//Abundace constants
+#define Z_AB (0.02)
+#define Y_AB (0.28)
+#define X_AB (0.70)
+
+// CGS constants needed for radiation
+#define ARAD (7.5657e-15) /*Radiation density constant*/
+#define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
+#define ME_CGS (9.1094e-28) /*Mass of electron*/
+#define MMW (1.69) /*Mean molecular weight*/
+#define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
+#define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
+#define PLANCK_CGS (6.6260755e-27) /*Planck's constant*/
+#define STEFAN_CGS (5.67051e-5) /*Stefan-Boltzmann constant*/
+#define FINE_CGS (7.29735308e-3)
+#define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
+#define E_CGS (4.80320427e-10) /*Elementary charge*/
+#define C_CGS (2.99792458e10) /*Speed of light*/
+#if (RADM1_SUBCYCLING)
+#define M_SGRA_SOLAR (0.1) /* Solar masses */
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#if (BHNSQ2_1)
+#define M_SGRA_SOLAR (3.795) /* Solar masses */
+#elif (BHNSQ2_2)
+#define M_SGRA_SOLAR (2.67396) /* Solar masses */
+#elif (FORNAX_IC)
+#define M_SGRA_SOLAR (4.03) /* Solar masses */
+#endif
+#else
+#define M_SGRA_SOLAR (8.07) /* Solar masses */
+#endif
+#elif (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define M_SGRA_SOLAR (2.5) /* Solar masses */
+#else
+#define M_SGRA_SOLAR (4.0) /* Solar masses */
+#endif
+#else 
+#define M_SGRA_SOLAR (6.4e9) /* Solar masses */
+#endif
+#define M_SOLAR_CGS (1.998e33) /* Solar mass */
+#define MASS_RATIO (MH_CGS/ME_CGS)
+#define G_CGS (6.67259e-8) /* Gravitational constant */
+#define CK_CGS (8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS))
+#define MU_I (4.0/(4.0*X_AB+Y_AB))
+#define MU_E (2.0/(1.0+X_AB))
+#define MU_G (4.0/(6*X_AB+Y_AB+2.0))
+#define BASIC (0)
+#define TYPE2 (1)
+#define TYPE3 (2)
+#define IONS (0)
+#define ELECTRONS (1)
+
+// Constants needed for neutrinos
+#define MP_CGS (1.6726231e-24)
+#define MN_CGS (1.6749286e-24)
+
+// Scaling from code units to cgs units
+#define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
+#define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
+//#define MASS_DENSITY_SCALE (3.1)
+//#define MASS_DENSITY_SCALE (0.1*0.02*5e-9*3.1)
+//#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001) //M87
+//#define MASS_DENSITY_SCALE (0.001*0.00001*0.000000002*3.1) //Sgr A*
+//#define MASS_DENSITY_SCALE (1e-15) //Sgr A*
+#if(NEUTRINOS_M1 || DOHELM)
+#if (RADM1_SUBCYCLING)
+#define MASS_DENSITY_SCALE (0.0000001)
+#elif (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#if (BHNSQ2)
+#if (BHNSQ2_1)
+#define MASS_DENSITY_SCALE (12403425968728.7) // (1.87456e-5)
+#elif (BHNSQ2_2)
+#define MASS_DENSITY_SCALE (1949439399418.96)
+#elif (FORNAX_IC)
+#define MASS_DENSITY_SCALE (1.02e14) // (4.762731e13)
+#endif
+#else
+#define MASS_DENSITY_SCALE (M_SGRA_SOLAR * M_SOLAR_CGS / (R_G_CGS * R_G_CGS * R_G_CGS) * (6.63555e-7) * M_SGRA_SOLAR * M_SGRA_SOLAR)
+#endif
+#else
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+#define MASS_DENSITY_SCALE (1e12)
+#endif
+#endif
+#else
+#if (WHICHPROBLEM == COLLAPSAR)
+#if (COLLAPSAR_GR1D)
+#define MASS_DENSITY_SCALE (604401395800000.0)
+#else
+#define MASS_DENSITY_SCALE (244475423533.749)
+#endif
+#else
+//#define MASS_DENSITY_SCALE (3.1)
+#define MASS_DENSITY_SCALE (0.001*0.00001*0.0000000002*3.1*0.000001*0.1/30.0) //M87
+//#define MASS_DENSITY_SCALE (1e12)
+#endif
+#endif
+#define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
+#define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
+#define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
+
+//IMEX constant
+#define Y_IMEX (0.29289321881)
+
+/*************************************************************************
+MNEMONICS SECTION
+*************************************************************************/
+/* mnemonics for primitive vars; conserved vars */
+#define RHO	(0)	
+#define UU	(1)
+#define U1	(2)
+#define U2	(3)
+#define U3	(4)
+#define B1	(5)
+#define B2	(6)
+#define B3	(7)
+#define KTOT (8)
+//whether the evolve the passive scalar, which is 1 whenever the floors are activated (Neutron Star)
+#define DOFLR    (NEUTRON_STAR)
+#define FLR     (8+DOKTOT)   
+#if DOFLR
+#define FLRFRAC (1+FLR)
+#else
+#define FLRFRAC (FLR)
+#endif
+#define PS1START (USE_PS1START+FLRFRAC)
+#define UU_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START))
+#define U1_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+1)
+#define U2_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+2)
+#define U3_RAD	(8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+3)
+#define E1 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4)
+#define E2 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+1)
+#define E3 (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+2)
+#define ENTRE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3)
+#define ENTRI (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+1)
+#define PHOTON (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2)
+#define YE (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1)
+#define XALPHA  (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+0)
+#define XATM    (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+1)
+#define UU_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2)
+#define U1_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+1)
+#define U2_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+2)
+#define U3_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+3)
+#define NUMBER_NU (8+DOKTOT+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*4+RESISTIVE*3+TWO_T*2+RAD_M1*P_NUM*1+DO_YE*1+DONUCLEAR*2+4)
+#define NPR_NU (5)
+#define index_nu(PRIM_NU, species) (NPR_NU * species + PRIM_NU) // species = 0, 1, 2  
+   
+
+
+
+
+/* mnemonics for centering of grid functions */
+#define LEFT (0)
+#define RIGHT (1)
+#define FACE1	(0)	
+#define FACE2	(1)
+#define CORN	(2)
+#define CENT	(3)
+#define FACE3	(4)
+#define CORN2	(5)
+#define CORN3	(6)
+
+//For variable inversions
+#define UTCON1 	2
+#define UTCON2 	3
+#define UTCON3 	4
+#define BCON1	5
+#define BCON2	6
+#define BCON3	7
+
+//For variable inversions
+#define QCOV0	1
+#define QCOV1	2
+#define QCOV2	3
+#define QCOV3	4
+
+/* mnemonics for slope limiter */
+#define MC	(0)
+#define VANL	(1)
+#define MINM	(2)
+
+/* mnemonics for diagnostic calls */
+#define INIT_OUT	    (0)
+#define DUMP_OUT	    (1)
+#define IMAGE_OUT	    (2)
+#define LOG_OUT		    (3)
+#define FINAL_OUT	    (4)
+#define DUMP_OUT_REDUCED	(5)
+
+/* failure modes */
+#define FAIL_UTOPRIM        (1)
+#define FAIL_VCHAR_DISCR    (2)
+#define FAIL_COEFF_NEG	    (3)
+#define FAIL_COEFF_SUP	    (4)
+#define FAIL_GAMMA          (5)
+#define FAIL_METRIC         (6)
+
+/*For Windows users*/
+#ifndef M_PI 
+#define M_PI 3.14159265358979323846264338327950288 
+#define M_PI_2 (M_PI*0.5)
+#endif 
+
+/*Mnemonics for AMR parameters*/
+#define NV 185
+#define AMR_ACTIVE 0
+#define AMR_LEVEL 1
+#define AMR_REFINED 2
+#define AMR_COORD1 3
+#define AMR_COORD2 4
+#define AMR_COORD3 5
+#define AMR_PARENT 6
+#define AMR_CHILD1 7
+#define AMR_CHILD2 8
+#define AMR_CHILD3 9
+#define AMR_CHILD4 10
+#define AMR_CHILD5 11
+#define AMR_CHILD6 12
+#define AMR_CHILD7 13
+#define AMR_CHILD8 14
+#define AMR_NBR1 15
+#define AMR_NBR2 16
+#define AMR_NBR3 17
+#define AMR_NBR4 18
+#define AMR_NBR5 19
+#define AMR_NBR6 20
+#define AMR_CORN1 21
+#define AMR_CORN2 22
+#define AMR_CORN3 23
+#define AMR_CORN4 24
+#define AMR_CORN5 25
+#define AMR_CORN6 26
+#define AMR_CORN7 27
+#define AMR_CORN8 28
+#define AMR_CORN9 29
+#define AMR_CORN10 30
+#define AMR_CORN11 31
+#define AMR_CORN12 32
+#define AMR_NODE 33
+#define AMR_POLE 34
+#define AMR_NUMBER 35
+#define AMR_TIMELEVEL 36
+#define AMR_TAG 37
+#define AMR_CORN1D 38
+#define AMR_CORN2D 39
+#define AMR_CORN3D 40
+#define AMR_CORN4D 41
+#define AMR_CORN5D 42
+#define AMR_CORN6D 43
+#define AMR_CORN7D 44
+#define AMR_CORN8D 45
+#define AMR_CORN9D 46
+#define AMR_CORN10D 47
+#define AMR_CORN11D 48
+#define AMR_CORN12D 49
+#define AMR_CORN1D_1 50
+#define AMR_CORN2D_1 51
+#define AMR_CORN3D_1 52
+#define AMR_CORN4D_1 53
+#define AMR_CORN5D_1 54
+#define AMR_CORN6D_1 55
+#define AMR_CORN7D_1 56
+#define AMR_CORN8D_1 57
+#define AMR_CORN9D_1 58
+#define AMR_CORN10D_1 59
+#define AMR_CORN11D_1 60
+#define AMR_CORN12D_1 61
+#define AMR_CORN1D_2 62
+#define AMR_CORN2D_2 63
+#define AMR_CORN3D_2 64
+#define AMR_CORN4D_2 65
+#define AMR_CORN5D_2 66
+#define AMR_CORN6D_2 67
+#define AMR_CORN7D_2 68
+#define AMR_CORN8D_2 69
+#define AMR_CORN9D_2 70
+#define AMR_CORN10D_2 71
+#define AMR_CORN11D_2 72
+#define AMR_CORN12D_2 73
+#define RM_ORDER 74
+#define GDUMP_WRITTEN 75
+#define AMR_PRESTEP 76
+#define AMR_GPU 77
+#define AMR_NSTEP 78
+#define AMR_IPROBE1 79
+#define AMR_IPROBE1_1 80
+#define AMR_IPROBE1_2 81
+#define AMR_IPROBE1_3 82
+#define AMR_IPROBE1_4 84
+#define AMR_IPROBE2 85
+#define AMR_IPROBE2_1 86
+#define AMR_IPROBE2_2 87
+#define AMR_IPROBE2_3 88
+#define AMR_IPROBE2_4 89
+#define AMR_IPROBE3 90
+#define AMR_IPROBE3_1 91
+#define AMR_IPROBE3_2 92
+#define AMR_IPROBE3_3 93
+#define AMR_IPROBE3_4 94
+#define AMR_IPROBE4 95
+#define AMR_IPROBE4_1 96
+#define AMR_IPROBE4_2 97
+#define AMR_IPROBE4_3 98
+#define AMR_IPROBE4_4 99
+#define AMR_IPROBE5 100
+#define AMR_IPROBE5_1 101
+#define AMR_IPROBE5_2 102
+#define AMR_IPROBE5_3 103
+#define AMR_IPROBE5_4 104
+#define AMR_IPROBE6 105
+#define AMR_IPROBE6_1 106
+#define AMR_IPROBE6_2 107
+#define AMR_IPROBE6_3 108
+#define AMR_IPROBE6_4 109
+#define AMR_LEVEL1 110
+#define AMR_LEVEL2 111
+#define AMR_LEVEL3 112
+#define AMR_NBR1_3 113
+#define AMR_NBR1_4 114
+#define AMR_NBR1_7 115
+#define AMR_NBR1_8 116
+#define AMR_NBR2_1 117
+#define AMR_NBR2_2 118
+#define AMR_NBR2_3 119
+#define AMR_NBR2_4 120
+#define AMR_NBR3_1 121
+#define AMR_NBR3_2 122
+#define AMR_NBR3_5 123
+#define AMR_NBR3_6 124
+#define AMR_NBR4_5 125
+#define AMR_NBR4_6 126
+#define AMR_NBR4_7 127
+#define AMR_NBR4_8 128
+#define AMR_NBR5_1 129
+#define AMR_NBR5_3 130
+#define AMR_NBR5_5 131
+#define AMR_NBR5_7 132
+#define AMR_NBR6_2 133
+#define AMR_NBR6_4 134
+#define AMR_NBR6_6 135
+#define AMR_NBR6_8 136
+#define AMR_CORN1_1 137
+#define AMR_CORN1_2 138
+#define AMR_CORN2_1 139
+#define AMR_CORN2_2 140
+#define AMR_CORN3_1 141
+#define AMR_CORN3_2 142
+#define AMR_CORN4_1 143
+#define AMR_CORN4_2 144
+#define AMR_CORN5_1 145
+#define AMR_CORN5_2 146
+#define AMR_CORN6_1 147
+#define AMR_CORN6_2 148
+#define AMR_CORN7_1 149
+#define AMR_CORN7_2 150
+#define AMR_CORN8_1 151
+#define AMR_CORN8_2 152
+#define AMR_CORN9_1 153
+#define AMR_CORN9_2 154
+#define AMR_CORN10_1 155
+#define AMR_CORN10_2 156
+#define AMR_CORN11_1 157
+#define AMR_CORN11_2 158
+#define AMR_CORN12_1 159
+#define AMR_CORN12_2 160
+#define AMR_NBR1P 161
+#define AMR_NBR2P 162
+#define AMR_NBR3P 163
+#define AMR_NBR4P 164
+#define AMR_NBR5P 165
+#define AMR_NBR6P 166
+#define AMR_CORN1P 167
+#define AMR_CORN2P 168
+#define AMR_CORN3P 169
+#define AMR_CORN4P 170
+#define AMR_CORN5P 171
+#define AMR_CORN6P 172
+#define AMR_CORN7P 173
+#define AMR_CORN8P 174
+#define AMR_CORN9P 175
+#define AMR_CORN10P 176
+#define AMR_CORN11P 177
+#define AMR_CORN12P 178
+#define AMR_TAG1 179
+#define AMR_TAG3 180
+#define AMR_WEIGHT 181
+#define GDUMP_WRITTEN_REDUCED 182
+#define AMR_CARTFLAG 183
+#define AMR_RBOUNDFLAG 184
+
+//Same as above but for old datasets used in grid_read function
+#define READ_AMR_COORD1 (0)
+#define READ_AMR_COORD2 (1)
+#define READ_AMR_COORD3 (2)
+#define READ_AMR_LEVEL1 (3)
+#define READ_AMR_LEVEL2 (4)
+#define READ_AMR_LEVEL3 (5)
+#define READ_AMR_LEVEL (6)
+#define READ_AMR_ACTIVE (7)
+
+/*************************************************************************
+Variable Inversion Section
+*************************************************************************/
+#define G_ISOTHERMAL (1.)
+
+/* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
+#define USE_ISENTROPIC 1
+
+#if( USE_ISENTROPIC ) 
+#define G_ATM GAMMA
+#else
+#define G_ATM G_ISOTHERMAL
+#endif
+
+//Use Newman&Hamhin inversion
+#define NEWMAN (0)
+
+#define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
+#define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */
+#define MIN_NEWT_TOL  1.0e-10    /* Max. of tolerance allowed for Newton-Raphson iterations */
+#define EXTRA_NEWT_ITER 2
+#define NEWT_TOL2     1.0e-15      /* TOL of new 1D^*_{v^2} gnr2 method */
+#define MIN_NEWT_TOL2 1.0e-10  /* TOL of new 1D^*_{v^2} gnr2 method */
+#define W_TOO_BIG	1.e20	/* \gamma^2 (\rho_0 + u + p) is assumedto always be smaller than this.  Thisis used to detect solver failures */
+#define UTSQ_TOO_BIG	1.e20    /* \tilde{u}^2 is assumed to be smallerthan this.  Used to detect solverfailures */
+
+#define FAIL_VAL  1.e30    /* Generic value to which we set variables when a problem arises */
+#define NUMEPSILON (2.2204460492503131e-16)
+
+/*Set dimensions for Utoprim routines*/
+#define NEWT_DIM_2 2
+#define NEWT_DIM_1 1
+
+// Section with DONUCLEAR constants
+#define x_atm_cutoff (0.01)
+#define tgas_cutoff (5e9)
+#define Qalpha (28.3 * 1.60217733e-6)
+#define amu (1.6605402e-24)
+#define m_alpha (4.0 * amu)
+
+/*************************************************************************
+Section with EOS constants
+*************************************************************************/
+#define EOSIMAX (541)   
+#define EOSJMAX (201)   
+// Log10 of EOS quantity limits
+#define eos_tlo (3.0)   
+#define eos_thi (13.0)
+#define eos_dlo (-12.0) 
+#define eos_dhi (15.0)
+// EOS quantity limits
+#if (DOHELM_LOWTEMP)
+#define eos_temp_low (1e-10)
+#else
+#define eos_temp_low (1e3)
+#endif
+#define eos_temp_up (1e13)
+#define eos_dens_low (1e-12)
+#define eos_dens_up (1e15)
+
+#define MAXLEN (1024)
+
+// tolerances 
+#define EOS_TEMP_TOL (1.e-10)
+#define EOS_TOL (1.e-10)
+#define EOS_ITERATIONS (50)
+
+// becomes true if variables for Aprox13t network are set
+#define bAprox13t (0)
+
+// Use linear interpolation of the EOS table
+#define EOS_LINEAR (1)
+
+// if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
+// otherwise, set EOS_COULOMB_CORR to 0
+#define eos_coulombMult (1.0)
+#define EOS_COULOMB_CORR (0)
+#define EOS_COULOMB_CORR_GPU (0)
+
+// from eos_helmConstData
+#define avo (6.0221367e23)
+#define kerg (1.380658e-16)
+#define kev (8.617385e-5)
+#define k2mev (8.617385e-11)
+#define mev2k (1.160445e10)
+#define avoinv (1.0e0 / avo)
+#define kergavo (kerg * avo)
+#define c_light (2.99792458e10)
+#define h_planck (6.6260755e-27)
+#define hbar_planck (1.05457266e-27)
+#define ssol (5.67051e-5)
+#define asol (4.0e0 * ssol / c_light)
+#define asoli3 (asol / 3.0e0)
+#define asoli3_inv (3.0e0 / asol)
+#define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+#define selecon ((2.0e0 * M_PI * 0.000548 * amu * kerg) / (h_planck * h_planck))
+
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#define Mbh_cgs (M_SGRA_SOLAR * 1.99e33)
+#else
+#define Mbh_cgs (3 * 1.99e33)
+#endif 
+
+#define G_cgs (6.67259e-8)
+
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+#define eos_qe (4.8032068e-10)
+#define esqu (eos_qe * eos_qe)
+
+// conversion factors for EOS
+// DANAT: finish!
+#define conv_T_CODE2CGS (1.0)
+#define conv_dens_CODE2CGS MASS_DENSITY_SCALE //(c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
+#define conv_dens_CGS2CODE (1.0 / MASS_DENSITY_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs) / (c_light * c_light * c_light * c_light * c_light * c_light)
+#define conv_pres_CODE2CGS PRESSURE_SCALE //((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
+#define conv_pres_CGS2CODE (1.0 / PRESSURE_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
+#define conv_ener_CODE2CGS (c_light * c_light)
+#define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
+#define conv_entr_CODE2CGS (kergavo)
+#define conv_entr_CGS2CODE (1.0 / kergavo)
+
+//For the uniform background coulomb correction
+#define eos_a1 (-0.898004e0)
+#define eos_b1 (0.96786e0)
+#define eos_c1 (0.220703e0)
+#define d1cc (-0.86097e0)
+#define e1cc (2.5269e0)
+#define eos_a2 (0.29561e0)
+#define eos_b2 (1.9885e0)
+#define eos_c2 (0.288675e0)
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+
+// ***********Beginning of statement function declarations **********
+// quintic hermite polynomial statement functions
+// psi0 and its derivatives
+#define psi0(zFunc) (zFunc*zFunc*zFunc * ( zFunc * (-6.0e0*zFunc + 15.0e0) -10.0e0) + 1.0e0)
+#define dpsi0(zFunc) (zFunc*zFunc * ( zFunc * (-30.0e0*zFunc + 60.0e0) - 30.0e0))
+#define ddpsi0(zFunc) (zFunc* ( zFunc*( -120.0e0*zFunc + 180.0e0) -60.0e0))
+
+// psi1 and its derivatives
+#define psi1(zFunc) (zFunc*( zFunc*zFunc * ( zFunc * (-3.0e0*zFunc + 8.0e0) - 6.0e0) + 1.0e0))
+#define dpsi1(zFunc) (zFunc*zFunc * ( zFunc * (-15.0e0*zFunc + 32.0e0) - 18.0e0) +1.0e0)
+#define ddpsi1(zFunc) (zFunc * (zFunc * (-60.0e0*zFunc + 96.0e0) -36.0e0))
+
+// psi2  and its derivatives
+#define psi2(zFunc) (0.5e0*zFunc*zFunc*( zFunc* ( zFunc * (-zFunc + 3.0e0) - 3.0e0) + 1.0e0))
+#define dpsi2(zFunc) (0.5e0*zFunc*( zFunc*(zFunc*(-5.0e0*zFunc + 12.0e0) - 9.0e0) + 2.0e0))
+#define ddpsi2(zFunc) (0.5e0*(zFunc*( zFunc * (-20.0e0*zFunc + 36.0e0) - 18.0e0) + 2.0e0))
+
+#define h5(w0t, w1t, w2t, w0mt, w1mt, w2mt, w0d, w1d, w2d, w0md, w1md, w2md, fi) (fi[0]  *w0d*w0t   + fi[1]  *w0md*w0t  + fi[2]  *w0d*w0mt  + fi[3]  *w0md*w0mt + fi[4]  *w0d*w1t   + fi[5]  *w0md*w1t + fi[6]  *w0d*w1mt  + fi[7]  *w0md*w1mt + fi[8]  *w0d*w2t   + fi[9] *w0md*w2t + fi[10] *w0d*w2mt  + fi[11] *w0md*w2mt + fi[12] *w1d*w0t   + fi[13] *w1md*w0t + fi[14] *w1d*w0mt  + fi[15] *w1md*w0mt  + fi[16] *w2d*w0t   + fi[17] *w2md*w0t + fi[18] *w2d*w0mt  + fi[19] *w2md*w0mt + fi[20] *w1d*w1t   + fi[21] *w1md*w1t + fi[22] *w1d*w1mt  + fi[23] *w1md*w1mt + fi[24] *w2d*w1t   + fi[25] *w2md*w1t + fi[26] *w2d*w1mt  + fi[27] *w2md*w1mt + fi[28] *w1d*w2t   + fi[29] *w1md*w2t + fi[30] *w1d*w2mt  + fi[31] *w1md*w2mt + fi[32] *w2d*w2t   + fi[33] *w2md*w2t + fi[34] *w2d*w2mt  + fi[35] *w2md*w2mt)
+
+//  cubic hermite polynomial statement functions
+//  psi0 & derivatives
+#define xpsi0(zFunc) (zFunc * zFunc * (2.0e0*zFunc - 3.0e0) + 1.0)
+
+//  psi1 & derivatives
+#define xpsi1(zFunc) (zFunc * ( zFunc * (zFunc - 2.0e0) + 1.0e0))
+
+/*************************************************************************
+Section with derived quantities
+*************************************************************************/
+/** Grid size without AMR **/
+#define N1  (NB_1*BS_1)
+#define N2  (NB_2*BS_2)
+#define N3  (NB_3*BS_3)
+
+/*Set number of boundary cells in grid depending on order of spatial reconstruction*/
+#define NG (2+PPM)
+#define N1M ((N1>1)?(N1+2*NG):(1))
+#define N2M ((N2>1)?(N2+2*NG):(1))
+#define N3M ((N3>1)?(N3+2*NG):(1))
+
+#define N1G ((N1>1)?(NG):(0))
+#define N2G ((N2>1)?(NG):(0))
+#define N3G ((N3>1)?(NG):(0))
+
+#define D1 (N1>1)
+#define D2 (N2>1)
+#define D3 (N3>1)
+
+/*Set variable numbers*/
+#define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
+#define NPR_R      (4)        /* number of radiation primitive variables */
+#define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
+#define NPR_PH     (1)        /* Number density of photons*/
+//#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
+#define NPR_E      (3)        /* number of electric field primitive variables */
+#define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
+#define NPR        (NPR_U+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+RAD_M1*P_NUM*NPR_PH+RAD_M1*DO_YE*1+RAD_M1*DONUCLEAR*2+RAD_M1*NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
+#define NDIM       (4)        /* number of total dimensions.  Never changes */
+#define NPG        (5)        /* number of positions on grid for grid functions */
+#define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
+#define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
+#define NIMG       (4)        /* Number of types of images to make, kind of */
+#define NFAIL	   (5)        /* Number of types of failure images to make*/
+
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM+1*DO_YE+2*DONUCLEAR+(5+1)*NEUTRINOS_M1*NU_SPECIES) //+NEUTRON_STAR*(1+DOFLR))
+
+/*Based on derefinement level near pole set total number of AMR levels*/
+#if(NB_2==6 && DEREFINE_POLE)
+#define N_LEVELS_1D 1
+#elif(NB_2 == 12 && DEREFINE_POLE)
+#define N_LEVELS_1D 2
+#elif(NB_2 == 24 && DEREFINE_POLE)
+#define N_LEVELS_1D 3
+#elif(NB_2 == 48 && DEREFINE_POLE)
+#define N_LEVELS_1D 4
+#elif(NB_2 == 96 && DEREFINE_POLE)
+#define N_LEVELS_1D 5
+#elif(NB_2 == 192 && DEREFINE_POLE)
+#define N_LEVELS_1D 6
+#elif(NB_2 == 384 && DEREFINE_POLE)
+#define N_LEVELS_1D 7
+#elif(NB_2 == 768 && DEREFINE_POLE)
+#define N_LEVELS_1D 8
+#elif(NB_2 == 1536 && DEREFINE_POLE)
+#define N_LEVELS_1D 9
+#else
+#define N_LEVELS_1D 0
+#endif
+#define N_LEVELS (N_LEVELS_1D+N_LEVELS_3D+N_LEVELS_CART)
+
+/*Calculate number of AMR blocks for different refinement levels and configurations*/
+#if(REF_3+REF_2+REF_1==2)
+#if (N_LEVELS==1)
+#define NB (NB_1*NB_2*NB_3)
+#elif(N_LEVELS==2)
+#define NB (NB_1*NB_2*NB_3*(4+1))
+#elif(N_LEVELS==3)
+#define NB (NB_1*NB_2*NB_3*(4*(4+1)+1))
+#elif(N_LEVELS==4)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4+1)+1)+1))
+#elif(N_LEVELS==5)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4+1)+1)+1)+1))
+#elif(N_LEVELS==6)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4+1)+1)+1)+1)+1))
+#elif(N_LEVELS==7)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==8)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==9)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4*(4*(4*(4*(4+1)+1)+1)+1)+1)+1)+1)+1))
+#endif
+#elif(REF_3+REF_2+REF_1==3)
+#if (N_LEVELS_3D==1)
+#define FACTOR1 (1)
+#define FACTOR2 (1)
+#elif(N_LEVELS_3D==2)
+#define FACTOR1 (8+1)
+#define FACTOR2 ((6)+1)
+#elif(N_LEVELS_3D==3)
+#define FACTOR1 (8*8+8+1)
+#define FACTOR2 ((4*8+2*6)+6+1)
+#elif(N_LEVELS_3D==4)
+#define FACTOR1 (8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8+2*(4*8+2*6))+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==5)
+#define FACTOR1 (8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==6)
+#define FACTOR1 (8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==7)
+#define FACTOR1 (8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==8)
+#define FACTOR1 (8*8*8*8*8*8*8+8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6)+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#elif(N_LEVELS_3D==9)
+#define FACTOR1 (8*8*8*8*8*8*8*8+8*8*8*8*8*8*8+8*8*8*8*8*8+8*8*8*8*8+8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8*8*8*8*8+2*(4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))))+4*8*8*8*8*8*8+2*(4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))))+4*8*8*8*8*8+2*(4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6))))+4*8*8*8+2*(4*8*8+2*(4*8+2*6)+4*8*8*8*8+2*(4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8*8+2*(4*8*8+2*(4*8+2*6))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
+#endif
+#if (N_LEVELS_1D==0)
+#if(DEREFINE_POLE)
+#define NB (NB_1*NB_3*(1*FACTOR1+2*FACTOR2))
+#elif(GRID_CARTESIAN)
+#define NB (NB_1*NB_2*NB_3*(N_LEVELS_CART+1)*FACTOR1)
+#else
+#define NB (NB_1*NB_2*NB_3*FACTOR1)
+#endif
+#elif (N_LEVELS_1D==1)
+#define NB (NB_1*NB_3*(2*4*FACTOR1+2*(FACTOR2)+4))
+#elif(N_LEVELS_1D==2)
+#define NB (NB_1*NB_3*((4*8*FACTOR1)+(2*2*FACTOR1+2*8)+(2*(FACTOR2)+10)))
+#elif(N_LEVELS_1D==3)
+#define NB (NB_1*NB_3*((8*16*FACTOR1)+(4*4*FACTOR1+4*16)+(2*2*FACTOR1+2*20)+(2*(FACTOR2)+22)))
+#elif(N_LEVELS_1D==4)
+#define NB (NB_1*NB_3*((16*32*FACTOR1)+(8*8*FACTOR1+8*32)+(4*4*FACTOR1+4*40)+(2*2*FACTOR1+2*44)+(2*(FACTOR2)+46)))
+#elif(N_LEVELS_1D==5)
+#define NB (NB_1*NB_3*((32*64*FACTOR1)+(16*16*FACTOR1+16*64)+(8*8*FACTOR1+8*80)+(4*4*FACTOR1+4*88)+(2*2*FACTOR1+2*92)+(2*(FACTOR2)+94)))
+#elif(N_LEVELS_1D==6)
+#define NB (NB_1*NB_3*((64*128*FACTOR1)+(32*32*FACTOR1+32*128)+(16*16*FACTOR1+16*160)+(8*8*FACTOR1+8*176)+(4*4*FACTOR1+4*184)+(2*2*FACTOR1+2*192)+(2*(FACTOR2)+190)))
+#elif(N_LEVELS_1D==7)
+#define NB (NB_1*NB_3*((128*256*FACTOR1)+(64*64*FACTOR1+64*256)+(32*32*FACTOR1+32*320)+(16*16*FACTOR1+16*352)+(8*8*FACTOR1+8*368)+(4*4*FACTOR1+4*384)+(2*2*FACTOR1+2*400)+(2*(FACTOR2)+382)))
+#elif(N_LEVELS_1D==8)
+#define NB (NB_1*NB_3*((256*512*FACTOR1)+(128*128*FACTOR1+128*512)+(64*64*FACTOR1+64*640)+(32*32*FACTOR1+32*704)+(16*16*FACTOR1+16*736)+(8*8*FACTOR1+8*768)+(4*4*FACTOR1+4*800)+(2*2*FACTOR1+2*832)+(2*(FACTOR2)+766)))
+#elif(N_LEVELS_1D==9)
+#define NB (NB_1*NB_3*((512*1024*FACTOR1)+(256*256*FACTOR1+256*1024)+(128*128*FACTOR1+128*1280)+(64*64*FACTOR1+64*1408)+(32*32*FACTOR1+32*1472)+(16*16*FACTOR1+16*1536)+(8*8*FACTOR1+4*1600)+(4*4*FACTOR1+4*1664)+(2*2*FACTOR1+2*1728)+(2*(FACTOR2)+766)))
+#endif
+#elif(REF_3+REF_2+REF_1==1)
+#if (N_LEVELS==1)
+#define NB (NB_1*NB_2*NB_3)
+#elif(N_LEVELS==2)
+#define NB (NB_1*NB_2*NB_3*(2+1))
+#elif(N_LEVELS==3)
+#define NB (NB_1*NB_2*NB_3*(2*(2+1)+1))
+#elif(N_LEVELS==4)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2+1)+1)+1))
+#elif(N_LEVELS==5)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2+1)+1)+1)+1))
+#elif(N_LEVELS==6)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2+1)+1)+1)+1)+1))
+#elif(N_LEVELS==7)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==8)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1)+1))
+#elif(N_LEVELS==9)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2*(2*(2*(2*(2+1)+1)+1)+1)+1)+1)+1)+1))
+#endif
+#endif
+
+#if(HLLC==1 || HLLD==1)
+#define FRAME_TRANSFORM (1)
+#else
+#define FRAME_TRANSFORM (0)
+#endif
+
+/*Define offset to make GPU memory access coalesced*/
+#define FIX_MEM1 (LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE)
+#define FIX_MEM2 (LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE)
+
+/*Macro declerations*/
+#define PLOOP  for(k=0;k<NPR;k++) //loop over all Dimensions; second rank loop */
+#define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
+#define DLOOPA for(j=0;j<NDIM;j++) //loop over all Space dimensions; second rank loop */
+#define SLOOP  for(j=1;j<NDIM;j++) for(k=1;k<NDIM;k++) //loop over all Space dimensions; first rank loop */
+#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables 
+#define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
+#define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
+#define delta(i,j) ( (i == j) ? 1. : 0.)
+#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
+#define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
+#define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)
+#if (N3>1)
+#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + BS_3 ;z++)
+#else
+#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + BS_3 ;z++)
+#endif
+#define ZSLOOP(istart,istop,jstart,jstop) for(i=istart;i<=istop;i++) for(j=jstart;j<=jstop;j++)
+#if (N3>1)
+#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
+#define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
+#else
+#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
+#define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
+#endif
+
+/*HIP related stuff*/
+#if(SHIP)
+#define gpuError_t hipError_t
+#define gpuSuccess hipSuccess
+#define gpuFuncCachePreferL1 hipFuncCachePreferL1
+#define gpuMemcpyHostToDevice hipMemcpyHostToDevice
+#define gpuMemcpyKind hipMemcpyKind
+#define gpuStream_t hipStream_t
+#define gpuMemcpyDeviceToHost hipMemcpyDeviceToHost
+#define gpuMemcpyDeviceToDevice hipMemcpyDeviceToDevice
+#define gpuEvent_t hipEvent_t
+#define gpuSharedMemBankSizeEightByte hipSharedMemBankSizeEightByte
+#elif(SCUDA)
+#define gpuError_t cudaError_t
+#define gpuSuccess cudaSuccess
+#define gpuFuncCachePreferL1 cudaFuncCachePreferL1
+#define gpuMemcpyHostToDevice cudaMemcpyHostToDevice
+#define gpuMemcpyKind cudaMemcpyKind
+#define gpuStream_t cudaStream_t
+#define gpuMemcpyDeviceToHost cudaMemcpyDeviceToHost
+#define gpuMemcpyDeviceToDevice cudaMemcpyDeviceToDevice
+#define gpuEvent_t cudaEvent_t
+#define gpuSharedMemBankSizeEightByte cudaSharedMemBankSizeEightByte
+#endif

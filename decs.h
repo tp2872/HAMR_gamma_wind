@@ -1264,6 +1264,10 @@ void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_mag(void);
 void set_mag_NS(void);
+void set_mag_hla(void);
+void set_mag_wind(void);
+void set_mag_wind_ce(void);
+void set_mag_ce(void);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double* X, double lgcov[][NDIM]);
 void gcov_func_spherical(double *X, double lgcov[][NDIM]);
@@ -1645,6 +1649,10 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th,
 void coord_transform(double* pr, int n, int ii, int jj, int zz);
 void set_mag(void);
 void set_mag_NS(void);
+void set_mag_hla(void);
+void set_mag_wind(void);
+void set_mag_ce(void);
+void set_mag_wind_ce(void);
 void init_thindisk();
 double compute_Amax(double(*restrict A[NB])[NPR]);
 double compute_B_from_A(void);
@@ -1693,7 +1701,8 @@ void init_collapsar();
 void init_NSM();
 void init_NS();
 void init_postmerger();
-
+void init_hla_NS();
+void init_ce_NS();
 
 extern double global_kappa, aphipow;
 
