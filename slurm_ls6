@@ -5,8 +5,7 @@
 #SBATCH -p gpu-a100-small
 #SBATCH -N 1 #Number of nodes
 #SBATCH -n 4 # Number of cores
-#SBATCH --mail-type=all
-#SBATCH --mail-user=doggies012@hotmail.com
+
 
 module load cuda
 export OMP_NUM_THREADS=10
