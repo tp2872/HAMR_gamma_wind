@@ -22,6 +22,10 @@ double(*restrict ph[NB_LOCAL])[NPR];
 double(*restrict E_corn[NB_LOCAL])[NDIM];
 double(*restrict dE[NB_LOCAL])[2][NDIM][NDIM];
 double(*restrict ps[NB_LOCAL])[NDIM];
+#if(NEUTRON_STAR && NS_TORUS)
+double(*restrict p_torus[NB_LOCAL])[NPR];
+double(*restrict ps_torus[NB_LOCAL])[NDIM];
+#endif
 double(*restrict psh[NB_LOCAL])[NDIM];
 double(*restrict U_n[NB_LOCAL])[NPR];
 double(*restrict U_0[NB_LOCAL])[NPR];
@@ -109,8 +113,10 @@ double* radiusF1_GPU[NB_LOCAL];
 double* dxpdx11_F1_GPU[NB_LOCAL];
 double* dxpdx11_CENT_GPU[NB_LOCAL];
 double* r_CORN2_GPU[NB_LOCAL];
-double* th_CORN3_GPU[NB_LOCAL];
 double* th_CORN3_2_GPU[NB_LOCAL];
+#endif
+#if(TWISTED_OMEGA || OBLIQUE_NS)
+double* th_CORN3_GPU[NB_LOCAL];
 double* phi_CORN2_GPU[NB_LOCAL];
 #endif
 double* NS_scaling_CENT[NB_LOCAL];
@@ -294,8 +300,10 @@ double* BufferradiusF1[NB_LOCAL];
 double* Bufferdxpdx11_F1[NB_LOCAL];
 double* Bufferdxpdx11_CENT[NB_LOCAL];
 double* Bufferr_CORN2[NB_LOCAL];
-double* Bufferth_CORN3[NB_LOCAL];
 double* Bufferth_CORN3_2[NB_LOCAL];
+#endif
+#if(TWISTED_OMEGA || OBLIQUE_NS)
+double* Bufferth_CORN3[NB_LOCAL];
 double* Bufferphi_CORN2[NB_LOCAL];
 #endif
 double * BufferNS_scaling_CENT[NB_LOCAL];

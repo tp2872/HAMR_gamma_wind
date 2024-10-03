@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --account=rrg-dhaggard
+#SBATCH --gpus-per-node=1  # Number of GPUs per node
+#SBATCH --mem=30G        # memory per node
+#SBATCH --time=0-00:30      # time (DD-HH:MM)
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+module load cuda
+echo $SLURM_JOB_ID
+cd /home/kchatt/scratch/Twisted_NS/polar_twist/test_run
+cp -r rdumps0/ rdumps0.$SLURM_JOB_ID/
+cp -r rdumps1/ rdumps1.$SLURM_JOB_ID/
+//make clean
+//make -j
+srun ./harm

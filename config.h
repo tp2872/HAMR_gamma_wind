@@ -26,7 +26,7 @@ Physical Parameters section
 #define CE_PULSAR 22
 
 /*Set problem*/
-#define WHICHPROBLEM CE_PULSAR
+#define WHICHPROBLEM ISOLATED_NS
 
 #if(WHICHPROBLEM==ISOLATED_NS||WHICHPROBLEM==HLA_PULSAR||WHICHPROBLEM==CE_PULSAR)
 /*Neutron star definition*/
@@ -34,6 +34,8 @@ Physical Parameters section
 #else
 #define NEUTRON_STAR (0)
 #endif
+
+#define NS_TORUS (1)
 
 #define OBLIQUE_NS                  (1)           // 0: aligned rotator, 1: oblique rotator
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians

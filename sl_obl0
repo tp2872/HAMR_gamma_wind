@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --account=rrg-dhaggard
+#SBATCH --gres=gpu:4       # Number of GPUs per node
+#SBATCH --nodes=1         # Number of nodes
+#SBATCH --ntasks-per-node=4        # Number of MPI process
+#SBATCH --cpus-per-task=10     # CPU cores per MPI process
+#SBATCH --mem=120G        # memory per node
+#SBATCH --time=0-12:00      # time (DD-HH:MM)
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+module load cuda
+echo $SLURM_JOB_ID
+cd /home/kchatt/scratch/Oblique_NS/obl0
+//cp -r rdumps0/ rdumps0.$SLURM_JOB_ID/
+//cp -r rdumps1/ rdumps1.$SLURM_JOB_ID/
+//make clean
+//make -j
+srun ./harm

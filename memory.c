@@ -73,6 +73,10 @@ void set_arrays(int n)
 	ps[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	psh[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
+	#if(NEUTRON_STAR && NS_TORUS)
+	p_torus[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	ps_torus[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+	#endif
 	#if(LEER)
 	V[nl[n]] = (double(*)[6])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
 	#endif

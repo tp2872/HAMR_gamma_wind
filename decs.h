@@ -64,6 +64,10 @@ extern double(*restrict  ph[NB_LOCAL])[NPR];
 extern double(*restrict E_corn[NB_LOCAL])[NDIM];
 extern double(*restrict dE[NB_LOCAL])[2][NDIM][NDIM];
 extern double(*restrict ps[NB_LOCAL])[NDIM];
+#if(NEUTRON_STAR && NS_TORUS)
+extern double(*restrict p_torus[NB_LOCAL])[NPR];
+extern double(*restrict ps_torus[NB_LOCAL])[NDIM];
+#endif
 extern double(*restrict psh[NB_LOCAL])[NDIM];
 extern double(*restrict U_n[NB_LOCAL])[NPR];
 extern double(*restrict U_0[NB_LOCAL])[NPR];
@@ -150,8 +154,10 @@ extern double* radiusF1_GPU[NB_LOCAL];
 extern double* dxpdx11_F1_GPU[NB_LOCAL];
 extern double* dxpdx11_CENT_GPU[NB_LOCAL];
 extern double* r_CORN2_GPU[NB_LOCAL];
-extern double* th_CORN3_GPU[NB_LOCAL];
 extern double* th_CORN3_2_GPU[NB_LOCAL];
+#endif
+#if(OBLIQUE_NS || TWISTED_OMEGA)
+extern double* th_CORN3_GPU[NB_LOCAL];
 extern double* phi_CORN2_GPU[NB_LOCAL];
 #endif
 extern double* NS_scaling_CENT[NB_LOCAL];
@@ -338,8 +344,10 @@ extern double* BufferradiusF1[NB_LOCAL];
 extern double* Bufferdxpdx11_F1[NB_LOCAL];
 extern double* Bufferdxpdx11_CENT[NB_LOCAL];
 extern double* Bufferr_CORN2[NB_LOCAL];
-extern double* Bufferth_CORN3[NB_LOCAL];
 extern double* Bufferth_CORN3_2[NB_LOCAL];
+#endif
+#if(OBLIQUE_NS || TWISTED_OMEGA)
+extern double* Bufferth_CORN3[NB_LOCAL];
 extern double* Bufferphi_CORN2[NB_LOCAL];
 #endif
 extern double * BufferNS_scaling_CENT[NB_LOCAL];
@@ -1264,10 +1272,6 @@ void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_mag(void);
 void set_mag_NS(void);
-void set_mag_hla(void);
-void set_mag_wind(void);
-void set_mag_wind_ce(void);
-void set_mag_ce(void);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double* X, double lgcov[][NDIM]);
 void gcov_func_spherical(double *X, double lgcov[][NDIM]);
@@ -1649,10 +1653,8 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double* r, double* th,
 void coord_transform(double* pr, int n, int ii, int jj, int zz);
 void set_mag(void);
 void set_mag_NS(void);
-void set_mag_hla(void);
-void set_mag_wind(void);
-void set_mag_ce(void);
-void set_mag_wind_ce(void);
+void set_mag_torus(void);
+void init_NS_torus(void);
 void init_thindisk();
 double compute_Amax(double(*restrict A[NB])[NPR]);
 double compute_B_from_A(void);
@@ -1700,9 +1702,9 @@ void init_truncdisk();
 void init_collapsar();
 void init_NSM();
 void init_NS();
+void init_NS_torus();
 void init_postmerger();
-void init_hla_NS();
-void init_ce_NS();
+
 
 extern double global_kappa, aphipow;
 
