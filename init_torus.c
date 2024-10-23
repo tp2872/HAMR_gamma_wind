@@ -67,10 +67,10 @@ void init()
 			init_NS();
 			break;
                 case HLA_PULSAR:
-                        init_hla_NS();
+                        init_wind_NS();
                         break;
                 case CE_PULSAR:
-                        init_ce_NS();
+                        init_wind_NS();
                         break;
 	}
 

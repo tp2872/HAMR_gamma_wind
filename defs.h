@@ -26,6 +26,10 @@ double(*restrict ps[NB_LOCAL])[NDIM];
 double(*restrict p_torus[NB_LOCAL])[NPR];
 double(*restrict ps_torus[NB_LOCAL])[NDIM];
 #endif
+#if(NEUTRON_STAR)
+double(*restrict p_wind[NB_LOCAL])[NPR];
+double(*restrict ps_wind[NB_LOCAL])[NDIM];
+#endif
 double(*restrict psh[NB_LOCAL])[NDIM];
 double(*restrict U_n[NB_LOCAL])[NPR];
 double(*restrict U_0[NB_LOCAL])[NPR];

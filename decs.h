@@ -68,6 +68,10 @@ extern double(*restrict ps[NB_LOCAL])[NDIM];
 extern double(*restrict p_torus[NB_LOCAL])[NPR];
 extern double(*restrict ps_torus[NB_LOCAL])[NDIM];
 #endif
+#if(NEUTRON_STAR)
+extern double(*restrict p_wind[NB_LOCAL])[NPR];
+extern double(*restrict ps_wind[NB_LOCAL])[NDIM];
+#endif
 extern double(*restrict psh[NB_LOCAL])[NDIM];
 extern double(*restrict U_n[NB_LOCAL])[NPR];
 extern double(*restrict U_0[NB_LOCAL])[NPR];
@@ -1654,7 +1658,10 @@ void coord_transform(double* pr, int n, int ii, int jj, int zz);
 void set_mag(void);
 void set_mag_NS(void);
 void set_mag_torus(void);
+void set_mag_wind(void);
+void set_mag_NS_wind(void);
 void init_NS_torus(void);
+void init_wind(void);
 void init_thindisk();
 double compute_Amax(double(*restrict A[NB])[NPR]);
 double compute_B_from_A(void);
@@ -1703,6 +1710,7 @@ void init_collapsar();
 void init_NSM();
 void init_NS();
 void init_NS_torus();
+void init_wind_NS();
 void init_postmerger();
 
 

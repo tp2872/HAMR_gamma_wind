@@ -156,7 +156,7 @@ void init_NS()
 	if (rank == 0) {
 		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
-#if((WHICHPROBLEM==NS_PROBLEM))
+#if((NEUTRON_STAR))
 	//double torus_mass = 0.;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -434,7 +434,7 @@ void set_mag_NS(void) {
 			rotate_coord(X_cart, -tilt);
 			cart_to_sph(X_cart, &r, &th, &phi);
 #endif
-#if(WHICHPROBLEM==NS_PROBLEM)
+#if(NEUTRON_STAR)
 			double z1, z1inv, schwFactor, A_schw;
 			z1 = 2.0 / r;
 			z1inv = 1.0 / z1;

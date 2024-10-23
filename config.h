@@ -26,7 +26,7 @@ Physical Parameters section
 #define CE_PULSAR 22
 
 /*Set problem*/
-#define WHICHPROBLEM ISOLATED_NS
+#define WHICHPROBLEM HLA_PULSAR
 
 #if(WHICHPROBLEM==ISOLATED_NS||WHICHPROBLEM==HLA_PULSAR||WHICHPROBLEM==CE_PULSAR)
 /*Neutron star definition*/
@@ -35,7 +35,7 @@ Physical Parameters section
 #define NEUTRON_STAR (0)
 #endif
 
-#define NS_TORUS (1)
+#define NS_TORUS (0)
 
 #define OBLIQUE_NS                  (1)           // 0: aligned rotator, 1: oblique rotator
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
@@ -47,7 +47,7 @@ Physical Parameters section
 #define KERR_SPIN_NS                (1./3.)  //(1.0/3.0)
 #define SPINUP_TIME_NS              (40.0)  //40.0        // Needs to be ~> 2 R_LC/c
 #define SPINUP_START_TIME_NS        (20.0)  //50.0//500.0       // When rotation begins
-#define MU_NS                       (40.0)  //10.0   // Set using mu=10, is scaled internally
+#define MU_NS                       (100.0)  //10.0   // Set using mu=10, is scaled internally
 #define FFE_ZONE_FLRFRAC_THRESHOLD  (0.5)  //0.5
 #define RHO0_HYDROSTAT_ATM_NS       (8.877e-6)    // 8.877e-6 gives b^2/rho = 1e4 at equator
                                                 
@@ -71,7 +71,11 @@ Physical Parameters section
 #define START_WIND                   (-50.)
 #define MACH_WIND                    (2.)
 #define WIND_NO_FIELD                (0)
-#define WHICH_FIELD_WIND WIND_NO_FIELD
+#define WIND_VERTICAL                (1)
+#define WHICH_FIELD_WIND WIND_VERTICAL
+#define FROM_LEFT		     (0)
+#define FROM_DOWN		     (1)
+#define WIND_DIRECTION   FROM_LEFT
 #endif
 
 #if(WHICHPROBLEM==CE_PULSAR)
@@ -81,7 +85,11 @@ Physical Parameters section
 #define EPS_RHO                      (1)
 #define MACH_WIND                    (2.)
 #define WIND_NO_FIELD                (0)
-#define WHICH_FIELD_WIND WIND_NO_FIELD
+#define WIND_VERTICAL		     (1)
+#define WHICH_FIELD_WIND WIND_VERTICAL
+#define FROM_LEFT	             (0)
+#define FROM_DOWN		     (1)
+#define WIND_DIRECTION   FROM_DOWN
 #endif
 
 
@@ -159,7 +167,7 @@ Physical Parameters section
 /*For Aris's ICs*/
 #define R_BONDI (1e2)
 #define R_CIRC (3e1)
-#define BETA (0.1)
+#define BETA (100)
 
 
 

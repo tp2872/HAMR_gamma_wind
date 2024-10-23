@@ -46,16 +46,16 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = mpicc
-CCFLAGS  =  -fopenmp -g -O3 -I /sw/summit/cuda/11.4.2/include
+CC       = mpicc 
+CCFLAGS  = -fopenmp -g -O2 -I /opt/apps/cuda/12.2/include
 endif
 
-EXTRALIBS = -lm -L /sw/summit/cuda/11.4.2/lib64 -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L /opt/apps/cuda/12.2/lib64  -lstdc++ -lcudart 
 
-CC_COMPILE  = $(CC) $(CCFLAGS) -c
-CUDA_COMPILE  = nvcc -arch=compute_70 -code=sm_70 -Xcompiler \-fopenmp -lgomp -c
-CC_LOAD     = $(CC) $(CCFLAGS)
-CUDA_LOAD  = nvcc -arch=compute_70 -code=sm_70 -Xcompiler \-fopenmp -lgomp -dlink
+CC_COMPILE  = $(CC) $(CCFLAGS) -c 
+CUDA_COMPILE  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -c 
+CC_LOAD     = $(CC) $(CCFLAGS) 
+CUDA_LOAD  = nvcc -arch=compute_80 -code=sm_80 -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -64,19 +64,18 @@ GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_p
 
 EXE = harm
 all: $(EXE)
-
+	
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
-bounds.o coord.o const_trans.o const_trans_res.o diag.o dump.o eos_helm.o fixup.o \
+bounds.o coord.o const_trans.o const_trans_res.o diag.o dump.o eos_helm.o fixup.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o GPU_program1.o GPU_program2.o GPU_main.o\
-hllc.o LAS.o init_collapsar.o init_mag.o init_misc.o init_nsm.o init_tde.o init_torus_NS.o\
-init_thindisk.o init_torus.o init_torus_grb.o init_torus_spherical.o \
-interp.o lu.o main.o memory.o metric.o phys_2T.o phys_mhd.o phys_neutrinos.o \
+hllc.o LAS.o init_collapsar.o init_mag.o init_misc.o init_nsm.o init_tde.o \
+init_thindisk.o init_torus.o init_torus_grb.o init_torus_NS.o init_torus_spherical.o\
+init_hla_ce_ns.o interp.o lu.o main.o memory.o metric.o phys_2T.o phys_mhd.o phys_neutrinos.o \
 phys_nu.o phys_nuclear.o phys_radiation.o phys_res.o radiation.o ranc.o restart.o step_ch.o step_ch_res.o \
-u2p_util.o utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o utoprim_3d_res.o utoprim_nm.o wrapper.o\
-
-INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h
-
+u2p_util.o utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o utoprim_3d_res.o utoprim_nm.o wrapper.o
+INCS = \
+decs.h decs_MPI.h decsCUDA.h defs.h include.h u2p_defs.h u2p_util.h config.h
 
 $(OBJS) : $(INCS) makefile
 
@@ -88,6 +87,6 @@ $(EXE): $(OBJS) $(INCS) makefile
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-
 newrun:
 	/bin/rm -rf reduced/ dumps*/ gdumps/ rdumps0/ rdumps1/
+
