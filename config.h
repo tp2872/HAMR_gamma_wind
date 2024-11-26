@@ -37,7 +37,7 @@ Physical Parameters section
 
 #define NS_TORUS (0)
 
-#define OBLIQUE_NS                  (1)           // 0: aligned rotator, 1: oblique rotator
+#define OBLIQUE_NS                  (0)           // 0: aligned rotator, 1: oblique rotator
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
 #define DEFORM_DIPOLE_NS            (0)
 
@@ -70,11 +70,11 @@ Physical Parameters section
 #define RHOINFTY                     (1.e-3)
 #define START_WIND                   (-50.)
 #define MACH_WIND                    (2.)
-#define WIND_NO_FIELD                (0)
-#define WIND_VERTICAL                (1)
-#define WHICH_FIELD_WIND WIND_VERTICAL
-#define FROM_LEFT		     (0)
-#define FROM_DOWN		     (1)
+#define WIND_NO_FIELD                (1)
+#define WIND_VERTICAL                (0)
+#define WHICH_FIELD_WIND WIND_NO_FIELD
+#define FROM_LEFT		     (1)
+#define FROM_DOWN		     (0)
 #define WIND_DIRECTION   FROM_LEFT
 #endif
 

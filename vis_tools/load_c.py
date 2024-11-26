@@ -9,8 +9,8 @@ To do:
 '''
 
 ## Load libfunctions
-cdll.LoadLibrary("./pp_c.cpython-311-x86_64-linux-gnu.so")
-libfunctions = CDLL("./pp_c.cpython-311-x86_64-linux-gnu.so") 
+cdll.LoadLibrary("./pp_c.cpython-39-x86_64-linux-gnu.so")
+libfunctions = CDLL("./pp_c.cpython-39-x86_64-linux-gnu.so") 
 #cdll.LoadLibrary("/pscratch/sd/n/nkaaz/analysis/harm2d/libs/libfunctions.so")
 #libfunctions = CDLL("/pscratch/sd/n/nkaaz/analysis/harm2d/libs/libfunctions.so")  
 
