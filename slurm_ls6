@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH -A AST20011
-#SBATCH --job-name="NS Test 4 Lvl Deref"
+#SBATCH --job-name="Low Res Test"
 #SBATCH -t 25:00:00
 #SBATCH -p gpu-a100-small
 #SBATCH -N 1 #Number of nodes
