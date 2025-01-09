@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	begin_rdump = begin1;
 
 	//cuProfilerStart();
-	tf = 1280.0*R_NS/4.0;
+	tf = 3600.0*RUNTIME*R_NS/4.0;
 	while(t < tf) {
 		/*Used for running OpenCL on either GPU or CPU*/
 		#if(GPU_ENABLED && !GPU_DEBUG)
@@ -183,10 +183,11 @@ int main(int argc, char *argv[])
 			#endif
 
 			//Calculate exit criterion
-			//if (runtime > (RUNTIME * 3600.0)) {
-			//	if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
-			//	break;
-			//}
+			if (runtime > (RUNTIME * 3600.0)) {
+				if (rank == 0) fprintf(stderr, "Time limit reached. Writing restart dump and exiting. \n");
+				restart_write();
+				break;
+			}
 
 			tlog += DTl;
 		}
