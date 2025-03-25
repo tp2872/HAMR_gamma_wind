@@ -26,7 +26,7 @@ Physical Parameters section
 #define CE_PULSAR 22
 
 /*Set problem*/
-#define WHICHPROBLEM HLA_PULSAR
+#define WHICHPROBLEM ISOLATED_NS
 
 #if(WHICHPROBLEM==ISOLATED_NS||WHICHPROBLEM==HLA_PULSAR||WHICHPROBLEM==CE_PULSAR)
 /*Neutron star definition*/
@@ -70,11 +70,11 @@ Physical Parameters section
 #define RHOINFTY                     (1.e-3)
 #define START_WIND                   (-50.)
 #define MACH_WIND                    (2.)
-#define WIND_NO_FIELD                (1)
-#define WIND_VERTICAL                (0)
-#define WHICH_FIELD_WIND WIND_NO_FIELD
-#define FROM_LEFT		     (1)
-#define FROM_DOWN		     (0)
+#define WIND_NO_FIELD                (0)
+#define WIND_VERTICAL                (1)
+#define WHICH_FIELD_WIND WIND_VERTICAL
+#define FROM_LEFT		     (0)
+#define FROM_DOWN		     (1)
 #define WIND_DIRECTION   FROM_LEFT
 #endif
 
@@ -350,14 +350,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
+#define NB_1 10
 #define NB_2 2
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 54
-#define BS_2 48
-#define BS_3 32
+#define BS_2 96
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -401,7 +401,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0

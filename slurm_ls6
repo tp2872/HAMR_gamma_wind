@@ -1,15 +1,15 @@
 #!/bin/bash -l
 #SBATCH -A AST20011
-#SBATCH --job-name="Low Res Test"
-#SBATCH -t 25:00:00
-#SBATCH -p gpu-a100-small
+#SBATCH --job-name="NS"
+#SBATCH -t 00:05:00
+#SBATCH -p gpu-a100-dev
 #SBATCH -N 1 #Number of nodes
-#SBATCH -n 3 # Number of cores
+#SBATCH -n 4 # Number of cores
 
 
 module load cuda/12.2
 export OMP_NUM_THREADS=10
 export MY_SPECTRUM_OPTIONS="--gpu"
 
-ibrun -np 3 ./harm
+ibrun -np 4 ./harm
 
