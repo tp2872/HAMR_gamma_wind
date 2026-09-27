@@ -170,6 +170,10 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 					for (i = -N1G; i < 0; i++) {
 						for (k = 0; k < NPR - USE_PS1START; k++) {
 							prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, 0, j, z)][k];
+							prim[nl[n]][index_3D(n, i, j, z)][RHO] = 1.0;
+							prim[nl[n]][index_3D(n, i, j, z)][UU] = 0.1;
+							prim[nl[n]][index_3D(n, i, j, z)][FLR] = 0.0;
+							prim[nl[n]][index_3D(n, i, j, z)][FLRFRAC] = 0.0;
 						}
 #if(STAGGERED)
 						ps[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, 0, j, z)][2];
@@ -215,10 +219,10 @@ void bound_prim1_outflow(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict
 #pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++) {
 					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
-						inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 0, 1);
-						inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 0, 1);
+						inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 1, 1);
+						inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 1, 1);
 #if(N1G==3)
-						inflow_check(prim[nl[n]][index_3D(n, -3, j, z)], n, i, j, z, 0, 1);
+						inflow_check(prim[nl[n]][index_3D(n, -3, j, z)], n, i, j, z, 1, 1);
 #endif
 					}
 				}

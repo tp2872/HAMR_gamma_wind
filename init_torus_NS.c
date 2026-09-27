@@ -93,16 +93,40 @@ void init_NS()
 			cart_to_sph(X_cart, &r, &th, &phi);
 #endif
 
-			rho = 1.e-20 * RHOMIN;
-			u = 1.e-20 * UUMIN;
+			//rho = 1.e-20 * RHOMIN;
+			//u = 1.e-20 * UUMIN;
+			rho = 1.0*pow(R_NS/r,2.0);
+			u = 0.1*pow(R_NS/r,8.0/3.0);
+			//rho = 1.0*pow(R_NS/r,2.0);
+			//double kappa = 1e-3;
+			//u = kappa * pow(rho, GAMMA);
+                        //double ct = 0.2;
+			//double v1 = 2.0*ct*pow(2.0*r*ct*ct,0.5);
+			//double u0ic = 1.0/sqrt(-(geom.gcon[0][0] + 2.0*geom.gcon[0][1]*v1 + geom.gcon[1][1]*v1*v1));
+			//double v1 = 0.0;
+			//double cs = sqrt(GAMMA*u/(3.0*rho)); //cs = sqrt(gamma*P/rho) and P=u/3
+
+			double cs0 = 0.05;
+
+                        double rs = 0.5/(cs0*cs0);
+                        double v1r = 2.0*cs0*sqrt(r/rs);
+
+			
+			v1r = v1r/sqrt(geom.gcov[1][1]);
+			double u0ic = 1.0/sqrt(-(geom.gcon[0][0] + 2.0*geom.gcon[0][1]*v1r + geom.gcon[1][1]*v1r*v1r));
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = -sqrt(-1.0 / geom.gcov[0][0]) * geom.gcon[0][1] / geom.gcon[0][0]; // Make static wrt coordinates
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = -sqrt(-1.0 / geom.gcov[0][0]) * geom.gcon[0][2] / geom.gcon[0][0];
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = -sqrt(-1.0 / geom.gcov[0][0]) * geom.gcon[0][3] / geom.gcon[0][0];
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][FLR] = 1.0;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][FLRFRAC] = 1.0;
+			
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = v1r;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][FLR] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][FLRFRAC] = 0.0;
 
 			if (rho > rhomax) {
 #pragma omp critical
@@ -160,8 +184,8 @@ void init_NS()
 	//double torus_mass = 0.;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
 
 #if(RAD_M1)
 			//Set radiation pressure
@@ -782,8 +806,8 @@ void set_mag_NS(void) {
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			//fprintf(stderr, "initial B1 B2 B3 bsq_ij: %g %g %g %g\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3], bsq_ij);
 #if(NEUTRON_STAR)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = bsq_ij / pow(10.0, SURF_MAX_BSQ_RHO_LOG);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.2 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = bsq_ij / pow(10.0, SURF_MAX_BSQ_RHO_LOG);
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 0.2 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
 				beta_ij = 2.0 * (gam - 1.0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
 #endif
 			

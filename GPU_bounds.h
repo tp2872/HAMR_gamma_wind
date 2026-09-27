@@ -46,15 +46,15 @@ __global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov,
 		}
 
 		/*Make sure there is no inflow at inner boundary*/
-		inflow_check(prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
-		inflow_check(prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim1, 0, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 0, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 #if(N1G==3)
-		inflow_check(prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim3, 0, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 #endif
-		inflow_check(prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
-		inflow_check(prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim1, 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
+		inflow_check(prim2, 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 #if(N1G==3)
-		inflow_check(prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet, 1);
+		inflow_check(prim3, 1, jcurr, zcurr, 1, gcov, gcon, gdet, 1);
 #endif
 
 		// Extrapolate in the ghost cells as in Gammie et al. (gdet extrapolation)
@@ -75,6 +75,31 @@ __global__ void boundprim1_outflow(double* pv, const  double* __restrict__ gcov,
 			pv[k * (ksize)+2 * isize + global_id] = prim3[k];
 #endif
 		}
+
+		pv[RHO * (ksize)+global_id] = 1.0;
+		pv[RHO * (ksize)+1 * isize + global_id] = 1.0;
+#if(N1G==3)
+                pv[RHO * (ksize)+2 * isize + global_id] = 1.0;
+#endif
+
+		pv[UU * (ksize)+global_id] = 0.1;
+                pv[UU * (ksize)+1 * isize + global_id] = 0.1;
+#if(N1G==3)
+                pv[UU * (ksize)+2 * isize + global_id] = 0.1;
+#endif
+
+		pv[FLR * (ksize)+global_id] = 0.0;
+                pv[FLR * (ksize)+1 * isize + global_id] = 0.0;
+#if(N1G==3)
+                pv[FLR * (ksize)+2 * isize + global_id] = 0.0;
+#endif
+
+		pv[FLRFRAC * (ksize)+global_id] = 0.0;
+                pv[FLRFRAC * (ksize)+1 * isize + global_id] = 0.0;
+#if(N1G==3)
+                pv[FLRFRAC * (ksize)+2 * isize + global_id] = 0.0;
+#endif
+
 
 #if(STAGGERED)
 		ps[1 * (ksize)+0 * isize + global_id] = ps[1 * (ksize)+N1G * isize + global_id];

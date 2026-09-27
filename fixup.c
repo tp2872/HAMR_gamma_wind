@@ -25,6 +25,37 @@ void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 void fixup1zone( int i, int j, int z, int n, double pv[NPR] ) 
 {
 	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
+        double f,gamma, bsq;
+        double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
+        double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut, u;
+        double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+        int m;
+        int k, flag, dofloor=0;
+        #if(RESISTIVE)
+        struct of_state_res q;
+        #else
+        struct of_state q;
+        #endif
+        #if(TWO_T)
+        double ue, ui, Theta, gam, C, dis;
+        #endif
+        #if (NEUTRON_STAR)
+        double Rlc, rho_b, rho_g, smooth, smooth_geom;
+        #endif
+        struct of_geom geom;
+
+
+
+        coord(n, i,j, z, CENT,X);
+        bl_coord(X,&r,&th, &phi);
+
+	if (r<radfix_dens) {
+		pv[RHO] = 1.0;
+		pv[UU] = 0.1;
+	}
+
+#if 0
+	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
 	double f,gamma, bsq;
 	double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
 	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut, u;
@@ -630,6 +661,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 			pv[U3] *= f ;	
 		}
 	}
+#endif
 	return;
 }
 

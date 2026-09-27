@@ -37,23 +37,25 @@ Physical Parameters section
 
 #define NS_TORUS (0)
 
+#define radfix_dens 0.0
+
 #define OBLIQUE_NS                  (0)           // 0: aligned rotator, 1: oblique rotator
 #define OBL_ANGLE_NS                (0.0 * M_PI /180.0)         // Obliquity angle, in radians
 #define DEFORM_DIPOLE_NS            (0)
 
 #define R_NS                        (4.0)         // Neutron star radius in r_g
-#define OMEGA_NS                    (0.05)  //0.05        // Angular velocity in c/r_g
+#define OMEGA_NS                    (0.0005)  //0.05        // Angular velocity in c/r_g
 #define CELLS_IN_STAR               (0)  //grid cells inside the the stellar surface
 #define KERR_SPIN_NS                (1./3.)  //(1.0/3.0)
-#define SPINUP_TIME_NS              (40.0)  //40.0        // Needs to be ~> 2 R_LC/c
-#define SPINUP_START_TIME_NS        (20.0)  //50.0//500.0       // When rotation begins
-#define MU_NS                       (40.0)  //10.0   // Set using mu=10, is scaled internally
+#define SPINUP_TIME_NS              (500.0)  //40.0        // Needs to be ~> 2 R_LC/c
+#define SPINUP_START_TIME_NS        (500.0)  //50.0//500.0       // When rotation begins
+#define MU_NS                       (4.0)  //10.0   // Set using mu=10, is scaled internally
 #define FFE_ZONE_FLRFRAC_THRESHOLD  (0.5)  //0.5
 #define RHO0_HYDROSTAT_ATM_NS       (8.877e-6)    // 8.877e-6 gives b^2/rho = 1e4 at equator
                                                 
 #define R_NS_OFFSET                 (0.0)
 #define NS_TAPERED_FLOORS           (1)         // 1= Kyle's tapered floors; 0= Tchekhovskoy+2013 floors (not yet working)
-#define FREEZE_BSQORHO              (100.0)
+#define FREEZE_BSQORHO              (10.0)
 #define MAX_BSQ_OVER_RHO            (100.0)       // These two are used in the dynamic flooring
 #define MAX_BSQ_OVER_UINT           (120.0)      // Set the maxima beyond R_LC; inside higher
 #define SURF_MAX_BSQ_RHO_LOG        (2.1)//4.75
@@ -84,20 +86,20 @@ Physical Parameters section
 #define START_WIND                   (-50.)
 #define EPS_RHO                      (1)
 #define MACH_WIND                    (2.)
-#define WIND_NO_FIELD                (1)
-#define WIND_VERTICAL		     (0)
+#define WIND_NO_FIELD                (0)
+#define WIND_VERTICAL		     (1)
 #define WHICH_FIELD_WIND WIND_NO_FIELD
-#define FROM_LEFT	             (1)
-#define FROM_DOWN		     (0)
-#define WIND_DIRECTION   FROM_LEFT
+#define FROM_LEFT	             (0)
+#define FROM_DOWN		     (1)
+#define WIND_DIRECTION   FROM_DOWN
 #endif
 
 
 #define TWISTED_OMEGA               (0)           // Aligned twisted fields
-#define START_TWIST                 (5.0*2.0*M_PI/OMEGA_NS)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
+#define START_TWIST                 (0.0)    //(SPINUP_START_TIME_NS + 2.0*SPINUP_TIME_NS)
 
 /*Select adiabatic index*/
-#define GAMMA	(1.1)
+#define GAMMA	(5.0/3.0)
                                       
 /*Select grid outer radius*/
 #define ROUT (10000.0)
@@ -216,7 +218,7 @@ Physical Parameters section
 // Whether electron fraction is evolved
 #if (NEUTRINOS_M1)
 #define DO_YE (1)
-#define DONUCLEAR (1)
+#define DONUCLEAR (0)
 #else 
 #define DO_YE (0)
 #define DONUCLEAR (0)
@@ -225,9 +227,9 @@ Physical Parameters section
 // Evolve temperature as an additional primitive variable (appends NPR, NPR_DUMP, NPR_HD)
 #if (DOHELM)
 #if (NEUTRINOS_M1)
-#define DOHELM_TEMPERATURE (1) // DIMARK:  still in progress: now, replaces UU as a primitive variable
+#define DOHELM_TEMPERATURE (0) // DIMARK:  still in progress: now, replaces UU as a primitive variable
 #else
-#define DOHELM_TEMPERATURE (1) 
+#define DOHELM_TEMPERATURE (0) 
 #endif
 #else
 #define DOHELM_TEMPERATURE (0) 
@@ -350,14 +352,14 @@ Numerical Parameters section
 #define NB_LOCAL (1000)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
-#define NB_3 2
+#define NB_1 16
+#define NB_2 8
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 54
-#define BS_2 64
-#define BS_3 64
+#define BS_1 32
+#define BS_2 32
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -401,7 +403,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -501,7 +503,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Set boundary conditions in first dimensions; possible options: OUTFLOW, PERIODIC*/
 #if(NEUTRON_STAR)
-#define BOUND_TYPE1 NEUTRON_STAR_BC
+#define BOUND_TYPE1 OUTFLOW
 #else
 #define BOUND_TYPE1 OUTFLOW
 #endif
@@ -1296,7 +1298,7 @@ Section with derived quantities
 //#define NPR_NU     (5)        /* number of neutrino primitive variables (RAD+NUM) */
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+RAD_M1*P_NUM*NPR_PH+RAD_M1*DO_YE*1+RAD_M1*DONUCLEAR*2+RAD_M1*NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
+#define NPR        (NPR_U+NEUTRON_STAR*(1+DOFLR+USE_PS1START)+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+RAD_M1*P_NUM*NPR_PH+DO_YE*1+DONUCLEAR*2+RAD_M1*NEUTRINOS_M1*NU_SPECIES*NPR_NU)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */

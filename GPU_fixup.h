@@ -1000,6 +1000,11 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#endif
 	#endif
 ) {
+        if (r< radfix_dens) {
+		pf[RHO] = 1.0;
+		pf[UU] = 0.1;
+	}
+#if 0
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
 	double pf_prefloor[NPR], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut ,u;
@@ -1797,4 +1802,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#else 
 	return(0);
 	#endif
+
+return 0;
+#endif
 }

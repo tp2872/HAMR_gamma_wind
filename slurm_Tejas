@@ -1,0 +1,19 @@
+#!/bin/bash -l                                                                  
+# Queue (Partition):                                                            
+#SBATCH -p gpu                                                                 
+#SBATCH -C h100,ib
+
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
+#SBATCH --exclude=workergpu156
+#SBATCH --time=1:15:00                                                         
+
+
+export OMP_NUM_THREADS=8
+module load gcc openmpi
+module load modules
+module load cuda
+mpiexec -np 1 ./harm
+
